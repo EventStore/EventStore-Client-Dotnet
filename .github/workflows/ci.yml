@@ -1,0 +1,92 @@
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches:
+    - master
+    tags:
+    - oss-v*
+
+jobs:
+  vulnerability-scan:
+    runs-on: ubuntu-latest
+    name: ci/github/scan-vulnerabilities
+    container: mcr.microsoft.com/dotnet/core/sdk:3.1-bionic
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Scan for Vulnerabilities
+      run: |
+        dotnet tool restore
+        dotnet restore
+        dotnet tool run dotnet-retire
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-18.04]
+        test: ["", .Streams, .PersistentSubscriptions, .Operations, .UserManagement, .ProjectionManagement]
+        configuration: [release]
+        eventStoreDockerTag: ['6.0.0-preview3.21-bionic']
+    runs-on: ${{ matrix.os }}
+    name: ci/github/build-${{ matrix.os }}/EventStore.Client${{ matrix.test }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Github Registry Docker Login
+      uses: azure/docker-login@v1
+      with:
+        login-server: docker.pkg.github.com/eventstore
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Pull EventStore Image
+      shell: bash
+      run: |
+          docker pull docker.pkg.github.com/eventstore/eventstore/eventstore:${{ matrix.eventStoreDockerTag }}
+          docker tag docker.pkg.github.com/eventstore/eventstore/eventstore:${{ matrix.eventStoreDockerTag }} \
+            eventstore/eventstore:${{ matrix.eventStoreDockerTag }}
+    - name: Install Dotnet
+      uses: actions/setup-dotnet@v1.4.0
+      with:
+        dotnet-version: '3.1.102'
+    - name: Calculate Version
+      shell: bash
+      run: |
+        git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+        dotnet tool restore
+        version=$(dotnet tool run minver -- --tag-prefix=oss-v)
+        echo "::set-env name=VERSION::${version}"
+    - name: Compile
+      shell: bash
+      run: |
+        dotnet build --configuration ${{ matrix.configuration }} src/EventStore.Client${{ matrix.test }}
+    - name: Run Tests
+      shell: bash
+      env:
+        ES_DOCKER_TAG: ${{ matrix.eventStoreDockerTag }}
+      run: |
+        dotnet test --configuration ${{ matrix.configuration }} --blame \
+          --logger:html --logger:trx --logger:"console;verbosity=normal" \
+          --results-directory=$(pwd)/test-results/test/EventStore.Client${{ matrix.test }}.Tests \
+          test/EventStore.Client${{ matrix.test }}.Tests
+    - name: Collect Test Results
+      shell: bash
+      if: always()
+      run: |
+        echo $(find ./test-results -name "*.html" | xargs cat) > test-results.html
+    - name: Publish Test Results (HTML)
+      uses: actions/upload-artifact@v1
+      if: always()
+      with:
+        path: test-results.html
+        name: test-results-${{ matrix.configuration }}-${{ matrix.os }}-EventStore.Client${{ matrix.test }}.html
+    - name: Publish Test Results (All)
+      uses: actions/upload-artifact@v1
+      if: always()
+      with:
+        name: test-results-${{ matrix.configuration }}-${{ matrix.os }}-EventStore.Client${{ matrix.test }}
+        path: test-results
+

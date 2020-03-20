@@ -1,0 +1,30 @@
+<Project>
+	<PropertyGroup>
+		<TargetFramework>netcoreapp3.1</TargetFramework>
+		<Platform>x64</Platform>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<Nullable>disable</Nullable>
+		<NullableContextOptions>enable</NullableContextOptions>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<LangVersion>8.0</LangVersion>
+		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+		<DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
+		<DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
+		<OutputPath>$(MSBuildThisFileDirectory)..\bin\$(Configuration)\$(MSBuildProjectName)\</OutputPath>
+		<Authors>Event Store Ltd</Authors>
+		<PackageLicenseUrl>https://github.com/EventStore-Client-Dotnet/EventStore-Client-Dotnet/blob/master/LICENSE.md</PackageLicenseUrl>
+		<PackageProjectUrl>https://eventstore.com</PackageProjectUrl>
+		<PackageIconUrl>https://eventstore.com/images/ouro.svg</PackageIconUrl>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+		<Copyright>Copyright 2012-2020 Event Store Ltd</Copyright>
+		<PackageReleaseNotes>https://eventstore.com/blog/</PackageReleaseNotes>
+		<Copyright>Copyright 2012-2020 Event Store Ltd</Copyright>
+		<PackageTags>eventstore client grpc</PackageTags>
+		<RootNamespace>EventStore.Client</RootNamespace>
+		<UseLinkBase>true</UseLinkBase>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="NETStandard.Library" Version="2.0.3"/>
+		<PackageReference Include="System.Net.Http" Version="4.3.4"/>
+	</ItemGroup>
+</Project>
