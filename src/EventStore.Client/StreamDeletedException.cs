@@ -1,5 +1,6 @@
 using System;
 
+#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// Exception thrown if an operation is attempted on a stream which
@@ -15,12 +16,8 @@ namespace EventStore.Client {
 		/// Constructs a new instance of <see cref="StreamDeletedException"/>.
 		/// </summary>
 		/// <param name="stream">The name of the deleted stream.</param>
-		public StreamDeletedException(string stream, Exception exception = null)
+		public StreamDeletedException(string stream, Exception? exception = null)
 			: base($"Event stream '{stream}' is deleted.", exception) {
-			if (stream == null) {
-				throw new ArgumentNullException(nameof(stream));
-			}
-
 			Stream = stream;
 		}
 	}

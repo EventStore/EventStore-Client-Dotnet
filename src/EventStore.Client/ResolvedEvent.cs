@@ -1,7 +1,8 @@
+#nullable enable
 namespace EventStore.Client {
-	public struct ResolvedEvent {
+	public readonly struct ResolvedEvent {
 		public readonly EventRecord Event;
-		public readonly EventRecord Link;
+		public readonly EventRecord? Link;
 
 		public EventRecord OriginalEvent {
 			get { return Link ?? Event; }
@@ -12,18 +13,13 @@ namespace EventStore.Client {
 		/// </summary>
 		public readonly Position? OriginalPosition;
 
-		public string OriginalStreamId {
-			get { return OriginalEvent.EventStreamId; }
-		}
+		public string OriginalStreamId => OriginalEvent.EventStreamId;
 
-		public StreamRevision OriginalEventNumber {
-			get { return OriginalEvent.EventNumber; }
-		}
+		public StreamRevision OriginalEventNumber => OriginalEvent.EventNumber;
 
 		public bool IsResolved => Link != null && Event != null;
 
-
-		public ResolvedEvent(EventRecord @event, EventRecord link, long? commitPosition) {
+		public ResolvedEvent(EventRecord @event, EventRecord? link, long? commitPosition) {
 			Event = @event;
 			Link = link;
 			OriginalPosition = commitPosition.HasValue

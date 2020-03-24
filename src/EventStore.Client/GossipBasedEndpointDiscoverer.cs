@@ -8,14 +8,15 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
+#nullable enable
 namespace EventStore.Client {
-	internal class ClusterEndpointDiscoverer : IEndpointDiscoverer {
+	public class ClusterEndpointDiscoverer : IEndpointDiscoverer {
 		private readonly int _maxDiscoverAttempts;
 		private readonly EndPoint[] _gossipSeeds;
 		private readonly TimeSpan _discoveryInterval;
 
 		private readonly HttpClient _client;
-		private ClusterMessages.MemberInfo[] _oldGossip;
+		private ClusterMessages.MemberInfo[]? _oldGossip;
 
 		private readonly NodePreference _nodePreference;
 
@@ -31,7 +32,7 @@ namespace EventStore.Client {
 			TimeSpan gossipTimeout,
 			TimeSpan discoveryInterval,
 			NodePreference nodePreference,
-			HttpMessageHandler httpMessageHandler = null) {
+			HttpMessageHandler? httpMessageHandler = null) {
 			_maxDiscoverAttempts = maxDiscoverAttempts;
 			_gossipSeeds = gossipSeeds;
 			_discoveryInterval = discoveryInterval;
@@ -55,7 +56,7 @@ namespace EventStore.Client {
 			throw new DiscoveryException($"Failed to discover candidate in {_maxDiscoverAttempts} attempts.");
 		}
 
-		private async Task<IPEndPoint> DiscoverEndpointAsync() {
+		private async Task<IPEndPoint?> DiscoverEndpointAsync() {
 			var oldGossip = Interlocked.Exchange(ref _oldGossip, null);
 			var gossipCandidates = oldGossip != null
 				? ArrangeGossipCandidates(oldGossip.ToArray())
@@ -127,7 +128,7 @@ namespace EventStore.Client {
 			return result;
 		}
 
-		private IPEndPoint TryDetermineBestNode(IEnumerable<ClusterMessages.MemberInfo> members,
+		private IPEndPoint? TryDetermineBestNode(IEnumerable<ClusterMessages.MemberInfo> members,
 			NodePreference nodePreference) {
 			var notAllowedStates = new[] {
 				ClusterMessages.VNodeState.Manager,
@@ -175,11 +176,9 @@ namespace EventStore.Client {
 
 			var node = nodes.FirstOrDefault();
 
-			if (node == default(ClusterMessages.MemberInfo)) {
-				return null;
-			}
-
-			return new IPEndPoint(IPAddress.Parse(node.ExternalHttpIp), node.ExternalHttpPort);
+			return node == default(ClusterMessages.MemberInfo)
+				? null
+				: new IPEndPoint(IPAddress.Parse(node.ExternalHttpIp), node.ExternalHttpPort);
 		}
 
 		private bool IsReadOnlyReplicaState(ClusterMessages.VNodeState state) {

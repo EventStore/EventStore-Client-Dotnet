@@ -7,22 +7,20 @@ using EventStore.Client.Operations;
 using Grpc.Core.Interceptors;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using EventStoreOperationsClient = EventStore.Client.EventStoreOperationsClient;
 
+#nullable enable
 namespace Microsoft.Extensions.DependencyInjection {
 	public static class EventStoreOperationsClientServiceCollectionExtensions {
 		public static IServiceCollection AddEventStoreOperationsClient(this IServiceCollection services, Uri address,
-			Func<HttpMessageHandler> createHttpMessageHandler = null)
+			Func<HttpMessageHandler>? createHttpMessageHandler = null)
 			=> services.AddEventStoreOperationsClient(options => {
 				options.ConnectivitySettings.Address = address;
 				options.CreateHttpMessageHandler = createHttpMessageHandler;
 			});
 
 		public static IServiceCollection AddEventStoreOperationsClient(this IServiceCollection services,
-			Action<EventStoreClientSettings> configureOptions = null) {
-			if (services == null) {
-				throw new ArgumentNullException(nameof(services));
-			}
-
+			Action<EventStoreClientSettings>? configureOptions = null) {
 			var options = new EventStoreClientSettings();
 			configureOptions?.Invoke(options);
 

@@ -1,13 +1,15 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using EventStore.Client.Operations;
 
-namespace EventStore.Client.Operations {
+#nullable enable
+namespace EventStore.Client {
 	public partial class EventStoreOperationsClient {
 		public async Task<DatabaseScavengeResult> StartScavengeAsync(
 			int threadCount = 1,
 			int startFromChunk = 0,
-			UserCredentials userCredentials = default,
+			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			if (threadCount <= 0) {
 				throw new ArgumentOutOfRangeException(nameof(threadCount));
@@ -35,12 +37,8 @@ namespace EventStore.Client.Operations {
 
 		public async Task<DatabaseScavengeResult> StopScavengeAsync(
 			string scavengeId,
-			UserCredentials userCredentials = default,
+			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			if (scavengeId == null) {
-				throw new ArgumentNullException(nameof(scavengeId));
-			}
-
 			var result = await _client.StopScavengeAsync(new StopScavengeReq {
 					Options = new StopScavengeReq.Types.Options {
 						ScavengeId = scavengeId

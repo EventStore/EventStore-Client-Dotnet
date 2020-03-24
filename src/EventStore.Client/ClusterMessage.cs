@@ -1,9 +1,10 @@
 ﻿using System;
 
+#nullable enable
 namespace EventStore.Client {
 	public class ClusterMessages {
 		public class ClusterInfo {
-			public MemberInfo[] Members { get; set; }
+			public MemberInfo[]? Members { get; set; }
 		}
 
 		public class MemberInfo {
@@ -11,7 +12,7 @@ namespace EventStore.Client {
 
 			public VNodeState State { get; set; }
 			public bool IsAlive { get; set; }
-			public string ExternalHttpIp { get; set; }
+			public string? ExternalHttpIp { get; set; }
 			public int ExternalHttpPort { get; set; }
 		}
 

@@ -1,5 +1,6 @@
 ﻿using System;
 
+#nullable enable
 namespace EventStore.Client {
 	public class EventStoreClientOperationOptions {
 		public TimeSpan? TimeoutAfter { get; set; }
@@ -9,7 +10,7 @@ namespace EventStore.Client {
 
 		public EventStoreClientOperationOptions Clone() =>
 			new EventStoreClientOperationOptions {
-				TimeoutAfter = TimeoutAfter,
+				TimeoutAfter = TimeoutAfter
 			};
 	}
 }

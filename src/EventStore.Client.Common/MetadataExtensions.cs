@@ -1,15 +1,17 @@
 using Grpc.Core;
 
+#nullable enable
 namespace EventStore.Client {
 	internal static class MetadataExtensions {
-		public static bool TryGetValue(this Metadata metadata, string key, out string value) {
+		public static bool TryGetValue(this Metadata metadata, string key, out string? value) {
 			value = default;
 
 			foreach (var entry in metadata) {
-				if (entry.Key == key) {
-					value = entry.Value;
-					return true;
+				if (entry.Key != key) {
+					continue;
 				}
+				value = entry.Value;
+				return true;
 			}
 
 			return false;

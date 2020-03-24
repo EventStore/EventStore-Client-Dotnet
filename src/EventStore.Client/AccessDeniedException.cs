@@ -1,5 +1,6 @@
 using System;
 
+#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// Exception thrown when a user is not authorised to carry out
