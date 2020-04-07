@@ -1,7 +1,8 @@
 using System;
 
-namespace EventStore.Client.Operations {
-	public struct DatabaseScavengeResult : IEquatable<DatabaseScavengeResult> {
+#nullable enable
+namespace EventStore.Client {
+	public readonly struct DatabaseScavengeResult : IEquatable<DatabaseScavengeResult> {
 		public string ScavengeId { get; }
 		public ScavengeResult Result { get; }
 
@@ -15,13 +16,12 @@ namespace EventStore.Client.Operations {
 			new DatabaseScavengeResult(scavengeId, ScavengeResult.InProgress);
 
 		private DatabaseScavengeResult(string scavengeId, ScavengeResult result) {
-			if (scavengeId == null) throw new ArgumentNullException(nameof(scavengeId));
 			ScavengeId = scavengeId;
 			Result = result;
 		}
 
 		public bool Equals(DatabaseScavengeResult other) => ScavengeId == other.ScavengeId && Result == other.Result;
-		public override bool Equals(object obj) => obj is DatabaseScavengeResult other && Equals(other);
+		public override bool Equals(object? obj) => obj is DatabaseScavengeResult other && Equals(other);
 		public override int GetHashCode() => HashCode.Hash.Combine(ScavengeId).Combine(Result);
 		public static bool operator ==(DatabaseScavengeResult left, DatabaseScavengeResult right) => left.Equals(right);
 

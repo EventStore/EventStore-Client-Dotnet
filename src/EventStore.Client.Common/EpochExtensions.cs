@@ -1,5 +1,6 @@
 using System;
 
+#nullable enable
 namespace EventStore.Client {
 	internal static class EpochExtensions {
 		public static DateTime FromTicksSinceEpoch(this long value) =>

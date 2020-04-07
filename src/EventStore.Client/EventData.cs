@@ -1,6 +1,7 @@
 using System;
 using System.Net.Http.Headers;
 
+#nullable enable
 namespace EventStore.Client {
 	public sealed class EventData {
 		public readonly ReadOnlyMemory<byte> Data;
@@ -13,14 +14,6 @@ namespace EventStore.Client {
 			string contentType = Constants.Metadata.ContentTypes.ApplicationJson) {
 			if (eventId == Uuid.Empty) {
 				throw new ArgumentOutOfRangeException(nameof(eventId));
-			}
-
-			if (type == null) {
-				throw new ArgumentNullException(nameof(type));
-			}
-
-			if (contentType == null) {
-				throw new ArgumentNullException(nameof(contentType));
 			}
 
 			MediaTypeHeaderValue.Parse(contentType);

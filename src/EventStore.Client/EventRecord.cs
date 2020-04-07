@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+#nullable enable
 namespace EventStore.Client {
 	public class EventRecord {
 		public readonly string EventStreamId;

@@ -1,3 +1,4 @@
+#nullable enable
 namespace EventStore.Client {
 	internal static class Constants {
 		public static class Exceptions {

@@ -1,5 +1,6 @@
 using System;
 
+#nullable enable
 namespace EventStore.Client {
 	public class StreamNotFoundException : Exception {
 		/// <summary>
@@ -11,12 +12,9 @@ namespace EventStore.Client {
 		/// Constructs a new instance of <see cref="StreamNotFoundException"/>.
 		/// </summary>
 		/// <param name="stream">The name of the deleted stream.</param>
-		public StreamNotFoundException(string stream, Exception exception = null)
+		/// <param name="exception"></param>
+		public StreamNotFoundException(string stream, Exception? exception = null)
 			: base($"Event stream '{stream}' was not found.", exception) {
-			if (stream == null) {
-				throw new ArgumentNullException(nameof(stream));
-			}
-
 			Stream = stream;
 		}
 	}

@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 
+#nullable enable
 namespace EventStore.Client {
 	public class WrongExpectedVersionException : Exception {
 		public string StreamName { get; }
@@ -20,7 +21,7 @@ namespace EventStore.Client {
 		/// Constructs a new instance of <see cref="WrongExpectedVersionException" /> with the expected and actual versions if available.
 		/// </summary>
 		public WrongExpectedVersionException(string streamName, long? expectedVersion, long? actualVersion,
-			Exception exception = default) :
+			Exception? exception = null) :
 			base(
 				$"Append failed due to WrongExpectedVersion. Stream: {streamName}, Expected version: {expectedVersion}, Actual version: {actualVersion}",
 				exception) {

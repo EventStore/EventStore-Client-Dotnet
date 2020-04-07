@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 
+#nullable enable
 namespace EventStore.Client {
 	public class EventStoreClientConnectivitySettings {
 		public Uri Address { get; set; } = new UriBuilder {
@@ -9,19 +10,15 @@ namespace EventStore.Client {
 		}.Uri;
 		public int MaxDiscoverAttempts { get; set; }
 
-		public EndPoint[] GossipSeeds {
-			get {
-				object endpoints = (object)DnsGossipSeeds ?? IpGossipSeeds;
-				return endpoints switch {
-					DnsEndPoint[] dns => Array.ConvertAll<DnsEndPoint, EndPoint>(dns, x => x),
-					IPEndPoint[] ip => Array.ConvertAll<IPEndPoint, EndPoint>(ip, x => x),
-					_ => Array.Empty<EndPoint>()
-				};
-			}
-		}
+		public EndPoint[] GossipSeeds =>
+			((object?) DnsGossipSeeds ?? IpGossipSeeds) switch {
+				DnsEndPoint[] dns => Array.ConvertAll<DnsEndPoint, EndPoint>(dns, x => x),
+				IPEndPoint[] ip => Array.ConvertAll<IPEndPoint, EndPoint>(ip, x => x),
+				_ => Array.Empty<EndPoint>()
+			};
 
-		public DnsEndPoint[] DnsGossipSeeds { get; set; }
-		public IPEndPoint[] IpGossipSeeds { get; set; }
+		public DnsEndPoint[]? DnsGossipSeeds { get; set; }
+		public IPEndPoint[]? IpGossipSeeds { get; set; }
 		public TimeSpan GossipTimeout { get; set; }
 		public TimeSpan DiscoveryInterval { get; set; }
 		public NodePreference NodePreference { get; set; }

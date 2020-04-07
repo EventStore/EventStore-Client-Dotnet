@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+	  <ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Remove="..\EventStore.Client.Tests.Common\*.cs" />
+	</ItemGroup>
+</Project>

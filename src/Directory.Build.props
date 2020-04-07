@@ -1,0 +1,48 @@
+<Project>
+	<Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"/>
+	<PropertyGroup Condition="$(MSBuildProjectName) != 'EventStore.Client'">
+		<ESPackageIdSuffix>$(MSBuildProjectName.Remove(0,18))</ESPackageIdSuffix>
+		<ESProto>$(ESPackageIdSuffix.ToLower()).proto</ESProto>
+		<ESProtoPath>../EventStore.Client.Common/protos/$(ESProto)</ESProtoPath>
+		<PackageId>EventStore.Client.Grpc.$(ESPackageIdSuffix)</PackageId>
+	</PropertyGroup>
+	<ItemGroup Condition="$(MSBuildProjectName) != 'EventStore.Client'">
+		<ProjectReference Include="..\EventStore.Client\EventStore.Client.csproj"/>
+		<Protobuf
+			Include="$(ESProtoPath)"
+			GrpcServices="Client"
+			Link="protos/$(ESProto)"/>
+	</ItemGroup>
+	<PropertyGroup>
+		<PackageIconUrl>ouro.svg</PackageIconUrl>
+		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+		<PackageProjectUrl>https://eventstore.com</PackageProjectUrl>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+		<PackageReleaseNotes>https://eventstore.com/blog/</PackageReleaseNotes>
+		<PackageTags>eventstore client grpc</PackageTags>
+		<Authors>Event Store Ltd</Authors>
+		<Copyright>Copyright 2012-2020 Event Store Ltd</Copyright>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Include="..\..\LICENSE.md" Pack="true" PackagePath="\"/>
+		<None Include="..\..\ouro.svg" Pack="true" PackagePath="\"/>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="4.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Grpc.Tools" Version="2.27.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Include="../EventStore.Client.Common/**/*.cs"/>
+	</ItemGroup>
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+			<_Parameter1>$(ProjectName).Tests</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+</Project>

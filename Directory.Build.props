@@ -1,0 +1,21 @@
+<Project>
+	<PropertyGroup>
+		<TargetFramework>netcoreapp3.1</TargetFramework>
+		<Platform>x64</Platform>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<Nullable>disable</Nullable>
+		<NullableContextOptions>enable</NullableContextOptions>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<LangVersion>8.0</LangVersion>
+		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+		<DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
+		<DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
+		<OutputPath>$(MSBuildThisFileDirectory)..\bin\$(Configuration)\$(MSBuildProjectName)\</OutputPath>
+		<RootNamespace>EventStore.Client</RootNamespace>
+		<UseLinkBase>true</UseLinkBase>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="NETStandard.Library" Version="2.0.3"/>
+		<PackageReference Include="System.Net.Http" Version="4.3.4"/>
+	</ItemGroup>
+</Project>
