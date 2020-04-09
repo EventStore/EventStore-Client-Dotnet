@@ -16,6 +16,7 @@ namespace EventStore.Client {
 		private readonly CancellationTokenSource _disposed;
 		private int _subscriptionDroppedInvoked;
 
+		public string SubscriptionId { get; }
 
 		internal static async Task<StreamSubscription> Confirm(
 			IAsyncEnumerable<(SubscriptionConfirmation confirmation, Position?, ResolvedEvent)> read,
@@ -48,6 +49,7 @@ namespace EventStore.Client {
 			_log = log;
 			_cancellationToken = cancellationToken;
 			_subscriptionDroppedInvoked = 0;
+			SubscriptionId = events.Current.confirmation.SubscriptionId;
 
 			Task.Run(Subscribe);
 		}

@@ -16,6 +16,7 @@ namespace EventStore.Client {
 		private readonly AsyncDuplexStreamingCall<ReadReq, ReadResp> _call;
 		private int _subscriptionDroppedInvoked;
 
+		public string SubscriptionId { get; }
 
 		internal static async Task<PersistentSubscription> Confirm(AsyncDuplexStreamingCall<ReadReq, ReadResp> call,
 			ReadReq.Types.Options options, bool autoAck,
@@ -44,6 +45,7 @@ namespace EventStore.Client {
 			_eventAppeared = eventAppeared;
 			_subscriptionDropped = subscriptionDropped;
 			_disposed = new CancellationTokenSource();
+			SubscriptionId = call.ResponseStream.Current.SubscriptionConfirmation.SubscriptionId;
 			Task.Run(Subscribe);
 		}
 
