@@ -147,9 +147,5 @@ namespace EventStore.Client {
 		/// </returns>
 		/// <filterpriority>2</filterpriority>
 		public override string ToString() => $"C:{CommitPosition}/P:{PreparePosition}";
-
-		public (long commitPosition, long preparePosition) ToInt64() => Equals(End)
-			? (-1, -1)
-			: ((long)CommitPosition, (long)PreparePosition);
 	}
 }

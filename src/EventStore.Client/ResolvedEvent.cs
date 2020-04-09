@@ -4,9 +4,7 @@ namespace EventStore.Client {
 		public readonly EventRecord Event;
 		public readonly EventRecord? Link;
 
-		public EventRecord OriginalEvent {
-			get { return Link ?? Event; }
-		}
+		public EventRecord OriginalEvent => Link ?? Event;
 
 		/// <summary>
 		/// Position of the OriginalEvent (unresolved link or event) if available
@@ -19,12 +17,12 @@ namespace EventStore.Client {
 
 		public bool IsResolved => Link != null && Event != null;
 
-		public ResolvedEvent(EventRecord @event, EventRecord? link, long? commitPosition) {
+		public ResolvedEvent(EventRecord @event, EventRecord? link, ulong? commitPosition) {
 			Event = @event;
 			Link = link;
 			OriginalPosition = commitPosition.HasValue
-				? new Position((ulong)commitPosition.Value, (link ?? @event).Position.PreparePosition)
-				: default;
+				? new Position(commitPosition.Value, (link ?? @event).Position.PreparePosition)
+				: new Position?();
 		}
 	}
 }

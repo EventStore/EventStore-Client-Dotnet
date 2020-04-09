@@ -143,9 +143,8 @@ namespace EventStore.Client {
 					ConvertToEventRecord(response.Event.Event)!,
 					ConvertToEventRecord(response.Event.Link),
 					response.Event.PositionCase switch {
-						ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => new Position(
-							response.Event.CommitPosition, 0).ToInt64().commitPosition,
-						ReadResp.Types.ReadEvent.PositionOneofCase.NoPosition => default(long?),
+						ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => response.Event.CommitPosition,
+						ReadResp.Types.ReadEvent.PositionOneofCase.NoPosition => null,
 						_ => throw new InvalidOperationException()
 					});
 
