@@ -16,6 +16,7 @@ namespace EventStore.Client {
 		private readonly CancellationTokenSource _disposed;
 		private int _subscriptionDroppedInvoked;
 
+
 		internal static async Task<StreamSubscription> Confirm(
 			IAsyncEnumerable<(SubscriptionConfirmation confirmation, Position?, ResolvedEvent)> read,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
@@ -33,7 +34,7 @@ namespace EventStore.Client {
 				checkpointReached, cancellationToken);
 		}
 
-		private StreamSubscription(IAsyncEnumerator<(SubscriptionConfirmation, Position?, ResolvedEvent)> events,
+		private StreamSubscription(IAsyncEnumerator<(SubscriptionConfirmation confirmation, Position?, ResolvedEvent)> events,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped,
 			ILogger log,

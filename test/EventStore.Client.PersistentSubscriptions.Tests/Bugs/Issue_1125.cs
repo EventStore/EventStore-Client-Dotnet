@@ -39,7 +39,7 @@ namespace EventStore.Client.Bugs {
 					resolveLinkTos: true, startFrom: StreamRevision.Start),
 				userCredentials: userCredentials);
 
-			using (_fixture.Client.Subscribe(streamName, subscriptionName,
+			using (await _fixture.Client.SubscribeAsync(streamName, subscriptionName,
 				async (subscription, @event, arg3, arg4) => {
 					var result = Interlocked.Increment(ref hitCount);
 					await subscription.Ack(@event);

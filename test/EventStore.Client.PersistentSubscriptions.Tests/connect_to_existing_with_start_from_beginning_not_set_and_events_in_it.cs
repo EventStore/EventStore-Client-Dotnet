@@ -40,8 +40,8 @@ namespace EventStore.Client {
 					new PersistentSubscriptionSettings(startFrom: StreamRevision.End), TestCredentials.Root);
 			}
 
-			protected override  Task When() {
-				_subscription = Client.Subscribe(Stream, Group,
+			protected override async Task When() {
+				_subscription = await Client.SubscribeAsync(Stream, Group,
 					(subscription, e, r, ct) => {
 						_firstEventSource.TrySetResult(e);
 						return Task.CompletedTask;
@@ -50,7 +50,6 @@ namespace EventStore.Client {
 							_firstEventSource.TrySetException(ex!);
 						}
 					}, TestCredentials.TestUser1);
-				return Task.CompletedTask;
 			}
 
 			public override Task DisposeAsync() {

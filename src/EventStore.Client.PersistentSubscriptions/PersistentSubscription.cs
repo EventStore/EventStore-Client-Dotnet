@@ -9,36 +9,42 @@ using Grpc.Core;
 #nullable enable
 namespace EventStore.Client {
 	public class PersistentSubscription : IDisposable {
-		private readonly PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient _client;
-		private readonly UserCredentials? _userCredentials;
-		private readonly ReadReq.Types.Options _options;
 		private readonly bool _autoAck;
 		private readonly Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> _eventAppeared;
 		private readonly Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> _subscriptionDropped;
 		private readonly CancellationTokenSource _disposed;
-		private readonly TaskCompletionSource<bool> _started;
 		private readonly AsyncDuplexStreamingCall<ReadReq, ReadResp> _call;
 		private int _subscriptionDroppedInvoked;
 
-		public Task Started => _started.Task;
 
-		internal PersistentSubscription(
-			PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient client,
-			ReadReq.Types.Options options,
-			bool autoAck,
+		internal static async Task<PersistentSubscription> Confirm(AsyncDuplexStreamingCall<ReadReq, ReadResp> call,
+			ReadReq.Types.Options options, bool autoAck,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped,
-			UserCredentials? userCredentials) {
-			_client = client;
-			_userCredentials = userCredentials;
-			_options = options;
+			CancellationToken cancellationToken = default) {
+			await call.RequestStream.WriteAsync(new ReadReq {
+				Options = options
+			}).ConfigureAwait(false);
+
+			if (!await call.ResponseStream.MoveNext(cancellationToken).ConfigureAwait(false) ||
+			    call.ResponseStream.Current.ContentCase != ReadResp.ContentOneofCase.SubscriptionConfirmation) {
+				throw new InvalidOperationException();
+			}
+
+			return new PersistentSubscription(call, autoAck, eventAppeared, subscriptionDropped);
+		}
+
+		private PersistentSubscription(
+			AsyncDuplexStreamingCall<ReadReq, ReadResp> call,
+			bool autoAck,
+			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped) {
+			_call = call;
 			_autoAck = autoAck;
 			_eventAppeared = eventAppeared;
 			_subscriptionDropped = subscriptionDropped;
 			_disposed = new CancellationTokenSource();
-			_started = new TaskCompletionSource<bool>();
-			_call = _client.Read(RequestMetadata.Create(_userCredentials), cancellationToken: _disposed.Token);
-			_ = Subscribe();
+			Task.Run(Subscribe);
 		}
 
 		public Task Ack(params Uuid[] eventIds) {
@@ -81,22 +87,6 @@ namespace EventStore.Client {
 		}
 
 		private async Task Subscribe() {
-			try {
-				await _call.RequestStream.WriteAsync(new ReadReq {
-					Options = _options
-				}).ConfigureAwait(false);
-
-				if (!await _call.ResponseStream.MoveNext(_disposed.Token).ConfigureAwait(false) ||
-				    _call.ResponseStream.Current.ContentCase != ReadResp.ContentOneofCase.SubscriptionConfirmation) {
-					throw new InvalidOperationException();
-				}
-			} catch (Exception ex) {
-				SubscriptionDropped(SubscriptionDroppedReason.ServerError, ex);
-				return;
-			} finally {
-				_started.SetResult(true);
-			}
-
 			try {
 				while (await _call!.ResponseStream.MoveNext().ConfigureAwait(false) &&
 				       !_disposed.IsCancellationRequested) {

@@ -14,28 +14,21 @@ namespace EventStore.Client {
 		[Fact]
 		public async Task throws_persistent_subscription_not_found() {
 			var streamName = _fixture.GetStreamName();
-			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
-			using var _ = _fixture.Client.Subscribe(
-				streamName,
-				"foo",
-				delegate {
-					return Task.CompletedTask;
-				},
-				(s, r, e) => dropped.TrySetResult((r, e)), userCredentials: TestCredentials.Root);
-
-			var (reason, exception) = await dropped.Task.WithTimeout();
-
-			Assert.Equal(SubscriptionDroppedReason.ServerError, reason);
-			var ex = Assert.IsType<PersistentSubscriptionNotFoundException>(exception);
+			var ex = await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(async () => {
+				using var _ = await _fixture.Client.SubscribeAsync(
+					streamName,
+					"foo",
+					delegate {
+						return Task.CompletedTask;
+					},
+					userCredentials: TestCredentials.Root);
+			}).WithTimeout();
 
 			Assert.Equal(streamName, ex.StreamName);
 			Assert.Equal("foo", ex.GroupName);
 		}
 
 		public class Fixture : EventStoreClientFixture {
-			public Fixture() {
-			}
-
 			protected override Task Given() => Task.CompletedTask;
 			protected override Task When() => Task.CompletedTask;
 		}

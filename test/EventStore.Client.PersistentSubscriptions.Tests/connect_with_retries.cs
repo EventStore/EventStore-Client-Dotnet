@@ -34,7 +34,7 @@ namespace EventStore.Client {
 				await StreamsClient.AppendToStreamAsync(Stream, AnyStreamRevision.NoStream, Events);
 				await Client.CreateAsync(Stream, Group,
 					new PersistentSubscriptionSettings(startFrom: StreamRevision.Start), TestCredentials.Root);
-				_subscription = Client.Subscribe(Stream, Group,
+				_subscription = await Client.SubscribeAsync(Stream, Group,
 					async (subscription, e, r, ct) => {
 						if (r > 4) {
 							_retryCountSource.TrySetResult(r.Value);
