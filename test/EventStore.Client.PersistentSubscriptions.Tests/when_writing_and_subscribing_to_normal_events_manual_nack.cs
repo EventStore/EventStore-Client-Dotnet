@@ -40,7 +40,7 @@ namespace EventStore.Client {
 				await Client.CreateAsync(Stream, Group,
 					new PersistentSubscriptionSettings(startFrom: StreamRevision.Start, resolveLinkTos: true),
 					TestCredentials.Root);
-				_subscription = Client.Subscribe(Stream, Group,
+				_subscription = await Client.SubscribeAsync(Stream, Group,
 					(subscription, e, retryCount, ct) => {
 						subscription.Nack(PersistentSubscriptionNakEventAction.Park, "fail", e);
 

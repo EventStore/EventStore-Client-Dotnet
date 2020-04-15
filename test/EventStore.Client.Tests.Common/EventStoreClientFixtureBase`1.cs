@@ -100,7 +100,7 @@ namespace EventStore.Client {
 				Value = new Tuple<string, Guid>(captureCorrelationId, captureId)
 			};
 
-			bool Filter(LogEvent logEvent) => callContextData.Value!.Item2.Equals(captureId);
+			bool Filter(LogEvent logEvent) => callContextData!.Value!.Item2.Equals(captureId);
 
 			MessageTemplateTextFormatter formatter = new MessageTemplateTextFormatter(
 				"{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message}");

@@ -107,32 +107,7 @@ namespace EventStore.Client.Interceptors {
 			};
 		}
 
-
-		/*		private static Exception ConvertRpcException(RpcException ex) {
-			return ex.Trailers.TryGetValue(Constants.Exceptions.ExceptionKey, out var value) switch {
-				true => value switch {
-					Constants.Exceptions.PersistentSubscriptionDoesNotExist => new
-						PersistentSubscriptionNotFoundException(
-							ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value,
-							ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.GroupName)?.Value, ex),
-					Constants.Exceptions.MaximumSubscribersReached => new
-						MaximumSubscribersReachedException(
-							ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value,
-							ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.GroupName)?.Value, ex),
-					Constants.Exceptions.PersistentSubscriptionDropped => new
-						PersistentSubscriptionDroppedByServerException(
-							ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value,
-							ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.GroupName)?.Value, ex),
-				},
-				false => ex.StatusCode switch {
-					StatusCode.DeadlineExceeded => ex,
-					StatusCode.Unauthenticated => new NotAuthenticatedException(ex.Message, ex),
-					_ => new InvalidOperationException(ex.Message, ex)
-				}
-			};
-		}
-*/
-		class AsyncStreamReader<TResponse> : IAsyncStreamReader<TResponse> {
+		private class AsyncStreamReader<TResponse> : IAsyncStreamReader<TResponse> {
 			private readonly Action<Exception>? _exceptionOccurred;
 			private readonly IDictionary<string, Func<RpcException, Exception>> _exceptionMap;
 			private readonly IAsyncStreamReader<TResponse> _inner;

@@ -151,7 +151,7 @@ namespace EventStore.Client {
 				yield return e;
 			}
 
-			(SubscriptionConfirmation, Position?, ResolvedEvent) ConvertToItem(ReadResp response) => response.ContentCase switch {
+			static (SubscriptionConfirmation, Position?, ResolvedEvent) ConvertToItem(ReadResp response) => response.ContentCase switch {
 				ReadResp.ContentOneofCase.Confirmation => (
 					new SubscriptionConfirmation(response.Confirmation.SubscriptionId), null, default),
 				ReadResp.ContentOneofCase.Event => (SubscriptionConfirmation.None,
@@ -163,18 +163,17 @@ namespace EventStore.Client {
 				_ => throw new InvalidOperationException()
 			};
 
-			ResolvedEvent ConvertToResolvedEvent(ReadResp.Types.ReadEvent readEvent) =>
+			static ResolvedEvent ConvertToResolvedEvent(ReadResp.Types.ReadEvent readEvent) =>
 				new ResolvedEvent(
 					ConvertToEventRecord(readEvent.Event)!,
 					ConvertToEventRecord(readEvent.Link),
 					readEvent.PositionCase switch {
-						ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => new Position(
-							readEvent.CommitPosition, 0).ToInt64().commitPosition,
+						ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => readEvent.CommitPosition,
 						ReadResp.Types.ReadEvent.PositionOneofCase.NoPosition => null,
 						_ => throw new InvalidOperationException()
 					});
 
-			EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent e) =>
+			static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent e) =>
 				e == null
 					? null
 					: new EventRecord(

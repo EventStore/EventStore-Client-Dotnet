@@ -6,10 +6,11 @@ using EventStore.Client.PersistentSubscriptions;
 #nullable enable
 namespace EventStore.Client {
 	partial class EventStorePersistentSubscriptionsClient {
-		public PersistentSubscription Subscribe(string streamName, string groupName,
+		public Task<PersistentSubscription> SubscribeAsync(string streamName, string groupName,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-			UserCredentials? userCredentials = null, int bufferSize = 10, bool autoAck = true) {
+			UserCredentials? userCredentials = null, int bufferSize = 10, bool autoAck = true,
+			CancellationToken cancellationToken = default) {
 			if (streamName == null) {
 				throw new ArgumentNullException(nameof(streamName));
 			}
@@ -34,16 +35,15 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(bufferSize));
 			}
 
-			var options = new ReadReq.Types.Options {
-				BufferSize = bufferSize,
-				GroupName = groupName,
-				StreamName = streamName,
-				UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()}
-			};
+			var call = _client.Read(RequestMetadata.Create(userCredentials), cancellationToken: cancellationToken);
 
-
-			return new PersistentSubscription(_client, options, autoAck, eventAppeared,
-				subscriptionDropped ?? delegate { }, userCredentials);
+			return PersistentSubscription.Confirm(call, new ReadReq.Types.Options {
+					BufferSize = bufferSize,
+					GroupName = groupName,
+					StreamName = streamName,
+					UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()}
+				}, autoAck, eventAppeared,
+				subscriptionDropped ?? delegate { }, cancellationToken);
 		}
 	}
 }

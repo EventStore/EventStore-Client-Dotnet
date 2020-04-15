@@ -16,8 +16,10 @@ namespace EventStore.Client {
 		private readonly CancellationTokenSource _disposed;
 		private int _subscriptionDroppedInvoked;
 
+		public string SubscriptionId { get; }
+
 		internal static async Task<StreamSubscription> Confirm(
-			IAsyncEnumerable<(SubscriptionConfirmation, Position?, ResolvedEvent)> read,
+			IAsyncEnumerable<(SubscriptionConfirmation confirmation, Position?, ResolvedEvent)> read,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped,
 			ILogger log,
@@ -25,7 +27,7 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken = default) {
 			var enumerator = read.GetAsyncEnumerator(cancellationToken);
 			if (!await enumerator.MoveNextAsync(cancellationToken).ConfigureAwait(false) ||
-			    enumerator.Current.Item1 == SubscriptionConfirmation.None) {
+			    enumerator.Current.confirmation == SubscriptionConfirmation.None) {
 				throw new InvalidOperationException();
 			}
 
@@ -33,7 +35,7 @@ namespace EventStore.Client {
 				checkpointReached, cancellationToken);
 		}
 
-		private StreamSubscription(IAsyncEnumerator<(SubscriptionConfirmation, Position?, ResolvedEvent)> events,
+		private StreamSubscription(IAsyncEnumerator<(SubscriptionConfirmation confirmation, Position?, ResolvedEvent)> events,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped,
 			ILogger log,
@@ -47,6 +49,7 @@ namespace EventStore.Client {
 			_log = log;
 			_cancellationToken = cancellationToken;
 			_subscriptionDroppedInvoked = 0;
+			SubscriptionId = events.Current.confirmation.SubscriptionId;
 
 			Task.Run(Subscribe);
 		}

@@ -15,7 +15,6 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task existing_subscriptions_are_dropped() {
-			await _fixture.Started.WithTimeout();
 			var (reason, exception) = await _fixture.Dropped.WithTimeout(TimeSpan.FromSeconds(10));
 			Assert.Equal(SubscriptionDroppedReason.ServerError, reason);
 			var ex = Assert.IsType<PersistentSubscriptionDroppedByServerException>(exception);
@@ -26,7 +25,6 @@ namespace EventStore.Client {
 		public class Fixture : EventStoreClientFixture {
 			private readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception)> _droppedSource;
 			public Task<(SubscriptionDroppedReason, Exception)> Dropped => _droppedSource.Task;
-			public Task Started => _subscription.Started;
 			private PersistentSubscription _subscription;
 
 			public Fixture() {
@@ -37,10 +35,9 @@ namespace EventStore.Client {
 				await StreamsClient.AppendToStreamAsync(Stream, AnyStreamRevision.NoStream, CreateTestEvents());
 				await Client.CreateAsync(Stream, Group, new PersistentSubscriptionSettings(),
 					TestCredentials.Root);
-				_subscription = Client.Subscribe(Stream, Group,
+				_subscription = await Client.SubscribeAsync(Stream, Group,
 					delegate { return Task.CompletedTask; },
-					(subscription, reason, ex) => _droppedSource.TrySetResult((reason, ex)), userCredentials:TestCredentials.Root);
-				await _subscription.Started;
+					(subscription, reason, ex) => _droppedSource.TrySetResult((reason, ex)), TestCredentials.Root);
 			}
 
 			protected override Task When() => Client.UpdateAsync(Stream, Group,
