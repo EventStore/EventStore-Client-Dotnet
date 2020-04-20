@@ -10,7 +10,7 @@
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 		<DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
 		<DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
-		<OutputPath>$(MSBuildThisFileDirectory)..\bin\$(Configuration)\$(MSBuildProjectName)\</OutputPath>
+		<OutputPath>$(MSBuildThisFileDirectory)\bin\$(Configuration)\$(MSBuildProjectName)\</OutputPath>
 		<RootNamespace>EventStore.Client</RootNamespace>
 		<UseLinkBase>true</UseLinkBase>
 	</PropertyGroup>
