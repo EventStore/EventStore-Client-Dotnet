@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>netcoreapp3.1</TargetFramework>
+		<RootNamespace>setting_up_dependency_injection</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
+		<ProjectReference Include="..\..\..\src\EventStore.Client\EventStore.Client.csproj" />
+	</ItemGroup>
+
+</Project>

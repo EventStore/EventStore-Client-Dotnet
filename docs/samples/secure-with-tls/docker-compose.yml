@@ -1,0 +1,12 @@
+version: '3'
+services:
+  eventstore:
+    image: docker.pkg.github.com/eventstore/eventstore/eventstore:ci
+    volumes:
+      - ./certs:/usr/certs
+    environment:
+      - EVENTSTORE_CERTIFICATE_FILE=/usr/certs/dev.crt
+      - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/usr/certs/dev.key
+      - EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH=/usr/certs
+    ports:
+      - 2113:2113
