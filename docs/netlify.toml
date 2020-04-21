@@ -1,0 +1,9 @@
+[build]
+    publish = "public/"
+    command = "yarn docs:build"
+
+[[redirects]]
+  from = "/"
+  to = "/sdk/dotnet/"
+  status = 200
+  force = true

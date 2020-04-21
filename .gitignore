@@ -362,3 +362,5 @@ MigrationBackup/
 # Generated Certificates
 
 certs/
+.DS_Store
+docs/public
