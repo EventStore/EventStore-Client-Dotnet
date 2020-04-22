@@ -55,6 +55,7 @@ namespace EventStore.Client {
 		public static bool operator <=(StreamRevision left, StreamRevision right) => left._value <= right._value;
 		public long ToInt64() => Equals(None) ? -1 : Convert.ToInt64(_value);
 		public static implicit operator ulong(StreamRevision streamRevision) => streamRevision._value;
+		public static implicit operator StreamRevision(ulong value) => new StreamRevision(value);
 		public override string ToString() => this == None ? "End" : _value.ToString();
 		public ulong ToUInt64() => _value;
 	}

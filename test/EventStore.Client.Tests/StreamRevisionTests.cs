@@ -85,22 +85,34 @@ namespace EventStore.Client {
 		public void Comparability(StreamRevision left, StreamRevision right, int expected)
 			=> Assert.Equal(expected, left.CompareTo(right));
 
-		public static IEnumerable<object[]> Int64TestCases() {
-			yield return new object[] {-1L, StreamRevision.None};
-			yield return new object[] {0L, new StreamRevision(0)};
+		[Fact]
+		public void ExplicitConversionFromStreamRevisionReturnsExpectedResult() {
+			const ulong value = 0UL;
+			var actual = (ulong)new StreamRevision(value);
+			Assert.Equal(value, actual);
 		}
 
 		[Fact]
-		public void ExplicitConversionExpectedResult() {
-			const ulong expected = 0UL;
-			var actual = (ulong)new StreamRevision(expected);
+		public void ImplicitConversionFromStreamRevisionReturnsExpectedResult() {
+			const ulong value = 0UL;
+			ulong actual = new StreamRevision(value);
+			Assert.Equal(value, actual);
+		}
+
+		[Fact]
+		public void ExplicitConversionToStreamRevisionReturnsExpectedResult() {
+			const ulong value = 0UL;
+			var expected = new StreamRevision(value);
+			var actual = (StreamRevision)value;
 			Assert.Equal(expected, actual);
 		}
 
 		[Fact]
-		public void ImplicitConversionExpectedResult() {
-			const ulong expected = 0UL;
-			Assert.Equal(expected, new StreamRevision(expected));
+		public void ImplicitConversionToStreamRevisionReturnsExpectedResult() {
+			const ulong value = 0UL;
+			var expected = new StreamRevision(value);
+			StreamRevision actual = value;
+			Assert.Equal(expected, actual);
 		}
 
 		[Fact]
