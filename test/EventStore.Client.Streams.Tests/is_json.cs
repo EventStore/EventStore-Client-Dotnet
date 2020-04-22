@@ -38,7 +38,7 @@ namespace EventStore.Client {
 					? Constants.Metadata.ContentTypes.ApplicationJson
 					: Constants.Metadata.ContentTypes.ApplicationOctetStream);
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, new[] {eventData});
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, new[] {eventData});
 
 			var @event = await _fixture.Client
 				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, 1, resolveLinkTos: true)

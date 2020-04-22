@@ -17,7 +17,7 @@ namespace EventStore.Client {
 
 			await _fixture.Client.AppendToStreamAsync(
 				stream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				_fixture.GetEvents(MaxAppendSize - 1));
 		}
 
@@ -27,7 +27,7 @@ namespace EventStore.Client {
 
 			await Assert.ThrowsAsync<MaximumAppendSizeExceededException>(() => _fixture.Client.AppendToStreamAsync(
 				stream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				_fixture.GetEvents(MaxAppendSize * 2)));
 		}
 

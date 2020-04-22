@@ -45,38 +45,38 @@ namespace EventStore.Client.Security {
 		}
 
 		protected override async Task Given() {
-			await Client.SetStreamMetadataAsync(NoAclStream, AnyStreamRevision.NoStream, new StreamMetadata(),
+			await Client.SetStreamMetadataAsync(NoAclStream, StreamState.NoStream, new StreamMetadata(),
 				userCredentials: TestCredentials.TestAdmin).WithTimeout();
 			await Client.SetStreamMetadataAsync(
 				ReadStream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				new StreamMetadata(acl: new StreamAcl(TestCredentials.TestUser1.Username)),
 				userCredentials: TestCredentials.TestAdmin).WithTimeout();
 			await Client.SetStreamMetadataAsync(
 				WriteStream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				new StreamMetadata(acl: new StreamAcl(writeRole: TestCredentials.TestUser1.Username)),
 				userCredentials: TestCredentials.TestAdmin).WithTimeout();
 			await Client.SetStreamMetadataAsync(
 				MetaReadStream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				new StreamMetadata(acl: new StreamAcl(metaReadRole: TestCredentials.TestUser1.Username)),
 				userCredentials: TestCredentials.TestAdmin).WithTimeout();
 			await Client.SetStreamMetadataAsync(
 				MetaWriteStream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				new StreamMetadata(acl: new StreamAcl(metaWriteRole: TestCredentials.TestUser1.Username)),
 				userCredentials: TestCredentials.TestAdmin).WithTimeout();
 
 			await Client.SetStreamMetadataAsync(
 				AllStream,
-				AnyStreamRevision.Any,
+				StreamState.Any,
 				new StreamMetadata(acl: new StreamAcl(readRole: TestCredentials.TestUser1.Username)),
 				userCredentials: TestCredentials.TestAdmin).WithTimeout();
 
 			await Client.SetStreamMetadataAsync(
 				SystemAclStream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				new StreamMetadata(acl: new StreamAcl(
 					writeRole: TestCredentials.TestUser1.Username,
 					readRole: TestCredentials.TestUser1.Username,
@@ -86,7 +86,7 @@ namespace EventStore.Client.Security {
 
 			await Client.SetStreamMetadataAsync(
 				SystemAdminStream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				new StreamMetadata(acl: new StreamAcl(
 					writeRole: SystemRoles.Admins,
 					readRole: SystemRoles.Admins,
@@ -96,7 +96,7 @@ namespace EventStore.Client.Security {
 
 			await Client.SetStreamMetadataAsync(
 				NormalAllStream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				new StreamMetadata(acl: new StreamAcl(
 					writeRole: SystemRoles.All,
 					readRole: SystemRoles.All,
@@ -106,7 +106,7 @@ namespace EventStore.Client.Security {
 
 			await Client.SetStreamMetadataAsync(
 				SystemAllStream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				new StreamMetadata(acl: new StreamAcl(
 					writeRole: SystemRoles.All,
 					readRole: SystemRoles.All,
@@ -134,7 +134,7 @@ namespace EventStore.Client.Security {
 				.AsTask();
 
 		public Task<WriteResult> AppendStream(string streamId, UserCredentials userCredentials = default) =>
-			Client.AppendToStreamAsync(streamId, AnyStreamRevision.Any, CreateTestEvents(3),
+			Client.AppendToStreamAsync(streamId, StreamState.Any, CreateTestEvents(3),
 				userCredentials: userCredentials);
 
 		public Task ReadAllForward(UserCredentials userCredentials = default) =>
@@ -154,7 +154,7 @@ namespace EventStore.Client.Security {
 
 		public Task<WriteResult> WriteMeta(string streamId, UserCredentials userCredentials = default,
 			string role = default) =>
-			Client.SetStreamMetadataAsync(streamId, AnyStreamRevision.Any,
+			Client.SetStreamMetadataAsync(streamId, StreamState.Any,
 				new StreamMetadata(acl: new StreamAcl(
 					writeRole: role,
 					readRole: role,
@@ -192,13 +192,13 @@ namespace EventStore.Client.Security {
 
 		public async Task<string> CreateStreamWithMeta(StreamMetadata metadata,
 			[CallerMemberName] string streamId = default) {
-			await Client.SetStreamMetadataAsync(streamId, AnyStreamRevision.NoStream,
+			await Client.SetStreamMetadataAsync(streamId, StreamState.NoStream,
 				metadata, userCredentials: TestCredentials.TestAdmin);
 			return streamId;
 		}
 
 		public Task<DeleteResult> DeleteStream(string streamId, UserCredentials userCredentials = default) =>
-			Client.TombstoneAsync(streamId, AnyStreamRevision.Any, userCredentials: userCredentials);
+			Client.TombstoneAsync(streamId, StreamState.Any, userCredentials: userCredentials);
 
 		public override Task DisposeAsync() {
 			UserManagementClient?.Dispose();

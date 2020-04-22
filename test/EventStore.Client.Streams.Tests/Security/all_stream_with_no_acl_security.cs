@@ -67,7 +67,7 @@ namespace EventStore.Client.Security {
 		public class Fixture : SecurityFixture {
 			protected override async Task Given() {
 				await base.Given();
-				await Client.SetStreamMetadataAsync(AllStream, AnyStreamRevision.Any, new StreamMetadata(),
+				await Client.SetStreamMetadataAsync(AllStream, StreamState.Any, new StreamMetadata(),
 					userCredentials: TestCredentials.Root);
 			}
 

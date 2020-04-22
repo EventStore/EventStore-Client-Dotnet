@@ -26,7 +26,7 @@ namespace EventStore.Client {
 			protected override Task Given() => Task.CompletedTask;
 
 			protected override async Task When() {
-				Result = await Client.AppendToStreamAsync("stream-1", AnyStreamRevision.NoStream,
+				Result = await Client.AppendToStreamAsync("stream-1", StreamState.NoStream,
 					CreateTestEvents());
 			}
 		}

@@ -18,7 +18,7 @@ namespace EventStore.Client {
 			SystemSettings settings,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			if (client == null) throw new ArgumentNullException(nameof(client));
-			return client.AppendToStreamAsync(SystemStreams.SettingsStream, AnyStreamRevision.Any,
+			return client.AppendToStreamAsync(SystemStreams.SettingsStream, StreamState.Any,
 				new[] {
 					new EventData(Uuid.NewUuid(), SystemEventTypes.Settings,
 						JsonSerializer.SerializeToUtf8Bytes(settings, SystemSettingsJsonSerializerOptions))
@@ -47,13 +47,13 @@ namespace EventStore.Client {
 		public static async Task<ConditionalWriteResult> ConditionalAppendToStreamAsync(
 			this EventStoreClient client,
 			string streamName,
-			AnyStreamRevision expectedRevision,
+			StreamState expectedState,
 			IEnumerable<EventData> eventData,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			if (client == null) throw new ArgumentNullException(nameof(client));
 			try {
-				var result = await client.AppendToStreamAsync(streamName, expectedRevision, eventData,
+				var result = await client.AppendToStreamAsync(streamName, expectedState, eventData,
 					userCredentials: userCredentials, cancellationToken: cancellationToken).ConfigureAwait(false);
 				return ConditionalWriteResult.FromWriteResult(result);
 			} catch (StreamDeletedException) {

@@ -30,7 +30,7 @@ namespace EventStore.Client.Bugs {
 			var subscriptionName = $"subscription_{iteration}";
 
 			for (var i = 0; i < eventCount; i++) {
-				await _fixture.StreamsClient.AppendToStreamAsync(streamName, AnyStreamRevision.Any,
+				await _fixture.StreamsClient.AppendToStreamAsync(streamName, StreamState.Any,
 					_fixture.CreateTestEvents());
 			}
 
@@ -54,7 +54,7 @@ namespace EventStore.Client.Bugs {
 						completed.TrySetException(new Exception($"{dr}"));
 				}, userCredentials)) {
 				for (var i = 0; i < eventCount; i++) {
-					await _fixture.StreamsClient.AppendToStreamAsync(streamName, AnyStreamRevision.Any,
+					await _fixture.StreamsClient.AppendToStreamAsync(streamName, StreamState.Any,
 						_fixture.CreateTestEvents());
 				}
 

@@ -50,7 +50,7 @@ namespace EventStore.Client {
 			}
 
 			protected override Task When()
-				=> StreamsClient.AppendToStreamAsync(Stream, AnyStreamRevision.NoStream, Events);
+				=> StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, Events);
 
 			public override Task DisposeAsync() {
 				_subscription?.Dispose();

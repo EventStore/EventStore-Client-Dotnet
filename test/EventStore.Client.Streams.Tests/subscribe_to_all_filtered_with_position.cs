@@ -37,11 +37,11 @@ namespace EventStore.Client {
 
 			foreach (var e in beforeEvents) {
 				await _fixture.Client.AppendToStreamAsync($"{streamPrefix}_{Guid.NewGuid():n}",
-					AnyStreamRevision.NoStream, new[] {e});
+					StreamState.NoStream, new[] {e});
 			}
 
 			var writeResult = await _fixture.Client.AppendToStreamAsync("checkpoint",
-				AnyStreamRevision.NoStream, _fixture.CreateTestEvents());
+				StreamState.NoStream, _fixture.CreateTestEvents());
 
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(writeResult.LogPosition, EventAppeared,
 				false, filterOptions: new SubscriptionFilterOptions(filter, 4, CheckpointReached),
@@ -49,7 +49,7 @@ namespace EventStore.Client {
 
 			foreach (var e in afterEvents) {
 				await _fixture.Client.AppendToStreamAsync($"{streamPrefix}_{Guid.NewGuid():n}",
-					AnyStreamRevision.NoStream, new[] {e});
+					StreamState.NoStream, new[] {e});
 			}
 
 			await Task.WhenAll(appeared.Task, checkpointSeen.Task).WithTimeout();
@@ -94,11 +94,11 @@ namespace EventStore.Client {
 		public class Fixture : EventStoreClientFixture {
 			public const string FilteredOutStream = nameof(FilteredOutStream);
 
-			protected override Task Given() => Client.SetStreamMetadataAsync("$all", AnyStreamRevision.Any,
+			protected override Task Given() => Client.SetStreamMetadataAsync("$all", StreamState.Any,
 				new StreamMetadata(acl: new StreamAcl(SystemRoles.All)), userCredentials: TestCredentials.Root);
 
 			protected override Task When() =>
-				Client.AppendToStreamAsync(FilteredOutStream, AnyStreamRevision.NoStream, CreateTestEvents(10));
+				Client.AppendToStreamAsync(FilteredOutStream, StreamState.NoStream, CreateTestEvents(10));
 		}
 	}
 }

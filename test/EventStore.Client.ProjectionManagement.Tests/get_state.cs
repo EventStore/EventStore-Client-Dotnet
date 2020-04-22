@@ -32,7 +32,7 @@ fromStream('{nameof(get_state)}').when({{
 			protected override Task Given() => Client.CreateContinuousAsync(nameof(get_state),
 				Projection, userCredentials: TestCredentials.Root);
 
-			protected override Task When() => StreamsClient.AppendToStreamAsync(nameof(get_state), AnyStreamRevision.NoStream,
+			protected override Task When() => StreamsClient.AppendToStreamAsync(nameof(get_state), StreamState.NoStream,
 				CreateTestEvents());
 		}
 	}

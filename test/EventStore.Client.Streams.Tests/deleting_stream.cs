@@ -12,13 +12,13 @@ namespace EventStore.Client {
 		}
 
 		public static IEnumerable<object[]> ExpectedVersionCases() {
-			yield return new object[] {AnyStreamRevision.Any, nameof(AnyStreamRevision.Any)};
-			yield return new object[] {AnyStreamRevision.NoStream, nameof(AnyStreamRevision.NoStream)};
+			yield return new object[] {StreamState.Any, nameof(StreamState.Any)};
+			yield return new object[] {StreamState.NoStream, nameof(StreamState.NoStream)};
 		}
 
 		[Theory, MemberData(nameof(ExpectedVersionCases))]
 		public async Task hard_deleting_a_stream_that_does_not_exist_with_expected_version_does_not_throw(
-			AnyStreamRevision expectedVersion, string name) {
+			StreamState expectedVersion, string name) {
 			var stream = $"{_fixture.GetStreamName()}_{name}";
 
 			await _fixture.Client.TombstoneAsync(stream, expectedVersion);
@@ -26,7 +26,7 @@ namespace EventStore.Client {
 
 		[Theory, MemberData(nameof(ExpectedVersionCases))]
 		public async Task soft_deleting_a_stream_that_does_not_exist_with_expected_version_does_not_throw(
-			AnyStreamRevision expectedVersion, string name) {
+			StreamState expectedVersion, string name) {
 			var stream = $"{_fixture.GetStreamName()}_{name}";
 
 			await _fixture.Client.SoftDeleteAsync(stream, expectedVersion);
@@ -55,7 +55,7 @@ namespace EventStore.Client {
 
 			var writeResult = await _fixture.Client.AppendToStreamAsync(
 				stream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				_fixture.CreateTestEvents());
 
 			var deleteResult = await _fixture.Client.TombstoneAsync(stream, StreamRevision.FromInt64(writeResult.NextExpectedVersion));
@@ -69,7 +69,7 @@ namespace EventStore.Client {
 
 			var writeResult = await _fixture.Client.AppendToStreamAsync(
 				stream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				_fixture.CreateTestEvents());
 
 			var deleteResult = await _fixture.Client.SoftDeleteAsync(stream, StreamRevision.FromInt64(writeResult.NextExpectedVersion));
@@ -81,10 +81,10 @@ namespace EventStore.Client {
 		public async Task hard_deleting_a_deleted_stream_should_throw() {
 			var stream = _fixture.GetStreamName();
 
-			await _fixture.Client.TombstoneAsync(stream, AnyStreamRevision.NoStream);
+			await _fixture.Client.TombstoneAsync(stream, StreamState.NoStream);
 
 			await Assert.ThrowsAsync<StreamDeletedException>(
-				() => _fixture.Client.TombstoneAsync(stream, AnyStreamRevision.NoStream));
+				() => _fixture.Client.TombstoneAsync(stream, StreamState.NoStream));
 		}
 
 		public class Fixture : EventStoreClientFixture {

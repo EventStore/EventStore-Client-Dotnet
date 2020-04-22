@@ -33,14 +33,14 @@ namespace EventStore.Client {
 		/// Soft Deletes a stream asynchronously.
 		/// </summary>
 		/// <param name="streamName">The name of the stream to delete.</param>
-		/// <param name="expectedRevision">The expected <see cref="AnyStreamRevision"/> of the stream being deleted.</param>
+		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream being deleted.</param>
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public Task<DeleteResult> SoftDeleteAsync(
 			string streamName,
-			AnyStreamRevision expectedRevision,
+			StreamState expectedState,
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
@@ -48,12 +48,12 @@ namespace EventStore.Client {
 			var options = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(options);
 
-			return SoftDeleteAsync(streamName, expectedRevision, options, userCredentials, cancellationToken);
+			return SoftDeleteAsync(streamName, expectedState, options, userCredentials, cancellationToken);
 		}
 
 		private Task<DeleteResult> SoftDeleteAsync(
 			string streamName,
-			AnyStreamRevision expectedRevision,
+			StreamState expectedState,
 			EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
@@ -61,7 +61,7 @@ namespace EventStore.Client {
 				Options = new DeleteReq.Types.Options {
 					StreamName = streamName
 				}
-			}.WithAnyStreamRevision(expectedRevision), operationOptions, userCredentials, cancellationToken);
+			}.WithAnyStreamRevision(expectedState), operationOptions, userCredentials, cancellationToken);
 
 		private Task<DeleteResult> SoftDeleteAsync(
 			string streamName,

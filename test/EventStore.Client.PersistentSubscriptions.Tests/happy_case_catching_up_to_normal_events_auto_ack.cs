@@ -37,7 +37,7 @@ namespace EventStore.Client {
 
 			protected override async Task Given() {
 				foreach (var e in _events) {
-					await StreamsClient.AppendToStreamAsync(Stream, AnyStreamRevision.Any, new[] {e});
+					await StreamsClient.AppendToStreamAsync(Stream, StreamState.Any, new[] {e});
 				}
 
 				await Client.CreateAsync(Stream, Group,

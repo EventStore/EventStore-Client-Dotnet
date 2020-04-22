@@ -54,7 +54,7 @@ namespace EventStore.Client {
 
 			await Task.Delay(100);
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, _fixture.CreateTestEvents());
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
 
 			var (reason, ex) = await dropped.Task.WithTimeout();
 
@@ -112,7 +112,7 @@ namespace EventStore.Client {
 				await _fixture.Client.SubscribeToAllAsync(Position.End, EventAppeared, false, SubscriptionDropped);
 
 			foreach (var @event in afterEvents) {
-				await _fixture.Client.AppendToStreamAsync($"stream-{@event.EventId:n}", AnyStreamRevision.NoStream,
+				await _fixture.Client.AppendToStreamAsync($"stream-{@event.EventId:n}", StreamState.NoStream,
 					new[] {@event});
 			}
 
@@ -149,7 +149,7 @@ namespace EventStore.Client {
 
 		public class Fixture : EventStoreClientFixture {
 			protected override Task Given() =>
-				Client.SetStreamMetadataAsync("$all", AnyStreamRevision.NoStream,
+				Client.SetStreamMetadataAsync("$all", StreamState.NoStream,
 					new StreamMetadata(acl: new StreamAcl(SystemRoles.All)), userCredentials: TestCredentials.Root);
 
 			protected override Task When() => Task.CompletedTask;

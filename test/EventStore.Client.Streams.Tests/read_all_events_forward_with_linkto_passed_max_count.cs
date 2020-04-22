@@ -26,12 +26,12 @@ namespace EventStore.Client {
 			public ResolvedEvent[]? Events { get; private set; }
 
 			protected override async Task Given() {
-				await Client.AppendToStreamAsync(DeletedStream, AnyStreamRevision.Any, CreateTestEvents());
-				await Client.SetStreamMetadataAsync(DeletedStream, AnyStreamRevision.Any,
+				await Client.AppendToStreamAsync(DeletedStream, StreamState.Any, CreateTestEvents());
+				await Client.SetStreamMetadataAsync(DeletedStream, StreamState.Any,
 					new StreamMetadata(maxCount: 2));
-				await Client.AppendToStreamAsync(DeletedStream, AnyStreamRevision.Any, CreateTestEvents());
-				await Client.AppendToStreamAsync(DeletedStream, AnyStreamRevision.Any, CreateTestEvents());
-				await Client.AppendToStreamAsync(LinkedStream, AnyStreamRevision.Any, new[] {
+				await Client.AppendToStreamAsync(DeletedStream, StreamState.Any, CreateTestEvents());
+				await Client.AppendToStreamAsync(DeletedStream, StreamState.Any, CreateTestEvents());
+				await Client.AppendToStreamAsync(LinkedStream, StreamState.Any, new[] {
 					new EventData(
 						Uuid.NewUuid(), SystemEventTypes.LinkTo, Encoding.UTF8.GetBytes("0@" + DeletedStream),
 						Array.Empty<byte>(), Constants.Metadata.ContentTypes.ApplicationOctetStream)

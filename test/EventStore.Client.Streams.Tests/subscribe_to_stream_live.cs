@@ -20,7 +20,7 @@ namespace EventStore.Client {
 			var appeared = new TaskCompletionSource<StreamRevision>();
 			var dropped = new TaskCompletionSource<bool>();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream,
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 				_fixture.CreateTestEvents());
 
 			using var _ = await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.End, (s, e, ct) => {
@@ -46,7 +46,7 @@ namespace EventStore.Client {
 				appeared.TrySetResult(true);
 				return Task.CompletedTask;
 			}, false, (s, reason, ex) => dropped.TrySetResult(true)).WithTimeout();
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream,
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 				_fixture.CreateTestEvents());
 
 			Assert.True(await appeared.Task.WithTimeout());
@@ -64,7 +64,7 @@ namespace EventStore.Client {
 				.WithTimeout();
 			using var s2 = await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.End, EventAppeared)
 				.WithTimeout();
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, _fixture.CreateTestEvents());
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
 
 			Assert.True(await appeared.Task.WithTimeout());
 
@@ -85,7 +85,7 @@ namespace EventStore.Client {
 
 			using var _ = await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.End, EventAppeared, false,
 				SubscriptionDropped).WithTimeout();
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, _fixture.CreateTestEvents());
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
 
 			Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) {
 				s.Dispose();
@@ -110,7 +110,7 @@ namespace EventStore.Client {
 			using var _ = await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.End, EventAppeared, false,
 				SubscriptionDropped).WithTimeout();
 
-			await _fixture.Client.TombstoneAsync(stream, AnyStreamRevision.NoStream);
+			await _fixture.Client.TombstoneAsync(stream, StreamState.NoStream);
 			var (reason, ex) = await dropped.Task.WithTimeout();
 
 			Assert.Equal(SubscriptionDroppedReason.ServerError, reason);

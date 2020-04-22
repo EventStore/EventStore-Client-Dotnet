@@ -53,7 +53,7 @@ namespace EventStore.Client {
 			using var subscription = await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.Start, EventAppeared,
 				false, SubscriptionDropped);
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream,
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 				_fixture.CreateTestEvents(2));
 
 			Assert.True(await appeared.Task.WithTimeout());
@@ -92,7 +92,7 @@ namespace EventStore.Client {
 
 			using var s1 = await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.Start, EventAppeared);
 			using var s2 = await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.Start, EventAppeared);
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, _fixture.CreateTestEvents(2));
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents(2));
 
 			Assert.True(await appeared.Task.WithTimeout());
 
@@ -141,7 +141,7 @@ namespace EventStore.Client {
 			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
 			var expectedException = new Exception("Error");
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, _fixture.CreateTestEvents(2));
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents(2));
 
 			using var subscription = await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.Start, EventAppeared,
 				false, SubscriptionDropped);
@@ -174,15 +174,15 @@ namespace EventStore.Client {
 
 			enumerator.MoveNext();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, _fixture.CreateTestEvents());
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, beforeEvents);
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, beforeEvents);
 
 			using var subscription =
 				await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.Start, EventAppeared, false,
 					SubscriptionDropped);
 
-			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, afterEvents);
+			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents);
 
 			await appeared.Task.WithTimeout();
 
