@@ -38,7 +38,7 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 
 			await Assert.ThrowsAsync<WrongExpectedVersionException>(
-				() => _fixture.Client.TombstoneAsync(stream, StreamRevision.Start));
+				() => _fixture.Client.TombstoneAsync(stream, new StreamRevision(0)));
 		}
 
 		[Fact]
@@ -46,7 +46,7 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 
 			await Assert.ThrowsAsync<WrongExpectedVersionException>(
-				() => _fixture.Client.SoftDeleteAsync(stream, StreamRevision.Start));
+				() => _fixture.Client.SoftDeleteAsync(stream, new StreamRevision(0)));
 		}
 
 		[Fact]

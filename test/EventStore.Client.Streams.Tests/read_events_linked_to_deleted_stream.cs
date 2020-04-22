@@ -62,7 +62,7 @@ namespace EventStore.Client {
 
 			public new class Fixture : read_events_linked_to_deleted_stream.Fixture {
 				protected override ValueTask<ResolvedEvent[]> Read()
-					=> Client.ReadStreamAsync(Direction.Forwards, LinkedStream, StreamRevision.Start, 1,
+					=> Client.ReadStreamAsync(Direction.Forwards, LinkedStream, StreamPosition.Start, 1,
 						resolveLinkTos: true).ToArrayAsync();
 			}
 		}
@@ -73,7 +73,7 @@ namespace EventStore.Client {
 
 			public new class Fixture : read_events_linked_to_deleted_stream.Fixture {
 				protected override ValueTask<ResolvedEvent[]> Read()
-					=> Client.ReadStreamAsync(Direction.Backwards, LinkedStream, StreamRevision.Start, 1,
+					=> Client.ReadStreamAsync(Direction.Backwards, LinkedStream, StreamPosition.Start, 1,
 						resolveLinkTos: true).ToArrayAsync();
 			}
 		}

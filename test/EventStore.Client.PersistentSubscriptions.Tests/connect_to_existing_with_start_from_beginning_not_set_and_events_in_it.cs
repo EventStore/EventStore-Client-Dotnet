@@ -37,7 +37,7 @@ namespace EventStore.Client {
 			protected override async Task Given() {
 				await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, Events);
 				await Client.CreateAsync(Stream, Group,
-					new PersistentSubscriptionSettings(startFrom: StreamRevision.End), TestCredentials.Root);
+					new PersistentSubscriptionSettings(startFrom: StreamPosition.End), TestCredentials.Root);
 			}
 
 			protected override async Task When() {

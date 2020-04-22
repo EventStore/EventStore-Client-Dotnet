@@ -20,8 +20,8 @@ namespace EventStore.Client {
 			var appeared = new TaskCompletionSource<bool>();
 			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
 
-			using var subscription = await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.Start, EventAppeared,
-				false, SubscriptionDropped);
+			using var subscription = await _fixture.Client.SubscribeToStreamAsync(stream, StreamPosition.Start,
+				EventAppeared, false, SubscriptionDropped);
 
 			Assert.False(appeared.Task.IsCompleted);
 
@@ -50,8 +50,8 @@ namespace EventStore.Client {
 			var appeared = new TaskCompletionSource<bool>();
 			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
 
-			using var subscription = await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.Start, EventAppeared,
-				false, SubscriptionDropped);
+			using var subscription = await _fixture.Client.SubscribeToStreamAsync(stream, StreamPosition.Start,
+				EventAppeared, false, SubscriptionDropped);
 
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 				_fixture.CreateTestEvents(2));
@@ -69,7 +69,7 @@ namespace EventStore.Client {
 			Assert.Null(ex);
 
 			Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) {
-				if (e.OriginalEvent.EventNumber == StreamRevision.Start) {
+				if (e.OriginalEvent.EventNumber == StreamPosition.Start) {
 					appeared.TrySetException(new Exception());
 				} else {
 					appeared.TrySetResult(true);
@@ -90,14 +90,14 @@ namespace EventStore.Client {
 
 			int appearedCount = 0;
 
-			using var s1 = await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.Start, EventAppeared);
-			using var s2 = await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.Start, EventAppeared);
+			using var s1 = await _fixture.Client.SubscribeToStreamAsync(stream, StreamPosition.Start, EventAppeared);
+			using var s2 = await _fixture.Client.SubscribeToStreamAsync(stream, StreamPosition.Start, EventAppeared);
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents(2));
 
 			Assert.True(await appeared.Task.WithTimeout());
 
 			Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) {
-				if (e.OriginalEvent.EventNumber == StreamRevision.Start) {
+				if (e.OriginalEvent.EventNumber == StreamPosition.Start) {
 					appeared.TrySetException(new Exception());
 					return Task.CompletedTask;
 				}
@@ -115,8 +115,8 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
 
-			using var subscription = await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.Start, EventAppeared,
-				false, SubscriptionDropped);
+			using var subscription = await _fixture.Client.SubscribeToStreamAsync(stream, StreamPosition.Start,
+				EventAppeared, false, SubscriptionDropped);
 
 			if (dropped.Task.IsCompleted) {
 				Assert.False(dropped.Task.IsCompleted, dropped.Task.Result.ToString());
@@ -143,8 +143,8 @@ namespace EventStore.Client {
 
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents(2));
 
-			using var subscription = await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.Start, EventAppeared,
-				false, SubscriptionDropped);
+			using var subscription = await _fixture.Client.SubscribeToStreamAsync(stream, StreamPosition.Start,
+				EventAppeared, false, SubscriptionDropped);
 
 			var (reason, ex) = await dropped.Task.WithTimeout();
 
@@ -179,7 +179,7 @@ namespace EventStore.Client {
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, beforeEvents);
 
 			using var subscription =
-				await _fixture.Client.SubscribeToStreamAsync(stream, StreamRevision.Start, EventAppeared, false,
+				await _fixture.Client.SubscribeToStreamAsync(stream, StreamPosition.Start, EventAppeared, false,
 					SubscriptionDropped);
 
 			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents);

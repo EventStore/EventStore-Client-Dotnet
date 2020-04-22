@@ -6,7 +6,7 @@ namespace EventStore.Client {
 		public readonly string StreamName;
 		public readonly bool StreamDeleted;
 		public readonly StreamMetadata Metadata;
-		public readonly StreamRevision? MetastreamRevision;
+		public readonly StreamPosition? MetastreamRevision;
 
 		public override int GetHashCode() =>
 			HashCode.Hash.Combine(StreamName).Combine(Metadata).Combine(MetastreamRevision);
@@ -20,14 +20,14 @@ namespace EventStore.Client {
 		public static bool operator !=(StreamMetadataResult left, StreamMetadataResult right) => !left.Equals(right);
 
 		public static StreamMetadataResult None(string streamName) => new StreamMetadataResult(streamName);
-		public static StreamMetadataResult Create(string streamName, StreamRevision revision,
+		public static StreamMetadataResult Create(string streamName, StreamPosition revision,
 			StreamMetadata metadata) {
 			if (metadata == null) throw new ArgumentNullException(nameof(metadata));
 
 			return new StreamMetadataResult(streamName, revision, metadata);
 		}
 
-		private StreamMetadataResult(string streamName, StreamRevision? metastreamRevision = null,
+		private StreamMetadataResult(string streamName, StreamPosition? metastreamRevision = null,
 			StreamMetadata metadata = default, bool streamDeleted = false) {
 			if (streamName == null) {
 				throw new ArgumentNullException(nameof(streamName));

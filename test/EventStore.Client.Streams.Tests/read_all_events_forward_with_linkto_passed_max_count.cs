@@ -39,7 +39,7 @@ namespace EventStore.Client {
 			}
 
 			protected override async Task When() {
-				Events = await Client.ReadStreamAsync(Direction.Forwards, LinkedStream, StreamRevision.Start,
+				Events = await Client.ReadStreamAsync(Direction.Forwards, LinkedStream, StreamPosition.Start,
 						int.MaxValue, resolveLinkTos: true)
 					.ToArrayAsync();
 			}

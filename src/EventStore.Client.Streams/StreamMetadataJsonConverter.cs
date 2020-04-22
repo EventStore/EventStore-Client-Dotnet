@@ -12,7 +12,7 @@ namespace EventStore.Client {
 			JsonSerializerOptions options) {
 			int? maxCount = null;
 			TimeSpan? maxAge = null, cacheControl = null;
-			StreamRevision? truncateBefore = null;
+			StreamPosition? truncateBefore = null;
 			StreamAcl? acl = null;
 			using var stream = new MemoryStream();
 			using var customMetadataWriter = new Utf8JsonWriter(stream);
@@ -62,8 +62,8 @@ namespace EventStore.Client {
 
 						var value = reader.GetInt64();
 						truncateBefore = value == long.MaxValue
-							? StreamRevision.End
-							: StreamRevision.FromInt64(value);
+							? StreamPosition.End
+							: StreamPosition.FromInt64(value);
 						break;
 					case SystemMetadata.Acl:
 						if (!reader.Read()) {

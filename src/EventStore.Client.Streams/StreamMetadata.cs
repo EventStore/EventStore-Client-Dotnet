@@ -8,7 +8,7 @@ using System.Text.Json;
 namespace EventStore.Client {
 	public readonly struct StreamMetadata : IEquatable<StreamMetadata> {
 		public TimeSpan? MaxAge { get; }
-		public StreamRevision? TruncateBefore { get; }
+		public StreamPosition? TruncateBefore { get; }
 		public TimeSpan? CacheControl { get; }
 		public StreamAcl? Acl { get; }
 		public int? MaxCount { get; }
@@ -17,7 +17,7 @@ namespace EventStore.Client {
 		public StreamMetadata(
 			int? maxCount = null,
 			TimeSpan? maxAge = null,
-			StreamRevision? truncateBefore = null,
+			StreamPosition? truncateBefore = null,
 			TimeSpan? cacheControl = null,
 			StreamAcl? acl = null,
 			JsonDocument? customMetadata = null) : this() {

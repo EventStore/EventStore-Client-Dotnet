@@ -18,7 +18,7 @@ namespace EventStore.Client {
 
 			try {
 				metadata = await ReadStreamAsync(Direction.Backwards, SystemStreams.MetastreamOf(streamName),
-						StreamRevision.End, 1, operationOptions, false, userCredentials, cancellationToken)
+						StreamPosition.End, 1, operationOptions, false, userCredentials, cancellationToken)
 					.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 			} catch (StreamNotFoundException) {
 				_log.LogWarning("Stream metadata for {streamName} not found.");

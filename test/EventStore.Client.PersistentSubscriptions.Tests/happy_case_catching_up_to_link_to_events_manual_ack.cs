@@ -46,7 +46,7 @@ namespace EventStore.Client {
 				}
 
 				await Client.CreateAsync(Stream, Group,
-					new PersistentSubscriptionSettings(startFrom: StreamRevision.Start, resolveLinkTos: true),
+					new PersistentSubscriptionSettings(startFrom: StreamPosition.Start, resolveLinkTos: true),
 					TestCredentials.Root);
 				_subscription = await Client.SubscribeAsync(Stream, Group,
 					(subscription, e, retryCount, ct) => {

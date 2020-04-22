@@ -36,7 +36,7 @@ namespace EventStore.Client {
 			await _fixture.Client.SoftDeleteAsync(stream, StreamRevision.FromInt64(writeResult.NextExpectedVersion));
 
 			await Assert.ThrowsAsync<StreamNotFoundException>(
-				() => _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, int.MaxValue)
+				() => _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, int.MaxValue)
 					.ToArrayAsync().AsTask());
 		}
 
@@ -68,19 +68,19 @@ namespace EventStore.Client {
 			await Task.Delay(50); //TODO: This is a workaround until github issue #1744 is fixed
 
 			var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards,
-					stream, StreamRevision.Start, int.MaxValue)
+					stream, StreamPosition.Start, int.MaxValue)
 				.Select(x => x.Event)
 				.ToArrayAsync();
 
 			Assert.Equal(3, actual.Length);
 			Assert.Equal(events.Select(x => x.EventId), actual.Select(x => x.EventId));
 			Assert.Equal(
-				Enumerable.Range(1, 3).Select(i => new StreamRevision((ulong)i)),
+				Enumerable.Range(1, 3).Select(i => new StreamPosition((ulong)i)),
 				actual.Select(x => x.EventNumber));
 
 			var metadata = await _fixture.Client.GetStreamMetadataAsync(stream);
-			Assert.Equal(new StreamRevision(1), metadata.Metadata.TruncateBefore);
-			Assert.Equal(new StreamRevision(1), metadata.MetastreamRevision);
+			Assert.Equal(new StreamPosition(1), metadata.Metadata.TruncateBefore);
+			Assert.Equal(new StreamPosition(1), metadata.MetastreamRevision);
 		}
 
 		[Fact]
@@ -106,19 +106,19 @@ namespace EventStore.Client {
 			await Task.Delay(50); //TODO: This is a workaround until github issue #1744 is fixed
 
 			var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards,
-					stream, StreamRevision.Start, int.MaxValue)
+					stream, StreamPosition.Start, int.MaxValue)
 				.Select(x => x.Event)
 				.ToArrayAsync();
 
 			Assert.Equal(3, actual.Length);
 			Assert.Equal(events.Select(x => x.EventId), actual.Select(x => x.EventId));
 			Assert.Equal(
-				Enumerable.Range(1, 3).Select(i => new StreamRevision((ulong)i)),
+				Enumerable.Range(1, 3).Select(i => new StreamPosition((ulong)i)),
 				actual.Select(x => x.EventNumber));
 
 			var metadata = await _fixture.Client.GetStreamMetadataAsync(stream);
-			Assert.Equal(new StreamRevision(1), metadata.Metadata.TruncateBefore);
-			Assert.Equal(new StreamRevision(1), metadata.MetastreamRevision);
+			Assert.Equal(new StreamPosition(1), metadata.Metadata.TruncateBefore);
+			Assert.Equal(new StreamPosition(1), metadata.MetastreamRevision);
 		}
 
 		[Fact]
@@ -136,7 +136,7 @@ namespace EventStore.Client {
 			var streamMetadata = new StreamMetadata(
 				acl: new StreamAcl(deleteRole: "some-role"),
 				maxCount: 100,
-				truncateBefore: new StreamRevision(long.MaxValue), // 1 less than End
+				truncateBefore: new StreamPosition(long.MaxValue), // 1 less than End
 				customMetadata: _customMetadata);
 			writeResult = await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream,
 				streamMetadata);
@@ -148,20 +148,20 @@ namespace EventStore.Client {
 
 			await Task.Delay(500); //TODO: This is a workaround until github issue #1744 is fixed
 
-			var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, int.MaxValue)
+			var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, int.MaxValue)
 				.Select(x => x.Event)
 				.ToArrayAsync();
 
 			Assert.Equal(3, actual.Length);
 			Assert.Equal(events.Select(x => x.EventId), actual.Select(x => x.EventId));
 			Assert.Equal(
-				Enumerable.Range(count, 3).Select(i => new StreamRevision((ulong)i)),
+				Enumerable.Range(count, 3).Select(i => new StreamPosition((ulong)i)),
 				actual.Select(x => x.EventNumber));
 
-			var expected = new StreamMetadata(streamMetadata.MaxCount, streamMetadata.MaxAge, new StreamRevision(2),
+			var expected = new StreamMetadata(streamMetadata.MaxCount, streamMetadata.MaxAge, new StreamPosition(2),
 				streamMetadata.CacheControl, streamMetadata.Acl, streamMetadata.CustomMetadata);
 			var metadataResult = await _fixture.Client.GetStreamMetadataAsync(stream);
-			Assert.Equal(new StreamRevision(1), metadataResult.MetastreamRevision);
+			Assert.Equal(new StreamPosition(1), metadataResult.MetastreamRevision);
 			Assert.Equal(expected, metadataResult.Metadata);
 		}
 
@@ -180,7 +180,7 @@ namespace EventStore.Client {
 			await _fixture.Client.TombstoneAsync(stream, StreamState.Any);
 
 			var ex = await Assert.ThrowsAsync<StreamDeletedException>(
-				() => _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, int.MaxValue)
+				() => _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, int.MaxValue)
 					.ToArrayAsync().AsTask());
 
 			Assert.Equal(stream, ex.Stream);
@@ -239,18 +239,18 @@ namespace EventStore.Client {
 
 			Assert.Equal(6, writeResult.NextExpectedVersion);
 
-			var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, int.MaxValue)
+			var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, int.MaxValue)
 				.Select(x => x.Event)
 				.ToArrayAsync();
 
 			Assert.Equal(firstEvents.Concat(secondEvents).Select(x => x.EventId), actual.Select(x => x.EventId));
-			Assert.Equal(Enumerable.Range(2, 5).Select(i => new StreamRevision((ulong)i)),
+			Assert.Equal(Enumerable.Range(2, 5).Select(i => new StreamPosition((ulong)i)),
 				actual.Select(x => x.EventNumber));
 
 			var metadataResult = await _fixture.Client.GetStreamMetadataAsync(stream);
 
-			Assert.Equal(new StreamRevision(2), metadataResult.Metadata.TruncateBefore);
-			Assert.Equal(new StreamRevision(1), metadataResult.MetastreamRevision);
+			Assert.Equal(new StreamPosition(2), metadataResult.Metadata.TruncateBefore);
+			Assert.Equal(new StreamPosition(1), metadataResult.MetastreamRevision);
 		}
 
 		[Fact]
@@ -261,27 +261,27 @@ namespace EventStore.Client {
 			var streamMetadata = new StreamMetadata(
 				acl: new StreamAcl(deleteRole: "some-role"),
 				maxCount: 100,
-				truncateBefore: StreamRevision.End,
+				truncateBefore: StreamPosition.End,
 				customMetadata: _customMetadata);
 
 			await _fixture.Client.SoftDeleteAsync(stream, StreamState.NoStream);
 
 			var writeResult = await _fixture.Client.SetStreamMetadataAsync(
 				stream,
-				StreamRevision.Start,
+				new StreamRevision(0),
 				streamMetadata);
 
 			Assert.Equal(1, writeResult.NextExpectedVersion);
 
 			await Assert.ThrowsAsync<StreamNotFoundException>(() => _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, int.MaxValue)
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, int.MaxValue)
 				.ToArrayAsync().AsTask());
 
-			var expected = new StreamMetadata(streamMetadata.MaxCount, streamMetadata.MaxAge, StreamRevision.Start,
+			var expected = new StreamMetadata(streamMetadata.MaxCount, streamMetadata.MaxAge, StreamPosition.Start,
 				streamMetadata.CacheControl, streamMetadata.Acl, streamMetadata.CustomMetadata);
 
 			var metadataResult = await _fixture.Client.GetStreamMetadataAsync(stream);
-			Assert.Equal(new StreamRevision(count), metadataResult.MetastreamRevision);
+			Assert.Equal(new StreamPosition(count), metadataResult.MetastreamRevision);
 			Assert.Equal(expected, metadataResult.Metadata);
 		}
 
@@ -304,19 +304,19 @@ namespace EventStore.Client {
 
 			writeResult = await _fixture.Client.SetStreamMetadataAsync(
 				stream,
-				StreamRevision.Start,
+				new StreamRevision(0),
 				streamMetadata);
 
 			Assert.Equal(1, writeResult.NextExpectedVersion);
 
 			var actual = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, int.MaxValue)
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, int.MaxValue)
 				.ToArrayAsync();
 
 			Assert.Empty(actual);
 
 			var metadataResult = await _fixture.Client.GetStreamMetadataAsync(stream);
-			var expected = new StreamMetadata(streamMetadata.MaxCount, streamMetadata.MaxAge, new StreamRevision(count),
+			var expected = new StreamMetadata(streamMetadata.MaxCount, streamMetadata.MaxAge, new StreamPosition(count),
 				streamMetadata.CacheControl, streamMetadata.Acl, streamMetadata.CustomMetadata);
 			Assert.Equal(expected, metadataResult.Metadata);
 		}

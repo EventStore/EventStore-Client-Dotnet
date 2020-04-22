@@ -5,11 +5,10 @@ namespace EventStore.Client {
 	public readonly struct StreamRevision : IEquatable<StreamRevision>, IComparable<StreamRevision> {
 		private readonly ulong _value;
 
-		public static readonly StreamRevision Start = new StreamRevision(0);
-		public static readonly StreamRevision End = new StreamRevision(ulong.MaxValue);
+		public static readonly StreamRevision None = new StreamRevision(ulong.MaxValue);
 
 		public static StreamRevision FromInt64(long value) =>
-			value == -1 ? End : new StreamRevision(Convert.ToUInt64(value));
+			value == -1 ? None : new StreamRevision(Convert.ToUInt64(value));
 
 		public StreamRevision(ulong value) {
 			if (value > long.MaxValue && value != ulong.MaxValue) {
@@ -54,9 +53,9 @@ namespace EventStore.Client {
 		public static bool operator <(StreamRevision left, StreamRevision right) => left._value < right._value;
 		public static bool operator >=(StreamRevision left, StreamRevision right) => left._value >= right._value;
 		public static bool operator <=(StreamRevision left, StreamRevision right) => left._value <= right._value;
-		public long ToInt64() => Equals(End) ? -1 : Convert.ToInt64(_value);
+		public long ToInt64() => Equals(None) ? -1 : Convert.ToInt64(_value);
 		public static implicit operator ulong(StreamRevision streamRevision) => streamRevision._value;
-		public override string ToString() => this == End ? "End" : _value.ToString();
+		public override string ToString() => this == None ? "End" : _value.ToString();
 		public ulong ToUInt64() => _value;
 	}
 }

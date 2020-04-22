@@ -116,19 +116,19 @@ namespace EventStore.Client.Security {
 		}
 
 		public Task ReadEvent(string streamId, UserCredentials userCredentials = default) =>
-			Client.ReadStreamAsync(Direction.Forwards, streamId, StreamRevision.Start, 1, resolveLinkTos: false,
+			Client.ReadStreamAsync(Direction.Forwards, streamId, StreamPosition.Start, 1, resolveLinkTos: false,
 					userCredentials: userCredentials)
 				.ToArrayAsync()
 				.AsTask();
 
 		public Task ReadStreamForward(string streamId, UserCredentials userCredentials = default) =>
-			Client.ReadStreamAsync(Direction.Forwards, streamId, StreamRevision.Start, 1, resolveLinkTos: false,
+			Client.ReadStreamAsync(Direction.Forwards, streamId, StreamPosition.Start, 1, resolveLinkTos: false,
 					userCredentials: userCredentials)
 				.ToArrayAsync()
 				.AsTask();
 
 		public Task ReadStreamBackward(string streamId, UserCredentials userCredentials = default) =>
-			Client.ReadStreamAsync(Direction.Backwards, streamId, StreamRevision.Start, 1, resolveLinkTos: false,
+			Client.ReadStreamAsync(Direction.Backwards, streamId, StreamPosition.Start, 1, resolveLinkTos: false,
 					userCredentials: userCredentials)
 				.ToArrayAsync()
 				.AsTask();

@@ -6,7 +6,7 @@ namespace EventStore.Client {
 	public class EventRecord {
 		public readonly string EventStreamId;
 		public readonly Uuid EventId;
-		public readonly StreamRevision EventNumber;
+		public readonly StreamPosition EventNumber;
 		public readonly string EventType;
 		public readonly ReadOnlyMemory<byte> Data;
 		public readonly ReadOnlyMemory<byte> Metadata;
@@ -17,7 +17,7 @@ namespace EventStore.Client {
 		public EventRecord(
 			string eventStreamId,
 			Uuid eventId,
-			StreamRevision eventNumber,
+			StreamPosition eventNumber,
 			Position position,
 			IDictionary<string, string> metadata,
 			ReadOnlyMemory<byte> data,

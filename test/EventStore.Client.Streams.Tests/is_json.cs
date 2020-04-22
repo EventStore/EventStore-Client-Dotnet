@@ -41,7 +41,7 @@ namespace EventStore.Client {
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, new[] {eventData});
 
 			var @event = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, 1, resolveLinkTos: true)
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 1, resolveLinkTos: true)
 				.FirstOrDefaultAsync();
 
 			Assert.Equal(isJson

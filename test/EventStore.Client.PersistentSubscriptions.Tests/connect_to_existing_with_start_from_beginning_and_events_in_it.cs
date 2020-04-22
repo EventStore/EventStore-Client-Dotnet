@@ -21,7 +21,7 @@ namespace EventStore.Client {
 		[Fact]
 		public async Task the_subscription_gets_event_zero_as_its_first_event() {
 			var resolvedEvent = await _fixture.FirstEvent.WithTimeout(TimeSpan.FromSeconds(10));
-			Assert.Equal(StreamRevision.Start, resolvedEvent.Event.EventNumber);
+			Assert.Equal(StreamPosition.Start, resolvedEvent.Event.EventNumber);
 			Assert.Equal(_fixture.Events[0].EventId, resolvedEvent.Event.EventId);
 		}
 
@@ -39,7 +39,7 @@ namespace EventStore.Client {
 			protected override async Task Given() {
 				await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, Events);
 				await Client.CreateAsync(Stream, Group,
-					new PersistentSubscriptionSettings(startFrom: StreamRevision.Start), TestCredentials.Root);
+					new PersistentSubscriptionSettings(startFrom: StreamPosition.Start), TestCredentials.Root);
 			}
 
 			protected override async Task When() {

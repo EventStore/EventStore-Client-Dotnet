@@ -146,7 +146,7 @@ namespace EventStore.Client {
 					: new EventRecord(
 						e.StreamName,
 						Uuid.FromDto(e.Id),
-						new StreamRevision(e.StreamRevision),
+						new StreamPosition(e.StreamRevision),
 						new Position(e.CommitPosition, e.PreparePosition),
 						e.Metadata,
 						e.Data.ToByteArray(),

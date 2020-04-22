@@ -30,7 +30,7 @@ namespace EventStore.Client {
 
 			var ex = await Assert.ThrowsAsync<StreamNotFoundException>(() =>
 				_fixture.Client
-					.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, iterations)
+					.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, iterations)
 					.ToArrayAsync().AsTask());
 
 			Assert.Equal(stream, ex.Stream);
@@ -49,7 +49,7 @@ namespace EventStore.Client {
 
 			var ex = await Assert.ThrowsAsync<StreamNotFoundException>(() =>
 				_fixture.Client
-					.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, iterations)
+					.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, iterations)
 					.ToArrayAsync().AsTask());
 
 			Assert.Equal(stream, ex.Stream);
@@ -68,7 +68,7 @@ namespace EventStore.Client {
 
 			Assert.Equal(0, writeResult.NextExpectedVersion);
 
-			var count = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, 2)
+			var count = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 2)
 				.CountAsync();
 			Assert.Equal(1, count);
 		}

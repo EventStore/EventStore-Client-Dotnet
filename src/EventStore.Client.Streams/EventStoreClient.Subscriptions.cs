@@ -155,7 +155,7 @@ namespace EventStore.Client {
 		}
 
 		private Task<StreamSubscription> SubscribeToStreamAsync(string streamName,
-			StreamRevision start,
+			StreamPosition start,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			EventStoreClientOperationOptions operationOptions,
 			bool resolveLinkTos = false,
@@ -168,7 +168,7 @@ namespace EventStore.Client {
 						Options = new ReadReq.Types.Options {
 							ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
 							ResolveLinks = resolveLinkTos,
-							Stream = start == StreamRevision.End
+							Stream = start == StreamPosition.End
 								? new ReadReq.Types.Options.Types.StreamOptions {
 									End = new Empty(),
 									StreamName = streamName
@@ -197,7 +197,7 @@ namespace EventStore.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public Task<StreamSubscription> SubscribeToStreamAsync(string streamName,
-			StreamRevision start,
+			StreamPosition start,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			bool resolveLinkTos = false,
 			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = default,
