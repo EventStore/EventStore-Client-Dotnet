@@ -1,0 +1,11 @@
+version: '3'
+services:
+  eventstore:
+    image: eventstore/eventstore:6.0.0-preview3-bionic
+    volumes:
+      - ./certs:/usr/certs
+    environment:
+      - EVENTSTORE_CERTIFICATE_FILE=/usr/certs/localhost.pfx
+      - EVENTSTORE_CERTIFICATE_PASSWORD=dev
+    ports:
+      - 2113:2113
