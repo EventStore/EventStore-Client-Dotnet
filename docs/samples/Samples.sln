@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "quick-start", "quick-start\quick-start.csproj", "{521987E5-4394-4EE0-B217-E3DC9DB0D327}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "client", "client", "{EBB93BBC-42A7-48E4-B1EA-0EA3953D347C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client.Streams", "..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj", "{A32CE3CB-AB71-45C6-A1B2-CD94BE2D2B28}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client", "..\..\src\EventStore.Client\EventStore.Client.csproj", "{A71A13F7-8480-4E48-B88D-A2364F7C95B6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{521987E5-4394-4EE0-B217-E3DC9DB0D327}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{521987E5-4394-4EE0-B217-E3DC9DB0D327}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{521987E5-4394-4EE0-B217-E3DC9DB0D327}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{521987E5-4394-4EE0-B217-E3DC9DB0D327}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A32CE3CB-AB71-45C6-A1B2-CD94BE2D2B28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A32CE3CB-AB71-45C6-A1B2-CD94BE2D2B28}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A32CE3CB-AB71-45C6-A1B2-CD94BE2D2B28}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A32CE3CB-AB71-45C6-A1B2-CD94BE2D2B28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A71A13F7-8480-4E48-B88D-A2364F7C95B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A71A13F7-8480-4E48-B88D-A2364F7C95B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A71A13F7-8480-4E48-B88D-A2364F7C95B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A71A13F7-8480-4E48-B88D-A2364F7C95B6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A32CE3CB-AB71-45C6-A1B2-CD94BE2D2B28} = {EBB93BBC-42A7-48E4-B1EA-0EA3953D347C}
+		{A71A13F7-8480-4E48-B88D-A2364F7C95B6} = {EBB93BBC-42A7-48E4-B1EA-0EA3953D347C}
+	EndGlobalSection
+EndGlobal
