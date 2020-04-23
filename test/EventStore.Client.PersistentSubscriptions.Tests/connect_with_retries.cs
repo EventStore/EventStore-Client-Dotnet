@@ -31,9 +31,9 @@ namespace EventStore.Client {
 			}
 
 			protected override async Task Given() {
-				await StreamsClient.AppendToStreamAsync(Stream, AnyStreamRevision.NoStream, Events);
+				await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, Events);
 				await Client.CreateAsync(Stream, Group,
-					new PersistentSubscriptionSettings(startFrom: StreamRevision.Start), TestCredentials.Root);
+					new PersistentSubscriptionSettings(startFrom: StreamPosition.Start), TestCredentials.Root);
 				_subscription = await Client.SubscribeAsync(Stream, Group,
 					async (subscription, e, r, ct) => {
 						if (r > 4) {
@@ -51,7 +51,7 @@ namespace EventStore.Client {
 			}
 
 			protected override Task When() =>
-				StreamsClient.AppendToStreamAsync(Stream, AnyStreamRevision.NoStream, Events);
+				StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, Events);
 
 			public override Task DisposeAsync() {
 				_subscription?.Dispose();

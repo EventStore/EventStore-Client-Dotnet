@@ -11,7 +11,7 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Which event position in the stream the subscription should start from.
 		/// </summary>
-		public readonly StreamRevision StartFrom;
+		public readonly StreamPosition StartFrom;
 
 		/// <summary>
 		/// Whether to track latency statistics on this subscription.
@@ -68,14 +68,14 @@ namespace EventStore.Client {
 		/// </summary>
 		public readonly string NamedConsumerStrategy;
 
-		public PersistentSubscriptionSettings(bool resolveLinkTos = false, StreamRevision? startFrom = null,
+		public PersistentSubscriptionSettings(bool resolveLinkTos = false, StreamPosition? startFrom = null,
 			bool extraStatistics = false, TimeSpan? messageTimeout = null, int maxRetryCount = 500,
 			int liveBufferSize = 500, int readBatchSize = 10, int historyBufferSize = 20,
 			TimeSpan? checkPointAfter = null, int minCheckPointCount = 10, int maxCheckPointCount = 1000,
 			int maxSubscriberCount = 0, string namedConsumerStrategy = SystemConsumerStrategies.RoundRobin) {
 			messageTimeout ??= TimeSpan.FromSeconds(30);
 			checkPointAfter ??= TimeSpan.FromSeconds(2);
-			startFrom ??= StreamRevision.End;
+			startFrom ??= StreamPosition.End;
 
 			if (messageTimeout.Value < TimeSpan.Zero || messageTimeout.Value.TotalMilliseconds > int.MaxValue) {
 				throw new ArgumentOutOfRangeException(

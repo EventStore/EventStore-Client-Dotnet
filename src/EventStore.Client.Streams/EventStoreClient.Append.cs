@@ -53,25 +53,25 @@ namespace EventStore.Client {
 
 		private Task<WriteResult> AppendToStreamAsync(
 			string streamName,
-			AnyStreamRevision expectedRevision,
+			StreamState expectedState,
 			IEnumerable<EventData> eventData,
 			EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedRevision);
+			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedState);
 
 			return AppendToStreamInternal(new AppendReq {
 				Options = new AppendReq.Types.Options {
 					StreamName = streamName
 				}
-			}.WithAnyStreamRevision(expectedRevision), eventData, operationOptions, userCredentials, cancellationToken);
+			}.WithAnyStreamRevision(expectedState), eventData, operationOptions, userCredentials, cancellationToken);
 		}
 
 		/// <summary>
 		/// Appends events asynchronously to a stream.
 		/// </summary>
 		/// <param name="streamName">The name of the stream to append events to.</param>
-		/// <param name="expectedRevision">The expected <see cref="AnyStreamRevision"/> of the stream to append to.</param>
+		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream to append to.</param>
 		/// <param name="eventData">An <see cref="IEnumerable{EventData}"/> to append to the stream.</param>
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
 		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
@@ -79,7 +79,7 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public Task<WriteResult> AppendToStreamAsync(
 			string streamName,
-			AnyStreamRevision expectedRevision,
+			StreamState expectedState,
 			IEnumerable<EventData> eventData,
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
 			UserCredentials? userCredentials = null,
@@ -87,7 +87,7 @@ namespace EventStore.Client {
 			var operationOptions = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(operationOptions);
 
-			return AppendToStreamAsync(streamName, expectedRevision, eventData, operationOptions, userCredentials,
+			return AppendToStreamAsync(streamName, expectedState, eventData, operationOptions, userCredentials,
 				cancellationToken);
 		}
 
@@ -126,7 +126,7 @@ namespace EventStore.Client {
 
 				writeResult = new WriteResult(
 					response.CurrentRevisionOptionCase == AppendResp.CurrentRevisionOptionOneofCase.NoStream
-						? AnyStreamRevision.NoStream.ToInt64()
+						? StreamState.NoStream.ToInt64()
 						: new StreamRevision(response.CurrentRevision).ToInt64(),
 					response.PositionOptionCase == AppendResp.PositionOptionOneofCase.Position
 						? new Position(response.Position.CommitPosition, response.Position.PreparePosition)

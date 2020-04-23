@@ -15,7 +15,7 @@ namespace EventStore.Client {
 			protected override Task Given() => Task.CompletedTask;
 
 			protected override async Task When() {
-				await StreamsClient.AppendToStreamAsync(Stream, AnyStreamRevision.Any, CreateTestEvents());
+				await StreamsClient.AppendToStreamAsync(Stream, StreamState.Any, CreateTestEvents());
 				await Client.CreateAsync(Stream, "existing",
 					new PersistentSubscriptionSettings(), TestCredentials.Root);
 				await Client.DeleteAsync(Stream, "existing",

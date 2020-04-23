@@ -18,11 +18,11 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents(6).ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events.Take(1));
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(1));
 
 			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, (ulong)events.Length + 1).CountAsync();
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, (ulong)events.Length + 1).CountAsync();
 
 			Assert.Equal(events.Length, count);
 		}
@@ -33,11 +33,11 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents(6).ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, events.Take(1));
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Take(1));
 
 			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, (ulong)events.Length + 1).CountAsync();
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, (ulong)events.Length + 1).CountAsync();
 
 			Assert.Equal(events.Length, count);
 		}
@@ -48,11 +48,11 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents(6).ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
 			await _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(5), events.Take(1));
 
 			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, (ulong)events.Length + 2).CountAsync();
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, (ulong)events.Length + 2).CountAsync();
 
 			Assert.Equal(events.Length + 1, count);
 		}
@@ -63,7 +63,7 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents(6).ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
 			await Assert.ThrowsAsync<WrongExpectedVersionException>(
 				() => _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(6), events.Take(1)));
@@ -75,7 +75,7 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents(6).ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
 			await Assert.ThrowsAsync<WrongExpectedVersionException>(
 				() => _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(4), events.Take(1)));
@@ -87,11 +87,11 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents().ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, StreamRevision.Start, events.Take(1));
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+			await _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(0), events.Take(1));
 
 			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, (ulong)events.Length + 2).CountAsync();
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, (ulong)events.Length + 2).CountAsync();
 
 			Assert.Equal(events.Length + 1, count);
 		}
@@ -102,11 +102,11 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents().ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, events.Take(1));
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Take(1));
 
 			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, (ulong)events.Length + 1).CountAsync();
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, (ulong)events.Length + 1).CountAsync();
 
 			Assert.Equal(events.Length, count);
 		}
@@ -117,11 +117,11 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents().ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events.Take(1));
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(1));
 
 			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, (ulong)events.Length + 1).CountAsync();
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, (ulong)events.Length + 1).CountAsync();
 
 			Assert.Equal(events.Length, count);
 		}
@@ -132,12 +132,12 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents(3).ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, events.Skip(1).Take(1));
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, events.Skip(1).Take(1));
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Skip(1).Take(1));
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Skip(1).Take(1));
 
 			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, (ulong)events.Length + 1).CountAsync();
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, (ulong)events.Length + 1).CountAsync();
 
 			Assert.Equal(events.Length, count);
 		}
@@ -148,11 +148,11 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents(2).ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events.Take(1));
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(1));
 
 			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, (ulong)events.Length + 1).CountAsync();
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, (ulong)events.Length + 1).CountAsync();
 
 			Assert.Equal(events.Length, count);
 		}
@@ -163,11 +163,11 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents(2).ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, events.Take(1));
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Take(1));
 
 			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, (ulong)events.Length + 1).CountAsync();
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, (ulong)events.Length + 1).CountAsync();
 
 			Assert.Equal(events.Length, count);
 		}
@@ -178,12 +178,12 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents(2).ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamRevision.Start, events.Skip(1));
+			await _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(0), events.Skip(1));
 
 			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, (ulong)events.Length + 1).CountAsync();
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, (ulong)events.Length + 1).CountAsync();
 
 			Assert.Equal(events.Length, count);
 		}
@@ -194,11 +194,11 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents(2).ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, events.Skip(1).Take(1));
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Skip(1).Take(1));
 
 			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, (ulong)events.Length + 1).CountAsync();
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, (ulong)events.Length + 1).CountAsync();
 
 			Assert.Equal(events.Length, count);
 		}
@@ -209,12 +209,12 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents(3).ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events.Take(2));
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(2));
 
 			await Assert.ThrowsAsync<WrongExpectedVersionException>(
 				() => _fixture.Client.AppendToStreamAsync(
 					stream,
-					AnyStreamRevision.NoStream,
+					StreamState.NoStream,
 					events));
 		}
 

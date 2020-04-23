@@ -18,7 +18,7 @@ namespace EventStore.Client {
 		public async Task any_stream_revision_fails_when_operation_expired() {
 			var stream = _fixture.GetStreamName();
 			var rpcException = await Assert.ThrowsAsync<RpcException>(() =>
-				_fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, _fixture.CreateTestEvents(),
+				_fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents(),
 					options => options.TimeoutAfter = TimeSpan.Zero));
 
 			Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);

@@ -20,7 +20,7 @@ namespace EventStore.Client {
 
 		public class Fixture : EventStoreClientFixture {
 			protected override async Task Given() {
-				await StreamsClient.AppendToStreamAsync(Stream, AnyStreamRevision.NoStream, CreateTestEvents());
+				await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, CreateTestEvents());
 				await Client.CreateAsync(Stream, Group, new PersistentSubscriptionSettings(),
 					TestCredentials.Root);
 			}

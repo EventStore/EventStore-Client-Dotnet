@@ -8,19 +8,19 @@ namespace EventStore.Client.Streams {
 					partial class StreamOptions {
 						public static StreamOptions FromStreamNameAndRevision(
 							string streamName,
-							StreamRevision streamRevision) {
+							StreamPosition streamRevision) {
 							if (streamName == null) {
 								throw new ArgumentNullException(nameof(streamName));
 							}
 
-							if (streamRevision == StreamRevision.End) {
+							if (streamRevision == StreamPosition.End) {
 								return new StreamOptions {
 									StreamName = streamName,
 									End = new Empty()
 								};
 							}
 
-							if (streamRevision == StreamRevision.Start) {
+							if (streamRevision == StreamPosition.Start) {
 								return new StreamOptions {
 									StreamName = streamName,
 									Start = new Empty()

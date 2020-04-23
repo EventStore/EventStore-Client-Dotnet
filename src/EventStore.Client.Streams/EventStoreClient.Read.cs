@@ -71,7 +71,7 @@ namespace EventStore.Client {
 		private IAsyncEnumerable<ResolvedEvent> ReadStreamAsync(
 			Direction direction,
 			string streamName,
-			StreamRevision revision,
+			StreamPosition revision,
 			ulong count,
 			EventStoreClientOperationOptions operationOptions,
 			bool resolveLinkTos = false,
@@ -109,7 +109,7 @@ namespace EventStore.Client {
 		public IAsyncEnumerable<ResolvedEvent> ReadStreamAsync(
 			Direction direction,
 			string streamName,
-			StreamRevision revision,
+			StreamPosition revision,
 			ulong count,
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
 			bool resolveLinkTos = false,
@@ -179,7 +179,7 @@ namespace EventStore.Client {
 					: new EventRecord(
 						e.StreamName,
 						Uuid.FromDto(e.Id),
-						new StreamRevision(e.StreamRevision),
+						new StreamPosition(e.StreamRevision),
 						new Position(e.CommitPosition, e.PreparePosition),
 						e.Metadata,
 						e.Data.ToByteArray(),

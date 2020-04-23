@@ -30,13 +30,12 @@ namespace EventStore.Client {
 
 		[Fact]
 		public void AdditionOperator() {
-			var sut = StreamRevision.Start;
+			var sut = new StreamRevision(0);
 			Assert.Equal(new StreamRevision(1), sut + 1);
 			Assert.Equal(new StreamRevision(1), 1 + sut);
 		}
 
 		public static IEnumerable<object[]> AdditionOutOfBoundsCases() {
-			yield return new object[] {StreamRevision.End, 1};
 			yield return new object[] {new StreamRevision(long.MaxValue), long.MaxValue + 2UL};
 		}
 
@@ -55,7 +54,7 @@ namespace EventStore.Client {
 
 		public static IEnumerable<object[]> SubtractionOutOfBoundsCases() {
 			yield return new object[] {new StreamRevision(1), 2};
-			yield return new object[] {StreamRevision.Start, 1};
+			yield return new object[] {new StreamRevision(0), 1};
 		}
 
 		[Theory, MemberData(nameof(SubtractionOutOfBoundsCases))]
@@ -76,31 +75,44 @@ namespace EventStore.Client {
 		}
 
 		public static IEnumerable<object[]> ComparableTestCases() {
-			yield return new object[] {StreamRevision.Start, StreamRevision.Start, 0};
-			yield return new object[] {StreamRevision.Start, StreamRevision.End, -1};
-			yield return new object[] {StreamRevision.End, StreamRevision.Start, 1};
+			var start = new StreamRevision(0);
+			yield return new object[] {start, start, 0};
+			yield return new object[] {start, StreamRevision.None, -1};
+			yield return new object[] {StreamRevision.None, start, 1};
 		}
 
 		[Theory, MemberData(nameof(ComparableTestCases))]
 		public void Comparability(StreamRevision left, StreamRevision right, int expected)
 			=> Assert.Equal(expected, left.CompareTo(right));
 
-		public static IEnumerable<object[]> Int64TestCases() {
-			yield return new object[] {-1L, StreamRevision.End};
-			yield return new object[] {0L, StreamRevision.Start};
+		[Fact]
+		public void ExplicitConversionFromStreamRevisionReturnsExpectedResult() {
+			const ulong value = 0UL;
+			var actual = (ulong)new StreamRevision(value);
+			Assert.Equal(value, actual);
 		}
 
 		[Fact]
-		public void ExplicitConversionExpectedResult() {
-			const ulong expected = 0UL;
-			var actual = (ulong)new StreamRevision(expected);
+		public void ImplicitConversionFromStreamRevisionReturnsExpectedResult() {
+			const ulong value = 0UL;
+			ulong actual = new StreamRevision(value);
+			Assert.Equal(value, actual);
+		}
+
+		[Fact]
+		public void ExplicitConversionToStreamRevisionReturnsExpectedResult() {
+			const ulong value = 0UL;
+			var expected = new StreamRevision(value);
+			var actual = (StreamRevision)value;
 			Assert.Equal(expected, actual);
 		}
 
 		[Fact]
-		public void ImplicitConversionExpectedResult() {
-			const ulong expected = 0UL;
-			Assert.Equal(expected, new StreamRevision(expected));
+		public void ImplicitConversionToStreamRevisionReturnsExpectedResult() {
+			const ulong value = 0UL;
+			var expected = new StreamRevision(value);
+			StreamRevision actual = value;
+			Assert.Equal(expected, actual);
 		}
 
 		[Fact]

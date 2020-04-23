@@ -44,7 +44,7 @@ namespace EventStore.Client {
 
 		private Task<DeleteResult> TombstoneAsync(
 			string streamName,
-			AnyStreamRevision expectedRevision,
+			StreamState expectedState,
 			EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
@@ -52,20 +52,20 @@ namespace EventStore.Client {
 				Options = new TombstoneReq.Types.Options {
 					StreamName = streamName
 				}
-			}.WithAnyStreamRevision(expectedRevision), operationOptions, userCredentials, cancellationToken);
+			}.WithAnyStreamRevision(expectedState), operationOptions, userCredentials, cancellationToken);
 
 		/// <summary>
 		/// Tombstones a stream asynchronously. Note: Tombstoned streams can never be recreated.
 		/// </summary>
 		/// <param name="streamName">The name of the stream to tombstone.</param>
-		/// <param name="expectedRevision">The expected <see cref="AnyStreamRevision"/> of the stream being deleted.</param>
+		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream being deleted.</param>
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public Task<DeleteResult> TombstoneAsync(
 			string streamName,
-			AnyStreamRevision expectedRevision,
+			StreamState expectedState,
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
@@ -73,7 +73,7 @@ namespace EventStore.Client {
 			var operationOptions = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(operationOptions);
 			
-			return TombstoneAsync(streamName, expectedRevision, operationOptions, userCredentials, cancellationToken);
+			return TombstoneAsync(streamName, expectedState, operationOptions, userCredentials, cancellationToken);
 		}
 
 		private async Task<DeleteResult> TombstoneInternal(TombstoneReq request,

@@ -19,7 +19,7 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 
 			var rpcException = await Assert.ThrowsAsync<RpcException>(() => _fixture.Client
-				.ReadStreamAsync(Direction.Backwards, stream, StreamRevision.End, 1,
+				.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 1,
 					options => options.TimeoutAfter = TimeSpan.Zero)
 				.ToArrayAsync().AsTask());
 			

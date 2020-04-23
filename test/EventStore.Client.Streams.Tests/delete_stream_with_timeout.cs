@@ -17,7 +17,7 @@ namespace EventStore.Client {
 		public async Task any_stream_revision_soft_delete_fails_when_operation_expired() {
 			var stream = _fixture.GetStreamName();
 			var rpcException = await Assert.ThrowsAsync<RpcException>(() =>
-				_fixture.Client.SoftDeleteAsync(stream, AnyStreamRevision.Any,
+				_fixture.Client.SoftDeleteAsync(stream, StreamState.Any,
 					options => options.TimeoutAfter = TimeSpan.Zero));
 
 			Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
@@ -38,7 +38,7 @@ namespace EventStore.Client {
 		public async Task any_stream_revision_tombstoning_fails_when_operation_expired() {
 			var stream = _fixture.GetStreamName();
 			var rpcException = await Assert.ThrowsAsync<RpcException>(() =>
-				_fixture.Client.TombstoneAsync(stream, AnyStreamRevision.Any,
+				_fixture.Client.TombstoneAsync(stream, StreamState.Any,
 					options => options.TimeoutAfter = TimeSpan.Zero));
 
 			Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);

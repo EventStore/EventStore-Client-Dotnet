@@ -31,7 +31,7 @@ fromStream('{nameof(get_result)}').when({{
 				Projection, userCredentials: TestCredentials.Root);
 
 			protected override async Task When() {
-				await StreamsClient.AppendToStreamAsync(nameof(get_result), AnyStreamRevision.NoStream,
+				await StreamsClient.AppendToStreamAsync(nameof(get_result), StreamState.NoStream,
 					CreateTestEvents());
 			}
 		}

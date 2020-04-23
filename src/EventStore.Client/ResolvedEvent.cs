@@ -13,7 +13,7 @@ namespace EventStore.Client {
 
 		public string OriginalStreamId => OriginalEvent.EventStreamId;
 
-		public StreamRevision OriginalEventNumber => OriginalEvent.EventNumber;
+		public StreamPosition OriginalEventNumber => OriginalEvent.EventNumber;
 
 		public bool IsResolved => Link != null && Event != null;
 

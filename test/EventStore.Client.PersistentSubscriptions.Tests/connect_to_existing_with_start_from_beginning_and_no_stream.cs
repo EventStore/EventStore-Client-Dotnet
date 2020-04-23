@@ -20,7 +20,7 @@ namespace EventStore.Client {
 		[Fact]
 		public async Task the_subscription_gets_event_zero_as_its_first_event() {
 			var firstEvent = await _fixture.FirstEvent.WithTimeout(TimeSpan.FromSeconds(10));
-			Assert.Equal(StreamRevision.Start, firstEvent.Event.EventNumber);
+			Assert.Equal(StreamPosition.Start, firstEvent.Event.EventNumber);
 			Assert.Equal(_fixture.EventId, firstEvent.Event.EventId);
 		}
 
@@ -51,7 +51,7 @@ namespace EventStore.Client {
 			}
 
 			protected override Task When()
-				=> StreamsClient.AppendToStreamAsync(Stream, AnyStreamRevision.NoStream, Events);
+				=> StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, Events);
 
 			public override Task DisposeAsync() {
 				_subscription?.Dispose();

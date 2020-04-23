@@ -1,11 +1,11 @@
 namespace EventStore.Client.Streams {
 	partial class DeleteReq {
-		public DeleteReq WithAnyStreamRevision(AnyStreamRevision expectedRevision) {
-			if (expectedRevision == AnyStreamRevision.Any) {
+		public DeleteReq WithAnyStreamRevision(StreamState expectedState) {
+			if (expectedState == StreamState.Any) {
 				Options.Any = new Empty();
-			} else if (expectedRevision == AnyStreamRevision.NoStream) {
+			} else if (expectedState == StreamState.NoStream) {
 				Options.NoStream = new Empty();
-			} else if (expectedRevision == AnyStreamRevision.StreamExists) {
+			} else if (expectedState == StreamState.StreamExists) {
 				Options.StreamExists = new Empty();
 			}
 

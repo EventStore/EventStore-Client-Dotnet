@@ -54,7 +54,7 @@ namespace EventStore.Client {
 			using var subscription =
 				await _fixture.Client.SubscribeToStreamAsync(stream, EventAppeared, false, SubscriptionDropped);
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, _fixture.CreateTestEvents());
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
 
 			Assert.True(await appeared.Task.WithTimeout());
 
@@ -85,7 +85,7 @@ namespace EventStore.Client {
 
 			int appearedCount = 0;
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, _fixture.CreateTestEvents());
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
 			using var s1 = await _fixture.Client.SubscribeToStreamAsync(stream, EventAppeared).WithTimeout();
 			using var s2 = await _fixture.Client.SubscribeToStreamAsync(stream, EventAppeared).WithTimeout();
 
@@ -139,7 +139,7 @@ namespace EventStore.Client {
 				Assert.False(dropped.Task.IsCompleted, dropped.Task.Result.ToString());
 			}
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, _fixture.CreateTestEvents());
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
 
 			var (reason, ex) = await dropped.Task.WithTimeout();
 
@@ -169,14 +169,14 @@ namespace EventStore.Client {
 
 			enumerator.MoveNext();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, beforeEvents)
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, beforeEvents)
 				.WithTimeout();
 
 			using var subscription =
 				await _fixture.Client.SubscribeToStreamAsync(stream, EventAppeared, false, SubscriptionDropped)
 					.WithTimeout();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, afterEvents)
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents)
 				.WithTimeout();
 
 			await appeared.Task.WithTimeout();
@@ -214,7 +214,7 @@ namespace EventStore.Client {
 
 			using var _ = await _fixture.Client.SubscribeToStreamAsync(stream, EventAppeared, false, SubscriptionDropped);
 
-			await _fixture.Client.TombstoneAsync(stream, AnyStreamRevision.NoStream);
+			await _fixture.Client.TombstoneAsync(stream, StreamState.NoStream);
 			var (reason, ex) = await dropped.Task.WithTimeout();
 
 			Assert.Equal(SubscriptionDroppedReason.ServerError, reason);

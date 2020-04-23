@@ -39,14 +39,14 @@ namespace EventStore.Client {
 			public ResolvedEvent[]? Events { get; private set; }
 
 			protected override async Task Given() {
-				await Client.AppendToStreamAsync(DeletedStream, AnyStreamRevision.Any, CreateTestEvents());
-				await Client.AppendToStreamAsync(LinkedStream, AnyStreamRevision.Any, new[] {
+				await Client.AppendToStreamAsync(DeletedStream, StreamState.Any, CreateTestEvents());
+				await Client.AppendToStreamAsync(LinkedStream, StreamState.Any, new[] {
 					new EventData(
 						Uuid.NewUuid(), SystemEventTypes.LinkTo, Encoding.UTF8.GetBytes("0@" + DeletedStream),
 						Array.Empty<byte>(), Constants.Metadata.ContentTypes.ApplicationOctetStream)
 				});
 
-				await Client.SoftDeleteAsync(DeletedStream, AnyStreamRevision.Any);
+				await Client.SoftDeleteAsync(DeletedStream, StreamState.Any);
 			}
 
 			protected override async Task When() {
@@ -62,7 +62,7 @@ namespace EventStore.Client {
 
 			public new class Fixture : read_events_linked_to_deleted_stream.Fixture {
 				protected override ValueTask<ResolvedEvent[]> Read()
-					=> Client.ReadStreamAsync(Direction.Forwards, LinkedStream, StreamRevision.Start, 1,
+					=> Client.ReadStreamAsync(Direction.Forwards, LinkedStream, StreamPosition.Start, 1,
 						resolveLinkTos: true).ToArrayAsync();
 			}
 		}
@@ -73,7 +73,7 @@ namespace EventStore.Client {
 
 			public new class Fixture : read_events_linked_to_deleted_stream.Fixture {
 				protected override ValueTask<ResolvedEvent[]> Read()
-					=> Client.ReadStreamAsync(Direction.Backwards, LinkedStream, StreamRevision.Start, 1,
+					=> Client.ReadStreamAsync(Direction.Backwards, LinkedStream, StreamPosition.Start, 1,
 						resolveLinkTos: true).ToArrayAsync();
 			}
 		}

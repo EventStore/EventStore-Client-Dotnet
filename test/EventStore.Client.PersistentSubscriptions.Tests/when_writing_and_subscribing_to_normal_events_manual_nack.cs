@@ -38,7 +38,7 @@ namespace EventStore.Client {
 
 			protected override async Task Given() {
 				await Client.CreateAsync(Stream, Group,
-					new PersistentSubscriptionSettings(startFrom: StreamRevision.Start, resolveLinkTos: true),
+					new PersistentSubscriptionSettings(startFrom: StreamPosition.Start, resolveLinkTos: true),
 					TestCredentials.Root);
 				_subscription = await Client.SubscribeAsync(Stream, Group,
 					(subscription, e, retryCount, ct) => {
@@ -61,7 +61,7 @@ namespace EventStore.Client {
 
 			protected override async Task When() {
 				foreach (var e in _events) {
-					await StreamsClient.AppendToStreamAsync(Stream, AnyStreamRevision.Any, new[] {e});
+					await StreamsClient.AppendToStreamAsync(Stream, StreamState.Any, new[] {e});
 				}
 			}
 

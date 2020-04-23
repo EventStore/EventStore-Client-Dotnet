@@ -13,43 +13,43 @@ namespace EventStore.Client {
 		}
 
 		public static IEnumerable<object[]> ExpectedVersionCreateStreamTestCases() {
-			yield return new object[] {AnyStreamRevision.Any, nameof(AnyStreamRevision.Any)};
-			yield return new object[] {AnyStreamRevision.NoStream, nameof(AnyStreamRevision.NoStream)};
+			yield return new object[] {StreamState.Any, nameof(StreamState.Any)};
+			yield return new object[] {StreamState.NoStream, nameof(StreamState.NoStream)};
 		}
 
 		[Theory, MemberData(nameof(ExpectedVersionCreateStreamTestCases))]
-		public async Task appending_zero_events(AnyStreamRevision expectedVersion, string name) {
+		public async Task appending_zero_events(StreamState expectedVersion, string name) {
 			var stream = $"{_fixture.GetStreamName()}_{name}";
 
 			const int iterations = 2;
 			for (var i = 0; i < iterations; i++) {
 				var writeResult = await _fixture.Client.AppendToStreamAsync(
 					stream, expectedVersion, Enumerable.Empty<EventData>());
-				Assert.Equal(AnyStreamRevision.NoStream.ToInt64(), writeResult.NextExpectedVersion);
+				Assert.Equal(StreamState.NoStream.ToInt64(), writeResult.NextExpectedVersion);
 			}
 
 			var ex = await Assert.ThrowsAsync<StreamNotFoundException>(() =>
 				_fixture.Client
-					.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, iterations)
+					.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, iterations)
 					.ToArrayAsync().AsTask());
 
 			Assert.Equal(stream, ex.Stream);
 		}
 
 		[Theory, MemberData(nameof(ExpectedVersionCreateStreamTestCases))]
-		public async Task appending_zero_events_again(AnyStreamRevision expectedVersion, string name) {
+		public async Task appending_zero_events_again(StreamState expectedVersion, string name) {
 			var stream = $"{_fixture.GetStreamName()}_{name}";
 
 			const int iterations = 2;
 			for (var i = 0; i < iterations; i++) {
 				var writeResult = await _fixture.Client.AppendToStreamAsync(
 					stream, expectedVersion, Enumerable.Empty<EventData>());
-				Assert.Equal(AnyStreamRevision.NoStream.ToInt64(), writeResult.NextExpectedVersion);
+				Assert.Equal(StreamState.NoStream.ToInt64(), writeResult.NextExpectedVersion);
 			}
 
 			var ex = await Assert.ThrowsAsync<StreamNotFoundException>(() =>
 				_fixture.Client
-					.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, iterations)
+					.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, iterations)
 					.ToArrayAsync().AsTask());
 
 			Assert.Equal(stream, ex.Stream);
@@ -57,7 +57,7 @@ namespace EventStore.Client {
 
 		[Theory, MemberData(nameof(ExpectedVersionCreateStreamTestCases))]
 		public async Task create_stream_expected_version_on_first_write_if_does_not_exist(
-			AnyStreamRevision expectedVersion,
+			StreamState expectedVersion,
 			string name) {
 			var stream = $"{_fixture.GetStreamName()}_{name}";
 
@@ -68,7 +68,7 @@ namespace EventStore.Client {
 
 			Assert.Equal(0, writeResult.NextExpectedVersion);
 
-			var count = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamRevision.Start, 2)
+			var count = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 2)
 				.CountAsync();
 			Assert.Equal(1, count);
 		}
@@ -78,10 +78,10 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 			var events = _fixture.CreateTestEvents(4).ToArray();
 
-			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, events);
+			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events);
 			Assert.Equal(3, writeResult.NextExpectedVersion);
 
-			writeResult = await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, events);
+			writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events);
 			Assert.Equal(3, writeResult.NextExpectedVersion);
 		}
 
@@ -92,7 +92,7 @@ namespace EventStore.Client {
 			var evnt = _fixture.CreateTestEvents().First();
 			var events = new[] {evnt, evnt, evnt, evnt, evnt, evnt};
 
-			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, events);
+			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events);
 
 			Assert.Equal(5, writeResult.NextExpectedVersion);
 		}
@@ -105,11 +105,11 @@ namespace EventStore.Client {
 			var evnt = _fixture.CreateTestEvents().First();
 			var events = new[] {evnt, evnt, evnt, evnt, evnt, evnt};
 
-			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, events);
+			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events);
 
 			Assert.Equal(5, writeResult.NextExpectedVersion);
 
-			writeResult = await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, events);
+			writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events);
 
 			Assert.Equal(0, writeResult.NextExpectedVersion);
 		}
@@ -122,11 +122,11 @@ namespace EventStore.Client {
 			var evnt = _fixture.CreateTestEvents().First();
 			var events = new[] {evnt, evnt, evnt, evnt, evnt, evnt};
 
-			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
+			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
 			Assert.Equal(events.Length - 1, writeResult.NextExpectedVersion);
 
-			writeResult = await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, events);
+			writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
 			Assert.Equal(events.Length - 1, writeResult.NextExpectedVersion);
 		}
@@ -135,11 +135,11 @@ namespace EventStore.Client {
 		public async Task writing_with_correct_expected_version_to_deleted_stream_throws_stream_deleted() {
 			var stream = _fixture.GetStreamName();
 
-			await _fixture.Client.TombstoneAsync(stream, AnyStreamRevision.NoStream);
+			await _fixture.Client.TombstoneAsync(stream, StreamState.NoStream);
 
 			await Assert.ThrowsAsync<StreamDeletedException>(() => _fixture.Client.AppendToStreamAsync(
 				stream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				_fixture.CreateTestEvents(1)));
 		}
 
@@ -149,7 +149,7 @@ namespace EventStore.Client {
 
 			var result = await _fixture.Client.AppendToStreamAsync(
 				stream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				_fixture.CreateTestEvents(1));
 			Assert.True(0 < result.LogPosition.PreparePosition);
 			Assert.True(0 < result.LogPosition.CommitPosition);
@@ -158,17 +158,17 @@ namespace EventStore.Client {
 		[Fact]
 		public async Task writing_with_any_expected_version_to_deleted_stream_throws_stream_deleted() {
 			var stream = _fixture.GetStreamName();
-			await _fixture.Client.TombstoneAsync(stream, AnyStreamRevision.NoStream);
+			await _fixture.Client.TombstoneAsync(stream, StreamState.NoStream);
 
 			await Assert.ThrowsAsync<StreamDeletedException>(
-				() => _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, _fixture.CreateTestEvents(1)));
+				() => _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, _fixture.CreateTestEvents(1)));
 		}
 
 		[Fact]
 		public async Task writing_with_invalid_expected_version_to_deleted_stream_throws_stream_deleted() {
 			var stream = _fixture.GetStreamName();
 
-			await _fixture.Client.TombstoneAsync(stream, AnyStreamRevision.NoStream);
+			await _fixture.Client.TombstoneAsync(stream, StreamState.NoStream);
 
 			await Assert.ThrowsAsync<StreamDeletedException>(
 				() => _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(5), _fixture.CreateTestEvents()));
@@ -180,7 +180,7 @@ namespace EventStore.Client {
 
 			var writeResult = await _fixture.Client.AppendToStreamAsync(
 				stream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				_fixture.CreateTestEvents(1));
 
 			writeResult = await _fixture.Client.AppendToStreamAsync(
@@ -197,14 +197,14 @@ namespace EventStore.Client {
 
 			var writeResult = await _fixture.Client.AppendToStreamAsync(
 				stream,
-				AnyStreamRevision.NoStream,
+				StreamState.NoStream,
 				_fixture.CreateTestEvents(1));
 
 			Assert.Equal(0, writeResult.NextExpectedVersion);
 
 			writeResult = await _fixture.Client.AppendToStreamAsync(
 				stream,
-				AnyStreamRevision.Any,
+				StreamState.Any,
 				_fixture.CreateTestEvents(1));
 
 			Assert.Equal(1, writeResult.NextExpectedVersion);
@@ -217,16 +217,16 @@ namespace EventStore.Client {
 			var ex = await Assert.ThrowsAsync<WrongExpectedVersionException>(
 				() => _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(1), _fixture.CreateTestEvents()));
 			Assert.Equal(1, ex.ExpectedVersion);
-			Assert.Equal(AnyStreamRevision.NoStream.ToInt64(), ex.ActualVersion);
+			Assert.Equal(StreamState.NoStream.ToInt64(), ex.ActualVersion);
 		}
 
 		[Fact]
 		public async Task append_with_stream_exists_expected_version_to_existing_stream() {
 			var stream = _fixture.GetStreamName();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, _fixture.CreateTestEvents());
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.StreamExists,
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.StreamExists,
 				_fixture.CreateTestEvents());
 		}
 
@@ -235,12 +235,12 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 
 			for (var i = 0; i < 5; i++) {
-				await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.Any, _fixture.CreateTestEvents(1));
+				await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, _fixture.CreateTestEvents(1));
 			}
 
 			await _fixture.Client.AppendToStreamAsync(
 				stream,
-				AnyStreamRevision.StreamExists,
+				StreamState.StreamExists,
 				_fixture.CreateTestEvents());
 		}
 
@@ -248,12 +248,12 @@ namespace EventStore.Client {
 		public async Task append_with_stream_exists_expected_version_if_metadata_stream_exists() {
 			var stream = _fixture.GetStreamName();
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, AnyStreamRevision.Any,
+			await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.Any,
 				new StreamMetadata(10, default));
 
 			await _fixture.Client.AppendToStreamAsync(
 				stream,
-				AnyStreamRevision.StreamExists,
+				StreamState.StreamExists,
 				_fixture.CreateTestEvents());
 		}
 
@@ -263,22 +263,22 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 
 			var ex = await Assert.ThrowsAsync<WrongExpectedVersionException>(
-				() => _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.StreamExists,
+				() => _fixture.Client.AppendToStreamAsync(stream, StreamState.StreamExists,
 					_fixture.CreateTestEvents()));
 
-			Assert.Equal(AnyStreamRevision.StreamExists.ToInt64(), ex.ExpectedVersion);
-			Assert.Equal(AnyStreamRevision.NoStream.ToInt64(), ex.ActualVersion);
+			Assert.Equal(StreamState.StreamExists.ToInt64(), ex.ExpectedVersion);
+			Assert.Equal(StreamState.NoStream.ToInt64(), ex.ActualVersion);
 		}
 
 		[Fact]
 		public async Task appending_with_stream_exists_expected_version_to_hard_deleted_stream_throws_stream_deleted() {
 			var stream = _fixture.GetStreamName();
 
-			await _fixture.Client.TombstoneAsync(stream, AnyStreamRevision.NoStream);
+			await _fixture.Client.TombstoneAsync(stream, StreamState.NoStream);
 
 			await Assert.ThrowsAsync<StreamDeletedException>(() => _fixture.Client.AppendToStreamAsync(
 				stream,
-				AnyStreamRevision.StreamExists,
+				StreamState.StreamExists,
 				_fixture.CreateTestEvents()));
 		}
 
@@ -286,11 +286,11 @@ namespace EventStore.Client {
 		public async Task appending_with_stream_exists_expected_version_to_soft_deleted_stream_throws_stream_deleted() {
 			var stream = _fixture.GetStreamName();
 
-			await _fixture.Client.SoftDeleteAsync(stream, AnyStreamRevision.NoStream);
+			await _fixture.Client.SoftDeleteAsync(stream, StreamState.NoStream);
 
 			await Assert.ThrowsAsync<StreamDeletedException>(() => _fixture.Client.AppendToStreamAsync(
 				stream,
-				AnyStreamRevision.StreamExists,
+				StreamState.StreamExists,
 				_fixture.CreateTestEvents()));
 		}
 
@@ -299,7 +299,7 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 
 			var writeResult = await _fixture.Client.AppendToStreamAsync(
-				stream, AnyStreamRevision.NoStream, _fixture.CreateTestEvents(100));
+				stream, StreamState.NoStream, _fixture.CreateTestEvents(100));
 
 			Assert.Equal(99, writeResult.NextExpectedVersion);
 		}
@@ -320,7 +320,7 @@ namespace EventStore.Client {
 		public async Task returns_success_status_when_conditionally_appending_with_matching_version() {
 			var stream = _fixture.GetStreamName();
 
-			var result = await _fixture.Client.ConditionalAppendToStreamAsync(stream, AnyStreamRevision.Any,
+			var result = await _fixture.Client.ConditionalAppendToStreamAsync(stream, StreamState.Any,
 				_fixture.CreateTestEvents());
 
 			Assert.Equal(ConditionalWriteResult.FromWriteResult(new WriteResult(0, result.LogPosition)),
@@ -331,11 +331,11 @@ namespace EventStore.Client {
 		public async Task returns_failure_status_when_conditionally_appending_to_a_deleted_stream() {
 			var stream = _fixture.GetStreamName();
 
-			await _fixture.Client.AppendToStreamAsync(stream, AnyStreamRevision.NoStream, _fixture.CreateTestEvents());
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
 
-			await _fixture.Client.TombstoneAsync(stream, AnyStreamRevision.Any);
+			await _fixture.Client.TombstoneAsync(stream, StreamState.Any);
 
-			var result = await _fixture.Client.ConditionalAppendToStreamAsync(stream, AnyStreamRevision.Any,
+			var result = await _fixture.Client.ConditionalAppendToStreamAsync(stream, StreamState.Any,
 				_fixture.CreateTestEvents());
 
 			Assert.Equal(ConditionalWriteResult.StreamDeleted, result);

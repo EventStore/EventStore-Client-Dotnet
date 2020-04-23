@@ -30,13 +30,13 @@ namespace EventStore.Client.Bugs {
 			var subscriptionName = $"subscription_{iteration}";
 
 			for (var i = 0; i < eventCount; i++) {
-				await _fixture.StreamsClient.AppendToStreamAsync(streamName, AnyStreamRevision.Any,
+				await _fixture.StreamsClient.AppendToStreamAsync(streamName, StreamState.Any,
 					_fixture.CreateTestEvents());
 			}
 
 			await _fixture.Client.CreateAsync(streamName, subscriptionName,
 				new PersistentSubscriptionSettings(
-					resolveLinkTos: true, startFrom: StreamRevision.Start),
+					resolveLinkTos: true, startFrom: StreamPosition.Start),
 				userCredentials: userCredentials);
 
 			using (await _fixture.Client.SubscribeAsync(streamName, subscriptionName,
@@ -54,7 +54,7 @@ namespace EventStore.Client.Bugs {
 						completed.TrySetException(new Exception($"{dr}"));
 				}, userCredentials)) {
 				for (var i = 0; i < eventCount; i++) {
-					await _fixture.StreamsClient.AppendToStreamAsync(streamName, AnyStreamRevision.Any,
+					await _fixture.StreamsClient.AppendToStreamAsync(streamName, StreamState.Any,
 						_fixture.CreateTestEvents());
 				}
 
