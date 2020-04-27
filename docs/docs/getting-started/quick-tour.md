@@ -33,7 +33,7 @@ This will launch a new instance of the Event Store server with a trusted certifi
 
 ## Creating an connection
 
-First create a new console application.
+Create a new console application.
 
 The following example shows the simplest way to create a connection to event store on your local machine.
 
@@ -41,13 +41,21 @@ The following example shows the simplest way to create a connection to event sto
 
 > By default the server listens to port 2113 for requests.
 
-
-
 ## Writing an event
+
+Writing an event to the database involves two stages. 
+
+Firstly you have to construct a new `EventData` that contains a unique Id, an event type and a byte array containing the event data. Usually this is represented by json but can take any format.
+
+Secondly you have to append that `EventData` to a stream. Making sure to specify the stream name, the expected state of the stream and then the data.
 
 @[code transcludeWith=//append-to-stream](@/samples/quick-start/Program.cs)
 
 ## Reading an event
+
+A Stream can read in both directions. In this case we are reading the "some-stream" forwards from the start. We are reading a single event. 
+
+This provides an `IAsyncEnumerable` that can then be iterated on.
  
 @[code transcludeWith=//read-stream](@/samples/quick-start/Program.cs)
 
