@@ -28,14 +28,14 @@ namespace quick_start {
 
 			await connection.AppendToStreamAsync(
 				"some-stream",
-				AnyStreamRevision.Any, 
+				StreamState.NoStream, 
 				new List<EventData> {
 					eventData
 				});
 			//append-to-stream
 			
 			//read-stream
-			var events = connection.ReadStreamAsync(Direction.Forwards, "some-stream", StreamRevision.Start, 1);
+			var events = connection.ReadStreamAsync(Direction.Forwards, "some-stream", StreamPosition.Start, 1);
 
 			await foreach (var @event in events) {
 				Console.WriteLine(Encoding.UTF8.GetString(@event.Event.Data.Span));
