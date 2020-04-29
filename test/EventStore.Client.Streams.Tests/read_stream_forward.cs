@@ -136,6 +136,19 @@ namespace EventStore.Client {
 			Assert.Equal(maxCount, (ulong)events.Length);
 		}
 
+		[Fact]
+		public async Task reads_all_events_by_default() {
+			var streamName = _fixture.GetStreamName();
+			const int maxCount = 200;
+			await _fixture.Client.AppendToStreamAsync(streamName, StreamState.NoStream,
+				_fixture.CreateTestEvents(maxCount));
+			var count = await _fixture.Client
+				.ReadStreamAsync(Direction.Forwards, streamName, StreamPosition.Start)
+				.CountAsync();
+			Assert.True(count == maxCount);
+		}
+
+
 		public class Fixture : EventStoreClientFixture {
 			protected override Task Given() => Task.CompletedTask;
 			protected override Task When() => Task.CompletedTask;

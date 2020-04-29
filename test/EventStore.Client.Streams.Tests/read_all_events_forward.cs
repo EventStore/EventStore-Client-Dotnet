@@ -62,6 +62,15 @@ namespace EventStore.Client {
 			Assert.Equal(maxCount, (ulong)events.Length);
 		}
 
+		[Fact]
+		public async Task reads_all_events_by_default() {
+			var count = await _fixture.Client.ReadAllAsync(Direction.Forwards, Position.Start, int.MaxValue)
+				.CountAsync();
+			Assert.True(count >= _fixture.Events.Length);
+		}
+
+
+
 		public class Fixture : EventStoreClientFixture {
 			public EventData[] Events { get; }
 
