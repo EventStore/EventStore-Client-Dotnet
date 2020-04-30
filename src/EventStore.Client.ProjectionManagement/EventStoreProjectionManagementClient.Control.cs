@@ -33,5 +33,11 @@ namespace EventStore.Client {
 			}, RequestMetadata.Create(userCredentials), cancellationToken: cancellationToken);
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
+
+		public async Task RestartSubsystemAsync(UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
+			await _client.RestartSubsystemAsync(new Empty(), RequestMetadata.Create(userCredentials),
+				cancellationToken: cancellationToken);
+		}
 	}
 }
