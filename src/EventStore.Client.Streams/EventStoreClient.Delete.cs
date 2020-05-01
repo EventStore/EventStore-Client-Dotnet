@@ -80,7 +80,7 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
 			_log.LogDebug("Deleting stream {streamName}.", request.Options.StreamName);
-			var result = await _client.DeleteAsync(request, RequestMetadata.Create(userCredentials),
+			var result = await _client.DeleteAsync(request, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
 				deadline: DeadLine.After(operationOptions.TimeoutAfter), cancellationToken);
 
 			return new DeleteResult(new Position(result.Position.CommitPosition, result.Position.PreparePosition));

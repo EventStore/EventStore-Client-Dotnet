@@ -17,5 +17,7 @@ namespace EventStore.Client {
 
 		public EventStoreClientConnectivitySettings ConnectivitySettings { get; set; } =
 			EventStoreClientConnectivitySettings.Default;
+
+		public UserCredentials? DefaultCredentials { get; set; }
 	}
 }

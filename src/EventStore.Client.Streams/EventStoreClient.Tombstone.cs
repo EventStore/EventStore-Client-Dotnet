@@ -81,7 +81,7 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken) {
 			_log.LogDebug("Tombstoning stream {streamName}.", request.Options.StreamName);
 
-			var result = await _client.TombstoneAsync(request, RequestMetadata.Create(userCredentials),
+			var result = await _client.TombstoneAsync(request, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
 				deadline: DeadLine.After(operationOptions.TimeoutAfter), cancellationToken);
 
 			return new DeleteResult(new Position(result.Position.CommitPosition, result.Position.PreparePosition));
