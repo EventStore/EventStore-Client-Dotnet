@@ -24,7 +24,7 @@ namespace EventStore.Client {
 						ThreadCount = threadCount,
 						StartFromChunk = startFromChunk
 					}
-				}, RequestMetadata.Create(userCredentials),
+				}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
 				cancellationToken: cancellationToken);
 
 			return result.ScavengeResult switch {
@@ -43,7 +43,7 @@ namespace EventStore.Client {
 					Options = new StopScavengeReq.Types.Options {
 						ScavengeId = scavengeId
 					}
-				}, RequestMetadata.Create(userCredentials),
+				}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
 				cancellationToken: cancellationToken);
 
 			return result.ScavengeResult switch {

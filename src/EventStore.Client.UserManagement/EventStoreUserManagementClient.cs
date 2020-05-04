@@ -40,7 +40,7 @@ namespace EventStore.Client {
 					Password = password,
 					Groups = {groups}
 				}
-			}, RequestMetadata.Create(userCredentials), cancellationToken: cancellationToken);
+			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
 		}
 
 		public async Task<UserDetails> GetUserAsync(string loginName, UserCredentials? userCredentials = null,
@@ -57,7 +57,7 @@ namespace EventStore.Client {
 				Options = new DetailsReq.Types.Options {
 					LoginName = loginName
 				}
-			}, RequestMetadata.Create(userCredentials), cancellationToken: cancellationToken);
+			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
 
 			await call.ResponseStream.MoveNext().ConfigureAwait(false);
 			var userDetails = call.ResponseStream.Current.UserDetails;
@@ -81,7 +81,7 @@ namespace EventStore.Client {
 				Options = new DeleteReq.Types.Options {
 					LoginName = loginName
 				}
-			}, RequestMetadata.Create(userCredentials), cancellationToken: cancellationToken);
+			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
 		}
 
 		public async Task EnableUserAsync(string loginName, UserCredentials? userCredentials = null,
@@ -98,7 +98,7 @@ namespace EventStore.Client {
 				Options = new EnableReq.Types.Options {
 					LoginName = loginName
 				}
-			}, RequestMetadata.Create(userCredentials), cancellationToken: cancellationToken);
+			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
 		}
 
 		public async Task DisableUserAsync(string loginName, UserCredentials? userCredentials = null,
@@ -109,12 +109,12 @@ namespace EventStore.Client {
 				Options = new DisableReq.Types.Options {
 					LoginName = loginName
 				}
-			}, RequestMetadata.Create(userCredentials), cancellationToken: cancellationToken);
+			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
 		}
 
 		public async IAsyncEnumerable<UserDetails> ListAllAsync(UserCredentials? userCredentials = null,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default) {
-			using var call = _client.Details(new DetailsReq(), RequestMetadata.Create(userCredentials),
+			using var call = _client.Details(new DetailsReq(), RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
 				cancellationToken: cancellationToken);
 
 			await foreach (var userDetail in call.ResponseStream
@@ -141,7 +141,7 @@ namespace EventStore.Client {
 					NewPassword = newPassword,
 					LoginName = loginName
 				}
-			}, RequestMetadata.Create(userCredentials), cancellationToken: cancellationToken);
+			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
 		}
 
 		public async Task ResetPasswordAsync(string loginName, string newPassword,
@@ -156,7 +156,7 @@ namespace EventStore.Client {
 					NewPassword = newPassword,
 					LoginName = loginName
 				}
-			}, RequestMetadata.Create(userCredentials), cancellationToken: cancellationToken);
+			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
 		}
 
 		public static readonly IDictionary<string, Func<RpcException, Exception>> ExceptionMap =

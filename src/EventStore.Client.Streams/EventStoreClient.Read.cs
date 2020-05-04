@@ -140,7 +140,7 @@ namespace EventStore.Client {
 				{Structured = new Empty()};
 
 			using var call = _client.Read(
-				request, RequestMetadata.Create(userCredentials),
+				request, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
 				deadline: DeadLine.After(operationOptions.TimeoutAfter), cancellationToken);
 
 			await foreach (var e in call.ResponseStream
