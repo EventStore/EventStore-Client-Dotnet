@@ -76,12 +76,24 @@ namespace EventStore.Client {
 			Assert.Equal(expected.CacheControl, actual.Metadata.CacheControl);
 			Assert.Equal(expected.Acl, actual.Metadata.Acl);
 		}
-
+		
 		[Fact]
 		public async Task setting_with_wrong_expected_version_throws() {
 			var stream = _fixture.GetStreamName();
 			await Assert.ThrowsAsync<WrongExpectedVersionException>(() =>
 				_fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(2), new StreamMetadata()));
+		}
+
+		[Fact]
+		public async Task setting_with_wrong_expected_version_returns() {
+			var stream = _fixture.GetStreamName();
+			var writeResult =
+				await _fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(2), new StreamMetadata(),
+					options => {
+						options.ThrowOnAppendFailure = false;
+				});
+
+			Assert.IsType<WrongExpectedVersionResult>(writeResult);
 		}
 
 		[Fact]

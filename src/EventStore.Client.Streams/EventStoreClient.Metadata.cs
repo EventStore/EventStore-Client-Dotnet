@@ -48,7 +48,7 @@ namespace EventStore.Client {
 			return GetStreamMetadataAsync(streamName, options, userCredentials, cancellationToken);
 		}
 
-		private Task<WriteResult> SetStreamMetadataAsync(string streamName, StreamState expectedState,
+		private Task<IWriteResult> SetStreamMetadataAsync(string streamName, StreamState expectedState,
 			StreamMetadata metadata, EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default)
 			=> SetStreamMetadataInternal(metadata, new AppendReq {
@@ -67,7 +67,7 @@ namespace EventStore.Client {
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public Task<WriteResult> SetStreamMetadataAsync(string streamName, StreamState expectedState,
+		public Task<IWriteResult> SetStreamMetadataAsync(string streamName, StreamState expectedState,
 			StreamMetadata metadata, Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
@@ -77,7 +77,7 @@ namespace EventStore.Client {
 				userCredentials, cancellationToken);
 		}
 
-		private Task<WriteResult> SetStreamMetadataAsync(string streamName, StreamRevision expectedRevision,
+		private Task<IWriteResult> SetStreamMetadataAsync(string streamName, StreamRevision expectedRevision,
 			StreamMetadata metadata, EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default)
 			=> SetStreamMetadataInternal(metadata, new AppendReq {
@@ -97,7 +97,7 @@ namespace EventStore.Client {
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public Task<WriteResult> SetStreamMetadataAsync(string streamName, StreamRevision expectedRevision,
+		public Task<IWriteResult> SetStreamMetadataAsync(string streamName, StreamRevision expectedRevision,
 			StreamMetadata metadata, Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
@@ -107,7 +107,7 @@ namespace EventStore.Client {
 				userCredentials, cancellationToken);
 		}
 
-		private Task<WriteResult> SetStreamMetadataInternal(StreamMetadata metadata,
+		private Task<IWriteResult> SetStreamMetadataInternal(StreamMetadata metadata,
 			AppendReq appendReq,
 			EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials,

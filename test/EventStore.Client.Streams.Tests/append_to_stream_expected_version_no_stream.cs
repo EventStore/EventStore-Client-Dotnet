@@ -21,7 +21,7 @@ namespace EventStore.Client {
 		}
 
 		public class Fixture : EventStoreClientFixture {
-			public WriteResult Result { get; private set; }
+			public IWriteResult Result { get; private set; }
 
 			protected override Task Given() => Task.CompletedTask;
 

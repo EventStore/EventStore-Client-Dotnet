@@ -193,9 +193,9 @@ namespace EventStore.Client {
 			await Assert.ThrowsAsync<StreamDeletedException>(
 				() => _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, _fixture.CreateTestEvents()));
 		}
-
+		
 		[Fact]
-		public async Task allows_recreating_for_first_write_only() {
+		public async Task allows_recreating_for_first_write_only_throws_wrong_expected_version() {
 			var stream = _fixture.GetStreamName();
 
 			var writeResult =
@@ -214,6 +214,28 @@ namespace EventStore.Client {
 			await Assert.ThrowsAsync<WrongExpectedVersionException>(
 				() => _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 					_fixture.CreateTestEvents()));
+		}
+
+		[Fact]
+		public async Task allows_recreating_for_first_write_only_returns_wrong_expected_version() {
+			var stream = _fixture.GetStreamName();
+
+			var writeResult =
+				await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents(2));
+
+			Assert.Equal(1, writeResult.NextExpectedVersion);
+
+			await _fixture.Client.SoftDeleteAsync(stream, new StreamRevision(1));
+
+			writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
+				_fixture.CreateTestEvents(3));
+
+			Assert.Equal(4, writeResult.NextExpectedVersion);
+
+			var wrongExpectedVersionResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
+					_fixture.CreateTestEvents(), options => options.ThrowOnAppendFailure = false);
+			
+			Assert.IsType<WrongExpectedVersionResult>(wrongExpectedVersionResult);
 		}
 
 		[Fact]
