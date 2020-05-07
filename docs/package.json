@@ -3,7 +3,8 @@
     "chalk": "^2.0.0",
     "commander": "^2.0.0",
     "esm": "^3.0.0",
-    "markdown-it-container": "latest",
+    "markdown-it-container": "latest", 
+	"vuepress": "^1.4.0",
     "vuepress-plugin-one-click-copy": "^1.0.2"
   },
   "dependencies": {
