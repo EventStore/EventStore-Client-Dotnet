@@ -8,6 +8,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client.Streams",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client", "..\..\src\EventStore.Client\EventStore.Client.csproj", "{A71A13F7-8480-4E48-B88D-A2364F7C95B6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "connecting", "connecting\connecting.csproj", "{C4C0E34E-5B9F-4A77-91AA-7E2B33EB3DE9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "connecting-to-a-cluster", "connecting-to-a-cluster\connecting-to-a-cluster.csproj", "{C4CA324A-450D-4621-82F1-B4ECD18216B6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +30,14 @@ Global
 		{A71A13F7-8480-4E48-B88D-A2364F7C95B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A71A13F7-8480-4E48-B88D-A2364F7C95B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A71A13F7-8480-4E48-B88D-A2364F7C95B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4C0E34E-5B9F-4A77-91AA-7E2B33EB3DE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4C0E34E-5B9F-4A77-91AA-7E2B33EB3DE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4C0E34E-5B9F-4A77-91AA-7E2B33EB3DE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4C0E34E-5B9F-4A77-91AA-7E2B33EB3DE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4CA324A-450D-4621-82F1-B4ECD18216B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4CA324A-450D-4621-82F1-B4ECD18216B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4CA324A-450D-4621-82F1-B4ECD18216B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4CA324A-450D-4621-82F1-B4ECD18216B6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A32CE3CB-AB71-45C6-A1B2-CD94BE2D2B28} = {EBB93BBC-42A7-48E4-B1EA-0EA3953D347C}

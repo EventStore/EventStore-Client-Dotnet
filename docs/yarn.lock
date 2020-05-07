@@ -4773,10 +4773,9 @@ markdown-it-table-of-contents@^0.4.0:
   resolved "https://registry.yarnpkg.com/markdown-it-table-of-contents/-/markdown-it-table-of-contents-0.4.4.tgz#3dc7ce8b8fc17e5981c77cc398d1782319f37fbc"
   integrity sha512-TAIHTHPwa9+ltKvKPWulm/beozQU41Ab+FIefRaQV1NRnpzwcV9QOe6wXQS5WLivm5Q/nlo0rl6laGkMDZE7Gw==
 
-markdown-it-vuepress-code-snippet-enhanced@^1.0.1:
+"markdown-it-vuepress-code-snippet-enhanced@git+https://github.com/mat-mcloughlin/markdown-it-vuepress-code-snippet-enhanced.git":
   version "1.0.1"
-  resolved "https://registry.yarnpkg.com/markdown-it-vuepress-code-snippet-enhanced/-/markdown-it-vuepress-code-snippet-enhanced-1.0.1.tgz#516fda41378ab537453a0f64fc8ec8d80add0518"
-  integrity sha512-CfDWHyRWuNwvBIAQTXnlZVKRGxnOo82tnFrzxn2XLoI4jAK2mn1iNNQSyXB9ouxJKDn1YChHevnIG1woUi/g/g==
+  resolved "git+https://github.com/mat-mcloughlin/markdown-it-vuepress-code-snippet-enhanced.git#070fb77e20ef097a23f44c046ae8968a7a9ea220"
 
 markdown-it@^8.4.1:
   version "8.4.2"

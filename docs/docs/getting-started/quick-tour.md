@@ -16,7 +16,7 @@ To run the Event Store server, you first need to set up a trusted certificate. T
 Navigate to an empty folder and run the following command.
  
 ```
-$> dotnet dev-certs https -ep certs/localhost.pfx -p dev --trust
+dotnet dev-certs https -ep certs/localhost.pfx -p dev --trust
 ```
 
 Then create a new file called `docker-compose.yml` and copy the following contents into it.
@@ -26,7 +26,7 @@ Then create a new file called `docker-compose.yml` and copy the following conten
 Finally run the command.
 
 ```
-$> docker-compose up
+docker-compose up
 ```
 
 This will launch a new instance of the Event Store server with a trusted certificate.
