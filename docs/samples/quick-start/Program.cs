@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.Client;
@@ -8,7 +7,6 @@ using EventStore.Client;
 namespace quick_start {
 	class Program {
 		static async Task Main(string[] args) {
-			
 			//creating-connection
 			var settings = new EventStoreClientSettings {
 				ConnectivitySettings = {
@@ -28,18 +26,23 @@ namespace quick_start {
 
 			await connection.AppendToStreamAsync(
 				"some-stream",
-				StreamState.NoStream, 
+				StreamState.NoStream,
 				new List<EventData> {
 					eventData
 				});
 			//append-to-stream
-			
+
 			//read-stream
-			var events = connection.ReadStreamAsync(Direction.Forwards, "some-stream", StreamPosition.Start, 1);
+			var events = connection.ReadStreamAsync(
+				Direction.Forwards,
+				"some-stream",
+				StreamPosition.Start,
+				1);
 
 			await foreach (var @event in events) {
 				Console.WriteLine(Encoding.UTF8.GetString(@event.Event.Data.Span));
 			}
+
 			//read-stream
 		}
 	}

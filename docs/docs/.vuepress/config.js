@@ -9,6 +9,7 @@ module.exports = {
     ],
     themeConfig: {
         logo: "/es-logo.png",
+        logoLink: 'https://eventstore.com',
         sidebarDepth: 1,
         searchPlaceholder: "Search...",
         lastUpdated: "Last Updated",
@@ -38,7 +39,8 @@ module.exports = {
                 children: [
                     "connecting-to-eventstore/basics",
                     "connecting-to-eventstore/connecting-to-a-cluster",
-                    "connecting-to-eventstore/tls"
+                    "connecting-to-eventstore/tls",
+					"connecting-to-eventstore/setting-up-a-connection-with-net-dependency-injection"					
                 ]
             },
             {
