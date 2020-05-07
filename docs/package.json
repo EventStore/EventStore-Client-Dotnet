@@ -3,13 +3,13 @@
     "chalk": "^2.0.0",
     "commander": "^2.0.0",
     "esm": "^3.0.0",
-    "markdown-it-container": "latest", 
-	"vuepress": "^1.4.0",
+    "markdown-it-container": "latest",
     "vuepress-plugin-one-click-copy": "^1.0.2"
   },
   "dependencies": {
     "markdown-it-include": "^1.1.0",
     "markdown-it-vuepress-code-snippet-enhanced": "git+https://github.com/mat-mcloughlin/markdown-it-vuepress-code-snippet-enhanced.git",
+    "vuepress": "^1.4.1",
     "vuex": "^3.1.3"
   },
   "scripts": {
