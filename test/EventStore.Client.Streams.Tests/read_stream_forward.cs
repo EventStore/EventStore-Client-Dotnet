@@ -33,7 +33,17 @@ namespace EventStore.Client {
 
 			Assert.Equal(stream, ex.Stream);
 		}
+		
+		[Fact]
+		public async Task stream_does_not_exist_can_be_checked() {
+			var stream = _fixture.GetStreamName();
 
+			var result = _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 1);
+			
+			var state = await result.State;
+			Assert.Equal(EventStoreClient.ReadState.StreamNotFound, state);
+		}
+		
 		[Fact]
 		public async Task stream_deleted_throws() {
 			var stream = _fixture.GetStreamName();
