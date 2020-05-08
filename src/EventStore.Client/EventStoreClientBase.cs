@@ -20,7 +20,7 @@ namespace EventStore.Client {
 		protected EventStoreClientBase(EventStoreClientSettings? settings,
 			IDictionary<string, Func<RpcException, Exception>> exceptionMap) {
 			Settings = settings ?? new EventStoreClientSettings();
-			_httpHandler = Settings.CreateHttpMessageHandler?.Invoke() ?? new HttpClientHandler();
+			_httpHandler = new DefaultRequestVersionHandler(Settings.CreateHttpMessageHandler?.Invoke() ?? new HttpClientHandler());
 
 			var connectionName = Settings.ConnectionName ?? $"ES-{Guid.NewGuid()}";
 			Action<Exception>? exceptionNotificationHook = null;
@@ -29,10 +29,14 @@ namespace EventStore.Client {
 				_httpHandler = ClusterAwareHttpHandler.Create(Settings, _httpHandler);
 			}
 
+			HttpRequestMessage msg = new HttpRequestMessage()
+			{
+				Version = new Version(2, 0)
+			};
+
 			_channel = GrpcChannel.ForAddress(Settings.ConnectivitySettings.Address, new GrpcChannelOptions {
 				HttpClient = new HttpClient(_httpHandler) {
-					Timeout = Timeout.InfiniteTimeSpan,
-					DefaultRequestVersion = new Version(2, 0),
+					Timeout = Timeout.InfiniteTimeSpan
 				},
 				LoggerFactory = Settings.LoggerFactory
 			});
@@ -42,6 +46,7 @@ namespace EventStore.Client {
 					.Intercept(new TypedExceptionInterceptor(exceptionMap, exceptionNotificationHook))
 					.Intercept(new ConnectionNameInterceptor(connectionName)),
 				(invoker, interceptor) => invoker.Intercept(interceptor));
+
 		}
 
 		public void Dispose() {
