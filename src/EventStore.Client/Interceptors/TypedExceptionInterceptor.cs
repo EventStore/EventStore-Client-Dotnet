@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -9,12 +8,15 @@ using Grpc.Core.Interceptors;
 
 #nullable enable
 namespace EventStore.Client.Interceptors {
-	internal class TypedExceptionInterceptor : Interceptor {
+    internal class TypedExceptionInterceptor : Interceptor {
 		private static readonly IDictionary<string, Func<RpcException, Exception>> DefaultExceptionMap =
 			new Dictionary<string, Func<RpcException, Exception>> {
 				[Constants.Exceptions.AccessDenied] = ex => new AccessDeniedException(ex.Message, ex),
-				[Constants.Exceptions.NotLeader] = ex => new NotLeaderException(IPEndPoint.Parse(ex.Trailers
-					.FirstOrDefault(x => x.Key == Constants.Exceptions.LeaderEndpoint)?.Value))
+				[Constants.Exceptions.NotLeader] = ex => {
+					var ipString = ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.LeaderEndpoint)?.Value;
+					IPEndPointParser.TryParse(ipString, out var endpoint);
+					return new NotLeaderException(endpoint);
+				} 
 			};
 
 		private readonly Action<Exception>? _exceptionOccurred;
