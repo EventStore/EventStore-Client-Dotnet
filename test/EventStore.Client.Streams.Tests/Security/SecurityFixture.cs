@@ -133,7 +133,7 @@ namespace EventStore.Client.Security {
 				.ToArrayAsync()
 				.AsTask();
 
-		public Task<WriteResult> AppendStream(string streamId, UserCredentials userCredentials = default) =>
+		public Task<IWriteResult> AppendStream(string streamId, UserCredentials userCredentials = default) =>
 			Client.AppendToStreamAsync(streamId, StreamState.Any, CreateTestEvents(3),
 				userCredentials: userCredentials);
 
@@ -152,7 +152,7 @@ namespace EventStore.Client.Security {
 		public Task<StreamMetadataResult> ReadMeta(string streamId, UserCredentials userCredentials = default) =>
 			Client.GetStreamMetadataAsync(streamId, userCredentials: userCredentials);
 
-		public Task<WriteResult> WriteMeta(string streamId, UserCredentials userCredentials = default,
+		public Task<IWriteResult> WriteMeta(string streamId, UserCredentials userCredentials = default,
 			string role = default) =>
 			Client.SetStreamMetadataAsync(streamId, StreamState.Any,
 				new StreamMetadata(acl: new StreamAcl(

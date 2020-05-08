@@ -17,9 +17,14 @@ namespace EventStore.Client {
 			Status = status;
 		}
 
-		public static ConditionalWriteResult FromWriteResult(WriteResult writeResult)
-			=> new ConditionalWriteResult(writeResult.NextExpectedVersion, writeResult.LogPosition);
-
+		public static ConditionalWriteResult FromWriteResult(IWriteResult writeResult)
+			=> writeResult switch {
+				WrongExpectedVersionResult wrongExpectedVersion => 
+				new ConditionalWriteResult(wrongExpectedVersion.NextExpectedVersion, Position.End,
+					ConditionalWriteStatus.VersionMismatch),
+				_ => new ConditionalWriteResult(writeResult.NextExpectedVersion, writeResult.LogPosition)
+			};
+		
 		public static ConditionalWriteResult FromWrongExpectedVersion(WrongExpectedVersionException ex)
 			=> new ConditionalWriteResult(ex.ExpectedVersion ?? -1, Position.End,
 				ConditionalWriteStatus.VersionMismatch);

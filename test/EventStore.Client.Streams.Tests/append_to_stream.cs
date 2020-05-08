@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EventStore.Client.Streams;
 using Xunit;
 
 namespace EventStore.Client {
@@ -209,7 +210,7 @@ namespace EventStore.Client {
 
 			Assert.Equal(1, writeResult.NextExpectedVersion);
 		}
-
+		
 		[Fact]
 		public async Task appending_with_wrong_expected_version_to_existing_stream_throws_wrong_expected_version() {
 			var stream = _fixture.GetStreamName();
@@ -218,6 +219,21 @@ namespace EventStore.Client {
 				() => _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(1), _fixture.CreateTestEvents()));
 			Assert.Equal(1, ex.ExpectedVersion);
 			Assert.Equal(StreamState.NoStream.ToInt64(), ex.ActualVersion);
+		}
+
+		[Fact]
+		public async Task appending_with_wrong_expected_version_to_existing_stream_returns_wrong_expected_version() {
+			var stream = _fixture.GetStreamName();
+
+			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(1),
+				_fixture.CreateTestEvents(), options => {
+					options.ThrowOnAppendFailure = false;
+				});
+
+			var wrongExpectedVersionResult = (WrongExpectedVersionResult)writeResult;
+			
+			Assert.Equal(1, wrongExpectedVersionResult.NextExpectedVersion);
+			Assert.Equal(StreamState.NoStream.ToInt64(), wrongExpectedVersionResult.ActualVersion);
 		}
 
 		[Fact]
@@ -256,7 +272,7 @@ namespace EventStore.Client {
 				StreamState.StreamExists,
 				_fixture.CreateTestEvents());
 		}
-
+		
 		[Fact]
 		public async Task
 			appending_with_stream_exists_expected_version_and_stream_does_not_exist_throws_wrong_expected_version() {
@@ -268,6 +284,24 @@ namespace EventStore.Client {
 
 			Assert.Equal(StreamState.StreamExists.ToInt64(), ex.ExpectedVersion);
 			Assert.Equal(StreamState.NoStream.ToInt64(), ex.ActualVersion);
+		}
+
+		[Fact]
+		public async Task
+			appending_with_stream_exists_expected_version_and_stream_does_not_exist_returns_wrong_expected_version() {
+			var stream = _fixture.GetStreamName();
+
+			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.StreamExists,
+				_fixture.CreateTestEvents(), options => {
+					options.ThrowOnAppendFailure = false;
+				});
+			
+			Assert.IsType<WrongExpectedVersionResult>(writeResult);
+			
+			var wrongExpectedVersionResult = (WrongExpectedVersionResult)writeResult;
+			
+			Assert.Equal(StreamState.StreamExists.ToInt64(), wrongExpectedVersionResult.NextExpectedVersion);
+			Assert.Equal(StreamState.NoStream.ToInt64(), wrongExpectedVersionResult.ActualVersion);
 		}
 
 		[Fact]
@@ -323,7 +357,7 @@ namespace EventStore.Client {
 			var result = await _fixture.Client.ConditionalAppendToStreamAsync(stream, StreamState.Any,
 				_fixture.CreateTestEvents());
 
-			Assert.Equal(ConditionalWriteResult.FromWriteResult(new WriteResult(0, result.LogPosition)),
+			Assert.Equal(ConditionalWriteResult.FromWriteResult(new SuccessResult(0, result.LogPosition)),
 				result);
 		}
 
