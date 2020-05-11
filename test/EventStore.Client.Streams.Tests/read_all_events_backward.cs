@@ -21,7 +21,7 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task return_partial_slice_if_not_enough_events() {
-			var events = await _fixture.Client.ReadAllAsync(Direction.Backwards, Position.End, (ulong)(_fixture.Events.Length * 2))
+			var events = await _fixture.Client.ReadAllAsync(Direction.Backwards, Position.End, _fixture.Events.Length * 2)
 				.ToArrayAsync();
 
 			Assert.True(events.Length < _fixture.Events.Length * 2);
@@ -29,7 +29,7 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task return_events_in_reversed_order_compared_to_written() {
-			var events = await _fixture.Client.ReadAllAsync(Direction.Backwards, Position.End, (ulong)_fixture.Events.Length)
+			var events = await _fixture.Client.ReadAllAsync(Direction.Backwards, Position.End, _fixture.Events.Length)
 				.ToArrayAsync();
 
 			Assert.True(EventDataComparer.Equal(
@@ -54,12 +54,12 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task max_count_is_respected() {
-			var maxCount = (ulong)_fixture.Events.Length / 2;
+			var maxCount = _fixture.Events.Length / 2;
 			var events = await _fixture.Client.ReadAllAsync(Direction.Backwards, Position.End, maxCount)
 				.Take(_fixture.Events.Length)
 				.ToArrayAsync();
 
-			Assert.Equal(maxCount, (ulong)events.Length);
+			Assert.Equal(maxCount, events.Length);
 		}
 
 		public class Fixture : EventStoreClientFixture {

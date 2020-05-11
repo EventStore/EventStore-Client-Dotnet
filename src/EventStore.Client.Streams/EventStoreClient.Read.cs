@@ -13,7 +13,7 @@ namespace EventStore.Client {
 		private async IAsyncEnumerable<ResolvedEvent> ReadAllAsync(
 			Direction direction,
 			Position position,
-			ulong maxCount,
+			long maxCount,
 			EventStoreClientOperationOptions operationOptions,
 			bool resolveLinkTos = false,
 			UserCredentials? userCredentials = null,
@@ -27,7 +27,7 @@ namespace EventStore.Client {
 						},
 						ResolveLinks = resolveLinkTos,
 						All = ReadReq.Types.Options.Types.AllOptions.FromPosition(position),
-						Count = maxCount,
+						Count = (ulong)maxCount,
 					}
 				},
 				operationOptions,
@@ -55,7 +55,7 @@ namespace EventStore.Client {
 		public IAsyncEnumerable<ResolvedEvent> ReadAllAsync(
 			Direction direction,
 			Position position,
-			ulong maxCount = ulong.MaxValue,
+			long maxCount = long.MaxValue,
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
 			bool resolveLinkTos = false,
 			UserCredentials? userCredentials = null,
@@ -71,7 +71,7 @@ namespace EventStore.Client {
 			Direction direction,
 			string streamName,
 			StreamPosition revision,
-			ulong maxCount,
+			long maxCount,
 			EventStoreClientOperationOptions operationOptions,
 			bool resolveLinkTos = false,
 			UserCredentials? userCredentials = null,
@@ -84,7 +84,7 @@ namespace EventStore.Client {
 					},
 					ResolveLinks = resolveLinkTos,
 					Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(streamName, revision),
-					Count = maxCount
+					Count = (ulong)maxCount
 				}
 			},
 			operationOptions,
@@ -109,7 +109,7 @@ namespace EventStore.Client {
 			Direction direction,
 			string streamName,
 			StreamPosition revision,
-			ulong maxCount = long.MaxValue,
+			long maxCount = long.MaxValue,
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
 			bool resolveLinkTos = false,
 			UserCredentials? userCredentials = null,

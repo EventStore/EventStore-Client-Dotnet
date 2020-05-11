@@ -40,7 +40,7 @@ namespace EventStore.Client {
 
 			protected override async Task When() {
 				Events = await Client.ReadStreamAsync(Direction.Forwards, LinkedStream, StreamPosition.Start,
-						int.MaxValue, resolveLinkTos: true)
+						resolveLinkTos: true)
 					.ToArrayAsync();
 			}
 		}
