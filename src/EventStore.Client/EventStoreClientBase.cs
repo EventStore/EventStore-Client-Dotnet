@@ -29,6 +29,11 @@ namespace EventStore.Client {
 				_httpHandler = ClusterAwareHttpHandler.Create(Settings, _httpHandler);
 			}
 
+			HttpRequestMessage msg = new HttpRequestMessage()
+			{
+				Version = new Version(2, 0)
+			};
+
 			_channel = GrpcChannel.ForAddress(Settings.ConnectivitySettings.Address, new GrpcChannelOptions {
 				HttpClient = new HttpClient(_httpHandler) {
 					Timeout = Timeout.InfiniteTimeSpan
