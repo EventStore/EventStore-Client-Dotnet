@@ -60,7 +60,6 @@ namespace EventStore.Client {
 			bool resolveLinkTos = false,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-
 			var operationOptions = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(operationOptions);
 
@@ -68,7 +67,7 @@ namespace EventStore.Client {
 				cancellationToken);
 		}
 
-		private IAsyncEnumerable<ResolvedEvent> ReadStreamAsync(
+		private ReadStreamResult ReadStreamAsync(
 			Direction direction,
 			string streamName,
 			StreamPosition revision,
@@ -76,7 +75,7 @@ namespace EventStore.Client {
 			EventStoreClientOperationOptions operationOptions,
 			bool resolveLinkTos = false,
 			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) => ReadInternal(new ReadReq {
+			CancellationToken cancellationToken = default) => new ReadStreamResult(_client, new ReadReq {
 				Options = new ReadReq.Types.Options {
 					ReadDirection = direction switch {
 						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
@@ -90,12 +89,12 @@ namespace EventStore.Client {
 			},
 			operationOptions,
 			userCredentials,
-			cancellationToken)
-			.Where(x => x.Item1 == SubscriptionConfirmation.None && !x.Item2.HasValue)
-			.Select(x => x.Item3);
+			cancellationToken);
 
 		/// <summary>
 		/// Asynchronously reads all the events from a stream.
+		///
+		/// The result could also be inspected as a means to avoid handling exceptions as the <see cref="ReadState"/> would indicate whether or not the stream is readable./>
 		/// </summary>
 		/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
 		/// <param name="streamName">The name of the stream to read.</param>
@@ -106,7 +105,7 @@ namespace EventStore.Client {
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public IAsyncEnumerable<ResolvedEvent> ReadStreamAsync(
+		public ReadStreamResult ReadStreamAsync(
 			Direction direction,
 			string streamName,
 			StreamPosition revision,
@@ -122,6 +121,100 @@ namespace EventStore.Client {
 				userCredentials, cancellationToken);
 		}
 
+		public class ReadStreamResult : IAsyncEnumerable<ResolvedEvent>, IAsyncEnumerator<ResolvedEvent> {
+			private readonly IAsyncEnumerator<ReadResp> _call;
+			private bool _moved;
+			private CancellationToken _cancellationToken;
+			private readonly string _streamName;
+
+			public ReadStreamResult(
+				Streams.Streams.StreamsClient client,
+				ReadReq request,
+				EventStoreClientOperationOptions operationOptions,
+				UserCredentials? userCredentials, CancellationToken cancellationToken) {
+				if (request.Options.CountOptionCase == ReadReq.Types.Options.CountOptionOneofCase.Count &&
+				    request.Options.Count <= 0) {
+					throw new ArgumentOutOfRangeException("count");
+				}
+
+				_streamName = request.Options.Stream.StreamName;
+
+				if (request.Options.Filter == null) {
+					request.Options.NoFilter = new Empty();
+				}
+
+				request.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()};
+				_moved = false;
+				_call = client.Read(
+						request, RequestMetadata.Create(userCredentials),
+						deadline: DeadLine.After(operationOptions.TimeoutAfter), cancellationToken).ResponseStream
+					.ReadAllAsync().GetAsyncEnumerator();
+
+				ReadState = GetStateInternal();
+
+				async Task<ReadState> GetStateInternal() {
+					_moved = await _call.MoveNextAsync(cancellationToken).ConfigureAwait(false);
+					return _call.Current?.ContentCase switch {
+						ReadResp.ContentOneofCase.StreamNotFound => Client.ReadState.StreamNotFound,
+						_ => Client.ReadState.Ok
+					};
+				}
+
+				Current = default;
+			}
+
+			public Task<ReadState> ReadState { get; }
+
+			public IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(
+				CancellationToken cancellationToken = new CancellationToken()) {
+				_cancellationToken = cancellationToken;
+				return this;
+			}
+
+			public ValueTask DisposeAsync() {
+				return _call.DisposeAsync();
+			}
+
+			public async ValueTask<bool> MoveNextAsync() {
+				var state = await ReadState.ConfigureAwait(false);
+				if (state != Client.ReadState.Ok) {
+					throw ExceptionFromState(state, _streamName);
+				}
+
+				if (_moved) {
+					_moved = false;
+					if (IsCurrentItemEvent()) return true;
+				}
+
+				while (await _call.MoveNextAsync(_cancellationToken).ConfigureAwait(false)) {
+					if (IsCurrentItemEvent()) return true;
+				}
+
+				Current = default;
+				return false;
+
+				bool IsCurrentItemEvent() {
+					var (confirmation, position, @event) = ConvertToItem(_call.Current);
+					if (confirmation == SubscriptionConfirmation.None && position == null) {
+						Current = @event;
+						return true;
+					}
+
+					return false;
+				}
+			}
+
+			private static Exception ExceptionFromState(ReadState state, string streamName) {
+				return state switch {
+					Client.ReadState.StreamNotFound => new StreamNotFoundException(streamName),
+					_ => throw new ArgumentOutOfRangeException(nameof(state), state, null)
+				};
+			}
+
+			public ResolvedEvent Current { get; private set; }
+		}
+
+
 		private async IAsyncEnumerable<(SubscriptionConfirmation, Position?, ResolvedEvent)> ReadInternal(
 			ReadReq request,
 			EventStoreClientOperationOptions operationOptions,
@@ -136,8 +229,7 @@ namespace EventStore.Client {
 				request.Options.NoFilter = new Empty();
 			}
 
-			request.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption
-				{Structured = new Empty()};
+			request.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()};
 
 			using var call = _client.Read(
 				request, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
@@ -150,8 +242,10 @@ namespace EventStore.Client {
 				.ConfigureAwait(false)) {
 				yield return e;
 			}
+		}
 
-			static (SubscriptionConfirmation, Position?, ResolvedEvent) ConvertToItem(ReadResp response) => response.ContentCase switch {
+		private static (SubscriptionConfirmation, Position?, ResolvedEvent) ConvertToItem(ReadResp response) =>
+			response.ContentCase switch {
 				ReadResp.ContentOneofCase.Confirmation => (
 					new SubscriptionConfirmation(response.Confirmation.SubscriptionId), null, default),
 				ReadResp.ContentOneofCase.Event => (SubscriptionConfirmation.None,
@@ -163,27 +257,26 @@ namespace EventStore.Client {
 				_ => throw new InvalidOperationException()
 			};
 
-			static ResolvedEvent ConvertToResolvedEvent(ReadResp.Types.ReadEvent readEvent) =>
-				new ResolvedEvent(
-					ConvertToEventRecord(readEvent.Event)!,
-					ConvertToEventRecord(readEvent.Link),
-					readEvent.PositionCase switch {
-						ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => readEvent.CommitPosition,
-						ReadResp.Types.ReadEvent.PositionOneofCase.NoPosition => null,
-						_ => throw new InvalidOperationException()
-					});
+		private static ResolvedEvent ConvertToResolvedEvent(ReadResp.Types.ReadEvent readEvent) =>
+			new ResolvedEvent(
+				ConvertToEventRecord(readEvent.Event)!,
+				ConvertToEventRecord(readEvent.Link),
+				readEvent.PositionCase switch {
+					ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => readEvent.CommitPosition,
+					ReadResp.Types.ReadEvent.PositionOneofCase.NoPosition => null,
+					_ => throw new InvalidOperationException()
+				});
 
-			static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent e) =>
-				e == null
-					? null
-					: new EventRecord(
-						e.StreamName,
-						Uuid.FromDto(e.Id),
-						new StreamPosition(e.StreamRevision),
-						new Position(e.CommitPosition, e.PreparePosition),
-						e.Metadata,
-						e.Data.ToByteArray(),
-						e.CustomMetadata.ToByteArray());
-		}
+		private static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent e) =>
+			e == null
+				? null
+				: new EventRecord(
+					e.StreamName,
+					Uuid.FromDto(e.Id),
+					new StreamPosition(e.StreamRevision),
+					new Position(e.CommitPosition, e.PreparePosition),
+					e.Metadata,
+					e.Data.ToByteArray(),
+					e.CustomMetadata.ToByteArray());
 	}
 }
