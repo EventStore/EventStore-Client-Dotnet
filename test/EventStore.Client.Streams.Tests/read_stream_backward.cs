@@ -13,7 +13,7 @@ namespace EventStore.Client {
 		}
 
 		[Theory, InlineData(0)]
-		public async Task count_le_equal_zero_throws(ulong count) {
+		public async Task count_le_equal_zero_throws(long count) {
 			var stream = _fixture.GetStreamName();
 
 			var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
@@ -66,7 +66,7 @@ namespace EventStore.Client {
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
 			var actual = await _fixture.Client
-				.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, (ulong)expected.Length)
+				.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, expected.Length)
 				.Select(x => x.Event).ToArrayAsync();
 
 			Assert.True(EventDataComparer.Equal(expected.Reverse().ToArray(),
@@ -141,16 +141,17 @@ namespace EventStore.Client {
 		public async Task max_count_is_respected() {
 			var streamName = _fixture.GetStreamName();
 			const int count = 20;
-			const ulong maxCount = (ulong)count / 2;
+			const long maxCount = count / 2;
 
 			await _fixture.Client.AppendToStreamAsync(streamName, StreamState.NoStream,
 				_fixture.CreateTestEvents(count));
 
-			var events = await _fixture.Client.ReadStreamAsync(Direction.Backwards, streamName, StreamPosition.End, maxCount)
+			var events = await _fixture.Client
+				.ReadStreamAsync(Direction.Backwards, streamName, StreamPosition.End, maxCount)
 				.Take(count)
 				.ToArrayAsync();
 
-			Assert.Equal(maxCount, (ulong)events.Length);
+			Assert.Equal(maxCount, events.Length);
 		}
 
 		public class Fixture : EventStoreClientFixture {

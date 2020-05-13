@@ -13,7 +13,7 @@ namespace EventStore.Client {
 		private async IAsyncEnumerable<ResolvedEvent> ReadAllAsync(
 			Direction direction,
 			Position position,
-			ulong maxCount,
+			long maxCount,
 			EventStoreClientOperationOptions operationOptions,
 			bool resolveLinkTos = false,
 			UserCredentials? userCredentials = null,
@@ -27,7 +27,7 @@ namespace EventStore.Client {
 						},
 						ResolveLinks = resolveLinkTos,
 						All = ReadReq.Types.Options.Types.AllOptions.FromPosition(position),
-						Count = maxCount,
+						Count = (ulong)maxCount,
 					}
 				},
 				operationOptions,
@@ -55,7 +55,7 @@ namespace EventStore.Client {
 		public IAsyncEnumerable<ResolvedEvent> ReadAllAsync(
 			Direction direction,
 			Position position,
-			ulong maxCount,
+			long maxCount = long.MaxValue,
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
 			bool resolveLinkTos = false,
 			UserCredentials? userCredentials = null,
@@ -71,7 +71,7 @@ namespace EventStore.Client {
 			Direction direction,
 			string streamName,
 			StreamPosition revision,
-			ulong count,
+			long maxCount,
 			EventStoreClientOperationOptions operationOptions,
 			bool resolveLinkTos = false,
 			UserCredentials? userCredentials = null,
@@ -84,7 +84,7 @@ namespace EventStore.Client {
 					},
 					ResolveLinks = resolveLinkTos,
 					Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(streamName, revision),
-					Count = count
+					Count = (ulong)maxCount
 				}
 			},
 			operationOptions,
@@ -99,7 +99,7 @@ namespace EventStore.Client {
 		/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
 		/// <param name="streamName">The name of the stream to read.</param>
 		/// <param name="revision">The <see cref="StreamRevision"/> to start reading from.</param>
-		/// <param name="count">The number of events to read from the stream.</param>
+		/// <param name="maxCount">The number of events to read from the stream.</param>
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
 		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
@@ -109,7 +109,7 @@ namespace EventStore.Client {
 			Direction direction,
 			string streamName,
 			StreamPosition revision,
-			ulong count,
+			long maxCount = long.MaxValue,
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
 			bool resolveLinkTos = false,
 			UserCredentials? userCredentials = null,
@@ -117,7 +117,7 @@ namespace EventStore.Client {
 			var operationOptions = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(operationOptions);
 
-			return ReadStreamAsync(direction, streamName, revision, count, operationOptions, resolveLinkTos,
+			return ReadStreamAsync(direction, streamName, revision, maxCount, operationOptions, resolveLinkTos,
 				userCredentials, cancellationToken);
 		}
 
