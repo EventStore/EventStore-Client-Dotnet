@@ -9,7 +9,7 @@ namespace EventStore.Client {
 	public class ClusterAwareHttpHandler : DelegatingHandler {
 		private readonly bool _requiresLeader;
 		private readonly IEndpointDiscoverer _endpointDiscoverer;
-		private Lazy<Task<IPEndPoint>> _endpoint;
+		private Lazy<Task<EndPoint>> _endpoint;
 
 		public static ClusterAwareHttpHandler Create(EventStoreClientSettings settings,
 			HttpMessageHandler? httpMessageHandler = null) => new ClusterAwareHttpHandler(
@@ -28,7 +28,7 @@ namespace EventStore.Client {
 		public ClusterAwareHttpHandler(bool requiresLeader, IEndpointDiscoverer endpointDiscoverer) {
 			_requiresLeader = requiresLeader;
 			_endpointDiscoverer = endpointDiscoverer;
-			_endpoint = new Lazy<Task<IPEndPoint>>(endpointDiscoverer.DiscoverAsync,
+			_endpoint = new Lazy<Task<EndPoint>>(endpointDiscoverer.DiscoverAsync,
 				LazyThreadSafetyMode.ExecutionAndPublication);
 		}
 
@@ -38,13 +38,13 @@ namespace EventStore.Client {
 			try {
 				var endpoint = await endpointResolver.Value.ConfigureAwait(false);
 
-				request.RequestUri = new UriBuilder(Uri.UriSchemeHttps, endpoint.Address.ToString(), endpoint.Port,
+				request.RequestUri = new UriBuilder(Uri.UriSchemeHttps, endpoint.GetHost(), endpoint.GetPort(),
 					request.RequestUri.PathAndQuery).Uri;
 				request.Headers.Add("requires-leader", _requiresLeader.ToString());
 				return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
 			} catch (Exception) {
 				Interlocked.CompareExchange(ref _endpoint,
-					new Lazy<Task<IPEndPoint>>(() => _endpointDiscoverer.DiscoverAsync(),
+					new Lazy<Task<EndPoint>>(() => _endpointDiscoverer.DiscoverAsync(),
 						LazyThreadSafetyMode.ExecutionAndPublication), endpointResolver);
 
 				throw;
@@ -53,7 +53,7 @@ namespace EventStore.Client {
 
 		public void ExceptionOccurred(Exception exception) {
 			if (exception is NotLeaderException ex) {
-				_endpoint = new Lazy<Task<IPEndPoint>>(Task.FromResult(ex.LeaderEndpoint));
+				_endpoint = new Lazy<Task<EndPoint>>(Task.FromResult(ex.LeaderEndpoint));
 			}
 		}
 	}

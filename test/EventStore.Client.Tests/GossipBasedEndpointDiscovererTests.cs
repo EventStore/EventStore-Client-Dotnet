@@ -19,8 +19,8 @@ namespace EventStore.Client {
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Leader,
 						InstanceId = Guid.NewGuid(),
-						ExternalHttpIp = IPAddress.Any.ToString(),
-						ExternalHttpPort = 4444,
+						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointPort = 4444,
 						IsAlive = true,
 					},
 				}
@@ -52,15 +52,15 @@ namespace EventStore.Client {
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Leader,
 						InstanceId = Guid.NewGuid(),
-						ExternalHttpIp = IPAddress.Any.ToString(),
-						ExternalHttpPort = 1111,
+						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointPort = 1111,
 						IsAlive = true,
 					},
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Follower,
 						InstanceId = Guid.NewGuid(),
-						ExternalHttpIp = IPAddress.Any.ToString(),
-						ExternalHttpPort = 2222,
+						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointPort = 2222,
 						IsAlive = true,
 					},
 				}
@@ -70,15 +70,15 @@ namespace EventStore.Client {
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Leader,
 						InstanceId = Guid.NewGuid(),
-						ExternalHttpIp = IPAddress.Any.ToString(),
-						ExternalHttpPort = 1111,
+						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointPort = 1111,
 						IsAlive = false,
 					},
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Leader,
 						InstanceId = Guid.NewGuid(),
-						ExternalHttpIp = IPAddress.Any.ToString(),
-						ExternalHttpPort = 2222,
+						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointPort = 2222,
 						IsAlive = true,
 					},
 				}
@@ -101,17 +101,17 @@ namespace EventStore.Client {
 
 			var result = await sut.DiscoverAsync();
 
-			var expected = firstGossip.Members.First(x => x.ExternalHttpPort == 1111);
-			
-			Assert.Equal(expected.ExternalHttpIp, result.Address.ToString());
-			Assert.Equal(expected.ExternalHttpPort, result.Port);
+			var expected = firstGossip.Members.First(x => x.HttpEndPointPort == 1111);
+
+			Assert.Equal(expected.HttpEndPointIp, result.GetHost());
+			Assert.Equal(expected.HttpEndPointPort, result.GetPort());
 			
 			result = await sut.DiscoverAsync();
 
-			expected = secondGossip.Members.First(x => x.ExternalHttpPort == 2222);
-			
-			Assert.Equal(expected.ExternalHttpIp, result.Address.ToString());
-			Assert.Equal(expected.ExternalHttpPort, result.Port);
+			expected = secondGossip.Members.First(x => x.HttpEndPointPort == 2222);
+
+			Assert.Equal(expected.HttpEndPointIp, result.GetHost());
+			Assert.Equal(expected.HttpEndPointPort, result.GetPort());
 		}
 
 		[Fact]
@@ -150,8 +150,8 @@ namespace EventStore.Client {
 					new ClusterMessages.MemberInfo {
 						State = invalidState,
 						InstanceId = Guid.NewGuid(),
-						ExternalHttpIp = IPAddress.Any.ToString(),
-						ExternalHttpPort = 4444,
+						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointPort = 4444,
 						IsAlive = true,
 					},
 				}
@@ -177,15 +177,15 @@ namespace EventStore.Client {
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Leader,
 						InstanceId = Guid.NewGuid(),
-						ExternalHttpIp = IPAddress.Any.ToString(),
-						ExternalHttpPort = 1111,
+						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointPort = 1111,
 						IsAlive = true,
 					},
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Follower,
 						InstanceId = Guid.NewGuid(),
-						ExternalHttpIp = IPAddress.Any.ToString(),
-						ExternalHttpPort = 2222,
+						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointPort = 2222,
 						IsAlive = true,
 					},
 					new ClusterMessages.MemberInfo {
@@ -193,15 +193,15 @@ namespace EventStore.Client {
 							? expectedState
 							: ClusterMessages.VNodeState.ReadOnlyReplica,
 						InstanceId = Guid.NewGuid(),
-						ExternalHttpIp = IPAddress.Any.ToString(),
-						ExternalHttpPort = 3333,
+						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointPort = 3333,
 						IsAlive = true,
 					},
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Manager,
 						InstanceId = Guid.NewGuid(),
-						ExternalHttpIp = IPAddress.Any.ToString(),
-						ExternalHttpPort = 4444,
+						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointPort = 4444,
 						IsAlive = true,
 					},
 				}
@@ -213,8 +213,8 @@ namespace EventStore.Client {
 			}, Timeout.InfiniteTimeSpan, TimeSpan.Zero, preference, handler);
 
 			var result = await sut.DiscoverAsync();
-			Assert.Equal(result.Port,
-				gossip.Members.Last(x => x.State == expectedState).ExternalHttpPort);
+			Assert.Equal(result.GetPort(),
+				gossip.Members.Last(x => x.State == expectedState).HttpEndPointPort);
 		}
 
 		[Fact]
@@ -224,15 +224,15 @@ namespace EventStore.Client {
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Leader,
 						InstanceId = Guid.NewGuid(),
-						ExternalHttpIp = IPAddress.Any.ToString(),
-						ExternalHttpPort = 1111,
+						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointPort = 1111,
 						IsAlive = false,
 					},
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Follower,
 						InstanceId = Guid.NewGuid(),
-						ExternalHttpIp = IPAddress.Any.ToString(),
-						ExternalHttpPort = 2222,
+						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointPort = 2222,
 						IsAlive = true,
 					},
 				}
@@ -244,8 +244,8 @@ namespace EventStore.Client {
 			}, Timeout.InfiniteTimeSpan, TimeSpan.Zero, NodePreference.Leader, handler);
 
 			var result = await sut.DiscoverAsync();
-			Assert.Equal(result.Port,
-				gossip.Members.Last(x => x.State == ClusterMessages.VNodeState.Follower).ExternalHttpPort);
+			Assert.Equal(result.GetPort(),
+				gossip.Members.Last(x => x.State == ClusterMessages.VNodeState.Follower).HttpEndPointPort);
 		}
 
 		private HttpResponseMessage ResponseFromGossip(ClusterMessages.ClusterInfo gossip) =>
