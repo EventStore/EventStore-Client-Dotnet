@@ -40,7 +40,7 @@ namespace EventStore.Client {
 			_nodePreference = nodePreference;
 		}
 
-		public async Task<IPEndPoint> DiscoverAsync() {
+		public async Task<EndPoint> DiscoverAsync() {
 			for (int attempt = 1; attempt <= _maxDiscoverAttempts; ++attempt) {
 				try {
 					var endpoint = await DiscoverEndpointAsync().ConfigureAwait(false);
@@ -56,7 +56,7 @@ namespace EventStore.Client {
 			throw new DiscoveryException($"Failed to discover candidate in {_maxDiscoverAttempts} attempts.");
 		}
 
-		private async Task<IPEndPoint?> DiscoverEndpointAsync() {
+		private async Task<EndPoint?> DiscoverEndpointAsync() {
 			var oldGossip = Interlocked.Exchange(ref _oldGossip, null);
 			var gossipCandidates = oldGossip != null
 				? ArrangeGossipCandidates(oldGossip.ToArray())
@@ -87,11 +87,11 @@ namespace EventStore.Client {
 			int j = members.Length;
 			for (int k = 0; k < members.Length; ++k) {
 				if (members[k].State == ClusterMessages.VNodeState.Manager)
-					result[--j] = new IPEndPoint(IPAddress.Parse(members[k].ExternalHttpIp),
-						members[k].ExternalHttpPort);
+					result[--j] = new DnsEndPoint(members[k].HttpEndPointIp,
+						members[k].HttpEndPointPort);
 				else
-					result[++i] = new IPEndPoint(IPAddress.Parse(members[k].ExternalHttpIp),
-						members[k].ExternalHttpPort);
+					result[++i] = new DnsEndPoint(members[k].HttpEndPointIp,
+						members[k].HttpEndPointPort);
 			}
 
 			RandomShuffle(result, 0, i);
@@ -128,7 +128,7 @@ namespace EventStore.Client {
 			return result;
 		}
 
-		private IPEndPoint? TryDetermineBestNode(IEnumerable<ClusterMessages.MemberInfo> members,
+		private EndPoint? TryDetermineBestNode(IEnumerable<ClusterMessages.MemberInfo> members,
 			NodePreference nodePreference) {
 			var notAllowedStates = new[] {
 				ClusterMessages.VNodeState.Manager,
@@ -178,7 +178,7 @@ namespace EventStore.Client {
 
 			return node == default(ClusterMessages.MemberInfo)
 				? null
-				: new IPEndPoint(IPAddress.Parse(node.ExternalHttpIp), node.ExternalHttpPort);
+				: new DnsEndPoint(node.HttpEndPointIp, node.HttpEndPointPort);
 		}
 
 		private bool IsReadOnlyReplicaState(ClusterMessages.VNodeState state) {

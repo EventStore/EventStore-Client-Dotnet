@@ -88,13 +88,13 @@ namespace EventStore.Client {
 	}
 
 	internal class FakeEndpointDiscoverer : IEndpointDiscoverer {
-		private readonly Func<IPEndPoint> _function;
+		private readonly Func<EndPoint> _function;
 
-		public FakeEndpointDiscoverer(Func<IPEndPoint> function) {
+		public FakeEndpointDiscoverer(Func<EndPoint> function) {
 			_function = function;
 		}
 
-		public Task<IPEndPoint> DiscoverAsync() {
+		public Task<EndPoint> DiscoverAsync() {
 			return Task.FromResult(_function());
 		}
 	}

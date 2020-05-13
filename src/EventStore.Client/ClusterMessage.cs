@@ -12,8 +12,8 @@ namespace EventStore.Client {
 
 			public VNodeState State { get; set; }
 			public bool IsAlive { get; set; }
-			public string? ExternalHttpIp { get; set; }
-			public int ExternalHttpPort { get; set; }
+			public string? HttpEndPointIp { get; set; }
+			public int HttpEndPointPort { get; set; }
 		}
 
 		public enum VNodeState {
