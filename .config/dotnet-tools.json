@@ -13,6 +13,12 @@
       "commands": [
         "dotnet-retire"
       ]
+    },
+    "gpr": {
+      "version": "0.1.122",
+      "commands": [
+        "gpr"
+      ]
     }
   }
 }
