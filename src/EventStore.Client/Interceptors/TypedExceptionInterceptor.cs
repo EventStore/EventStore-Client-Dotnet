@@ -13,8 +13,9 @@ namespace EventStore.Client.Interceptors {
 		private static readonly IDictionary<string, Func<RpcException, Exception>> DefaultExceptionMap =
 			new Dictionary<string, Func<RpcException, Exception>> {
 				[Constants.Exceptions.AccessDenied] = ex => new AccessDeniedException(ex.Message, ex),
-				[Constants.Exceptions.NotLeader] = ex => new NotLeaderException(IPEndPoint.Parse(ex.Trailers
-					.FirstOrDefault(x => x.Key == Constants.Exceptions.LeaderEndpoint)?.Value))
+				[Constants.Exceptions.NotLeader] = ex => new NotLeaderException(
+						ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.LeaderEndpointHost)?.Value!,
+						ex.Trailers.GetIntValueOrDefault(Constants.Exceptions.LeaderEndpointPort), ex)
 			};
 
 		private readonly Action<Exception>? _exceptionOccurred;
