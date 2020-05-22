@@ -49,8 +49,6 @@ jobs:
       shell: bash
       run: |
         docker pull docker.pkg.github.com/eventstore/eventstore/eventstore:${{ matrix.docker-tag }}
-        docker tag docker.pkg.github.com/eventstore/eventstore/eventstore:${{ matrix.docker-tag }} \
-          eventstore/eventstore:${{ matrix.docker-tag }}
     - name: Install Dotnet
       uses: actions/setup-dotnet@v1.4.0
       with:
