@@ -100,8 +100,7 @@ jobs:
     - name: Dotnet Pack
       shell: bash
       run: |
-        dotnet tool restore
-        dotnet pack --configuration=Release --output=./packages /p:Version=$(dotnet tool run minver) \
+        dotnet pack --configuration=Release --output=./packages \
           /p:NoWarn=NU5105 \
           /p:RepositoryUrl=https://github.com/EventStore/EventStore-Client-Dotnet \
           /p:RepositoryType=git
