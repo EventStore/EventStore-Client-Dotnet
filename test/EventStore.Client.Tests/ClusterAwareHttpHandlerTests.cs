@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -67,8 +69,8 @@ namespace EventStore.Client {
 			Assert.Equal(2, discoveryAttempts);
 		}
 
-		[Fact]
-		public async Task should_set_endpoint_to_leader_endpoint_on_exception() {
+		[Theory, ClassData(typeof(EndPoints))]
+		public async Task should_set_endpoint_to_leader_endpoint_on_exception(EndPoint endpoint) {
 			var sut = new ClusterAwareHttpHandler(
 				true, new FakeEndpointDiscoverer(() => new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113))) {
 				InnerHandler = new TestMessageHandler()
@@ -78,13 +80,21 @@ namespace EventStore.Client {
 
 			var request = new HttpRequestMessage(HttpMethod.Get, new UriBuilder().Uri);
 
-			var newLeaderEndpoint = new IPEndPoint(IPAddress.Loopback, 1115);
-			sut.ExceptionOccurred(new NotLeaderException(newLeaderEndpoint));
+			sut.ExceptionOccurred(new NotLeaderException(endpoint.GetHost(), endpoint.GetPort()));
 			await client.SendAsync(request);
 			
-			Assert.Equal(newLeaderEndpoint.Address.ToString(), request.RequestUri.Host);
-			Assert.Equal(newLeaderEndpoint.Port, request.RequestUri.Port);
+			Assert.Equal(endpoint.GetHost(), request.RequestUri.Host);
+			Assert.Equal(endpoint.GetPort(), request.RequestUri.Port);
 		}
+	}
+	
+	public class EndPoints : IEnumerable<object[]> {
+		public IEnumerator<object[]> GetEnumerator() {
+			yield return new object[] {new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113)};
+			yield return new object[] {new DnsEndPoint("nodea.eventstore.dev", 2113), };
+		}
+
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 	}
 
 	internal class FakeEndpointDiscoverer : IEndpointDiscoverer {
