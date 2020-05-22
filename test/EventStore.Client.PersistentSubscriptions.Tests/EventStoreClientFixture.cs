@@ -16,8 +16,8 @@ namespace EventStore.Client {
 
 		public override async Task InitializeAsync() {
 			await TestServer.Start().WithTimeout(TimeSpan.FromMinutes(5));
-			await UserManagementClient.CreateUserAsync(TestCredentials.TestUser1.Username,
-				TestCredentials.TestUser1.Username, Array.Empty<string>(), TestCredentials.TestUser1.Password,
+			await UserManagementClient.CreateUserAsync(TestCredentials.TestUser1.Username!,
+				TestCredentials.TestUser1.Username!, Array.Empty<string>(), TestCredentials.TestUser1.Password!,
 				TestCredentials.Root);
 			await Given().WithTimeout(TimeSpan.FromMinutes(5));
 			await When().WithTimeout(TimeSpan.FromMinutes(5));

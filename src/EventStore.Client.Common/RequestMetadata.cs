@@ -1,6 +1,3 @@
-using System;
-using System.Net.Http.Headers;
-using System.Text;
 using Grpc.Core;
 
 #nullable enable
@@ -10,11 +7,7 @@ namespace EventStore.Client {
 			userCredentials == null
 				? new Metadata()
 				: new Metadata {
-					new Metadata.Entry(Constants.Headers.Authorization, new AuthenticationHeaderValue(
-							Constants.Headers.BasicScheme,
-							Convert.ToBase64String(
-								Encoding.ASCII.GetBytes($"{userCredentials.Username}:{userCredentials.Password}")))
-						.ToString())
+					new Metadata.Entry(Constants.Headers.Authorization, userCredentials.ToString())
 				};
 	}
 }

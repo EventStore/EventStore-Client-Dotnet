@@ -52,6 +52,7 @@ namespace EventStore.Client {
 		public static class Headers {
 			public const string Authorization = "authorization";
 			public const string BasicScheme = "Basic";
+			public const string BearerScheme = "Bearer";
 
 			public const string ConnectionName = "connection-name";
 			public const string RequiresLeader = "requires-leader";
