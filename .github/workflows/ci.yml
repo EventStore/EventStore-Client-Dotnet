@@ -113,4 +113,5 @@ jobs:
       shell: bash
       if: github.event_name == 'push'
       run: |
+        dotnet tool restore
         find . -name "*.nupkg" | xargs -n1 dotnet tool run gpr -- push --api-key=${{ secrets.github_token }}
