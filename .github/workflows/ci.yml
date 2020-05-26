@@ -9,7 +9,7 @@ on:
     - oss-v*
 
 env:
-  DOTNET_SDK_VERSION: 3.1.201
+  DOTNET_SDK_VERSION: 3.1.300
 jobs:
   vulnerability-scan:
     runs-on: ubuntu-latest
@@ -49,8 +49,6 @@ jobs:
       shell: bash
       run: |
         docker pull docker.pkg.github.com/eventstore/eventstore/eventstore:${{ matrix.docker-tag }}
-        docker tag docker.pkg.github.com/eventstore/eventstore/eventstore:${{ matrix.docker-tag }} \
-          eventstore/eventstore:${{ matrix.docker-tag }}
     - name: Install Dotnet
       uses: actions/setup-dotnet@v1.4.0
       with:
@@ -102,8 +100,7 @@ jobs:
     - name: Dotnet Pack
       shell: bash
       run: |
-        dotnet tool restore
-        dotnet pack --configuration=Release --output=./packages /p:Version=$(dotnet tool run minver) \
+        dotnet pack --configuration=Release --output=./packages \
           /p:NoWarn=NU5105 \
           /p:RepositoryUrl=https://github.com/EventStore/EventStore-Client-Dotnet \
           /p:RepositoryType=git

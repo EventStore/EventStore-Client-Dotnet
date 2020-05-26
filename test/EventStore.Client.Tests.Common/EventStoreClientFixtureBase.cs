@@ -138,13 +138,14 @@ namespace EventStore.Client {
 						Port = 2113
 					}.Uri
 				};
-				var tag = Environment.GetEnvironmentVariable("ES_DOCKER_TAG") ?? "6.0.0-preview3-bionic";
-				_container = new DockerContainer("eventstore/eventstore", tag, async ct => {
-					try {
-						using var response = await _httpClient.GetAsync("/web/index.html", ct);
-						return (int)response.StatusCode < 400;
-					} catch {
-					}
+				var tag = Environment.GetEnvironmentVariable("ES_DOCKER_TAG") ?? "ci";
+				_container = new DockerContainer("docker.pkg.github.com/eventstore/eventstore/eventstore", tag,
+					async ct => {
+						try {
+							using var response = await _httpClient.GetAsync("/web/index.html", ct);
+							return (int)response.StatusCode < 400;
+						} catch {
+						}
 
 					return false;
 				}, new Dictionary<int, int> {

@@ -36,6 +36,7 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
+		<PackageReference Include="MinVer" Version="2.2.0" PrivateAssets="All" />
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="../EventStore.Client.Common/**/*.cs"/>
