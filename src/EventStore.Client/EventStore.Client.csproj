@@ -20,7 +20,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Protobuf Include="..\EventStore.Client.Common\protos\shared.proto" GrpcServices="Client" ProtoRoot="..\EventStore.Client.Common\protos" />
-		<Protobuf Include="..\EventStore.Client.Common\protos\gossip.proto" GrpcServices="Client" ProtoRoot="..\EventStore.Client.Common\protos" />
+		<Protobuf Include="..\EventStore.Client.Common\protos\gossip.proto" ProtoRoot="..\EventStore.Client.Common\protos" />
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Remove="..\EventStore.Client.Common\TypedExceptionInterceptor.cs" />

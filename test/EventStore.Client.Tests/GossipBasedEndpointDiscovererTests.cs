@@ -2,15 +2,25 @@
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using EventStore.Client.Gossip;
+using Grpc.Core;
 using Xunit;
 
 #nullable enable
 namespace EventStore.Client {
-	public class GossipBasedEndpointDiscovererTests {
+	public class GossipBasedEndpointDiscovererTests: IAsyncLifetime {
+		private readonly Fixture _fixture;
+
+		public GossipBasedEndpointDiscovererTests() {
+			_fixture = new Fixture();
+		}
+
 		[Fact]
 		public async Task should_issue_gossip_to_gossip_seed() {
 			HttpRequestMessage? request = null;
@@ -26,12 +36,12 @@ namespace EventStore.Client {
 				}
 			};
 
-			var handler = new FakeMessageHandler(req => {
+			var handler = new CustomMessageHandler(req => {
 				request = req;
-				return ResponseFromGossip(gossip);
+				_fixture.CurrentClusterInfo.Members = gossip.Members;
 			});
 
-			var gossipSeed = new DnsEndPoint("gossip_seed_endpoint", 1114);
+			var gossipSeed = new DnsEndPoint(_fixture.Host, _fixture.Port);
 
 			var sut = new ClusterEndpointDiscoverer(1, new[] {
 				gossipSeed,
@@ -84,16 +94,16 @@ namespace EventStore.Client {
 				}
 			};
 
-			var handler = new FakeMessageHandler(req => {
+			var handler = new CustomMessageHandler(req => {
 				if (isFirstGossip) {
 					isFirstGossip = false;
-					return ResponseFromGossip(firstGossip);
+					_fixture.CurrentClusterInfo.Members = firstGossip.Members;
 				} else {
-					return ResponseFromGossip(secondGossip);
+					_fixture.CurrentClusterInfo.Members = secondGossip.Members;
 				}
 			});
 
-			var gossipSeed = new DnsEndPoint("gossip_seed_endpoint", 1114);
+			var gossipSeed = new DnsEndPoint(_fixture.Host, _fixture.Port);
 
 			var sut = new ClusterEndpointDiscoverer(5, new[] {
 				gossipSeed,
@@ -119,13 +129,13 @@ namespace EventStore.Client {
 			int maxDiscoveryAttempts = 5;
 			int discoveryAttempts = 0;
 
-			var handler = new FakeMessageHandler(request => {
+			var handler = new CustomMessageHandler(request => {
 				discoveryAttempts++;
 				throw new Exception();
 			});
 
 			var sut = new ClusterEndpointDiscoverer(maxDiscoveryAttempts, new[] {
-				new DnsEndPoint("localhost", 1114),
+				new DnsEndPoint(_fixture.Host, _fixture.Port),
 			}, Timeout.InfiniteTimeSpan, TimeSpan.Zero, NodePreference.Leader, handler);
 
 			await Assert.ThrowsAsync<DiscoveryException>(() => sut.DiscoverAsync());
@@ -157,9 +167,11 @@ namespace EventStore.Client {
 				}
 			};
 
-			var handler = new FakeMessageHandler(req => ResponseFromGossip(gossip));
+			var handler = new CustomMessageHandler(req => {
+				_fixture.CurrentClusterInfo.Members = gossip.Members;
+			});
 
-			var sut = new ClusterEndpointDiscoverer(1, new[] { new DnsEndPoint("localhost", 1113),
+			var sut = new ClusterEndpointDiscoverer(1, new[] { new DnsEndPoint(_fixture.Host, _fixture.Port),
 			}, Timeout.InfiniteTimeSpan, TimeSpan.Zero, NodePreference.Leader, handler);
 
 			await Assert.ThrowsAsync<DiscoveryException>(() => sut.DiscoverAsync());
@@ -206,10 +218,12 @@ namespace EventStore.Client {
 					},
 				}
 			};
-			var handler = new FakeMessageHandler(req => ResponseFromGossip(gossip));
+			var handler = new CustomMessageHandler(req => {
+				_fixture.CurrentClusterInfo.Members = gossip.Members;
+			});
 
 			var sut = new ClusterEndpointDiscoverer(1, new[] {
-				new DnsEndPoint("localhost", 1113)
+				new DnsEndPoint(_fixture.Host, _fixture.Port)
 			}, Timeout.InfiniteTimeSpan, TimeSpan.Zero, preference, handler);
 
 			var result = await sut.DiscoverAsync();
@@ -237,10 +251,12 @@ namespace EventStore.Client {
 					},
 				}
 			};
-			var handler = new FakeMessageHandler(req => ResponseFromGossip(gossip));
+			var handler = new CustomMessageHandler(req => {
+				_fixture.CurrentClusterInfo.Members = gossip.Members;
+			});
 
 			var sut = new ClusterEndpointDiscoverer(1, new[] {
-				new DnsEndPoint("localhost", 1113)
+				new DnsEndPoint(_fixture.Host, _fixture.Port)
 			}, Timeout.InfiniteTimeSpan, TimeSpan.Zero, NodePreference.Leader, handler);
 
 			var result = await sut.DiscoverAsync();
@@ -248,25 +264,103 @@ namespace EventStore.Client {
 				gossip.Members.Last(x => x.State == ClusterMessages.VNodeState.Follower).HttpEndPointPort);
 		}
 
-		private HttpResponseMessage ResponseFromGossip(ClusterMessages.ClusterInfo gossip) =>
-			new HttpResponseMessage(HttpStatusCode.OK) {
-				Content = new StringContent(JsonSerializer.Serialize(gossip, new JsonSerializerOptions {
-					PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-					PropertyNameCaseInsensitive = true,
-					Converters = {new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)}
-				}))
-			};
+		private class CustomMessageHandler : HttpClientHandler {
+			private readonly Action<HttpRequestMessage> _handle;
 
-		private class FakeMessageHandler : HttpMessageHandler {
-			private readonly Func<HttpRequestMessage, HttpResponseMessage> _handle;
-
-			public FakeMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> handle) {
+			public CustomMessageHandler(Action<HttpRequestMessage> handle) {
 				_handle = handle;
+				ServerCertificateCustomValidationCallback = delegate { return true; };
 			}
 
 			protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
 				CancellationToken cancellationToken) {
-				return Task.FromResult(_handle(request));
+				_handle(request);
+				return base.SendAsync(request, cancellationToken);
+			}
+		}
+
+		public Task InitializeAsync() => _fixture.InitializeAsync();
+		public Task DisposeAsync() => _fixture.DisposeAsync();
+
+		public class Fixture : IAsyncLifetime {
+			public readonly string Host = "localhost";
+			public readonly int Port = GetFreePort();
+			public readonly ClusterMessages.ClusterInfo CurrentClusterInfo = new ClusterMessages.ClusterInfo();
+			private Server? _server;
+
+			private static int GetFreePort() {
+				using var socket =
+					new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) {
+						ExclusiveAddressUse = false
+					};
+				socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+				socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+				return ((IPEndPoint)socket.LocalEndPoint).Port;
+			}
+
+			private void StartGrpcServer() {
+				var keyCertificatePair = GenerateKeyCertificatePair();
+				_server = new Server
+				{
+					Services = { Gossip.Gossip.BindService(new GossipImplementation(CurrentClusterInfo)) },
+					Ports = { new ServerPort(Host, Port, new SslServerCredentials(new [] {keyCertificatePair})) }
+				};
+				_server.Start();
+			}
+
+			private KeyCertificatePair GenerateKeyCertificatePair() {
+				using (RSA rsa = RSA.Create())
+				{
+					var certReq = new CertificateRequest("CN=hello", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+					var certificate = certReq.CreateSelfSigned(DateTimeOffset.UtcNow.AddMonths(-1), DateTimeOffset.UtcNow.AddMonths(1));
+					var pemCertificateBuilder = new StringBuilder();
+					pemCertificateBuilder.AppendLine("-----BEGIN CERTIFICATE-----");
+					pemCertificateBuilder.AppendLine(Convert.ToBase64String(certificate.Export(X509ContentType.Cert), Base64FormattingOptions.InsertLineBreaks));
+					pemCertificateBuilder.AppendLine("-----END CERTIFICATE-----");
+					var pemCertificate = pemCertificateBuilder.ToString();
+
+					var pemKeyBuilder = new StringBuilder();
+					pemKeyBuilder.AppendLine("-----BEGIN RSA PRIVATE KEY-----");
+					pemKeyBuilder.AppendLine(Convert.ToBase64String(rsa.ExportRSAPrivateKey(), Base64FormattingOptions.InsertLineBreaks));
+					pemKeyBuilder.AppendLine("-----END RSA PRIVATE KEY-----");
+					var pemKey = pemKeyBuilder.ToString();
+
+					return new KeyCertificatePair(pemCertificate, pemKey);
+				}
+			}
+
+			private class GossipImplementation : Gossip.Gossip.GossipBase {
+				private readonly ClusterMessages.ClusterInfo _currentClusterInfo;
+
+				public GossipImplementation(ClusterMessages.ClusterInfo currentClusterInfo) {
+					_currentClusterInfo = currentClusterInfo;
+				}
+				public override Task<ClusterInfo> Read(Empty request, ServerCallContext context) {
+					if (_currentClusterInfo.Members == null) {
+						return Task.FromResult(new ClusterInfo());
+					}
+					var members = Array.ConvertAll(_currentClusterInfo.Members, x => new MemberInfo {
+						InstanceId = Uuid.FromGuid(x.InstanceId).ToDto(),
+						State = (MemberInfo.Types.VNodeState)x.State,
+						IsAlive = x.IsAlive,
+						HttpEndPoint = new Gossip.EndPoint {
+							Address = x.HttpEndPointIp,
+							Port = (uint) x.HttpEndPointPort
+						}
+					}).ToArray();
+					var info = new ClusterInfo();
+					info.Members.AddRange(members);
+					return Task.FromResult(info);
+				}
+			}
+
+			public Task InitializeAsync() {
+				StartGrpcServer();
+				return Task.CompletedTask;
+			}
+
+			public Task DisposeAsync() {
+				return _server == null ? Task.CompletedTask : _server.ShutdownAsync();
 			}
 		}
 	}
