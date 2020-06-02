@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Net.Client;
+using EndPoint = System.Net.EndPoint;
+using GossipClient = EventStore.Client.Gossip.Gossip.GossipClient;
 
 #nullable enable
 namespace EventStore.Client {
@@ -14,17 +15,10 @@ namespace EventStore.Client {
 		private readonly int _maxDiscoverAttempts;
 		private readonly EndPoint[] _gossipSeeds;
 		private readonly TimeSpan _discoveryInterval;
-
-		private readonly HttpClient _client;
 		private ClusterMessages.MemberInfo[]? _oldGossip;
-
 		private readonly NodePreference _nodePreference;
-
-		private readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions {
-			PropertyNameCaseInsensitive = true,
-			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-			Converters = {new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)}
-		};
+		private readonly Dictionary<EndPoint, GossipClient> _gossipClients;
+		private readonly Func<EndPoint, GossipClient> _gossipClientFactory;
 
 		public ClusterEndpointDiscoverer(
 			int maxDiscoverAttempts,
@@ -36,8 +30,19 @@ namespace EventStore.Client {
 			_maxDiscoverAttempts = maxDiscoverAttempts;
 			_gossipSeeds = gossipSeeds;
 			_discoveryInterval = discoveryInterval;
-			_client = new HttpClient(httpMessageHandler ?? new HttpClientHandler()) {Timeout = gossipTimeout};
 			_nodePreference = nodePreference;
+			_gossipClients = new Dictionary<EndPoint,  GossipClient>();
+			_gossipClientFactory = (gossipSeedEndPoint) => {
+				string url = gossipSeedEndPoint.ToHttpUrl(EndPointExtensions.HTTPS_SCHEMA);
+				var channel = GrpcChannel.ForAddress(url, new GrpcChannelOptions {
+					HttpClient = new HttpClient(httpMessageHandler ?? new HttpClientHandler()) {
+						Timeout = gossipTimeout,
+						DefaultRequestVersion = new Version(2, 0),
+					}
+				});
+				var callInvoker = channel.CreateCallInvoker();
+				return new GossipClient(callInvoker);
+			};
 		}
 
 		public async Task<EndPoint> DiscoverAsync() {
@@ -113,19 +118,25 @@ namespace EventStore.Client {
 		}
 
 		private async Task<ClusterMessages.ClusterInfo> TryGetGossipFrom(EndPoint gossipSeed) {
-			string url = string.Empty;
-			switch (gossipSeed) {
-				case DnsEndPoint dnsEndPoint:
-					url = $"{Uri.UriSchemeHttps}://{dnsEndPoint.Host}:{dnsEndPoint.Port}/gossip?format=json";
-					break;
-				case IPEndPoint ipEndPoint:
-					url = $"{Uri.UriSchemeHttps}://{ipEndPoint.Address}:{ipEndPoint.Port}/gossip?format=json";
-					break;
+			if (!_gossipClients.TryGetValue(gossipSeed, out var client)) {
+				client = _gossipClientFactory(gossipSeed);
+				_gossipClients[gossipSeed] = client;
 			}
 
-			var response = await _client.GetStringAsync(url).ConfigureAwait(false);
-			var result = JsonSerializer.Deserialize<ClusterMessages.ClusterInfo>(response, _jsonSerializerOptions);
-			return result;
+			var clusterInfoDto = await client.ReadAsync(new Empty());
+			return ConvertGrpcClusterInfo(clusterInfoDto);
+		}
+
+		private static ClusterMessages.ClusterInfo ConvertGrpcClusterInfo(Gossip.ClusterInfo clusterInfo) {
+			var receivedMembers = Array.ConvertAll(clusterInfo.Members.ToArray(), x =>
+				new ClusterMessages.MemberInfo {
+					InstanceId = Uuid.FromDto(x.InstanceId).ToGuid(),
+					State = (ClusterMessages.VNodeState) x.State,
+					IsAlive = x.IsAlive,
+					HttpEndPointIp = x.HttpEndPoint.Address,
+					HttpEndPointPort = (int)x.HttpEndPoint.Port
+				});
+			return new ClusterMessages.ClusterInfo { Members = receivedMembers };
 		}
 
 		private EndPoint? TryDetermineBestNode(IEnumerable<ClusterMessages.MemberInfo> members,
@@ -143,6 +154,8 @@ namespace EventStore.Client {
 				ClusterMessages.VNodeState.PreLeader,
 				ClusterMessages.VNodeState.PreReplica,
 				ClusterMessages.VNodeState.PreReadOnlyReplica,
+				ClusterMessages.VNodeState.Clone,
+				ClusterMessages.VNodeState.DiscoverLeader
 			};
 
 			var nodes = members.Where(x => x.IsAlive)

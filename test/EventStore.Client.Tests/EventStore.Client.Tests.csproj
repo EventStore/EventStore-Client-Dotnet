@@ -4,6 +4,9 @@
 	  <ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />
 	</ItemGroup>
 	<ItemGroup>
+		<PackageReference Include="Grpc" Version="2.27.0" />
+	</ItemGroup>
+	<ItemGroup>
 		<Compile Remove="..\EventStore.Client.Tests.Common\*.cs" />
 	</ItemGroup>
 </Project>
