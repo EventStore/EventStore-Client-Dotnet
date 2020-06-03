@@ -6,7 +6,7 @@ on:
     branches:
     - master
     tags:
-    - oss-v*
+    - v*
 
 env:
   DOTNET_SDK_VERSION: 3.1.300
@@ -90,6 +90,14 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Get Version
+      id: get_version
+      run: | 
+        echo "::set-output name=branch::${GITHUB_REF:10}"
+        
+        dotnet tool restore
+        version=$(dotnet tool run minver -- --tag-prefix=v)
+        echo "::set-output name=version::${version}"
     - shell: bash
       run: |
         git fetch --prune --unshallow
@@ -100,7 +108,7 @@ jobs:
     - name: Dotnet Pack
       shell: bash
       run: |
-        dotnet pack --configuration=Release --output=./packages \
+        dotnet pack /p:Version=${{ steps.get_version.outputs.version }} --configuration=Release --output=./packages \
           /p:NoWarn=NU5105 \
           /p:RepositoryUrl=https://github.com/EventStore/EventStore-Client-Dotnet \
           /p:RepositoryType=git
@@ -109,9 +117,15 @@ jobs:
       with:
         path: packages
         name: nuget-packages
-    - name: Dotnet Push
+    - name: Dotnet Push to Github Packages
       shell: bash
       if: github.event_name == 'push'
       run: |
         dotnet tool restore
         find . -name "*.nupkg" | xargs -n1 dotnet tool run gpr -- push --api-key=${{ secrets.github_token }}
+    - name: Dotnet Push to Nuget.org
+      shell: bash
+      if: contains(steps.get_version.outputs.branch, 'v')
+      run: |
+        dotnet tool restore
+        find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.nuget_key }}
