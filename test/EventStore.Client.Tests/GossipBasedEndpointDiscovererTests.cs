@@ -29,7 +29,7 @@ namespace EventStore.Client {
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Leader,
 						InstanceId = Guid.NewGuid(),
-						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointAddress = IPAddress.Any.ToString(),
 						HttpEndPointPort = 4444,
 						IsAlive = true,
 					},
@@ -62,14 +62,14 @@ namespace EventStore.Client {
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Leader,
 						InstanceId = Guid.NewGuid(),
-						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointAddress = IPAddress.Any.ToString(),
 						HttpEndPointPort = 1111,
 						IsAlive = true,
 					},
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Follower,
 						InstanceId = Guid.NewGuid(),
-						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointAddress = IPAddress.Any.ToString(),
 						HttpEndPointPort = 2222,
 						IsAlive = true,
 					},
@@ -80,14 +80,14 @@ namespace EventStore.Client {
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Leader,
 						InstanceId = Guid.NewGuid(),
-						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointAddress = IPAddress.Any.ToString(),
 						HttpEndPointPort = 1111,
 						IsAlive = false,
 					},
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Leader,
 						InstanceId = Guid.NewGuid(),
-						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointAddress = IPAddress.Any.ToString(),
 						HttpEndPointPort = 2222,
 						IsAlive = true,
 					},
@@ -113,14 +113,14 @@ namespace EventStore.Client {
 
 			var expected = firstGossip.Members.First(x => x.HttpEndPointPort == 1111);
 
-			Assert.Equal(expected.HttpEndPointIp, result.GetHost());
+			Assert.Equal(expected.HttpEndPointAddress, result.GetHost());
 			Assert.Equal(expected.HttpEndPointPort, result.GetPort());
 			
 			result = await sut.DiscoverAsync();
 
 			expected = secondGossip.Members.First(x => x.HttpEndPointPort == 2222);
 
-			Assert.Equal(expected.HttpEndPointIp, result.GetHost());
+			Assert.Equal(expected.HttpEndPointAddress, result.GetHost());
 			Assert.Equal(expected.HttpEndPointPort, result.GetPort());
 		}
 
@@ -160,7 +160,7 @@ namespace EventStore.Client {
 					new ClusterMessages.MemberInfo {
 						State = invalidState,
 						InstanceId = Guid.NewGuid(),
-						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointAddress = IPAddress.Any.ToString(),
 						HttpEndPointPort = 4444,
 						IsAlive = true,
 					},
@@ -189,14 +189,14 @@ namespace EventStore.Client {
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Leader,
 						InstanceId = Guid.NewGuid(),
-						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointAddress = IPAddress.Any.ToString(),
 						HttpEndPointPort = 1111,
 						IsAlive = true,
 					},
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Follower,
 						InstanceId = Guid.NewGuid(),
-						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointAddress = IPAddress.Any.ToString(),
 						HttpEndPointPort = 2222,
 						IsAlive = true,
 					},
@@ -205,14 +205,14 @@ namespace EventStore.Client {
 							? expectedState
 							: ClusterMessages.VNodeState.ReadOnlyReplica,
 						InstanceId = Guid.NewGuid(),
-						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointAddress = IPAddress.Any.ToString(),
 						HttpEndPointPort = 3333,
 						IsAlive = true,
 					},
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Manager,
 						InstanceId = Guid.NewGuid(),
-						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointAddress = IPAddress.Any.ToString(),
 						HttpEndPointPort = 4444,
 						IsAlive = true,
 					},
@@ -238,14 +238,14 @@ namespace EventStore.Client {
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Leader,
 						InstanceId = Guid.NewGuid(),
-						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointAddress = IPAddress.Any.ToString(),
 						HttpEndPointPort = 1111,
 						IsAlive = false,
 					},
 					new ClusterMessages.MemberInfo {
 						State = ClusterMessages.VNodeState.Follower,
 						InstanceId = Guid.NewGuid(),
-						HttpEndPointIp = IPAddress.Any.ToString(),
+						HttpEndPointAddress = IPAddress.Any.ToString(),
 						HttpEndPointPort = 2222,
 						IsAlive = true,
 					},
@@ -344,7 +344,7 @@ namespace EventStore.Client {
 						State = (MemberInfo.Types.VNodeState)x.State,
 						IsAlive = x.IsAlive,
 						HttpEndPoint = new Gossip.EndPoint {
-							Address = x.HttpEndPointIp,
+							Address = x.HttpEndPointAddress,
 							Port = (uint) x.HttpEndPointPort
 						}
 					}).ToArray();
