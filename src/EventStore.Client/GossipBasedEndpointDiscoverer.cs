@@ -92,10 +92,10 @@ namespace EventStore.Client {
 			int j = members.Length;
 			for (int k = 0; k < members.Length; ++k) {
 				if (members[k].State == ClusterMessages.VNodeState.Manager)
-					result[--j] = new DnsEndPoint(members[k].HttpEndPointIp,
+					result[--j] = new DnsEndPoint(members[k].HttpEndPointAddress,
 						members[k].HttpEndPointPort);
 				else
-					result[++i] = new DnsEndPoint(members[k].HttpEndPointIp,
+					result[++i] = new DnsEndPoint(members[k].HttpEndPointAddress,
 						members[k].HttpEndPointPort);
 			}
 
@@ -133,7 +133,7 @@ namespace EventStore.Client {
 					InstanceId = Uuid.FromDto(x.InstanceId).ToGuid(),
 					State = (ClusterMessages.VNodeState) x.State,
 					IsAlive = x.IsAlive,
-					HttpEndPointIp = x.HttpEndPoint.Address,
+					HttpEndPointAddress = x.HttpEndPoint.Address,
 					HttpEndPointPort = (int)x.HttpEndPoint.Port
 				});
 			return new ClusterMessages.ClusterInfo { Members = receivedMembers };
@@ -191,7 +191,7 @@ namespace EventStore.Client {
 
 			return node == default(ClusterMessages.MemberInfo)
 				? null
-				: new DnsEndPoint(node.HttpEndPointIp, node.HttpEndPointPort);
+				: new DnsEndPoint(node.HttpEndPointAddress, node.HttpEndPointPort);
 		}
 
 		private bool IsReadOnlyReplicaState(ClusterMessages.VNodeState state) {

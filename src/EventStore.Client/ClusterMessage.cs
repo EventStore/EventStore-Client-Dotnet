@@ -12,7 +12,7 @@ namespace EventStore.Client {
 
 			public VNodeState State { get; set; }
 			public bool IsAlive { get; set; }
-			public string? HttpEndPointIp { get; set; }
+			public string? HttpEndPointAddress { get; set; }
 			public int HttpEndPointPort { get; set; }
 		}
 
