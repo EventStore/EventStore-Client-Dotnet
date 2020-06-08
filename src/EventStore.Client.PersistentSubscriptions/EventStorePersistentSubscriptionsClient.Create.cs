@@ -31,7 +31,7 @@ namespace EventStore.Client {
 
 			await _client.CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
-					StreamName = streamName,
+					StreamIdentifier = streamName,
 					GroupName = groupName,
 					Settings = new CreateReq.Types.Settings {
 						Revision = settings.StartFrom,

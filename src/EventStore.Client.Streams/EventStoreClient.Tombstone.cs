@@ -15,7 +15,7 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken = default) =>
 			TombstoneInternal(new TombstoneReq {
 				Options = new TombstoneReq.Types.Options {
-					StreamName = streamName,
+					StreamIdentifier = streamName,
 					Revision = expectedRevision
 				}
 			}, operationOptions, userCredentials, cancellationToken);
@@ -50,7 +50,7 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken = default) =>
 			TombstoneInternal(new TombstoneReq {
 				Options = new TombstoneReq.Types.Options {
-					StreamName = streamName
+					StreamIdentifier = streamName
 				}
 			}.WithAnyStreamRevision(expectedState), operationOptions, userCredentials, cancellationToken);
 
@@ -79,7 +79,7 @@ namespace EventStore.Client {
 		private async Task<DeleteResult> TombstoneInternal(TombstoneReq request,
 			EventStoreClientOperationOptions operationOptions, UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
-			_log.LogDebug("Tombstoning stream {streamName}.", request.Options.StreamName);
+			_log.LogDebug("Tombstoning stream {streamName}.", request.Options.StreamIdentifier);
 
 			var result = await _client.TombstoneAsync(request, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
 				deadline: DeadLine.After(operationOptions.TimeoutAfter), cancellationToken);

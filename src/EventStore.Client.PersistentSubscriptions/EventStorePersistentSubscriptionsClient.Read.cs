@@ -40,7 +40,7 @@ namespace EventStore.Client {
 			return PersistentSubscription.Confirm(call, new ReadReq.Types.Options {
 					BufferSize = bufferSize,
 					GroupName = groupName,
-					StreamName = streamName,
+					StreamIdentifier = streamName,
 					UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()}
 				}, autoAck, eventAppeared,
 				subscriptionDropped ?? delegate { }, cancellationToken);
