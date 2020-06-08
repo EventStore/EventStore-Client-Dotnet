@@ -9,7 +9,7 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken = default) {
 			await _client.DeleteAsync(new DeleteReq {
 				Options = new DeleteReq.Types.Options {
-					StreamName = streamName,
+					StreamIdentifier = streamName,
 					GroupName = groupName
 				}
 			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);

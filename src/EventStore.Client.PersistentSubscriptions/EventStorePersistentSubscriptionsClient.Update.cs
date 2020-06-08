@@ -31,7 +31,7 @@ namespace EventStore.Client {
 
 			await _client.UpdateAsync(new UpdateReq {
 				Options = new UpdateReq.Types.Options {
-					StreamName = streamName,
+					StreamIdentifier = streamName,
 					GroupName = groupName,
 					Settings = new UpdateReq.Types.Settings {
 						Revision = settings.StartFrom,

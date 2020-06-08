@@ -21,7 +21,7 @@ namespace EventStore.Client {
 
 			return AppendToStreamInternal(new AppendReq {
 				Options = new AppendReq.Types.Options {
-					StreamName = streamName,
+					StreamIdentifier = streamName,
 					Revision = expectedRevision
 				}
 			}, eventData, operationOptions, userCredentials, cancellationToken);
@@ -62,7 +62,7 @@ namespace EventStore.Client {
 
 			return AppendToStreamInternal(new AppendReq {
 				Options = new AppendReq.Types.Options {
-					StreamName = streamName
+					StreamIdentifier = streamName
 				}
 			}.WithAnyStreamRevision(expectedState), eventData, operationOptions, userCredentials, cancellationToken);
 		}
@@ -106,7 +106,7 @@ namespace EventStore.Client {
 
 				foreach (var e in eventData) {
 					_log.LogTrace("Appending event to stream - {streamName}@{eventId} {eventType}.",
-						header.Options.StreamName, e.EventId, e.Type);
+						header.Options.StreamIdentifier, e.EventId, e.Type);
 					await call.RequestStream.WriteAsync(new AppendReq {
 						ProposedMessage = new AppendReq.Types.ProposedMessage {
 							Id = e.EventId.ToDto(),
@@ -135,7 +135,7 @@ namespace EventStore.Client {
 								response.Success.Position.PreparePosition)
 							: default);
 					_log.LogDebug("Append to stream succeeded - {streamName}@{logPosition}/{nextExpectedVersion}.",
-						header.Options.StreamName, writeResult.LogPosition, writeResult.NextExpectedVersion);
+						header.Options.StreamIdentifier, writeResult.LogPosition, writeResult.NextExpectedVersion);
 				} else {
 					if (response.WrongExpectedVersion != null) {
 						var expectedRevision = response.WrongExpectedVersion.ExpectedRevisionOptionCase switch {
@@ -154,15 +154,15 @@ namespace EventStore.Client {
 
 						_log.LogDebug(
 							"Append to stream failed with Wrong Expected Version - {streamName}/{expectedRevision}/{currentRevision}",
-							header.Options.StreamName, expectedRevision, currentRevision);
+							header.Options.StreamIdentifier, expectedRevision, currentRevision);
 						
 						if (operationOptions.ThrowOnAppendFailure) {
-							throw new WrongExpectedVersionException(header.Options.StreamName, expectedRevision,
+							throw new WrongExpectedVersionException(header.Options.StreamIdentifier, expectedRevision,
 								currentRevision);
 						}
 
 						writeResult = new WrongExpectedVersionResult(
-							header.Options.StreamName, expectedRevision, currentRevision);
+							header.Options.StreamIdentifier, expectedRevision, currentRevision);
 					} else {
 						throw new InvalidOperationException("The operation completed with an unexpected result.");
 					}

@@ -15,20 +15,20 @@ namespace EventStore.Client.Streams {
 
 							if (streamRevision == StreamPosition.End) {
 								return new StreamOptions {
-									StreamName = streamName,
+									StreamIdentifier = streamName,
 									End = new Empty()
 								};
 							}
 
 							if (streamRevision == StreamPosition.Start) {
 								return new StreamOptions {
-									StreamName = streamName,
+									StreamIdentifier = streamName,
 									Start = new Empty()
 								};
 							}
 
 							return new StreamOptions {
-								StreamName = streamName,
+								StreamIdentifier = streamName,
 								Revision = streamRevision
 							};
 						}

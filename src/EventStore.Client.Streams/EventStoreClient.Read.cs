@@ -137,7 +137,7 @@ namespace EventStore.Client {
 					throw new ArgumentOutOfRangeException("count");
 				}
 
-				_streamName = request.Options.Stream.StreamName;
+				_streamName = request.Options.Stream.StreamIdentifier;
 
 				if (request.Options.Filter == null) {
 					request.Options.NoFilter = new Empty();
@@ -271,7 +271,7 @@ namespace EventStore.Client {
 			e == null
 				? null
 				: new EventRecord(
-					e.StreamName,
+					e.StreamIdentifier,
 					Uuid.FromDto(e.Id),
 					new StreamPosition(e.StreamRevision),
 					new Position(e.CommitPosition, e.PreparePosition),

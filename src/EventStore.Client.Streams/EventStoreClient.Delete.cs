@@ -59,7 +59,7 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken = default) =>
 			DeleteInternal(new DeleteReq {
 				Options = new DeleteReq.Types.Options {
-					StreamName = streamName
+					StreamIdentifier = streamName
 				}
 			}.WithAnyStreamRevision(expectedState), operationOptions, userCredentials, cancellationToken);
 
@@ -71,7 +71,7 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken = default) =>
 			DeleteInternal(new DeleteReq {
 				Options = new DeleteReq.Types.Options {
-					StreamName = streamName,
+					StreamIdentifier = streamName,
 					Revision = expectedRevision
 				}
 			}, operationOptions, userCredentials, cancellationToken);
@@ -79,7 +79,7 @@ namespace EventStore.Client {
 		private async Task<DeleteResult> DeleteInternal(DeleteReq request, EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
-			_log.LogDebug("Deleting stream {streamName}.", request.Options.StreamName);
+			_log.LogDebug("Deleting stream {streamName}.", request.Options.StreamIdentifier);
 			var result = await _client.DeleteAsync(request, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
 				deadline: DeadLine.After(operationOptions.TimeoutAfter), cancellationToken);
 

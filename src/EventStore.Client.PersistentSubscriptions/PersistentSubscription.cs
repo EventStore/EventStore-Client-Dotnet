@@ -144,7 +144,7 @@ namespace EventStore.Client {
 				e == null
 					? null
 					: new EventRecord(
-						e.StreamName,
+						e.StreamIdentifier,
 						Uuid.FromDto(e.Id),
 						new StreamPosition(e.StreamRevision),
 						new Position(e.CommitPosition, e.PreparePosition),

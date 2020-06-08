@@ -53,7 +53,7 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default)
 			=> SetStreamMetadataInternal(metadata, new AppendReq {
 				Options = new AppendReq.Types.Options {
-					StreamName = SystemStreams.MetastreamOf(streamName)
+					StreamIdentifier = SystemStreams.MetastreamOf(streamName)
 				}
 			}.WithAnyStreamRevision(expectedState), operationOptions, userCredentials, cancellationToken);
 
@@ -82,7 +82,7 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default)
 			=> SetStreamMetadataInternal(metadata, new AppendReq {
 				Options = new AppendReq.Types.Options {
-					StreamName = SystemStreams.MetastreamOf(streamName),
+					StreamIdentifier = SystemStreams.MetastreamOf(streamName),
 					Revision = expectedRevision
 				}
 			}, operationOptions, userCredentials, cancellationToken);

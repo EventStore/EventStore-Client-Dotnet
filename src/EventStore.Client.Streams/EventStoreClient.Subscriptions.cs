@@ -120,7 +120,7 @@ namespace EventStore.Client {
 						ResolveLinks = resolveLinkTos,
 						Stream = new ReadReq.Types.Options.Types.StreamOptions {
 							Start = new Empty(),
-							StreamName = streamName
+							StreamIdentifier = streamName
 						},
 						Subscription = new ReadReq.Types.Options.Types.SubscriptionOptions()
 					}
@@ -171,11 +171,11 @@ namespace EventStore.Client {
 							Stream = start == StreamPosition.End
 								? new ReadReq.Types.Options.Types.StreamOptions {
 									End = new Empty(),
-									StreamName = streamName
+									StreamIdentifier = streamName
 								}
 								: new ReadReq.Types.Options.Types.StreamOptions {
 									Revision = start,
-									StreamName = streamName
+									StreamIdentifier = streamName
 								},
 							Subscription = new ReadReq.Types.Options.Types.SubscriptionOptions()
 						}
