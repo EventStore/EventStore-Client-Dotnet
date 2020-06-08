@@ -7,8 +7,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj"/>
-		<ProjectReference Include="..\..\..\src\EventStore.Client\EventStore.Client.csproj"/>
+		<ProjectReference Include="..\..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
+		<ProjectReference Include="..\..\..\src\EventStore.Client\EventStore.Client.csproj" />
 	</ItemGroup>
 
 </Project>
