@@ -159,7 +159,7 @@ namespace EventStore.Client {
 				};
 			}
 
-			public Task Start(CancellationToken cancellationToken = default) => Task.CompletedTask;//_container.Start(cancellationToken);
+			public Task Start(CancellationToken cancellationToken = default) => _container.Start(cancellationToken);
 
 			public ValueTask DisposeAsync() {
 				_httpClient.Dispose();
