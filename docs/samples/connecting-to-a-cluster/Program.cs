@@ -21,7 +21,7 @@ namespace connecting_to_a_cluster {
 				}
 			};
 
-			var connection = new EventStoreClient(settings);
+			var client = new EventStoreClient(settings);
 			//connecting-to-a-cluster
 		}
 		
@@ -43,7 +43,7 @@ namespace connecting_to_a_cluster {
 				}
 			};
 
-			var connection = new EventStoreClient(settings);
+			var client = new EventStoreClient(settings);
 			//connecting-to-a-cluster-complex
 		}
 	}

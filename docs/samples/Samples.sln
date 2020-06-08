@@ -12,6 +12,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "connecting", "connecting\co
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "connecting-to-a-cluster", "connecting-to-a-cluster\connecting-to-a-cluster.csproj", "{C4CA324A-450D-4621-82F1-B4ECD18216B6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "writing-events", "writing-events\writing-events.csproj", "{496D9886-AF65-4579-AECE-2C147B9AF3C1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "secure-with-tls", "secure-with-tls\secure-with-tls.csproj", "{EF68E123-6187-48F3-B7E2-3EE826106B90}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,6 +42,14 @@ Global
 		{C4CA324A-450D-4621-82F1-B4ECD18216B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4CA324A-450D-4621-82F1-B4ECD18216B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C4CA324A-450D-4621-82F1-B4ECD18216B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{496D9886-AF65-4579-AECE-2C147B9AF3C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{496D9886-AF65-4579-AECE-2C147B9AF3C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{496D9886-AF65-4579-AECE-2C147B9AF3C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{496D9886-AF65-4579-AECE-2C147B9AF3C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF68E123-6187-48F3-B7E2-3EE826106B90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF68E123-6187-48F3-B7E2-3EE826106B90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF68E123-6187-48F3-B7E2-3EE826106B90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF68E123-6187-48F3-B7E2-3EE826106B90}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A32CE3CB-AB71-45C6-A1B2-CD94BE2D2B28} = {EBB93BBC-42A7-48E4-B1EA-0EA3953D347C}

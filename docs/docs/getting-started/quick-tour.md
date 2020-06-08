@@ -1,6 +1,6 @@
 # Quick tour
 
-This is a quick tour into the basic operations with Event Store. We will look at creating a connection, writing an event and reading an event.
+This is a quick tour into the basic operations with EventStoreDb. We will look at creating a connection, writing an event and reading an event.
 
 ## Requirements
 
@@ -11,33 +11,27 @@ This examples has the following requirements:
 
 ## Setup the certificates and running the server
 
-To run the Event Store server, you first need to set up a trusted certificate. This can be done using the `dotnet dev-certs` tool. 
-
-Navigate to an empty folder and run the following command.
- 
-```
-dotnet dev-certs https -ep certs/localhost.pfx -p dev --trust
-```
-
-Then create a new file called `docker-compose.yml` and copy the following contents into it.
+To run the EventStoreDb, create a new file called `docker-compose.yml` and copy the following contents into it.
 
 @[code transclude](@/samples/quick-start/docker-compose.yml)
 
-Finally run the command.
+Then run the command.
 
 ```
 docker-compose up
 ```
 
-This will launch a new instance of the Event Store server with a trusted certificate.
+This will launch a new instance of the EventStoreDb server .
 
 ## Creating an connection
 
 Create a new console application.
 
-The following example shows the simplest way to create a connection to event store on your local machine.
+The following example shows the simplest way to create a connection to EventStoreDb on your local machine.
 
 @[code transcludeWith=//creating-connection](@/samples/quick-start/Program.cs)
+
+EventStoreDb runs secure by default. To avoid setting up any certificates we need to override the `HttpClientHandler` to tell it to trust all certificates.
 
 > By default the server listens to port 2113 for requests.
 
