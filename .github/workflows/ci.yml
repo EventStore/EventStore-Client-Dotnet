@@ -128,4 +128,4 @@ jobs:
       if: contains(steps.get_version.outputs.branch, 'v')
       run: |
         dotnet tool restore
-        find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.nuget_key }}
+        find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.nuget_key }} --source https://api.nuget.org/v3/index.json
