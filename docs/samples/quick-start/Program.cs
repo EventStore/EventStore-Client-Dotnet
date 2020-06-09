@@ -10,7 +10,7 @@ using EventStore.Client;
 namespace quick_start {
 	class Program {
 		static async Task Main(string[] args) {
-			//creating-connection
+			#region creating-connection
 			var settings = new EventStoreClientSettings {
 				CreateHttpMessageHandler = () =>
 					new HttpClientHandler {
@@ -23,9 +23,9 @@ namespace quick_start {
 			};
 
 			var client = new EventStoreClient(settings);
-			//creating-connection
+			#endregion creating-connection
 
-			//append-to-stream
+			#region append-to-stream
 			var eventData = new EventData(
 				Uuid.NewUuid(),
 				"some-event",
@@ -38,9 +38,9 @@ namespace quick_start {
 				new List<EventData> {
 					eventData
 				});
-			//append-to-stream
+			#endregion append-to-stream
 
-			//read-stream
+			#region read-stream
 			var events = client.ReadStreamAsync(
 				Direction.Forwards,
 				"some-stream",
@@ -50,8 +50,7 @@ namespace quick_start {
 			await foreach (var @event in events) {
 				Console.WriteLine(Encoding.UTF8.GetString(@event.Event.Data.Span));
 			}
-
-			//read-stream
+			#endregion read-stream
 		}
 	}
 }

@@ -2,12 +2,12 @@
 
 ## Requirements
 
-The nuget package requires .NET Core SDK 3.1.
+The NuGet package requires .NET Core SDK 3.1.
 
 ## Installation
 
-There is a single package available from Nuget that can be installed via the following command:
+There is a single package available from NuGet that can be installed using the following command:
 
 ```
-Install-Package EventStore.Client.Grpc -Version 6.0.0-preview3
+dotnet add package EventStore.Client.Grpc -v 6.0.0-preview3
 ```

@@ -3,7 +3,7 @@ using Grpc.Core;
 using Grpc.Core.Interceptors;
 
 namespace connecting {
-	//interceptor
+	#region interceptor
 	public class DemoInterceptor : Interceptor {
 		public override AsyncServerStreamingCall<TResponse>
 			AsyncServerStreamingCall<TRequest, TResponse>(
@@ -24,6 +24,5 @@ namespace connecting {
 			return base.AsyncClientStreamingCall(context, continuation);
 		}
 	}
-
-	//interceptor
+	#endregion interceptor
 }
