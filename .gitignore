@@ -359,3 +359,4 @@ MigrationBackup/
 # Jetbrains IDE
 .idea/
 .DS_Store
+docs/public
