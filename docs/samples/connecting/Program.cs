@@ -8,7 +8,7 @@ namespace connecting {
 		}
 
 		private static void SimpleConnection() {
-			//creating-simple-connection
+			#region creating-simple-connection
 			var settings = new EventStoreClientSettings {
 				ConnectivitySettings = {
 					Address = new Uri("https://localhost:2113")
@@ -16,24 +16,24 @@ namespace connecting {
 			};
 
 			var connection = new EventStoreClient(settings);
-			//creating-simple-connection
+			#endregion creating-simple-connection
 		}
 
 		private static void SpecifyingAConnectionName() {
-			//setting-the-connection-name
+			#region setting-the-connection-name
 			var settings = new EventStoreClientSettings {
 				ConnectionName = "Some Connection",
 				ConnectivitySettings = {
 					Address = new Uri("https://localhost:2113")
 				}
 			};
-			//setting-the-connection-name
+			#endregion setting-the-connection-name
 
 			var connection = new EventStoreClient(settings);
 		}
 
 		private static void OverridingTheTimeout() {
-			//overriding-timeout
+			#region overriding-timeout
 			var settings = new EventStoreClientSettings {
 				OperationOptions = new EventStoreClientOperationOptions {
 					TimeoutAfter = TimeSpan.FromSeconds(30)
@@ -42,26 +42,26 @@ namespace connecting {
 					Address = new Uri("https://localhost:2113")
 				}
 			};
-			//overriding-timeout
+			#endregion overriding-timeout
 
 			var connection = new EventStoreClient(settings);
 		}
 
 		private static void CreatingAnInterceptor() {
-			//adding-an-interceptor
+			#region adding-an-interceptor
 			var settings = new EventStoreClientSettings {
 				Interceptors = new[] {new DemoInterceptor()},
 				ConnectivitySettings = {
 					Address = new Uri("https://localhost:2113")
 				}
 			};
-			//adding-an-interceptor
+			#endregion adding-an-interceptor
 
 			var connection = new EventStoreClient(settings);
 		}
 
 		private static void CustomHttpMessageHandler() {
-			//adding-an-custom-http-message-handler
+			#region adding-an-custom-http-message-handler
 			var settings = new EventStoreClientSettings {
 				CreateHttpMessageHandler = () =>
 					new HttpClientHandler {
@@ -72,7 +72,7 @@ namespace connecting {
 					Address = new Uri("https://localhost:2113")
 				}
 			};
-			//adding-an-custom-http-message-handler
+			#endregion adding-an-custom-http-message-handler
 
 			var connection = new EventStoreClient(settings);
 		}
