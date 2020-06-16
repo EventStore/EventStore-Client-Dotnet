@@ -1,7 +1,7 @@
 module.exports =[
 	{
-		"title": "Getting started",
-		collapsable: false,
+		title: "Getting started",
+		collapsable: true,
 		children: [
 			"getting-started/introduction",
 			"getting-started/installation",
@@ -9,13 +9,15 @@ module.exports =[
 		]
 	},
 	{
-		"title": "Changelog",
-		"path": "/changelog/",
-		collapsable: false
+		title: "Changelog",
+		collapsable: true,
+		children: [
+			"changelog/"
+		]
 	},
 	{
-		"title": "Connecting to Event Store",
-		collapsable: false,
+		title: "Connecting to Event Store",
+		collapsable: true,
 		children: [
 			"connecting-to-eventstore/basics",
 			"connecting-to-eventstore/connecting-to-a-cluster",
@@ -24,22 +26,22 @@ module.exports =[
 		]
 	},
 	{
-		"title": "Writing events",
-		collapsable: false,
+		title: "Writing events",
+		collapsable: true,
 		children: [
 			"writing-events/basics"
 		]
 	},
 	{
-		"title": "Reading events",
-		collapsable: false,
+		title: "Reading events",
+		collapsable: true,
 		children: [
 			"reading-events/basics"
 		]
 	},
 	{
-		"title": "Subscribing to streams",
-		collapsable: false,
+		title: "Subscribing to streams",
+		collapsable: true,
 		children: [
 			"subscribing-to-streams/basics",
 			"subscribing-to-streams/filtering",
@@ -47,15 +49,15 @@ module.exports =[
 		]
 	},
 	{
-		"title": "Projections",
-		collapsable: false,
+		title: "Projections",
+		collapsable: true,
 		children: [
 			"projections/creating-a-projection"
 		]
 	},
 	{
-		"title": "Persistent subscriptions",
-		collapsable: false,
+		title: "Persistent subscriptions",
+		collapsable: true,
 		children: [
 			"persistent-subscriptions/creating-a-persistent-subscription",
 			"persistent-subscriptions/subscribing-to-persistent-subscription",
@@ -63,18 +65,24 @@ module.exports =[
 		]
 	},
 	{
-		"title": "Examples",
-		"path": "/examples/",
-		collapsable: false,
+		title: "Examples",
+		children: [
+			"examples/"
+		],
+		collapsable: true,
 	},
 	{
-		"title": "Source code",
-		"path": "/source-code/",
-		collapsable: false,
+		title: "Source code",
+		children: [
+			"source-code/"
+		],
+		collapsable: true,
 	},
 	{
-		"title": "Issues and help",
-		"path": "/issues-and-help/",
-		collapsable: false,
+		title: "Issues and help",
+		children: [
+			"issues-and-help/"
+		],
+		collapsable: true,
 	}
 ]
