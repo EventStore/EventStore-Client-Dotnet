@@ -34,7 +34,8 @@ namespace EventStore.Client {
 					Timeout = Timeout.InfiniteTimeSpan,
 					DefaultRequestVersion = new Version(2, 0),
 				},
-				LoggerFactory = Settings.LoggerFactory
+				LoggerFactory = Settings.LoggerFactory,
+				Credentials = Settings.ChannelCredentials
 			});
 
 			CallInvoker = (Settings.Interceptors ?? Array.Empty<Interceptor>()).Aggregate(

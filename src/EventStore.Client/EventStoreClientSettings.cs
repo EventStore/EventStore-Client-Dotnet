@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Microsoft.Extensions.Logging;
 
@@ -11,6 +12,7 @@ namespace EventStore.Client {
 		public string? ConnectionName { get; set; }
 		public Func<HttpMessageHandler>? CreateHttpMessageHandler { get; set; }
 		public ILoggerFactory? LoggerFactory { get; set; }
+		public ChannelCredentials? ChannelCredentials { get; set; }
 
 		public EventStoreClientOperationOptions OperationOptions { get; set; } =
 			EventStoreClientOperationOptions.Default;
