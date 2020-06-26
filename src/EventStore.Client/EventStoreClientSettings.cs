@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 #nullable enable
 namespace EventStore.Client {
-	public class EventStoreClientSettings {
+	public partial class EventStoreClientSettings {
 		public IEnumerable<Interceptor>? Interceptors { get; set; }
 		public string? ConnectionName { get; set; }
 		public Func<HttpMessageHandler>? CreateHttpMessageHandler { get; set; }
