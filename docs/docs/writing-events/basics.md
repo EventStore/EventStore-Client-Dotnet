@@ -40,18 +40,28 @@ A byte encoded representation of your event. It is recommended that you store yo
 
 ### metadata
 
-It is common to need to store additional information along side your event that is part of the event it's self. This can be correlation Id's, timestamps, access information etc. EventStoreDb allows you to store a separate byte array containing this information to keep it separate
+It is common to need to store additional information along side your event that is part of the event it's self. This can be correlation Id's, timestamps, access information etc. EventStoreDb allows you to store a separate byte array containing this information to keep it separate.
 
 ### isJson
 
-Simple boolean field to tell EventStoreDb if the event is stored as json, true by default
+Simple boolean field to tell EventStoreDb if the event is stored as json, true by default.
 
 ## Handling concurrency
 
-Whe 
+When appending events to a stream you can supply a `StreamState` or `StreamRevision`. Your client can use this to tell EventStoreDB what state or version you expect the stream to be in when you append. If the stream isn't in that state then an exception will be thrown. 
 
+For example if we try and write the same record twice expecting both times that the stream doesn't exist we will get an `WrongExpectedVersionException` exception on the second:
+
+@[code transcludeWith=//append-with-no-stream](@/samples/writing-events/Program.cs)
+
+There are three available stream states:
+- Any
+- NoStream
+- StreamExists
+
+This check can be used to implement optimistic concurrency. When you retrieve a stream from EventStoreDB, you take note of the current version number, then when you save it back you can determine if somebody else has modified the record in the meantime.
 
 ## Options
 Throw on append failure etc
 
-## user credentials
+## User credentials
