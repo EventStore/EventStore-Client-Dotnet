@@ -46,7 +46,7 @@ namespace EventStore.Client {
 					Name = name,
 					Partition = partition ?? string.Empty
 				}
-			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
+			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 
 			var response = await call.ResponseAsync.ConfigureAwait(false);
 			return response.Result;
@@ -89,7 +89,7 @@ namespace EventStore.Client {
 					Name = name,
 					Partition = partition ?? string.Empty
 				}
-			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
+			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 
 			var response = await call.ResponseAsync.ConfigureAwait(false);
 			return response.State;

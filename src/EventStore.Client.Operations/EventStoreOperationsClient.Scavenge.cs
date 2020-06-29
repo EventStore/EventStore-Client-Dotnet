@@ -20,12 +20,11 @@ namespace EventStore.Client {
 			}
 
 			var result = await _client.StartScavengeAsync(new StartScavengeReq {
-					Options = new StartScavengeReq.Types.Options {
-						ThreadCount = threadCount,
-						StartFromChunk = startFromChunk
-					}
-				}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
-				cancellationToken: cancellationToken);
+				Options = new StartScavengeReq.Types.Options {
+					ThreadCount = threadCount,
+					StartFromChunk = startFromChunk
+				}
+			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 
 			return result.ScavengeResult switch {
 				ScavengeResp.Types.ScavengeResult.Started => DatabaseScavengeResult.Started(result.ScavengeId),
@@ -40,11 +39,10 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var result = await _client.StopScavengeAsync(new StopScavengeReq {
-					Options = new StopScavengeReq.Types.Options {
-						ScavengeId = scavengeId
-					}
-				}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
-				cancellationToken: cancellationToken);
+				Options = new StopScavengeReq.Types.Options {
+					ScavengeId = scavengeId
+				}
+			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 
 			return result.ScavengeResult switch {
 				ScavengeResp.Types.ScavengeResult.Started => DatabaseScavengeResult.Started(result.ScavengeId),

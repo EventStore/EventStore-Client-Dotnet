@@ -87,6 +87,7 @@ namespace EventStore.Client {
 					Count = (ulong)maxCount
 				}
 			},
+			Settings,
 			operationOptions,
 			userCredentials,
 			cancellationToken);
@@ -130,6 +131,7 @@ namespace EventStore.Client {
 			public ReadStreamResult(
 				Streams.Streams.StreamsClient client,
 				ReadReq request,
+				EventStoreClientSettings settings,
 				EventStoreClientOperationOptions operationOptions,
 				UserCredentials? userCredentials, CancellationToken cancellationToken) {
 				if (request.Options.CountOptionCase == ReadReq.Types.Options.CountOptionOneofCase.Count &&
@@ -145,10 +147,9 @@ namespace EventStore.Client {
 
 				request.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()};
 				_moved = false;
-				_call = client.Read(
-						request, RequestMetadata.Create(userCredentials),
-						deadline: DeadLine.After(operationOptions.TimeoutAfter), cancellationToken).ResponseStream
-					.ReadAllAsync().GetAsyncEnumerator();
+				_call = client.Read(request,
+						EventStoreCallOptions.Create(settings, operationOptions, userCredentials, cancellationToken))
+					.ResponseStream.ReadAllAsync().GetAsyncEnumerator();
 
 				ReadState = GetStateInternal();
 
@@ -231,9 +232,8 @@ namespace EventStore.Client {
 
 			request.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()};
 
-			using var call = _client.Read(
-				request, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
-				deadline: DeadLine.After(operationOptions.TimeoutAfter), cancellationToken);
+			using var call = _client.Read(request,
+				EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken));
 
 			await foreach (var e in call.ResponseStream
 				.ReadAllAsync(cancellationToken)

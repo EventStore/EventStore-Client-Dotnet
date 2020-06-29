@@ -35,7 +35,8 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(bufferSize));
 			}
 
-			var call = _client.Read(RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
+			var call = _client.Read(EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials,
+				cancellationToken));
 
 			return PersistentSubscription.Confirm(call, new ReadReq.Types.Options {
 					BufferSize = bufferSize,

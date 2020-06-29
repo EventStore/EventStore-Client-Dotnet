@@ -49,7 +49,7 @@ namespace EventStore.Client {
 						ReadBatchSize = settings.ReadBatchSize
 					}
 				}
-			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
+			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 	}
 }

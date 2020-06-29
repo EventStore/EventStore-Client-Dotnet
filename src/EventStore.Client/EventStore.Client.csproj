@@ -24,5 +24,6 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Remove="..\EventStore.Client.Common\TypedExceptionInterceptor.cs" />
+		<Compile Remove="..\EventStore.Client.Common\EventStoreClientSettingsExtensions.cs" />
 	</ItemGroup>
 </Project>

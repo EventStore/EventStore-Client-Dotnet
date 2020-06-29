@@ -97,8 +97,8 @@ namespace EventStore.Client {
 			EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
-			using var call = _client.Append(RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
-				DeadLine.After(operationOptions.TimeoutAfter), cancellationToken);
+			using var call = _client.Append(EventStoreCallOptions.Create(Settings, operationOptions,
+				userCredentials, cancellationToken));
 
 			IWriteResult writeResult;
 			try {
