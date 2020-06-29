@@ -18,9 +18,8 @@ namespace EventStore.Client {
 			}
 
 			using var call = _client.UpdateAsync(new UpdateReq {
-					Options = options
-				},
-				RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
+				Options = options
+			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 
 			await call.ResponseAsync.ConfigureAwait(false);
 		}

@@ -76,12 +76,13 @@ namespace EventStore.Client {
 				}
 			}, operationOptions, userCredentials, cancellationToken);
 
-		private async Task<DeleteResult> DeleteInternal(DeleteReq request, EventStoreClientOperationOptions operationOptions,
+		private async Task<DeleteResult> DeleteInternal(DeleteReq request,
+			EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
 			_log.LogDebug("Deleting stream {streamName}.", request.Options.StreamIdentifier);
-			var result = await _client.DeleteAsync(request, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
-				deadline: DeadLine.After(operationOptions.TimeoutAfter), cancellationToken);
+			var result = await _client.DeleteAsync(request,
+				EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken));
 
 			return new DeleteResult(new Position(result.Position.CommitPosition, result.Position.PreparePosition));
 		}

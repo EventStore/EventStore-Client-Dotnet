@@ -11,7 +11,7 @@ namespace EventStore.Client {
 				Options = new EnableReq.Types.Options {
 					Name = name
 				}
-			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
+			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -30,14 +30,14 @@ namespace EventStore.Client {
 					Name = name,
 					WriteCheckpoint = writeCheckpoint
 				}
-			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
+			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
 		public async Task RestartSubsystemAsync(UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			await _client.RestartSubsystemAsync(new Empty(), RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials),
-				cancellationToken: cancellationToken);
+			await _client.RestartSubsystemAsync(new Empty(),
+				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 	}
 }

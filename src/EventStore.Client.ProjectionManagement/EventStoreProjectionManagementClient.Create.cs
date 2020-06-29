@@ -12,7 +12,7 @@ namespace EventStore.Client {
 					OneTime = new Empty(),
 					Query = query
 				}
-			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
+			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -26,7 +26,7 @@ namespace EventStore.Client {
 					},
 					Query = query
 				}
-			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
+			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -39,7 +39,7 @@ namespace EventStore.Client {
 					},
 					Query = query
 				}
-			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
+			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 	}
