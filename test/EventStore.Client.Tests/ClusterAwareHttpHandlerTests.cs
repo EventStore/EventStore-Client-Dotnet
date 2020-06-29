@@ -10,10 +10,15 @@ using Xunit;
 
 namespace EventStore.Client {
 	public class ClusterAwareHttpHandlerTests {
-		[Theory, InlineData(true), InlineData(false)]
-		public async Task should_set_requires_leader_header(bool requiresLeader) {
+		[Theory,
+		InlineData(true,true),
+		InlineData(true,false),
+		InlineData(false,true),
+		InlineData(false,false)
+		]
+		public async Task should_set_requires_leader_header(bool useHttps,bool requiresLeader) {
 			var sut = new ClusterAwareHttpHandler(
-				requiresLeader, new FakeEndpointDiscoverer(() => new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113))) {
+				useHttps, requiresLeader, new FakeEndpointDiscoverer(() => new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113))) {
 				InnerHandler = new TestMessageHandler()
 			};
 
@@ -27,12 +32,12 @@ namespace EventStore.Client {
 			Assert.True(bool.Parse(value.First()) == requiresLeader);
 		}
 
-		[Fact]
-		public async Task should_issue_request_to_discovered_endpoint() {
+		[Theory, InlineData(true), InlineData(false)]
+		public async Task should_issue_request_to_discovered_endpoint(bool useHttps) {
 			var discoveredEndpoint = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113);
 
 			var sut = new ClusterAwareHttpHandler(
-				true, new FakeEndpointDiscoverer(() => discoveredEndpoint)) {
+				useHttps, true, new FakeEndpointDiscoverer(() => discoveredEndpoint)) {
 				InnerHandler = new TestMessageHandler()
 			};
 
@@ -47,12 +52,12 @@ namespace EventStore.Client {
 			Assert.Equal(discoveredEndpoint.Port, request.RequestUri.Port);
 		}
 
-		[Fact]
-		public async Task should_attempt_endpoint_discovery_on_next_request_when_request_fails() {
+		[Theory, InlineData(true), InlineData(false)]
+		public async Task should_attempt_endpoint_discovery_on_next_request_when_request_fails(bool useHttps) {
 			int discoveryAttempts = 0;
 
 			var sut = new ClusterAwareHttpHandler(
-				true, new FakeEndpointDiscoverer(() => {
+				useHttps, true, new FakeEndpointDiscoverer(() => {
 					discoveryAttempts++;
 					throw new Exception();
 				})) {
@@ -70,9 +75,9 @@ namespace EventStore.Client {
 		}
 
 		[Theory, ClassData(typeof(EndPoints))]
-		public async Task should_set_endpoint_to_leader_endpoint_on_exception(EndPoint endpoint) {
+		public async Task should_set_endpoint_to_leader_endpoint_on_exception(bool useHttps, EndPoint endpoint) {
 			var sut = new ClusterAwareHttpHandler(
-				true, new FakeEndpointDiscoverer(() => new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113))) {
+				useHttps, true, new FakeEndpointDiscoverer(() => new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113))) {
 				InnerHandler = new TestMessageHandler()
 			};
 
@@ -90,8 +95,11 @@ namespace EventStore.Client {
 	
 	public class EndPoints : IEnumerable<object[]> {
 		public IEnumerator<object[]> GetEnumerator() {
-			yield return new object[] {new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113)};
-			yield return new object[] {new DnsEndPoint("nodea.eventstore.dev", 2113), };
+			yield return new object[] {true, new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113)};
+			yield return new object[] {true, new DnsEndPoint("nodea.eventstore.dev", 2113), };
+			yield return new object[] {false, new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113)};
+			yield return new object[] {false, new DnsEndPoint("nodea.eventstore.dev", 2113), };
+
 		}
 
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
