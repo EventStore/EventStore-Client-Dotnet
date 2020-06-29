@@ -7,17 +7,20 @@ using System.Threading.Tasks;
 #nullable enable
 namespace EventStore.Client {
 	public class ClusterAwareHttpHandler : DelegatingHandler {
+		private readonly bool _useHttps;
 		private readonly bool _requiresLeader;
 		private readonly IEndpointDiscoverer _endpointDiscoverer;
 		private Lazy<Task<EndPoint>> _endpoint;
 
 		public static ClusterAwareHttpHandler Create(EventStoreClientSettings settings,
 			HttpMessageHandler? httpMessageHandler = null) => new ClusterAwareHttpHandler(
+			settings.ConnectivitySettings.UseHttps,
 			settings.ConnectivitySettings.NodePreference == NodePreference.Leader,
 			new ClusterEndpointDiscoverer(
 				settings.ConnectivitySettings.MaxDiscoverAttempts,
 				settings.ConnectivitySettings.GossipSeeds,
 				settings.ConnectivitySettings.GossipTimeout,
+				settings.ConnectivitySettings.UseHttps,
 				settings.ConnectivitySettings.DiscoveryInterval,
 				settings.ConnectivitySettings.NodePreference,
 				httpMessageHandler)) {
@@ -25,7 +28,8 @@ namespace EventStore.Client {
 		};
 
 
-		public ClusterAwareHttpHandler(bool requiresLeader, IEndpointDiscoverer endpointDiscoverer) {
+		public ClusterAwareHttpHandler(bool useHttps, bool requiresLeader, IEndpointDiscoverer endpointDiscoverer) {
+			_useHttps = useHttps;
 			_requiresLeader = requiresLeader;
 			_endpointDiscoverer = endpointDiscoverer;
 			_endpoint = new Lazy<Task<EndPoint>>(endpointDiscoverer.DiscoverAsync,
@@ -38,7 +42,7 @@ namespace EventStore.Client {
 			try {
 				var endpoint = await endpointResolver.Value.ConfigureAwait(false);
 
-				request.RequestUri = new UriBuilder(Uri.UriSchemeHttps, endpoint.GetHost(), endpoint.GetPort(),
+				request.RequestUri = new UriBuilder(_useHttps ? Uri.UriSchemeHttps : Uri.UriSchemeHttp, endpoint.GetHost(), endpoint.GetPort(),
 					request.RequestUri.PathAndQuery).Uri;
 				request.Headers.Add("requires-leader", _requiresLeader.ToString());
 				return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
