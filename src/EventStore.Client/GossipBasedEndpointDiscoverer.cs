@@ -24,6 +24,7 @@ namespace EventStore.Client {
 			int maxDiscoverAttempts,
 			EndPoint[] gossipSeeds,
 			TimeSpan gossipTimeout,
+			bool gossipOverHttps,
 			TimeSpan discoveryInterval,
 			NodePreference nodePreference,
 			HttpMessageHandler? httpMessageHandler = null) {
@@ -33,7 +34,7 @@ namespace EventStore.Client {
 			_nodePreference = nodePreference;
 			_gossipClients = new Dictionary<EndPoint,  GossipClient>();
 			_gossipClientFactory = (gossipSeedEndPoint) => {
-				string url = gossipSeedEndPoint.ToHttpUrl(EndPointExtensions.HTTPS_SCHEMA);
+				string url = gossipSeedEndPoint.ToHttpUrl(gossipOverHttps?EndPointExtensions.HTTPS_SCHEMA:EndPointExtensions.HTTP_SCHEMA);
 				var channel = GrpcChannel.ForAddress(url, new GrpcChannelOptions {
 					HttpClient = new HttpClient(httpMessageHandler ?? new HttpClientHandler()) {
 						Timeout = gossipTimeout,
