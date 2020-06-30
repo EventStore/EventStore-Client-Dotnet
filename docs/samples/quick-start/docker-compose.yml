@@ -1,7 +1,7 @@
 version: '3'
 services:
   eventstore:
-    image: eventstore/eventstore:20.6.0-rc-buster-slim
+    image: eventstore/eventstore:20.6.0-buster-slim
     environment:
       - EVENTSTORE_DEV=true
     ports:

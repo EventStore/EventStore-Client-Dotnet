@@ -1,5 +1,10 @@
 # Connecting to a cluster
 
+::: tip
+Packages required
+- EventStore.Client.Grpc.Streams 20.6.0
+:::
+
 TODO: Add link to how to set up cluster
 
 For redundancy, you can run EventStoreDB in a cluster. In this scenario you should specify all the nodes in your cluster when connecting. This allows your client to discover which node it should be speaking to at any given time.

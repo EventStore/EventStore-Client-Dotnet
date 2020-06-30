@@ -24,7 +24,7 @@ For example:
 
 will result in only a single event being written
 
-![Duplicate Event](images/duplicate-event.png)
+![Duplicate Event](/docs/writing-events/images/duplicate-event.png)
 
 For most scenarios you can just provide `Uuid.NewUuid()` although there are methods for generating a `Uuid` from other types if you need to change how this `Uuid` is generated
 
