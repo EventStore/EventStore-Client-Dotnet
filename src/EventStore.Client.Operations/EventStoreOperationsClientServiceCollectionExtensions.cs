@@ -21,6 +21,9 @@ namespace Microsoft.Extensions.DependencyInjection {
 
 		public static IServiceCollection AddEventStoreOperationsClient(this IServiceCollection services,
 			Action<EventStoreClientSettings>? configureOptions = null) {
+			if (services == null) {
+				throw new ArgumentNullException(nameof(services));
+			}
 			var options = new EventStoreClientSettings();
 			configureOptions?.Invoke(options);
 
