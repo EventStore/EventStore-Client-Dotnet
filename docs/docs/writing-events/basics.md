@@ -2,7 +2,7 @@
 
 The simplest way to write an event to EventStoreDb is to create an `EventData` object and call `AppendToStreamAsync()`
 
-@[code transcludeWith=//append-to-stream](@/samples/writing-events/Program.cs)
+<<< @/samples/writing-events/Program.cs#append-to-stream
 
 As you can see `AppendToStreamAsync()` a `IEnumerable<EventData>` so it is also possible to provide a collection of events to be saved in a single batch. 
  
@@ -12,7 +12,7 @@ As well as the example above there is also a number of other options for dealing
 
 ## Working with EventData
 
-When appending events to EventStoreDb they must first all be wrapped in an `EventData` object. This allow you to specify the content of the event, type of event whether its in Json format etc. In it's simplest form you need to the three following arguments.
+When appending events to EventStoreDb they must first all be wrapped in an `EventData` object. This allow you to specify the content of the event, the type of event and whether its in Json format. In it's simplest form you need to the three following arguments.
 
 ### eventId
 
@@ -20,7 +20,7 @@ This takes the format of of a `Uuid` and is used to uniquely identify the event 
 
 For example:
 
-@[code transcludeWith=//append-duplicate-event](@/samples/writing-events/Program.cs)
+<<< @/samples/writing-events/Program.cs#append-duplicate-event
 
 will result in only a single event being written
 
@@ -52,9 +52,9 @@ When appending events to a stream you can supply a `StreamState` or `StreamRevis
 
 For example if we try and write the same record twice expecting both times that the stream doesn't exist we will get an `WrongExpectedVersionException` exception on the second:
 
-@[code transcludeWith=//append-with-no-stream](@/samples/writing-events/Program.cs)
+<<< @/samples/writing-events/Program.cs#append-with-no-stream
 
-There are three available stream states:
+There are three available stream states: 
 - Any
 - NoStream
 - StreamExists
@@ -65,3 +65,5 @@ This check can be used to implement optimistic concurrency. When you retrieve a 
 Throw on append failure etc
 
 ## User credentials
+
+## stream format

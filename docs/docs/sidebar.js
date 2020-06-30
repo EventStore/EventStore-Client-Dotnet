@@ -12,15 +12,18 @@ module.exports =[
 		title: "Changelog",
 		collapsable: true,
 		children: [
-			"changelog/"
+			"changelog/todo"
 		]
 	},
 	{
 		title: "Connecting to Event Store",
 		collapsable: true,
 		children: [
-			"connecting-to-eventstore/basics",
+			"connecting-to-eventstore/connecting-to-a-single-node",
 			"connecting-to-eventstore/connecting-to-a-cluster",
+			"connecting-to-eventstore/connecting-to-eventstore-cloud",
+			"connecting-to-eventstore/using-a-custom-httpmessagehandler",
+			"connecting-to-eventstore/adding-a-grpc-interceptor",
 			"connecting-to-eventstore/tls",
 			"connecting-to-eventstore/setting-up-a-connection-with-net-dependency-injection"
 		]
@@ -29,7 +32,8 @@ module.exports =[
 		title: "Writing events",
 		collapsable: true,
 		children: [
-			"writing-events/basics"
+			"writing-events/basics",
+			"writing-events/event-versioning-strategies"
 		]
 	},
 	{

@@ -2,7 +2,7 @@ using System;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
-namespace connecting {
+namespace connecting_to_a_single_node {
 	#region interceptor
 	public class DemoInterceptor : Interceptor {
 		public override AsyncServerStreamingCall<TResponse>

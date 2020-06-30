@@ -6,9 +6,9 @@ namespace connecting_to_a_cluster {
 	class Program {
 		static void Main(string[] args) {
 		}
-		
+
 		private static void ConnectingToACluster() {
-			//connecting-to-a-cluster
+			#region connecting-to-a-cluster
 			var settings = new EventStoreClientSettings {
 				ConnectivitySettings =
 				{
@@ -22,11 +22,11 @@ namespace connecting_to_a_cluster {
 			};
 
 			var client = new EventStoreClient(settings);
-			//connecting-to-a-cluster
+			#endregion connecting-to-a-cluster
 		}
-		
+
 		private static void ConnectingToAClusterComplex() {
-			//connecting-to-a-cluster-complex
+			#region connecting-to-a-cluster-complex
 			var settings = new EventStoreClientSettings {
 				ConnectivitySettings =
 				{
@@ -44,7 +44,7 @@ namespace connecting_to_a_cluster {
 			};
 
 			var client = new EventStoreClient(settings);
-			//connecting-to-a-cluster-complex
+			#endregion connecting-to-a-cluster-complex
 		}
 	}
 }

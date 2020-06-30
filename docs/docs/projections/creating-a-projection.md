@@ -1,0 +1,6 @@
+- Creating basic projection
+- doing it idempotently 
+- delete projections
+- handling updates??
+- querying for state
+- getting stats

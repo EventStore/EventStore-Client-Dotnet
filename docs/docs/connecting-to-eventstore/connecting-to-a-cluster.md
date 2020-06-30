@@ -1,11 +1,13 @@
 # Connecting to a cluster
 
+TODO: Add link to how to set up cluster
+
 For redundancy, you can run EventStoreDB in a cluster. In this scenario you should specify all the nodes in your cluster when connecting. This allows your client to discover which node it should be speaking to at any given time.
 
 ::: warning
 Important: You should never hide your cluster behind a load balancer as this will stop your clients from connecting to the correct nodes.
 :::
-
+ 
 <<< @/samples/connecting-to-a-cluster/Program.cs#connecting-to-a-cluster
  
 ## Fine-tuning cluster connection

@@ -8,13 +8,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client.Streams",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client", "..\..\src\EventStore.Client\EventStore.Client.csproj", "{A71A13F7-8480-4E48-B88D-A2364F7C95B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "connecting", "connecting\connecting.csproj", "{C4C0E34E-5B9F-4A77-91AA-7E2B33EB3DE9}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "connecting-to-a-cluster", "connecting-to-a-cluster\connecting-to-a-cluster.csproj", "{C4CA324A-450D-4621-82F1-B4ECD18216B6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "writing-events", "writing-events\writing-events.csproj", "{496D9886-AF65-4579-AECE-2C147B9AF3C1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "secure-with-tls", "secure-with-tls\secure-with-tls.csproj", "{EF68E123-6187-48F3-B7E2-3EE826106B90}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "connecting-to-a-single-node", "connecting-to-a-single-node\connecting-to-a-single-node.csproj", "{BA92AA49-2DC6-44D3-AA5A-12438D06AA8F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "setting-up-dependency-injection", "setting-up-dependency-injection\setting-up-dependency-injection.csproj", "{CE732D15-A9D7-430C-BD22-94B32739279E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,10 +36,6 @@ Global
 		{A71A13F7-8480-4E48-B88D-A2364F7C95B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A71A13F7-8480-4E48-B88D-A2364F7C95B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A71A13F7-8480-4E48-B88D-A2364F7C95B6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C4C0E34E-5B9F-4A77-91AA-7E2B33EB3DE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C4C0E34E-5B9F-4A77-91AA-7E2B33EB3DE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C4C0E34E-5B9F-4A77-91AA-7E2B33EB3DE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C4C0E34E-5B9F-4A77-91AA-7E2B33EB3DE9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C4CA324A-450D-4621-82F1-B4ECD18216B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C4CA324A-450D-4621-82F1-B4ECD18216B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4CA324A-450D-4621-82F1-B4ECD18216B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -50,6 +48,14 @@ Global
 		{EF68E123-6187-48F3-B7E2-3EE826106B90}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF68E123-6187-48F3-B7E2-3EE826106B90}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF68E123-6187-48F3-B7E2-3EE826106B90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA92AA49-2DC6-44D3-AA5A-12438D06AA8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA92AA49-2DC6-44D3-AA5A-12438D06AA8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA92AA49-2DC6-44D3-AA5A-12438D06AA8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA92AA49-2DC6-44D3-AA5A-12438D06AA8F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE732D15-A9D7-430C-BD22-94B32739279E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE732D15-A9D7-430C-BD22-94B32739279E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE732D15-A9D7-430C-BD22-94B32739279E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE732D15-A9D7-430C-BD22-94B32739279E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A32CE3CB-AB71-45C6-A1B2-CD94BE2D2B28} = {EBB93BBC-42A7-48E4-B1EA-0EA3953D347C}

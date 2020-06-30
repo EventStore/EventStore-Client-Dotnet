@@ -1,1 +1,1 @@
-# Setting up a connection wit .NET dependency injection
+# Setting up a connection with .NET dependency injection

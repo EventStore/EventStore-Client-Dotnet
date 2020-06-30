@@ -1,0 +1,8 @@
+- subscribe to stream
+- sub to all
+- filtering
+- caught up to live
+- dealing with dropped subs
+- checkpointing
+- error handling
+- user creds

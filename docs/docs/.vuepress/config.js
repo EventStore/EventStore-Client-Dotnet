@@ -22,7 +22,7 @@ module.exports = {
 	},
 	markdown: {
 		extendMarkdown: md => {
-			md.use(require('markdown-it-vuepress-code-snippet-enhanced'));
+	//		md.use(require('markdown-it-vuepress-code-snippet-enhanced'));
 			md.use(require("markdown-it-include"));
 		}
 	}

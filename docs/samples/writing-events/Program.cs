@@ -22,26 +22,26 @@ namespace writing_events {
 
 			var client = new EventStoreClient(settings);
 
-			//append-to-stream
-			// var eventData = new EventData(
-			// 	Uuid.NewUuid(),
-			// 	"some-event",
-			// 	Encoding.UTF8.GetBytes("{\"id\": \"1\" \"value\": \"some value\"}")
-			// );
-			//
-			// await client.AppendToStreamAsync(
-			// 	"some-stream",
-			// 	StreamState.NoStream,
-			// 	new List<EventData> {
-			// 		eventData
-			// 	});
-			//append-to-stream
+			#region append-to-stream
+			var eventData = new EventData(
+				Uuid.NewUuid(),
+				"some-event",
+				Encoding.UTF8.GetBytes("{\"id\": \"1\" \"value\": \"some value\"}")
+			);
+
+			await client.AppendToStreamAsync(
+				"some-stream",
+				StreamState.NoStream,
+				new List<EventData> {
+					eventData
+				});
+			#endregion append-to-stream
 
 			await AppendWithConcurrencyCheck(client);
 		}
 
 		private static async Task AppendWithSameId(EventStoreClient client) {
-			//append-duplicate-event
+			#region append-duplicate-event
 			var eventData = new EventData(
 				Uuid.NewUuid(),
 				"some-event",
@@ -62,11 +62,11 @@ namespace writing_events {
 				new List<EventData> {
 					eventData
 				});
-			//append-duplicate-event
+			#endregion append-duplicate-event
 		}
 
 		private static async Task AppendWithNoStream(EventStoreClient client) {
-			//append-with-no-stream
+			#region append-with-no-stream
 			var eventDataOne = new EventData(
 				Uuid.NewUuid(),
 				"some-event",
@@ -93,11 +93,11 @@ namespace writing_events {
 				new List<EventData> {
 					eventDataTwo
 				});
-			//append-with-no-stream
+			#endregion append-with-no-stream
 		}
 
 		private static async Task AppendWithConcurrencyCheck(EventStoreClient client) {
-			//append-with-concurrency-check
+			#region append-with-concurrency-check
 			var clientOneRead = client.ReadStreamAsync(
 				Direction.Forwards,
 				"concurrency-stream",
@@ -133,7 +133,7 @@ namespace writing_events {
 				new List<EventData> {
 					clientTwoData
 				});
-			//append-with-concurrency-check
+			#endregion append-with-concurrency-check
 		}
 	}
 }

@@ -2,7 +2,7 @@
 using System.Net.Http;
 using EventStore.Client;
 
-namespace connecting {
+namespace connecting_to_a_single_node {
 	class Program {
 		static void Main(string[] args) {
 		}
