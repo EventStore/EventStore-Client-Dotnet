@@ -21,8 +21,8 @@ namespace EventStore.Client {
 			_fixture = new Fixture();
 		}
 
-		[Fact]
-		public async Task should_issue_gossip_to_gossip_seed() {
+		[Theory, InlineData(true), InlineData(false)]
+		public async Task should_issue_gossip_to_gossip_seed(bool useHttps) {
 			HttpRequestMessage? request = null;
 			var gossip = new ClusterMessages.ClusterInfo {
 				Members = new[] {
@@ -41,21 +41,21 @@ namespace EventStore.Client {
 				_fixture.CurrentClusterInfo.Members = gossip.Members;
 			});
 
-			var gossipSeed = new DnsEndPoint(_fixture.Host, _fixture.Port);
+			var gossipSeed = new DnsEndPoint(_fixture.Host, _fixture.GetPort(useHttps));
 
 			var sut = new ClusterEndpointDiscoverer(1, new[] {
 				gossipSeed,
-			}, Timeout.InfiniteTimeSpan, TimeSpan.Zero, NodePreference.Leader, handler);
+			}, Timeout.InfiniteTimeSpan, useHttps, TimeSpan.Zero, NodePreference.Leader, handler);
 
 			await sut.DiscoverAsync();
 
-			Assert.Equal(Uri.UriSchemeHttps, request?.RequestUri.Scheme);
+			Assert.Equal(useHttps ? Uri.UriSchemeHttps : Uri.UriSchemeHttp, request?.RequestUri.Scheme);
 			Assert.Equal(gossipSeed.Host, request?.RequestUri.Host);
 			Assert.Equal(gossipSeed.Port, request?.RequestUri.Port);
 		}
 		
-		[Fact]
-		public async Task should_be_able_to_discover_twice() {
+		[Theory, InlineData(true), InlineData(false)]
+		public async Task should_be_able_to_discover_twice(bool useHttps) {
 			bool isFirstGossip = true;
 			var firstGossip = new ClusterMessages.ClusterInfo {
 				Members = new[] {
@@ -103,11 +103,11 @@ namespace EventStore.Client {
 				}
 			});
 
-			var gossipSeed = new DnsEndPoint(_fixture.Host, _fixture.Port);
+			var gossipSeed = new DnsEndPoint(_fixture.Host, _fixture.GetPort(useHttps));
 
 			var sut = new ClusterEndpointDiscoverer(5, new[] {
 				gossipSeed,
-			}, Timeout.InfiniteTimeSpan, TimeSpan.Zero, NodePreference.Leader, handler);
+			}, Timeout.InfiniteTimeSpan, useHttps, TimeSpan.Zero, NodePreference.Leader, handler);
 
 			var result = await sut.DiscoverAsync();
 
@@ -124,8 +124,8 @@ namespace EventStore.Client {
 			Assert.Equal(expected.HttpEndPointPort, result.GetPort());
 		}
 
-		[Fact]
-		public async Task should_not_exceed_max_discovery_attempts() {
+		[Theory, InlineData(true), InlineData(false)]
+		public async Task should_not_exceed_max_discovery_attempts(bool useHttps) {
 			int maxDiscoveryAttempts = 5;
 			int discoveryAttempts = 0;
 
@@ -135,8 +135,8 @@ namespace EventStore.Client {
 			});
 
 			var sut = new ClusterEndpointDiscoverer(maxDiscoveryAttempts, new[] {
-				new DnsEndPoint(_fixture.Host, _fixture.Port),
-			}, Timeout.InfiniteTimeSpan, TimeSpan.Zero, NodePreference.Leader, handler);
+				new DnsEndPoint(_fixture.Host, _fixture.GetPort(useHttps)),
+			}, Timeout.InfiniteTimeSpan, useHttps, TimeSpan.Zero, NodePreference.Leader, handler);
 
 			await Assert.ThrowsAsync<DiscoveryException>(() => sut.DiscoverAsync());
 
@@ -144,17 +144,28 @@ namespace EventStore.Client {
 		}
 
 		[Theory,
-		 InlineData(ClusterMessages.VNodeState.Manager),
-		 InlineData(ClusterMessages.VNodeState.Shutdown),
-		 InlineData(ClusterMessages.VNodeState.Unknown),
-		 InlineData(ClusterMessages.VNodeState.Initializing),
-		 InlineData(ClusterMessages.VNodeState.CatchingUp),
-		 InlineData(ClusterMessages.VNodeState.ResigningLeader),
-		 InlineData(ClusterMessages.VNodeState.ShuttingDown),
-		 InlineData(ClusterMessages.VNodeState.PreLeader),
-		 InlineData(ClusterMessages.VNodeState.PreReplica),
-		 InlineData(ClusterMessages.VNodeState.PreReadOnlyReplica)]
-		public async Task should_not_be_able_to_pick_invalid_node(ClusterMessages.VNodeState invalidState) {
+		 InlineData(true,ClusterMessages.VNodeState.Manager),
+		 InlineData(true,ClusterMessages.VNodeState.Shutdown),
+		 InlineData(true,ClusterMessages.VNodeState.Unknown),
+		 InlineData(true,ClusterMessages.VNodeState.Initializing),
+		 InlineData(true,ClusterMessages.VNodeState.CatchingUp),
+		 InlineData(true,ClusterMessages.VNodeState.ResigningLeader),
+		 InlineData(true,ClusterMessages.VNodeState.ShuttingDown),
+		 InlineData(true,ClusterMessages.VNodeState.PreLeader),
+		 InlineData(true,ClusterMessages.VNodeState.PreReplica),
+		 InlineData(true,ClusterMessages.VNodeState.PreReadOnlyReplica),
+		 InlineData(false,ClusterMessages.VNodeState.Manager),
+		 InlineData(false,ClusterMessages.VNodeState.Shutdown),
+		 InlineData(false,ClusterMessages.VNodeState.Unknown),
+		 InlineData(false,ClusterMessages.VNodeState.Initializing),
+		 InlineData(false,ClusterMessages.VNodeState.CatchingUp),
+		 InlineData(false,ClusterMessages.VNodeState.ResigningLeader),
+		 InlineData(false,ClusterMessages.VNodeState.ShuttingDown),
+		 InlineData(false,ClusterMessages.VNodeState.PreLeader),
+		 InlineData(false,ClusterMessages.VNodeState.PreReplica),
+		 InlineData(false,ClusterMessages.VNodeState.PreReadOnlyReplica)
+		]
+		public async Task should_not_be_able_to_pick_invalid_node(bool useHttps, ClusterMessages.VNodeState invalidState) {
 			var gossip = new ClusterMessages.ClusterInfo {
 				Members = new[] {
 					new ClusterMessages.MemberInfo {
@@ -171,18 +182,23 @@ namespace EventStore.Client {
 				_fixture.CurrentClusterInfo.Members = gossip.Members;
 			});
 
-			var sut = new ClusterEndpointDiscoverer(1, new[] { new DnsEndPoint(_fixture.Host, _fixture.Port),
-			}, Timeout.InfiniteTimeSpan, TimeSpan.Zero, NodePreference.Leader, handler);
+			var sut = new ClusterEndpointDiscoverer(1, new[] { new DnsEndPoint(_fixture.Host, _fixture.GetPort(useHttps)),
+			}, Timeout.InfiniteTimeSpan, useHttps, TimeSpan.Zero, NodePreference.Leader, handler);
 
 			await Assert.ThrowsAsync<DiscoveryException>(() => sut.DiscoverAsync());
 		}
 
 		[Theory,
-		 InlineData(NodePreference.Leader, ClusterMessages.VNodeState.Leader),
-		 InlineData(NodePreference.Follower, ClusterMessages.VNodeState.Follower),
-		 InlineData(NodePreference.ReadOnlyReplica, ClusterMessages.VNodeState.ReadOnlyReplica),
-		 InlineData(NodePreference.ReadOnlyReplica, ClusterMessages.VNodeState.ReadOnlyLeaderless)]
-		public async Task should_pick_node_based_on_preference(NodePreference preference,
+		 InlineData(true, NodePreference.Leader, ClusterMessages.VNodeState.Leader),
+		 InlineData(true, NodePreference.Follower, ClusterMessages.VNodeState.Follower),
+		 InlineData(true, NodePreference.ReadOnlyReplica, ClusterMessages.VNodeState.ReadOnlyReplica),
+		 InlineData(true, NodePreference.ReadOnlyReplica, ClusterMessages.VNodeState.ReadOnlyLeaderless),
+		 InlineData(false, NodePreference.Leader, ClusterMessages.VNodeState.Leader),
+		 InlineData(false, NodePreference.Follower, ClusterMessages.VNodeState.Follower),
+		 InlineData(false, NodePreference.ReadOnlyReplica, ClusterMessages.VNodeState.ReadOnlyReplica),
+		 InlineData(false, NodePreference.ReadOnlyReplica, ClusterMessages.VNodeState.ReadOnlyLeaderless)
+		 ]
+		public async Task should_pick_node_based_on_preference(bool useHttps, NodePreference preference,
 			ClusterMessages.VNodeState expectedState) {
 			var gossip = new ClusterMessages.ClusterInfo {
 				Members = new[] {
@@ -223,16 +239,16 @@ namespace EventStore.Client {
 			});
 
 			var sut = new ClusterEndpointDiscoverer(1, new[] {
-				new DnsEndPoint(_fixture.Host, _fixture.Port)
-			}, Timeout.InfiniteTimeSpan, TimeSpan.Zero, preference, handler);
+				new DnsEndPoint(_fixture.Host, _fixture.GetPort(useHttps))
+			}, Timeout.InfiniteTimeSpan, useHttps, TimeSpan.Zero, preference, handler);
 
 			var result = await sut.DiscoverAsync();
 			Assert.Equal(result.GetPort(),
 				gossip.Members.Last(x => x.State == expectedState).HttpEndPointPort);
 		}
 
-		[Fact]
-		public async Task falls_back_to_first_alive_node_if_a_preferred_node_is_not_found() {
+		[Theory, InlineData(true), InlineData(false)]
+		public async Task falls_back_to_first_alive_node_if_a_preferred_node_is_not_found(bool useHttps) {
 			var gossip = new ClusterMessages.ClusterInfo {
 				Members = new[] {
 					new ClusterMessages.MemberInfo {
@@ -256,8 +272,8 @@ namespace EventStore.Client {
 			});
 
 			var sut = new ClusterEndpointDiscoverer(1, new[] {
-				new DnsEndPoint(_fixture.Host, _fixture.Port)
-			}, Timeout.InfiniteTimeSpan, TimeSpan.Zero, NodePreference.Leader, handler);
+				new DnsEndPoint(_fixture.Host, _fixture.GetPort(useHttps))
+			}, Timeout.InfiniteTimeSpan, useHttps, TimeSpan.Zero, NodePreference.Leader, handler);
 
 			var result = await sut.DiscoverAsync();
 			Assert.Equal(result.GetPort(),
@@ -284,7 +300,8 @@ namespace EventStore.Client {
 
 		public class Fixture : IAsyncLifetime {
 			public readonly string Host = "localhost";
-			public readonly int Port = GetFreePort();
+			public readonly int SecurePort = GetFreePort();
+			public readonly int InsecurePort = GetFreePort();
 			public readonly ClusterMessages.ClusterInfo CurrentClusterInfo = new ClusterMessages.ClusterInfo();
 			private Server? _server;
 
@@ -303,8 +320,12 @@ namespace EventStore.Client {
 				_server = new Server
 				{
 					Services = { Gossip.Gossip.BindService(new GossipImplementation(CurrentClusterInfo)) },
-					Ports = { new ServerPort(Host, Port, new SslServerCredentials(new [] {keyCertificatePair})) }
+					Ports = {
+						new ServerPort(Host, SecurePort, new SslServerCredentials(new [] {keyCertificatePair})),
+						new ServerPort(Host, InsecurePort, ServerCredentials.Insecure)
+						}
 				};
+				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true); //for clients
 				_server.Start();
 			}
 
@@ -361,6 +382,10 @@ namespace EventStore.Client {
 
 			public Task DisposeAsync() {
 				return _server == null ? Task.CompletedTask : _server.ShutdownAsync();
+			}
+
+			public int GetPort(bool secure){
+				return secure ? SecurePort : InsecurePort;
 			}
 		}
 	}

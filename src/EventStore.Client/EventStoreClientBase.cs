@@ -20,6 +20,11 @@ namespace EventStore.Client {
 		protected EventStoreClientBase(EventStoreClientSettings? settings,
 			IDictionary<string, Func<RpcException, Exception>> exceptionMap) {
 			Settings = settings ?? new EventStoreClientSettings();
+			if(Settings.ConnectivitySettings.Address.Scheme == Uri.UriSchemeHttp || !Settings.ConnectivitySettings.GossipOverHttps){
+				//this must be switched on before creation of the HttpMessageHandler
+				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+			}
+
 			_httpHandler = Settings.CreateHttpMessageHandler?.Invoke() ?? new HttpClientHandler();
 
 			var connectionName = Settings.ConnectionName ?? $"ES-{Guid.NewGuid()}";
