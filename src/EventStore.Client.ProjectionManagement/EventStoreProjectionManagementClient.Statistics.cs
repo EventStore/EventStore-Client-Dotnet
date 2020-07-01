@@ -32,7 +32,7 @@ namespace EventStore.Client {
 			[EnumeratorCancellation] CancellationToken cancellationToken) {
 			using var call = _client.Statistics(new StatisticsReq {
 				Options = options
-			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials));
+			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 
 			await foreach (var projectionDetails in call.ResponseStream
 				.ReadAllAsync(cancellationToken)

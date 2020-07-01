@@ -12,7 +12,7 @@ namespace EventStore.Client {
 					StreamIdentifier = streamName,
 					GroupName = groupName
 				}
-			}, RequestMetadata.Create(userCredentials ?? Settings.DefaultCredentials), cancellationToken: cancellationToken);
+			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 	}
 }
