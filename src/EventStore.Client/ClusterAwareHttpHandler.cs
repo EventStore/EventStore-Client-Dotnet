@@ -14,13 +14,13 @@ namespace EventStore.Client {
 
 		public static ClusterAwareHttpHandler Create(EventStoreClientSettings settings,
 			HttpMessageHandler? httpMessageHandler = null) => new ClusterAwareHttpHandler(
-			settings.ConnectivitySettings.UseHttps,
+			settings.ConnectivitySettings.GossipOverHttps,
 			settings.ConnectivitySettings.NodePreference == NodePreference.Leader,
 			new ClusterEndpointDiscoverer(
 				settings.ConnectivitySettings.MaxDiscoverAttempts,
 				settings.ConnectivitySettings.GossipSeeds,
 				settings.ConnectivitySettings.GossipTimeout,
-				settings.ConnectivitySettings.UseHttps,
+				settings.ConnectivitySettings.GossipOverHttps,
 				settings.ConnectivitySettings.DiscoveryInterval,
 				settings.ConnectivitySettings.NodePreference,
 				httpMessageHandler)) {

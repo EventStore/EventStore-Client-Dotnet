@@ -20,14 +20,14 @@ namespace EventStore.Client {
 		public DnsEndPoint[]? DnsGossipSeeds { get; set; }
 		public IPEndPoint[]? IpGossipSeeds { get; set; }
 		public TimeSpan GossipTimeout { get; set; }
-		public bool UseHttps { get; set; } = true;
+		public bool GossipOverHttps { get; set; } = true;
 		public TimeSpan DiscoveryInterval { get; set; }
 		public NodePreference NodePreference { get; set; }
 
 		public static EventStoreClientConnectivitySettings Default => new EventStoreClientConnectivitySettings {
 			MaxDiscoverAttempts = 10,
 			GossipTimeout = TimeSpan.FromSeconds(5),
-			UseHttps = true,
+			GossipOverHttps = true,
 			DiscoveryInterval = TimeSpan.FromMilliseconds(100),
 			NodePreference = NodePreference.Leader,
 		};
