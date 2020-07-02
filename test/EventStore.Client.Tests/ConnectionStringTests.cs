@@ -141,8 +141,8 @@ namespace EventStore.Client {
 			Assert.Null(settings.ConnectivitySettings.IpGossipSeeds);
 			Assert.Null(settings.ConnectivitySettings.DnsGossipSeeds);
 			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
-			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalSeconds);
-			Assert.Equal(33, settings.ConnectivitySettings.GossipTimeout.TotalSeconds);
+			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
+			Assert.Equal(33, settings.ConnectivitySettings.GossipTimeout.TotalMilliseconds);
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
 			Assert.NotNull(settings.CreateHttpMessageHandler);
 
@@ -155,10 +155,10 @@ namespace EventStore.Client {
 			Assert.Null(settings.ConnectivitySettings.DnsGossipSeeds);
 			Assert.True(settings.ConnectivitySettings.GossipOverHttps);
 			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
-			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalSeconds);
+			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
 			Assert.Null(settings.CreateHttpMessageHandler);
-			Assert.Equal(330, settings.OperationOptions.TimeoutAfter.Value.TotalSeconds);
+			Assert.Equal(330, settings.OperationOptions.TimeoutAfter.Value.TotalMilliseconds);
 			Assert.False(settings.OperationOptions.ThrowOnAppendFailure);
 
 			settings = EventStoreClientSettings.Create("esdb://hostname:4321/?tls=false");
@@ -178,15 +178,15 @@ namespace EventStore.Client {
 
 			Assert.Null(settings.ConnectionName);
 			Assert.Equal(EventStoreClientConnectivitySettings.Default.Address.Scheme, settings.ConnectivitySettings.Address.Scheme);
-			Assert.Equal(EventStoreClientConnectivitySettings.Default.DiscoveryInterval.TotalSeconds, settings.ConnectivitySettings.DiscoveryInterval.TotalSeconds);
+			Assert.Equal(EventStoreClientConnectivitySettings.Default.DiscoveryInterval.TotalMilliseconds, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
 			Assert.Null(EventStoreClientConnectivitySettings.Default.DnsGossipSeeds);
 			Assert.Empty(EventStoreClientConnectivitySettings.Default.GossipSeeds);
-			Assert.Equal(EventStoreClientConnectivitySettings.Default.GossipTimeout.TotalSeconds, settings.ConnectivitySettings.GossipTimeout.TotalSeconds);
+			Assert.Equal(EventStoreClientConnectivitySettings.Default.GossipTimeout.TotalMilliseconds, settings.ConnectivitySettings.GossipTimeout.TotalMilliseconds);
 			Assert.Null(EventStoreClientConnectivitySettings.Default.IpGossipSeeds);
 			Assert.Equal(EventStoreClientConnectivitySettings.Default.MaxDiscoverAttempts, settings.ConnectivitySettings.MaxDiscoverAttempts);
 			Assert.Equal(EventStoreClientConnectivitySettings.Default.NodePreference, settings.ConnectivitySettings.NodePreference);
 			Assert.Equal(EventStoreClientConnectivitySettings.Default.GossipOverHttps, settings.ConnectivitySettings.GossipOverHttps);
-			Assert.Equal(EventStoreClientOperationOptions.Default.TimeoutAfter.Value.TotalSeconds, settings.OperationOptions.TimeoutAfter.Value.TotalSeconds);
+			Assert.Equal(EventStoreClientOperationOptions.Default.TimeoutAfter.Value.TotalMilliseconds, settings.OperationOptions.TimeoutAfter.Value.TotalMilliseconds);
 			Assert.Equal(EventStoreClientOperationOptions.Default.ThrowOnAppendFailure, settings.OperationOptions.ThrowOnAppendFailure);
 		}
 
@@ -209,7 +209,7 @@ namespace EventStore.Client {
 			            Equals(settings.ConnectivitySettings.IpGossipSeeds[2].Address, IPAddress.Parse("127.0.0.3")) &&
 			            Equals(settings.ConnectivitySettings.IpGossipSeeds[2].Port, 2113));
 			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
-			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalSeconds);
+			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
 			Assert.NotNull(settings.CreateHttpMessageHandler);
 
@@ -229,7 +229,7 @@ namespace EventStore.Client {
 			            Equals(settings.ConnectivitySettings.DnsGossipSeeds[2].Host, "127.0.0.3") &&
 			            Equals(settings.ConnectivitySettings.DnsGossipSeeds[2].Port, 2113));
 			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
-			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalSeconds);
+			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
 			Assert.NotNull(settings.CreateHttpMessageHandler);
 		}
