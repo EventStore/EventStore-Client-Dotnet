@@ -6,6 +6,11 @@ using System.Net.Http;
 
 namespace EventStore.Client {
 	public partial class EventStoreClientSettings {
+		/// <summary>
+		/// Creates client settings from a connection string
+		/// </summary>
+		/// <param name="connectionString"></param>
+		/// <returns></returns>
 		public static EventStoreClientSettings Create(string connectionString) {
 			return ConnectionStringParser.Parse(connectionString);
 		}
