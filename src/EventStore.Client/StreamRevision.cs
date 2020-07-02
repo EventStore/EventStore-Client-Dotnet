@@ -163,7 +163,7 @@ namespace EventStore.Client {
 		public static implicit operator StreamRevision(ulong value) => new StreamRevision(value);
 
 		/// <inheritdoc />
-		public override string ToString() => this == None ? "End" : _value.ToString();
+		public override string ToString() => this == None ? nameof(None) : _value.ToString();
 
 		/// <summary>
 		/// Converts the <see cref="StreamRevision"/> to a <see cref="ulong" />.

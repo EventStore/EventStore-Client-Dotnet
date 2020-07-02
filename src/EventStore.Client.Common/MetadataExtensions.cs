@@ -17,10 +17,10 @@ namespace EventStore.Client {
 			return false;
 		}
 
-		public static long? GetLongValueOrDefault(this Metadata metadata, string key)
-			=> metadata.TryGetValue(key, out var s) && long.TryParse(s, out var value)
-				? value
-				: default;
+		public static StreamRevision GetStreamRevision(this Metadata metadata, string key)
+			=> metadata.TryGetValue(key, out var s) && ulong.TryParse(s, out var value)
+				? new StreamRevision(value)
+				: StreamRevision.None;
 
 		public static int GetIntValueOrDefault(this Metadata metadata, string key)
 			=> metadata.TryGetValue(key, out var s) && int.TryParse(s, out var value)

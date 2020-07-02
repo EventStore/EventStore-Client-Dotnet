@@ -31,9 +31,9 @@ namespace EventStore.Client {
 				StreamState.NoStream,
 				_fixture.CreateTestEvents());
 
-			Assert.Equal(0, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(0), writeResult.NextExpectedStreamRevision);
 
-			await _fixture.Client.SoftDeleteAsync(stream, StreamRevision.FromInt64(writeResult.NextExpectedVersion));
+			await _fixture.Client.SoftDeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
 			await Assert.ThrowsAsync<StreamNotFoundException>(
 				() => _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
@@ -55,15 +55,15 @@ namespace EventStore.Client {
 				StreamState.NoStream,
 				_fixture.CreateTestEvents());
 
-			Assert.Equal(0, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(0), writeResult.NextExpectedStreamRevision);
 
-			await _fixture.Client.SoftDeleteAsync(stream, StreamRevision.FromInt64(writeResult.NextExpectedVersion));
+			await _fixture.Client.SoftDeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
 			var events = _fixture.CreateTestEvents(3).ToArray();
 
 			writeResult = await _fixture.Client.AppendToStreamAsync(stream, expectedState, events);
 
-			Assert.Equal(3, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(3), writeResult.NextExpectedStreamRevision);
 
 			await Task.Delay(50); //TODO: This is a workaround until github issue #1744 is fixed
 
@@ -91,16 +91,16 @@ namespace EventStore.Client {
 				StreamState.NoStream,
 				_fixture.CreateTestEvents());
 
-			Assert.Equal(0, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(0), writeResult.NextExpectedStreamRevision);
 
-			await _fixture.Client.SoftDeleteAsync(stream, StreamRevision.FromInt64(writeResult.NextExpectedVersion));
+			await _fixture.Client.SoftDeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
 			var events = _fixture.CreateTestEvents(3).ToArray();
 
 			writeResult = await _fixture.Client.AppendToStreamAsync(stream,
-				StreamRevision.FromInt64(writeResult.NextExpectedVersion), events);
+				writeResult.NextExpectedStreamRevision, events);
 
-			Assert.Equal(3, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(3), writeResult.NextExpectedStreamRevision);
 
 			await Task.Delay(50); //TODO: This is a workaround until github issue #1744 is fixed
 
@@ -129,7 +129,7 @@ namespace EventStore.Client {
 				StreamState.NoStream,
 				_fixture.CreateTestEvents(count));
 
-			Assert.Equal(1, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
 			var streamMetadata = new StreamMetadata(
 				acl: new StreamAcl(deleteRole: "some-role"),
@@ -138,7 +138,7 @@ namespace EventStore.Client {
 				customMetadata: _customMetadata);
 			writeResult = await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream,
 				streamMetadata);
-			Assert.Equal(0, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(0), writeResult.NextExpectedStreamRevision);
 
 			var events = _fixture.CreateTestEvents(3).ToArray();
 
@@ -171,7 +171,7 @@ namespace EventStore.Client {
 				await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 					_fixture.CreateTestEvents(2));
 
-			Assert.Equal(1, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
 			await _fixture.Client.SoftDeleteAsync(stream, new StreamRevision(1));
 
@@ -200,14 +200,14 @@ namespace EventStore.Client {
 				await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 					_fixture.CreateTestEvents(2));
 
-			Assert.Equal(1, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
 			await _fixture.Client.SoftDeleteAsync(stream, new StreamRevision(1));
 
 			writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 				_fixture.CreateTestEvents(3));
 
-			Assert.Equal(4, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(4), writeResult.NextExpectedStreamRevision);
 
 			await Assert.ThrowsAsync<WrongExpectedVersionException>(
 				() => _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
@@ -221,14 +221,14 @@ namespace EventStore.Client {
 			var writeResult =
 				await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents(2));
 
-			Assert.Equal(1, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
 			await _fixture.Client.SoftDeleteAsync(stream, new StreamRevision(1));
 
 			writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 				_fixture.CreateTestEvents(3));
 
-			Assert.Equal(4, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(4), writeResult.NextExpectedStreamRevision);
 
 			var wrongExpectedVersionResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 					_fixture.CreateTestEvents(), options => options.ThrowOnAppendFailure = false);
@@ -244,7 +244,7 @@ namespace EventStore.Client {
 				await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 					_fixture.CreateTestEvents(2));
 
-			Assert.Equal(1, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
 			await _fixture.Client.SoftDeleteAsync(stream, new StreamRevision(1));
 
@@ -253,11 +253,11 @@ namespace EventStore.Client {
 
 			writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, firstEvents);
 
-			Assert.Equal(4, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(4), writeResult.NextExpectedStreamRevision);
 
 			writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, secondEvents);
 
-			Assert.Equal(6, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(6), writeResult.NextExpectedStreamRevision);
 
 			var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
 				.Select(x => x.Event)
@@ -291,7 +291,7 @@ namespace EventStore.Client {
 				new StreamRevision(0),
 				streamMetadata);
 
-			Assert.Equal(1, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
 			await Assert.ThrowsAsync<StreamNotFoundException>(() => _fixture.Client
 				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
@@ -318,16 +318,16 @@ namespace EventStore.Client {
 			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 				_fixture.CreateTestEvents(count));
 
-			Assert.Equal(1, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
-			await _fixture.Client.SoftDeleteAsync(stream, StreamRevision.FromInt64(writeResult.NextExpectedVersion));
+			await _fixture.Client.SoftDeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
 			writeResult = await _fixture.Client.SetStreamMetadataAsync(
 				stream,
 				new StreamRevision(0),
 				streamMetadata);
 
-			Assert.Equal(1, writeResult.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
 			var actual = await _fixture.Client
 				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)

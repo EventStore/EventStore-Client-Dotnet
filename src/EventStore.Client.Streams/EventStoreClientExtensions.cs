@@ -55,15 +55,16 @@ namespace EventStore.Client {
 			IEnumerable<EventData> eventData,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			if (client == null) throw new ArgumentNullException(nameof(client));
+			if (client == null) {
+				throw new ArgumentNullException(nameof(client));
+			}
 			try {
 				var result = await client.AppendToStreamAsync(streamName, expectedRevision, eventData,
-					userCredentials: userCredentials, cancellationToken: cancellationToken).ConfigureAwait(false);
+						options => options.ThrowOnAppendFailure = false, userCredentials, cancellationToken)
+					.ConfigureAwait(false);
 				return ConditionalWriteResult.FromWriteResult(result);
 			} catch (StreamDeletedException) {
 				return ConditionalWriteResult.StreamDeleted;
-			} catch (WrongExpectedVersionException ex) {
-				return ConditionalWriteResult.FromWrongExpectedVersion(ex);
 			}
 		}
 
@@ -85,10 +86,13 @@ namespace EventStore.Client {
 			IEnumerable<EventData> eventData,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			if (client == null) throw new ArgumentNullException(nameof(client));
+			if (client == null) {
+				throw new ArgumentNullException(nameof(client));
+			}
 			try {
 				var result = await client.AppendToStreamAsync(streamName, expectedState, eventData,
-					userCredentials: userCredentials, cancellationToken: cancellationToken).ConfigureAwait(false);
+						options => options.ThrowOnAppendFailure = false, userCredentials, cancellationToken)
+					.ConfigureAwait(false);
 				return ConditionalWriteResult.FromWriteResult(result);
 			} catch (StreamDeletedException) {
 				return ConditionalWriteResult.StreamDeleted;
