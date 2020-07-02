@@ -106,10 +106,10 @@ namespace EventStore.Client {
 					connSettings.MaxDiscoverAttempts = (int)maxDiscoverAttempts;
 
 				if (typedOptions.TryGetValue("DiscoveryInterval", out object discoveryInterval))
-					connSettings.DiscoveryInterval = TimeSpan.FromSeconds((int)discoveryInterval);
+					connSettings.DiscoveryInterval = TimeSpan.FromMilliseconds((int)discoveryInterval);
 
 				if (typedOptions.TryGetValue("GossipTimeout", out object gossipTimeout))
-					connSettings.GossipTimeout = TimeSpan.FromSeconds((int)gossipTimeout);
+					connSettings.GossipTimeout = TimeSpan.FromMilliseconds((int)gossipTimeout);
 
 				if (typedOptions.TryGetValue("NodePreference", out object nodePreference)) {
 					var nodePreferenceLowerCase = ((string)nodePreference).ToLowerInvariant();
@@ -147,7 +147,7 @@ namespace EventStore.Client {
 				}
 
 				if(typedOptions.TryGetValue("OperationTimeout", out object operationTimeout))
-					settings.OperationOptions.TimeoutAfter = TimeSpan.FromSeconds((int) operationTimeout);
+					settings.OperationOptions.TimeoutAfter = TimeSpan.FromMilliseconds((int) operationTimeout);
 
 				if(typedOptions.TryGetValue("ThrowOnAppendFailure", out object throwOnAppendFailure))
 					settings.OperationOptions.ThrowOnAppendFailure = (bool) throwOnAppendFailure;
