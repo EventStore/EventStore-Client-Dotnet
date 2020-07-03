@@ -74,6 +74,18 @@ namespace EventStore.Client {
 			Assert.Equal(nameof(value), ex.ParamName);
 		}
 
+		[Fact]
+		public void FromStreamPositionEndThrows() {
+			Assert.Throws<ArgumentOutOfRangeException>(() => StreamRevision.FromStreamPosition(StreamPosition.End));
+		}
+
+		[Fact]
+		public void FromStreamPositionReturnsExpectedResult() {
+			var result = StreamRevision.FromStreamPosition(StreamPosition.Start);
+
+			Assert.Equal(new StreamRevision(0), result);
+		}
+
 		public static IEnumerable<object[]> ComparableTestCases() {
 			var start = new StreamRevision(0);
 			yield return new object[] {start, start, 0};
