@@ -6,12 +6,12 @@
 		<PackageId>EventStore.Client.Grpc</PackageId>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Google.Protobuf" Version="3.11.4" />
-		<PackageReference Include="Grpc.Net.Client" Version="2.27.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.2" />
+		<PackageReference Include="Google.Protobuf" Version="3.12.3" />
+		<PackageReference Include="Grpc.Net.Client" Version="2.29.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.5" />
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-		<PackageReference Include="System.Linq.Async" Version="4.0.0" />
-		<PackageReference Include="System.Text.Json" Version="4.7.1" />
+		<PackageReference Include="System.Linq.Async" Version="4.1.1" />
+		<PackageReference Include="System.Text.Json" Version="4.7.2" />
 	</ItemGroup>
 	<ItemGroup>
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
