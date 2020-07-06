@@ -8,7 +8,8 @@ namespace EventStore.Client {
 		/// <summary>
 		/// The version the stream is currently at.
 		/// </summary>
-		[Obsolete]
+		[Obsolete("Please use NextExpectedStreamRevision instead. This property will be removed in a future version.",
+			true)]
 		long NextExpectedVersion { get; }
 		/// <summary>
 		/// The <see cref="Position"/> of the <see cref="IWriteResult"/> in the transaction file.

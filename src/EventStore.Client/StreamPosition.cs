@@ -27,6 +27,16 @@ namespace EventStore.Client {
 			value == -1 ? End : new StreamPosition(Convert.ToUInt64(value));
 
 		/// <summary>
+		/// Creates a <see cref="StreamPosition"/> from a <see cref="StreamRevision"/>.
+		/// </summary>
+		/// <param name="revision"></param>
+		/// <returns></returns>
+		public static StreamPosition FromStreamRevision(StreamRevision revision) => revision.ToUInt64() switch {
+			ulong.MaxValue => throw new ArgumentOutOfRangeException(nameof(revision)),
+			_ => new StreamPosition(revision.ToUInt64())
+		};
+
+		/// <summary>
 		/// Constructs a new <see cref="StreamPosition"/>.
 		/// </summary>
 		/// <param name="value"></param>
@@ -38,6 +48,12 @@ namespace EventStore.Client {
 
 			_value = value;
 		}
+
+		/// <summary>
+		/// Advance to the next <see cref="StreamPosition"/>.
+		/// </summary>
+		/// <returns></returns>
+		public StreamPosition Next() => this + 1;
 
 		/// <inheritdoc />
 		public int CompareTo(StreamPosition other) => _value.CompareTo(other._value);

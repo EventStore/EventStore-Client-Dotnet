@@ -35,6 +35,12 @@ namespace EventStore.Client {
 			Assert.Equal(new StreamPosition(1), 1 + sut);
 		}
 
+		[Fact]
+		public void NextReturnsExpectedResult() {
+			var sut = StreamPosition.Start;
+			Assert.Equal(sut + 1, sut.Next());
+		}
+
 		public static IEnumerable<object[]> AdditionOutOfBoundsCases() {
 			yield return new object[] {StreamPosition.End, 1};
 			yield return new object[] {new StreamPosition(long.MaxValue), long.MaxValue + 2UL};
@@ -59,9 +65,9 @@ namespace EventStore.Client {
 		}
 
 		[Theory, MemberData(nameof(SubtractionOutOfBoundsCases))]
-		public void SubtractionOutOfBoundsThrows(StreamPosition StreamPosition, ulong operand) {
-			Assert.Throws<OverflowException>(() => StreamPosition - operand);
-			Assert.Throws<OverflowException>(() => (ulong)StreamPosition - new StreamPosition(operand));
+		public void SubtractionOutOfBoundsThrows(StreamPosition streamPosition, ulong operand) {
+			Assert.Throws<OverflowException>(() => streamPosition - operand);
+			Assert.Throws<OverflowException>(() => (ulong)streamPosition - new StreamPosition(operand));
 		}
 
 		public static IEnumerable<object[]> ArgumentOutOfRangeTestCases() {
@@ -73,6 +79,18 @@ namespace EventStore.Client {
 		public void ArgumentOutOfRange(ulong value) {
 			var ex = Assert.Throws<ArgumentOutOfRangeException>(() => new StreamPosition(value));
 			Assert.Equal(nameof(value), ex.ParamName);
+		}
+
+		[Fact]
+		public void FromStreamPositionEndThrows() {
+			Assert.Throws<ArgumentOutOfRangeException>(() => StreamRevision.FromStreamPosition(StreamPosition.End));
+		}
+
+		[Fact]
+		public void FromStreamPositionReturnsExpectedResult() {
+			var result = StreamPosition.FromStreamRevision(new StreamRevision(0));
+
+			Assert.Equal(new StreamPosition(0), result);
 		}
 
 		public static IEnumerable<object[]> ComparableTestCases() {

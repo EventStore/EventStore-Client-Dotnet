@@ -44,6 +44,12 @@ namespace EventStore.Client {
 			_value = value;
 		}
 
+		/// <summary>
+		/// Advances the <see cref="StreamRevision"/> to the next revision.
+		/// </summary>
+		/// <returns></returns>
+		public StreamRevision Next() => this + 1;
+
 		/// <inheritdoc />
 		public int CompareTo(StreamRevision other) => _value.CompareTo(other._value);
 

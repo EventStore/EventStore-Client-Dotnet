@@ -35,6 +35,12 @@ namespace EventStore.Client {
 			Assert.Equal(new StreamRevision(1), 1 + sut);
 		}
 
+		[Fact]
+		public void NextReturnsExpectedResult() {
+			var sut = new StreamRevision(0);
+			Assert.Equal(sut + 1, sut.Next());
+		}
+
 		public static IEnumerable<object[]> AdditionOutOfBoundsCases() {
 			yield return new object[] {new StreamRevision(long.MaxValue), long.MaxValue + 2UL};
 		}
