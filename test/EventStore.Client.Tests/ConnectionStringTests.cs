@@ -42,20 +42,17 @@ namespace EventStore.Client {
 		}
 
 		[Fact]
-		public void connection_string_without_forward_slash_after_host_should_throw() {
-			Assert.Throws<ConnectionStringParseException>(() => {
-				EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1");
-			});
-
-			Assert.Throws<ConnectionStringParseException>(() => {
-				EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1:1234");
-			});
-		}
-
-		[Fact]
 		public void connection_string_with_invalid_host_should_throw() {
 			Assert.Throws<InvalidHostException>(() => {
+				EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1:abc");
+			});
+
+			Assert.Throws<InvalidHostException>(() => {
 				EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1:abc/");
+			});
+
+			Assert.Throws<InvalidHostException>(() => {
+				EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1:1234,127.0.0.2:abc,127.0.0.3:4321");
 			});
 
 			Assert.Throws<InvalidHostException>(() => {
@@ -63,7 +60,15 @@ namespace EventStore.Client {
 			});
 
 			Assert.Throws<InvalidHostException>(() => {
+				EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1:abc:def");
+			});
+
+			Assert.Throws<InvalidHostException>(() => {
 				EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1:abc:def/");
+			});
+
+			Assert.Throws<InvalidHostException>(() => {
+				EventStoreClientSettings.Create("esdb://user:pass@localhost:1234,127.0.0.2:abc:def,127.0.0.3:4321");
 			});
 
 			Assert.Throws<InvalidHostException>(() => {
@@ -71,8 +76,42 @@ namespace EventStore.Client {
 			});
 
 			Assert.Throws<InvalidHostException>(() => {
+				EventStoreClientSettings.Create("esdb://user:pass@localhost:1234,,127.0.0.3:4321");
+			});
+
+			Assert.Throws<InvalidHostException>(() => {
 				EventStoreClientSettings.Create("esdb://user:pass@localhost:1234,,127.0.0.3:4321/");
 			});
+		}
+
+		[Fact]
+		public void connection_string_with_empty_path_after_host_should_not_throw() {
+			EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1");
+			EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1:1234");
+			EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1/");
+			EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1?maxDiscoverAttempts=10");
+			EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1/?maxDiscoverAttempts=10");
+		}
+
+		[Fact]
+		public void connection_string_with_non_empty_path_should_throw() {
+			Assert.Throws<ConnectionStringParseException>(() => {
+				EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1/test");
+			});
+
+			Assert.Throws<ConnectionStringParseException>(() => {
+				EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1/maxDiscoverAttempts=10");
+			});
+
+			Assert.Throws<ConnectionStringParseException>(() => {
+				EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1/hello?maxDiscoverAttempts=10");
+			});
+		}
+
+		[Fact]
+		public void connection_string_with_no_key_value_pairs_specified_should_not_throw() {
+			EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1");
+			EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1/");
 		}
 
 		[Fact]
@@ -157,7 +196,7 @@ namespace EventStore.Client {
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
 			Assert.NotNull(settings.CreateHttpMessageHandler);
 
-			settings = EventStoreClientSettings.Create("esdb://127.0.0.1/?connectionName=test&maxDiscoverAttempts=13&DiscoveryInterval=37&nOdEPrEfErence=FoLLoWer&tls=true&tlsVerifyCert=true&operationTimeout=330&throwOnAppendFailure=faLse");
+			settings = EventStoreClientSettings.Create("esdb://127.0.0.1?connectionName=test&maxDiscoverAttempts=13&DiscoveryInterval=37&nOdEPrEfErence=FoLLoWer&tls=true&tlsVerifyCert=true&operationTimeout=330&throwOnAppendFailure=faLse");
 			Assert.Null(settings.DefaultCredentials);
 			Assert.Equal("test", settings.ConnectionName);
 			Assert.Equal("https://127.0.0.1:2113/",settings.ConnectivitySettings.Address.ToString());
@@ -252,7 +291,7 @@ namespace EventStore.Client {
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1/");
 			Assert.Equal(Uri.UriSchemeHttps, settings.ConnectivitySettings.Address.Scheme);
 
-			settings = EventStoreClientSettings.Create("esdb://127.0.0.1/?tls=true");
+			settings = EventStoreClientSettings.Create("esdb://127.0.0.1?tls=true");
 			Assert.Equal(Uri.UriSchemeHttps, settings.ConnectivitySettings.Address.Scheme);
 
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1/?tls=FaLsE");
@@ -261,7 +300,7 @@ namespace EventStore.Client {
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/");
 			Assert.True(settings.ConnectivitySettings.GossipOverHttps);
 
-			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/?tls=true");
+			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3?tls=true");
 			Assert.True(settings.ConnectivitySettings.GossipOverHttps);
 
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/?tls=fAlSe");

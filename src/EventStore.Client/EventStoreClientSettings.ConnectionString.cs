@@ -55,16 +55,28 @@ namespace EventStore.Client {
 					currentIndex = userInfoIndex + UserInfoSeparator.Length;
 				}
 
+
 				var slashIndex = connectionString.IndexOf(Slash, currentIndex, StringComparison.Ordinal);
-				if (slashIndex == -1)
-					throw new ConnectionStringParseException("The connection string must contain a / (forward slash) after specifying the hosts");
+				var questionMarkIndex = connectionString.IndexOf(QuestionMark, Math.Max(currentIndex, slashIndex), StringComparison.Ordinal);
+				var endIndex = connectionString.Length;
 
-				var hosts = ParseHosts(connectionString.Substring(currentIndex, slashIndex - currentIndex));
-				currentIndex = slashIndex + Slash.Length;
+				//for simpler substring operations:
+				if (slashIndex == -1) slashIndex = int.MaxValue;
+				if (questionMarkIndex == -1) questionMarkIndex = int.MaxValue;
 
-				var questionMarkIndex = connectionString.IndexOf(QuestionMark, currentIndex);
+				var hostSeparatorIndex = Math.Min(Math.Min(slashIndex, questionMarkIndex), endIndex);
+				var hosts = ParseHosts(connectionString.Substring(currentIndex,hostSeparatorIndex - currentIndex));
+				currentIndex = hostSeparatorIndex;
+
+				string path = "";
+				if (slashIndex != int.MaxValue)
+					path = connectionString.Substring(currentIndex,Math.Min(questionMarkIndex, endIndex) - currentIndex);
+
+				if (path != "" && path != "/")
+					throw new ConnectionStringParseException($"The specified path must be either an empty string or a forward slash (/) but the following path was found instead: '{path}'");
+
 				var options = new Dictionary<string, string>();
-				if (questionMarkIndex != -1) {
+				if (questionMarkIndex != int.MaxValue) {
 					currentIndex = questionMarkIndex + QuestionMark.Length;
 					options = ParseKeyValuePairs(connectionString.Substring(currentIndex));
 				}
