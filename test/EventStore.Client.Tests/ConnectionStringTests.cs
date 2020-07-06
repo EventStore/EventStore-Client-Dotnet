@@ -87,6 +87,17 @@ namespace EventStore.Client {
 		}
 
 		[Fact]
+		public void connection_string_with_duplicate_key_should_throw() {
+			Assert.Throws<DuplicateKeyException>(() => {
+				EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1/?maxDiscoverAttempts=1234&MaxDiscoverAttempts=10");
+			});
+
+			Assert.Throws<DuplicateKeyException>(() => {
+				EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1/?gossipTimeout=10&gossipTimeout=30");
+			});
+		}
+
+		[Fact]
 		public void connection_string_with_invalid_settings_should_throw() {
 			Assert.Throws<InvalidSettingException>(() => {
 				EventStoreClientSettings.Create("esdb://user:pass@127.0.0.1/?unknown=1234");

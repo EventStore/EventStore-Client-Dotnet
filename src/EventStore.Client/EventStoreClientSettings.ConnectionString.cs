@@ -220,7 +220,11 @@ namespace EventStore.Client {
 				var optionsTokens = s.Split(Ampersand);
 				foreach (var optionToken in optionsTokens) {
 					var (key, val) = ParseKeyValuePair(optionToken);
-					options[key] = val;
+					try {
+						options.Add(key, val);
+					} catch (ArgumentException) {
+						throw new DuplicateKeyException(key);
+					}
 				}
 				return options;
 			}
