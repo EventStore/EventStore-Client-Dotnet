@@ -23,6 +23,7 @@
 		<Authors>Event Store Ltd</Authors>
 		<Copyright>Copyright 2012-2020 Event Store Ltd</Copyright>
 		<MinVerTagPrefix>v</MinVerTagPrefix>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="..\..\LICENSE.md" Pack="true" PackagePath="\"/>
