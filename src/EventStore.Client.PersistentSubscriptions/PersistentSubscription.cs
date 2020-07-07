@@ -8,6 +8,9 @@ using Grpc.Core;
 
 #nullable enable
 namespace EventStore.Client {
+	/// <summary>
+	/// Represents a persistent subscription connection.
+	/// </summary>
 	public class PersistentSubscription : IDisposable {
 		private readonly bool _autoAck;
 		private readonly Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> _eventAppeared;
@@ -16,6 +19,9 @@ namespace EventStore.Client {
 		private readonly AsyncDuplexStreamingCall<ReadReq, ReadResp> _call;
 		private int _subscriptionDroppedInvoked;
 
+		/// <summary>
+		/// The Subscription Id.
+		/// </summary>
 		public string SubscriptionId { get; }
 
 		internal static async Task<PersistentSubscription> Confirm(AsyncDuplexStreamingCall<ReadReq, ReadResp> call,
@@ -49,6 +55,11 @@ namespace EventStore.Client {
 			Task.Run(Subscribe);
 		}
 
+		/// <summary>
+		/// Acknowledge that a message has completed processing (this will tell the server it has been processed).
+		/// </summary>
+		/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
+		/// <param name="eventIds">The <see cref="Uuid"/> of the <see cref="ResolvedEvent" />s to acknowledge. There should be less than 2000 to ack at a time.</param>
 		public Task Ack(params Uuid[] eventIds) {
 			if (eventIds.Length > 2000) {
 				throw new ArgumentException();
@@ -57,14 +68,39 @@ namespace EventStore.Client {
 			return AckInternal(eventIds);
 		}
 
+		/// <summary>
+		/// Acknowledge that a message has completed processing (this will tell the server it has been processed).
+		/// </summary>
+		/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
+		/// <param name="eventIds">The <see cref="Uuid"/> of the <see cref="ResolvedEvent" />s to acknowledge. There should be less than 2000 to ack at a time.</param>
+
 		public Task Ack(IEnumerable<Uuid> eventIds) => Ack(eventIds.ToArray());
 
+		/// <summary>
+		/// Acknowledge that a message has completed processing (this will tell the server it has been processed).
+		/// </summary>
+		/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
+		/// <param name="resolvedEvents">The <see cref="ResolvedEvent"></see>s to acknowledge. There should be less than 2000 to ack at a time.</param>
 		public Task Ack(params ResolvedEvent[] resolvedEvents) =>
 			Ack(Array.ConvertAll(resolvedEvents, resolvedEvent => resolvedEvent.OriginalEvent.EventId));
 
+		/// <summary>
+		/// Acknowledge that a message has completed processing (this will tell the server it has been processed).
+		/// </summary>
+		/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
+		/// <param name="resolvedEvents">The <see cref="ResolvedEvent"></see>s to acknowledge. There should be less than 2000 to ack at a time.</param>
 		public Task Ack(IEnumerable<ResolvedEvent> resolvedEvents) =>
 			Ack(resolvedEvents.Select(resolvedEvent => resolvedEvent.OriginalEvent.EventId));
 
+
+		/// <summary>
+		/// Acknowledge that a message has failed processing (this will tell the server it has not been processed).
+		/// </summary>
+		/// <param name="action">The <see cref="PersistentSubscriptionNakEventAction"/> to take.</param>
+		/// <param name="reason">A reason given.</param>
+		/// <param name="eventIds">The <see cref="Uuid"/> of the <see cref="ResolvedEvent" />s to nak. There should be less than 2000 to nak at a time.</param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentException">The number of <see cref="eventIds"/> exceeded the limit of 2000.</exception>
 		public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Uuid[] eventIds) {
 			if (eventIds.Length > 2000) {
 				throw new ArgumentException();
@@ -73,11 +109,20 @@ namespace EventStore.Client {
 			return NackInternal(eventIds, action, reason);
 		}
 
+		/// <summary>
+		/// Acknowledge that a message has failed processing (this will tell the server it has not been processed).
+		/// </summary>
+		/// <param name="action">The <see cref="PersistentSubscriptionNakEventAction"/> to take.</param>
+		/// <param name="reason">A reason given.</param>
+		/// <param name="resolvedEvents">The <see cref="ResolvedEvent" />s to nak. There should be less than 2000 to nak at a time.</param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentException">The number of <see cref="resolvedEvents"/> exceeded the limit of 2000.</exception>
 		public Task Nack(PersistentSubscriptionNakEventAction action, string reason,
 			params ResolvedEvent[] resolvedEvents) =>
 			Nack(action, reason,
 				Array.ConvertAll(resolvedEvents, resolvedEvent => resolvedEvent.OriginalEvent.EventId));
 
+		/// <inheritdoc />
 		public void Dispose() {
 			if (_disposed.IsCancellationRequested) {
 				return;

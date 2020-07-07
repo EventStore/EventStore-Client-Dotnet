@@ -3,7 +3,14 @@ using System.Runtime.Serialization;
 
 #nullable enable
 namespace EventStore.Client {
+	/// <summary>
+	/// Exception thrown if the expected version specified on an operation
+	/// does not match the version of the stream when the operation was attempted.
+	/// </summary>
 	public class WrongExpectedVersionException : Exception {
+		/// <summary>
+		/// The stream identifier.
+		/// </summary>
 		public string StreamName { get; }
 
 		/// <summary>

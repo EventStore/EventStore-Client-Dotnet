@@ -16,6 +16,7 @@ namespace EventStore.Client {
 		/// Constructs a new instance of <see cref="StreamDeletedException"/>.
 		/// </summary>
 		/// <param name="stream">The name of the deleted stream.</param>
+		/// <param name="exception"></param>
 		public StreamDeletedException(string stream, Exception? exception = null)
 			: base($"Event stream '{stream}' is deleted.", exception) {
 			Stream = stream;
