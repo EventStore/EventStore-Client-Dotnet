@@ -2,7 +2,7 @@
 using System.Net;
 
 namespace EventStore.Client {
-	static class EndPointExtensions {
+	internal static class EndPointExtensions {
 		public static string HTTP_SCHEMA => Uri.UriSchemeHttp;
 		public static string HTTPS_SCHEMA => Uri.UriSchemeHttps;
 
