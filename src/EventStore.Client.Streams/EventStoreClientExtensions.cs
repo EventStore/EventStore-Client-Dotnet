@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 #nullable enable
 namespace EventStore.Client {
+	/// <summary>
+	///  A set of extension methods for an <see cref="EventStoreClient"/>.
+	/// </summary>
 	public static class EventStoreClientExtensions {
 		private static readonly JsonSerializerOptions SystemSettingsJsonSerializerOptions = new JsonSerializerOptions {
 			Converters = {
@@ -13,6 +16,15 @@ namespace EventStore.Client {
 			},
 		};
 
+		/// <summary>
+		/// Writes <see cref="SystemSettings"/> to the $settings stream.
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="settings"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
 		public static Task SetSystemSettingsAsync(
 			this EventStoreClient client,
 			SystemSettings settings,
@@ -25,6 +37,17 @@ namespace EventStore.Client {
 				}, userCredentials: userCredentials, cancellationToken: cancellationToken);
 		}
 
+		/// <summary>
+		/// Appends to a stream conditionally.
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="streamName"></param>
+		/// <param name="expectedRevision"></param>
+		/// <param name="eventData"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
 		public static async Task<ConditionalWriteResult> ConditionalAppendToStreamAsync(
 			this EventStoreClient client,
 			string streamName,
@@ -44,6 +67,17 @@ namespace EventStore.Client {
 			}
 		}
 
+		/// <summary>
+		/// Appends to a stream conditionally.
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="streamName"></param>
+		/// <param name="expectedState"></param>
+		/// <param name="eventData"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
 		public static async Task<ConditionalWriteResult> ConditionalAppendToStreamAsync(
 			this EventStoreClient client,
 			string streamName,

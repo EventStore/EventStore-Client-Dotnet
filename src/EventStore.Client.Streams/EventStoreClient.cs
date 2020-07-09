@@ -10,6 +10,9 @@ using ReadReq = EventStore.Client.Streams.ReadReq;
 
 #nullable enable
 namespace EventStore.Client {
+	/// <summary>
+	/// The client used for operations on streams.
+	/// </summary>
 	public partial class EventStoreClient : EventStoreClientBase {
 		private static readonly JsonSerializerOptions StreamMetadataJsonSerializerOptions = new JsonSerializerOptions {
 			Converters = {
@@ -45,9 +48,17 @@ namespace EventStore.Client {
 							?.Value!, ex),
 			};
 
+		/// <summary>
+		/// Constructs a new <see cref="EventStoreClient"/>. This is not intended to be called directly from your code.
+		/// </summary>
+		/// <param name="options"></param>
 		public EventStoreClient(IOptions<EventStoreClientSettings> options) : this(options.Value) {
 		}
 
+		/// <summary>
+		/// Constructs a new <see cref="EventStoreClient"/>.
+		/// </summary>
+		/// <param name="settings"></param>
 		public EventStoreClient(EventStoreClientSettings? settings = null) : base(settings, ExceptionMap) {
 			_client = new Streams.Streams.StreamsClient(CallInvoker);
 			_log = Settings.LoggerFactory?.CreateLogger<EventStoreClient>() ?? new NullLogger<EventStoreClient>();

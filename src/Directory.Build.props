@@ -9,6 +9,7 @@
 	<ItemGroup Condition="$(MSBuildProjectName) != 'EventStore.Client'">
 		<ProjectReference Include="..\EventStore.Client\EventStore.Client.csproj"/>
 		<Protobuf
+			Access="internal"
 			Include="$(ESProtoPath)"
 			GrpcServices="Client"
 			Link="protos/$(ESProto)"/>

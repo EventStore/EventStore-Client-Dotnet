@@ -4,6 +4,9 @@ using System.Threading.Tasks;
 
 #nullable enable
 namespace EventStore.Client {
+	/// <summary>
+	/// A class representing the options to use when filtering read operations.
+	/// </summary>
 	public class SubscriptionFilterOptions {
 		/// <summary>
 		/// The <see cref="IEventFilter"/> to apply.

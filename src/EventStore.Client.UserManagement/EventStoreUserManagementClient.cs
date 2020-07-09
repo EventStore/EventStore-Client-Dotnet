@@ -11,10 +11,17 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 #nullable enable
 namespace EventStore.Client {
+	/// <summary>
+	/// The client used for operations on internal users.
+	/// </summary>
 	public class EventStoreUserManagementClient : EventStoreClientBase {
 		private readonly Users.Users.UsersClient _client;
 		private readonly ILogger _log;
 
+		/// <summary>
+		/// Constructs a new <see cref="EventStoreUserManagementClient"/>.
+		/// </summary>
+		/// <param name="settings"></param>
 		public EventStoreUserManagementClient(EventStoreClientSettings? settings = null) :
 			base(settings, ExceptionMap) {
 			_client = new Users.Users.UsersClient(CallInvoker);
@@ -22,6 +29,18 @@ namespace EventStore.Client {
 			       new NullLogger<EventStoreUserManagementClient>();
 		}
 
+		/// <summary>
+		/// Creates an internal user.
+		/// </summary>
+		/// <param name="loginName"></param>
+		/// <param name="fullName"></param>
+		/// <param name="groups"></param>
+		/// <param name="password"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public async Task CreateUserAsync(string loginName, string fullName, string[] groups, string password,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
@@ -43,6 +62,15 @@ namespace EventStore.Client {
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
+		/// <summary>
+		/// Gets the <see cref="UserDetails"/> of an internal user.
+		/// </summary>
+		/// <param name="loginName"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public async Task<UserDetails> GetUserAsync(string loginName, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			if (loginName == null) {
@@ -68,6 +96,15 @@ namespace EventStore.Client {
 			new UserDetails(userDetails.LoginName, userDetails.FullName, userDetails.Groups.ToArray(),
 				userDetails.Disabled, userDetails.LastUpdated?.TicksSinceEpoch.FromTicksSinceEpoch());
 
+		/// <summary>
+		/// Deletes an internal user.
+		/// </summary>
+		/// <param name="loginName"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public async Task DeleteUserAsync(string loginName, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			if (loginName == null) {
@@ -84,6 +121,15 @@ namespace EventStore.Client {
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
+		/// <summary>
+		/// Enables a previously disabled internal user.
+		/// </summary>
+		/// <param name="loginName"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public async Task EnableUserAsync(string loginName, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			if (loginName == null) {
@@ -101,6 +147,14 @@ namespace EventStore.Client {
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
+		/// <summary>
+		/// Disables an internal user.
+		/// </summary>
+		/// <param name="loginName"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public async Task DisableUserAsync(string loginName, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			if (loginName == string.Empty) throw new ArgumentOutOfRangeException(nameof(loginName));
@@ -112,6 +166,12 @@ namespace EventStore.Client {
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
+		/// <summary>
+		/// Lists the <see cref="UserDetails"/> of all internal users.
+		/// </summary>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public async IAsyncEnumerable<UserDetails> ListAllAsync(UserCredentials? userCredentials = null,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default) {
 			using var call = _client.Details(new DetailsReq(),
@@ -126,6 +186,17 @@ namespace EventStore.Client {
 			}
 		}
 
+		/// <summary>
+		/// Changes the password of an internal user.
+		/// </summary>
+		/// <param name="loginName"></param>
+		/// <param name="currentPassword"></param>
+		/// <param name="newPassword"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public async Task ChangePasswordAsync(string loginName, string currentPassword, string newPassword,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			if (loginName == null) throw new ArgumentNullException(nameof(loginName));
@@ -144,6 +215,16 @@ namespace EventStore.Client {
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
+		/// <summary>
+		/// Reset the password of an internal user.
+		/// </summary>
+		/// <param name="loginName"></param>
+		/// <param name="newPassword"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public async Task ResetPasswordAsync(string loginName, string newPassword,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			if (loginName == null) throw new ArgumentNullException(nameof(loginName));
@@ -159,7 +240,7 @@ namespace EventStore.Client {
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
-		public static readonly IDictionary<string, Func<RpcException, Exception>> ExceptionMap =
+		private static readonly IDictionary<string, Func<RpcException, Exception>> ExceptionMap =
 			new Dictionary<string, Func<RpcException, Exception>> {
 				[Constants.Exceptions.UserNotFound] = ex => new UserNotFoundException(
 					ex.Trailers.First(x => x.Key == Constants.Exceptions.LoginName).Value),

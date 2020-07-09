@@ -6,6 +6,9 @@ using Microsoft.Extensions.Logging;
 
 #nullable enable
 namespace EventStore.Client {
+	/// <summary>
+	/// A class representing a <see cref="StreamSubscription"/>.
+	/// </summary>
 	public class StreamSubscription : IDisposable {
 		private readonly IAsyncEnumerable<ResolvedEvent> _events;
 		private readonly Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> _eventAppeared;
@@ -16,6 +19,9 @@ namespace EventStore.Client {
 		private readonly CancellationTokenSource _disposed;
 		private int _subscriptionDroppedInvoked;
 
+		/// <summary>
+		/// The id of the <see cref="StreamSubscription"/> set by the server.
+		/// </summary>
 		public string SubscriptionId { get; }
 
 		internal static async Task<StreamSubscription> Confirm(
@@ -96,6 +102,7 @@ namespace EventStore.Client {
 			}
 		}
 
+		/// <inheritdoc />
 		public void Dispose() {
 			if (_disposed.IsCancellationRequested) {
 				return;
