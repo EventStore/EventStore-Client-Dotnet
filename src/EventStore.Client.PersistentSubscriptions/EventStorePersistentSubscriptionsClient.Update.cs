@@ -14,6 +14,16 @@ namespace EventStore.Client {
 				[SystemConsumerStrategies.Pinned] = UpdateReq.Types.ConsumerStrategy.Pinned,
 			};
 
+		/// <summary>
+		/// Updates a persistent subscription.
+		/// </summary>
+		/// <param name="streamName"></param>
+		/// <param name="groupName"></param>
+		/// <param name="settings"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
 		public async Task UpdateAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {

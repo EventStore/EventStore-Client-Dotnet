@@ -100,7 +100,7 @@ namespace EventStore.Client {
 		/// <param name="reason">A reason given.</param>
 		/// <param name="eventIds">The <see cref="Uuid"/> of the <see cref="ResolvedEvent" />s to nak. There should be less than 2000 to nak at a time.</param>
 		/// <returns></returns>
-		/// <exception cref="ArgumentException">The number of <see cref="eventIds"/> exceeded the limit of 2000.</exception>
+		/// <exception cref="ArgumentException">The number of eventIds exceeded the limit of 2000.</exception>
 		public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Uuid[] eventIds) {
 			if (eventIds.Length > 2000) {
 				throw new ArgumentException();
@@ -116,7 +116,7 @@ namespace EventStore.Client {
 		/// <param name="reason">A reason given.</param>
 		/// <param name="resolvedEvents">The <see cref="ResolvedEvent" />s to nak. There should be less than 2000 to nak at a time.</param>
 		/// <returns></returns>
-		/// <exception cref="ArgumentException">The number of <see cref="resolvedEvents"/> exceeded the limit of 2000.</exception>
+		/// <exception cref="ArgumentException">The number of resolvedEvents exceeded the limit of 2000.</exception>
 		public Task Nack(PersistentSubscriptionNakEventAction action, string reason,
 			params ResolvedEvent[] resolvedEvents) =>
 			Nack(action, reason,
