@@ -5,6 +5,13 @@ using EventStore.Client.Projections;
 #nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreProjectionManagementClient {
+		/// <summary>
+		/// Creates a one-time projection.
+		/// </summary>
+		/// <param name="query"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public async Task CreateOneTimeAsync(string query, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			using var call = _client.CreateAsync(new CreateReq {
@@ -16,6 +23,15 @@ namespace EventStore.Client {
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
+		/// <summary>
+		/// Creates a continuous projection.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="query"></param>
+		/// <param name="trackEmittedStreams"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public async Task CreateContinuousAsync(string name, string query, bool trackEmittedStreams = false,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			using var call = _client.CreateAsync(new CreateReq {
@@ -30,6 +46,14 @@ namespace EventStore.Client {
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
+		/// <summary>
+		/// Creates a transient projection.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="query"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public async Task CreateTransientAsync(string name, string query, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			using var call = _client.CreateAsync(new CreateReq {

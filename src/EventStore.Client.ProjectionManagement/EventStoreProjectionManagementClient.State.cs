@@ -9,9 +9,18 @@ using Type = System.Type;
 #nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreProjectionManagementClient {
+		/// <summary>
+		/// Gets the result of a projection as am untyped document.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="partition"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public async Task<JsonDocument> GetResultAsync(string name, string? partition = null,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			var value = await GetResultInternalAsync(name, partition, userCredentials, cancellationToken).ConfigureAwait(false);
+			var value = await GetResultInternalAsync(name, partition, userCredentials, cancellationToken)
+				.ConfigureAwait(false);
 
 			await using var stream = new MemoryStream();
 			await using var writer = new Utf8JsonWriter(stream);
@@ -23,10 +32,21 @@ namespace EventStore.Client {
 			return JsonDocument.Parse(stream);
 		}
 
+		/// <summary>
+		/// Gets the result of a projection.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="partition"></param>
+		/// <param name="serializerOptions"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
 		public async Task<T> GetResultAsync<T>(string name, string? partition = null,
 			JsonSerializerOptions? serializerOptions = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var value = await GetResultInternalAsync(name, partition, userCredentials, cancellationToken).ConfigureAwait(false);
+			var value = await GetResultInternalAsync(name, partition, userCredentials, cancellationToken)
+				.ConfigureAwait(false);
 
 			await using var stream = new MemoryStream();
 			await using var writer = new Utf8JsonWriter(stream);
@@ -52,9 +72,18 @@ namespace EventStore.Client {
 			return response.Result;
 		}
 
+		/// <summary>
+		/// Gets the state of a projection as an untyped document.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="partition"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public async Task<JsonDocument> GetStateAsync(string name, string? partition = null,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			var value = await GetStateInternalAsync(name, partition, userCredentials, cancellationToken).ConfigureAwait(false);
+			var value = await GetStateInternalAsync(name, partition, userCredentials, cancellationToken)
+				.ConfigureAwait(false);
 
 			await using var stream = new MemoryStream();
 			await using var writer = new Utf8JsonWriter(stream);
@@ -66,10 +95,21 @@ namespace EventStore.Client {
 			return JsonDocument.Parse(stream);
 		}
 
+		/// <summary>
+		/// Gets the state of a projection.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="partition"></param>
+		/// <param name="serializerOptions"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
 		public async Task<T> GetStateAsync<T>(string name, string? partition = null,
 			JsonSerializerOptions? serializerOptions = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var value = await GetStateInternalAsync(name, partition, userCredentials, cancellationToken).ConfigureAwait(false);
+			var value = await GetStateInternalAsync(name, partition, userCredentials, cancellationToken)
+				.ConfigureAwait(false);
 
 			await using var stream = new MemoryStream();
 			await using var writer = new Utf8JsonWriter(stream);
