@@ -24,6 +24,8 @@ namespace EventStore.Client {
 		public TimeSpan DiscoveryInterval { get; set; }
 		public NodePreference NodePreference { get; set; }
 
+		public bool IsSingleNode => GossipSeeds.Length == 0;
+
 		public static EventStoreClientConnectivitySettings Default => new EventStoreClientConnectivitySettings {
 			MaxDiscoverAttempts = 10,
 			GossipTimeout = TimeSpan.FromSeconds(5),

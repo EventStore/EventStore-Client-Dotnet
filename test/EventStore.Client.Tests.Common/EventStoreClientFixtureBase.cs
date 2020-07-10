@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Display;
@@ -50,14 +51,15 @@ namespace EventStore.Client {
 						? new TimeSpan?()
 						: TimeSpan.FromSeconds(30)
 				},
-				CreateHttpMessageHandler = () => new SocketsHttpHandler {
-					SslOptions = new SslClientAuthenticationOptions {
-						RemoteCertificateValidationCallback = delegate { return true; }
-					}
+				ConnectivitySettings = {
+					Address = new UriBuilder {
+						Scheme = Uri.UriSchemeHttp,
+						Port = 2113
+					}.Uri
 				}
 			};
 
-			TestServer = new EventStoreTestServer(env);
+			TestServer = new EventStoreTestServer(Settings.ConnectivitySettings.Address, env);
 		}
 
 		protected abstract Task Given();
@@ -127,16 +129,9 @@ namespace EventStore.Client {
 			private readonly DockerContainer _container;
 			private readonly HttpClient _httpClient;
 
-			public EventStoreTestServer(IDictionary<string, string>? env) {
-				_httpClient = new HttpClient(new SocketsHttpHandler {
-					SslOptions = {
-						RemoteCertificateValidationCallback = delegate { return true; }
-					}
-				}) {
-					BaseAddress = new UriBuilder {
-						Scheme = Uri.UriSchemeHttps,
-						Port = 2113
-					}.Uri
+			public EventStoreTestServer(Uri address, IDictionary<string, string>? env) {
+				_httpClient = new HttpClient {
+					BaseAddress = address
 				};
 				var tag = Environment.GetEnvironmentVariable("ES_DOCKER_TAG") ?? "ci";
 				_container = new DockerContainer("docker.pkg.github.com/eventstore/eventstore/eventstore", tag,
@@ -153,7 +148,8 @@ namespace EventStore.Client {
 				}) {
 					Env = new Dictionary<string, string>(
 						env ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
-						["EVENTSTORE_DEV"] = "true"
+						["EVENTSTORE_DEV"] = "true",
+						["EVENTSTORE_MEM_DB"] = "true"
 					},
 					ContainerName = "es-client-dotnet-test"
 				};

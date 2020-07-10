@@ -13,6 +13,7 @@ namespace EventStore.Client {
 	public abstract class EventStoreClientBase : IDisposable {
 		private readonly GrpcChannel _channel;
 		private readonly HttpMessageHandler _httpHandler;
+		private readonly HttpMessageHandler _innerHttpHandler;
 
 		protected CallInvoker CallInvoker { get; }
 		protected EventStoreClientSettings Settings { get; }
@@ -20,21 +21,27 @@ namespace EventStore.Client {
 		protected EventStoreClientBase(EventStoreClientSettings? settings,
 			IDictionary<string, Func<RpcException, Exception>> exceptionMap) {
 			Settings = settings ?? new EventStoreClientSettings();
-			if(Settings.ConnectivitySettings.Address.Scheme == Uri.UriSchemeHttp || !Settings.ConnectivitySettings.GossipOverHttps){
+
+			var connectionName = Settings.ConnectionName ?? $"ES-{Guid.NewGuid()}";
+
+			if (Settings.ConnectivitySettings.Address.Scheme == Uri.UriSchemeHttp ||
+			    !Settings.ConnectivitySettings.GossipOverHttps) {
 				//this must be switched on before creation of the HttpMessageHandler
 				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 			}
 
-			_httpHandler = Settings.CreateHttpMessageHandler?.Invoke() ?? new HttpClientHandler();
+			_innerHttpHandler = Settings.CreateHttpMessageHandler?.Invoke() ?? new SocketsHttpHandler();
 
-			var connectionName = Settings.ConnectionName ?? $"ES-{Guid.NewGuid()}";
-			Action<Exception>? exceptionNotificationHook = null;
+			_httpHandler = Settings.ConnectivitySettings.IsSingleNode
+				? (HttpMessageHandler)new SingleNodeHttpHandler(Settings) {
+					InnerHandler = _innerHttpHandler
+				}
+				: ClusterAwareHttpHandler.Create(Settings, _innerHttpHandler);
 
-			if (Settings.ConnectivitySettings.GossipSeeds.Length > 0) {
-				_httpHandler = ClusterAwareHttpHandler.Create(Settings, _httpHandler);
-			}
 
-			_channel = GrpcChannel.ForAddress(Settings.ConnectivitySettings.Address, new GrpcChannelOptions {
+			_channel = GrpcChannel.ForAddress(new UriBuilder(Settings.ConnectivitySettings.Address) {
+				Scheme = Uri.UriSchemeHttps
+			}.Uri, new GrpcChannelOptions {
 				HttpClient = new HttpClient(_httpHandler) {
 					Timeout = Timeout.InfiniteTimeSpan,
 					DefaultRequestVersion = new Version(2, 0),
@@ -42,6 +49,11 @@ namespace EventStore.Client {
 				LoggerFactory = Settings.LoggerFactory,
 				Credentials = Settings.ChannelCredentials
 			});
+
+			Action<Exception>? exceptionNotificationHook =
+				_httpHandler is ClusterAwareHttpHandler h
+					? h.ExceptionOccurred
+					: new Action<Exception>(ex => { });
 
 			CallInvoker = (Settings.Interceptors ?? Array.Empty<Interceptor>()).Aggregate(
 				_channel.CreateCallInvoker()
@@ -52,6 +64,7 @@ namespace EventStore.Client {
 
 		public void Dispose() {
 			_channel?.Dispose();
+			_innerHttpHandler?.Dispose();
 			_httpHandler?.Dispose();
 		}
 	}

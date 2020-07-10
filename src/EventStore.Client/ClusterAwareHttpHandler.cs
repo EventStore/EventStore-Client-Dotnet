@@ -42,8 +42,11 @@ namespace EventStore.Client {
 			try {
 				var endpoint = await endpointResolver.Value.ConfigureAwait(false);
 
-				request.RequestUri = new UriBuilder(_useHttps ? Uri.UriSchemeHttps : Uri.UriSchemeHttp, endpoint.GetHost(), endpoint.GetPort(),
-					request.RequestUri.PathAndQuery).Uri;
+				request.RequestUri = new UriBuilder(request.RequestUri) {
+					Host = endpoint.GetHost(),
+					Port = endpoint.GetPort(),
+					Scheme = _useHttps ? Uri.UriSchemeHttps : Uri.UriSchemeHttp
+				}.Uri;
 				request.Headers.Add("requires-leader", _requiresLeader.ToString());
 				return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
 			} catch (Exception) {
