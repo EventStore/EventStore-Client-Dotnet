@@ -13,7 +13,7 @@ namespace EventStore.Client {
 		public static readonly RegularFilterExpression None = default;
 
 		/// <summary>
-		/// A <see cref="RegularFilterExpression"/> that excludes system (i.e., those whose types start with $) events.
+		/// A <see cref="RegularFilterExpression"/> that excludes system events (i.e., those whose types start with $).
 		/// </summary>
 		/// <returns></returns>
 		public static readonly RegularFilterExpression ExcludeSystemEvents =

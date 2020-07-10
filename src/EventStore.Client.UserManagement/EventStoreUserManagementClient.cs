@@ -216,7 +216,7 @@ namespace EventStore.Client {
 		}
 
 		/// <summary>
-		/// Reset the password of an internal user.
+		/// Resets the password of an internal user.
 		/// </summary>
 		/// <param name="loginName"></param>
 		/// <param name="newPassword"></param>

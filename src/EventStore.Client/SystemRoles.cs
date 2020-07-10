@@ -5,7 +5,7 @@ namespace EventStore.Client {
 	/// </summary>
 	public static class SystemRoles {
 		/// <summary>
-		/// The $admin role.
+		/// The $admins role.
 		/// </summary>
 		public const string Admins = "$admins";
 

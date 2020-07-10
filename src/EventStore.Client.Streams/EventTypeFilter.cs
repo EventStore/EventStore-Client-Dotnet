@@ -26,7 +26,7 @@ namespace EventStore.Client {
 		public uint? MaxSearchWindow { get; }
 
 		/// <summary>
-		/// An <see cref="EventTypeFilter"/> that excludes system (i.e., those whose types start with $) events.
+		/// An <see cref="EventTypeFilter"/> that excludes system events (i.e., those whose types start with $).
 		/// </summary>
 		/// <param name="maxSearchWindow"></param>
 		/// <returns></returns>

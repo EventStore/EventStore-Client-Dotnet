@@ -8,7 +8,7 @@ namespace EventStore.Client {
 	/// </summary>
 	public class EventRecord {
 		/// <summary>
-		/// The Event Stream that this event belongs to.
+		/// The stream that this event belongs to.
 		/// </summary>
 		public readonly string EventStreamId;
 

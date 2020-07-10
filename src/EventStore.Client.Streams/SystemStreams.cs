@@ -5,7 +5,7 @@ namespace EventStore.Client {
 	/// </summary>
 	public static class SystemStreams {
 		/// <summary>
-		/// A stream containing all streams in the EventStoreDB.
+		/// A stream containing links pointing to each stream in the EventStoreDB.
 		/// </summary>
 		public const string StreamsStream = "$streams";
 

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 #nullable enable
 namespace EventStore.Client {
 	/// <summary>
-	///  A set of extension methods for and <see cref="EventStoreUserManagementClient"/>.
+	///  A set of extension methods for an <see cref="EventStoreUserManagementClient"/>.
 	/// </summary>
 	public static class EventStoreUserManagerClientExtensions {
 		/// <summary>

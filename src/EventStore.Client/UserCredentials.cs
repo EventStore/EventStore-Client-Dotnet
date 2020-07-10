@@ -5,8 +5,8 @@ using System.Text;
 #nullable enable
 namespace EventStore.Client {
 	/// <summary>
-	/// A username/password pair OR jwt token used for authentication and
-	/// authorization to perform operations to EventStoreDB.
+	/// Represents either a username/password pair or a JWT token used for authentication and
+	/// authorization to perform operations on the EventStoreDB.
 	/// </summary>
 	public class UserCredentials {
 		/// <summary>

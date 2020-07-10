@@ -11,7 +11,7 @@ using Grpc.Net.Client;
 #nullable enable
 namespace EventStore.Client {
 	/// <summary>
-	/// The base class used for clients used to communicate with the EventStoreDB.
+	/// The base class used by clients used to communicate with the EventStoreDB.
 	/// </summary>
 	public abstract class EventStoreClientBase : IDisposable {
 		private readonly GrpcChannel _channel;

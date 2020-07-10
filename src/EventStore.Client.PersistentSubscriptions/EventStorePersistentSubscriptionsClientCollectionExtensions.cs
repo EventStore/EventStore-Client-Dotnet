@@ -14,7 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 	/// </summary>
 	public static class EventStorePersistentSubscriptionsClientCollectionExtensions {
 		/// <summary>
-		/// Adds a <see cref="EventStorePersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="EventStorePersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
 		/// <param name="address"></param>
@@ -29,7 +29,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 			});
 
 		/// <summary>
-		/// Adds a <see cref="EventStorePersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="EventStorePersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
 		/// <param name="configureSettings"></param>

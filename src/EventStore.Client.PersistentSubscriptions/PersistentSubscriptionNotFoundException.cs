@@ -3,7 +3,7 @@ using System;
 #nullable enable
 namespace EventStore.Client {
 	/// <summary>
-	/// the exception that is thrown when a persistent subscription is not found.
+	/// The exception that is thrown when a persistent subscription is not found.
 	/// </summary>
 	public class PersistentSubscriptionNotFoundException : Exception {
 		/// <summary>

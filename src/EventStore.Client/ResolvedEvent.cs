@@ -1,12 +1,12 @@
 #nullable enable
 namespace EventStore.Client {
 	/// <summary>
-	/// A structure representing a single event or an resolved link event.
+	/// A structure representing a single event or a resolved link event.
 	/// </summary>
 	public readonly struct ResolvedEvent {
 		/// <summary>
-		/// The event, or the resolved link event if this <see cref="ResolvedEvent"/> is
-		/// a link event.
+		/// If this <see cref="ResolvedEvent"/> represents a link event, the <see cref="Event"/>
+		/// will be the resolved link event, otherwise it will be the single event.
 		/// </summary>
 		public readonly EventRecord Event;
 
@@ -18,14 +18,13 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Returns the event that was read or which triggered the subscription.
 		///
-		/// If this <see cref="ResolvedEvent"/> represents a link event, the Link
-		/// will be the <see cref="OriginalEvent"/>, otherwise it will be the
-		/// event.
+		/// If this <see cref="ResolvedEvent"/> represents a link event, the <see cref="OriginalEvent"/>
+		/// will be the <see cref="Link"/>, otherwise it will be <see cref="Event"/>.
 		/// </summary>
 		public EventRecord OriginalEvent => Link ?? Event;
 
 		/// <summary>
-		/// Position of the <see cref="OriginalEvent"/> (unresolved link or event) if available
+		/// Position of the <see cref="OriginalEvent"/> if available.
 		/// </summary>
 		public readonly Position? OriginalPosition;
 

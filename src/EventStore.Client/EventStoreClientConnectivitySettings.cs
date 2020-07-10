@@ -8,7 +8,7 @@ namespace EventStore.Client {
 	/// </summary>
 	public class EventStoreClientConnectivitySettings {
 		/// <summary>
-		/// The <see cref="Uri"/> of the EventStoreDB.
+		/// The <see cref="Uri"/> of the EventStoreDB. Use this when connecting to a single node.
 		/// </summary>
 		public Uri Address { get; set; } = new UriBuilder {
 			Scheme = Uri.UriSchemeHttps,

@@ -10,7 +10,7 @@ using Type = System.Type;
 namespace EventStore.Client {
 	public partial class EventStoreProjectionManagementClient {
 		/// <summary>
-		/// Gets the result of a projection as am untyped document.
+		/// Gets the result of a projection as an untyped document.
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="partition"></param>

@@ -1,6 +1,6 @@
 ﻿namespace EventStore.Client {
 	/// <summary>
-	/// Indicates which order of preferred nodes for connecting to.
+	/// Indicates the preferred EventStoreDB node type to connect to.
 	/// </summary>
 	public enum NodePreference {
 		/// <summary>

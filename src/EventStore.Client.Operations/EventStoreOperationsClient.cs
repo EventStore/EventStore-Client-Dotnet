@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 #nullable enable
 namespace EventStore.Client {
 	/// <summary>
-	/// The client used to performance maintenance and other administrative tasks on the EventStoreDB.
+	/// The client used to perform maintenance and other administrative tasks on the EventStoreDB.
 	/// </summary>
 	public partial class EventStoreOperationsClient : EventStoreClientBase {
 		private static readonly IDictionary<string, Func<RpcException, Exception>> ExceptionMap =

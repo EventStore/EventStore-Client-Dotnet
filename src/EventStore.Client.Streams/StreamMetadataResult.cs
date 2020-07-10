@@ -4,7 +4,7 @@ using System;
 namespace EventStore.Client {
 	/// <summary>
 	/// Represents stream metadata as a series of properties for system
-	/// data and a <see cref="StreamMetadata"/> object for user metadata.
+	/// data (e.g., MaxAge) and a <see cref="StreamMetadata"/> object for user metadata.
 	/// </summary>
 	public struct StreamMetadataResult : IEquatable<StreamMetadataResult> {
 		/// <summary>
