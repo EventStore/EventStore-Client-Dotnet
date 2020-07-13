@@ -26,15 +26,15 @@ namespace EventStore.Client.Security {
 		public override async Task InitializeAsync() {
 			await TestServer.Start().WithTimeout(TimeSpan.FromMinutes(5));
 
-			await UserManagementClient.CreateUserAsync(TestCredentials.TestUser1.Username,
+			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser1.Username,
 				nameof(TestCredentials.TestUser1), Array.Empty<string>(), TestCredentials.TestUser1.Password,
 				TestCredentials.Root).WithTimeout();
 
-			await UserManagementClient.CreateUserAsync(TestCredentials.TestUser2.Username,
+			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser2.Username,
 				nameof(TestCredentials.TestUser2), Array.Empty<string>(), TestCredentials.TestUser2.Password,
 				TestCredentials.Root).WithTimeout();
 
-			await UserManagementClient.CreateUserAsync(TestCredentials.TestAdmin.Username,
+			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestAdmin.Username,
 				nameof(TestCredentials.TestAdmin), new[] {SystemRoles.Admins}, TestCredentials.TestAdmin.Password,
 				TestCredentials.Root).WithTimeout();
 

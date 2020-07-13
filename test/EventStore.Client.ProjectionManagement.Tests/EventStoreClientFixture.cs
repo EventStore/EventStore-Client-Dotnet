@@ -24,7 +24,7 @@ namespace EventStore.Client {
 
 		public override async Task InitializeAsync() {
 			await TestServer.Start();
-			await UserManagementClient.CreateUserAsync(TestCredentials.TestUser1.Username!,
+			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser1.Username!,
 				TestCredentials.TestUser1.Username!, Array.Empty<string>(), TestCredentials.TestUser1.Password!,
 				TestCredentials.Root).WithTimeout();
 			await StandardProjections.Created(Client).WithTimeout(TimeSpan.FromMinutes(5));
