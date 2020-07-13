@@ -12,12 +12,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Ductus.FluentDocker.Builders;
-using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Services;
-using Ductus.FluentDocker.Services.Extensions;
 using Polly;
 using Serilog;
 using Serilog.Events;
+using Serilog.Extensions.Logging;
 using Serilog.Formatting.Display;
 using Xunit;
 using Xunit.Abstractions;
@@ -60,7 +59,8 @@ namespace EventStore.Client {
 						Scheme = Uri.UriSchemeHttp,
 						Port = 2113
 					}.Uri
-				}
+				},
+				LoggerFactory = new SerilogLoggerFactory()
 			};
 
 			TestServer = new EventStoreTestServer(Settings.ConnectivitySettings.Address, env);
