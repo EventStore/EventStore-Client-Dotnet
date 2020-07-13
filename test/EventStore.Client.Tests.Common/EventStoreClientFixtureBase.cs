@@ -3,15 +3,19 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
-using System.Net.Security;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core;
+using Ductus.FluentDocker.Builders;
+using Ductus.FluentDocker.Extensions;
+using Ductus.FluentDocker.Services;
+using Ductus.FluentDocker.Services.Extensions;
+using Polly;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Display;
@@ -126,7 +130,7 @@ namespace EventStore.Client {
 		}
 
 		protected class EventStoreTestServer : IAsyncDisposable {
-			private readonly DockerContainer _container;
+			private readonly IContainerService _eventStore;
 			private readonly HttpClient _httpClient;
 
 			public EventStoreTestServer(Uri address, IDictionary<string, string>? env) {
@@ -134,32 +138,42 @@ namespace EventStore.Client {
 					BaseAddress = address
 				};
 				var tag = Environment.GetEnvironmentVariable("ES_DOCKER_TAG") ?? "ci";
-				_container = new DockerContainer("docker.pkg.github.com/eventstore/eventstore/eventstore", tag,
-					async ct => {
-						try {
-							using var response = await _httpClient.GetAsync("/web/index.html", ct);
-							return (int)response.StatusCode < 400;
-						} catch {
-						}
 
-					return false;
-				}, new Dictionary<int, int> {
-					[2113] = 2113
-				}) {
-					Env = new Dictionary<string, string>(
+				_eventStore = new Builder()
+					.UseContainer()
+					.UseImage($"docker.pkg.github.com/eventstore/eventstore/eventstore:{tag}")
+					.WithEnvironment(new Dictionary<string, string>(
 						env ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
 						["EVENTSTORE_DEV"] = "true",
 						["EVENTSTORE_MEM_DB"] = "true"
-					},
-					ContainerName = "es-client-dotnet-test"
-				};
+					}.Select(pair => $"{pair.Key}={pair.Value}").ToArray())
+					.WithName("es-client-dotnet-test")
+					.ExposePort(2113, 2113)
+					.Build();
 			}
 
-			public Task Start(CancellationToken cancellationToken = default) => _container.Start(cancellationToken);
+			public async Task Start(CancellationToken cancellationToken = default) {
+				_eventStore.Start();
+				try {
+					await Policy.Handle<Exception>()
+						.WaitAndRetryAsync(5, retryCount => TimeSpan.FromSeconds(retryCount * retryCount))
+						.ExecuteAsync(async () => {
+							using var response = await _httpClient.GetAsync("/web/index.html", cancellationToken);
+							if (response.StatusCode >= HttpStatusCode.BadRequest) {
+								throw new Exception($"Health check failed with status code {response.StatusCode}");
+							}
+						});
+				} catch (Exception) {
+					_eventStore.Dispose();
+					throw;
+				}
+			}
 
 			public ValueTask DisposeAsync() {
-				_httpClient.Dispose();
-				return _container.DisposeAsync();
+				_httpClient?.Dispose();
+				_eventStore?.Dispose();
+
+				return new ValueTask(Task.CompletedTask);
 			}
 		}
 	}
