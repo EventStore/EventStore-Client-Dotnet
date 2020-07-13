@@ -26,22 +26,20 @@ namespace EventStore.Client.Security {
 		public override async Task InitializeAsync() {
 			await TestServer.Start().WithTimeout(TimeSpan.FromMinutes(5));
 
-			await Task.WhenAll(CreateUsers()).WithTimeout();
+			await UserManagementClient.CreateUserAsync(TestCredentials.TestUser1.Username,
+				nameof(TestCredentials.TestUser1), Array.Empty<string>(), TestCredentials.TestUser1.Password,
+				TestCredentials.Root).WithTimeout();
+
+			await UserManagementClient.CreateUserAsync(TestCredentials.TestUser2.Username,
+				nameof(TestCredentials.TestUser2), Array.Empty<string>(), TestCredentials.TestUser2.Password,
+				TestCredentials.Root).WithTimeout();
+
+			await UserManagementClient.CreateUserAsync(TestCredentials.TestAdmin.Username,
+				nameof(TestCredentials.TestAdmin), new[] {SystemRoles.Admins}, TestCredentials.TestAdmin.Password,
+				TestCredentials.Root).WithTimeout();
 
 			await Given().WithTimeout(TimeSpan.FromMinutes(10));
 			await When().WithTimeout(TimeSpan.FromMinutes(10));
-
-			IEnumerable<Task> CreateUsers() {
-				yield return UserManagementClient.CreateUserAsync(TestCredentials.TestUser1.Username,
-					nameof(TestCredentials.TestUser1), Array.Empty<string>(), TestCredentials.TestUser1.Password,
-					TestCredentials.Root);
-				yield return UserManagementClient.CreateUserAsync(TestCredentials.TestUser2.Username,
-					nameof(TestCredentials.TestUser2), Array.Empty<string>(), TestCredentials.TestUser2.Password,
-					TestCredentials.Root);
-				yield return UserManagementClient.CreateUserAsync(TestCredentials.TestAdmin.Username,
-					nameof(TestCredentials.TestAdmin), new[] {SystemRoles.Admins}, TestCredentials.TestAdmin.Password,
-					TestCredentials.Root);
-			}
 		}
 
 		protected override async Task Given() {
