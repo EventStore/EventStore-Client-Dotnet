@@ -7,6 +7,8 @@ Packages required
 
 TODO: Add link to how to set up cluster
 
+## Simple connection
+
 For redundancy, you can run EventStoreDB in a cluster. In this scenario you should specify all the nodes in your cluster when connecting. This allows your client to discover which node it should be speaking to at any given time.
 
 ::: warning
@@ -48,4 +50,11 @@ To find out more about the different node types see
 
 > TODO: Detail max discovery attempts 
 
+## Providing default credentials
+
+When creating a connection EventStoreDB allows you to set default credentials. These will be used for executing all commands unless they are explicitly overridden
+
+<<< @/samples/connecting-to-a-cluster/Program.cs#providing-default-credentials
+
+> TODO: Add link to supply with write
 

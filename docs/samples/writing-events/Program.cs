@@ -8,7 +8,7 @@ using EventStore.Client;
 
 namespace writing_events {
 	class Program {
-		static async Task Main(string[] args) {
+		static void Main(string[] args) {
 			var settings = new EventStoreClientSettings {
 				CreateHttpMessageHandler = () =>
 					new HttpClientHandler {
@@ -21,7 +21,9 @@ namespace writing_events {
 			};
 
 			var client = new EventStoreClient(settings);
+		}
 
+		private static async Task AppendToStream(EventStoreClient client) {
 			#region append-to-stream
 			var eventData = new EventData(
 				Uuid.NewUuid(),
@@ -36,8 +38,6 @@ namespace writing_events {
 					eventData
 				});
 			#endregion append-to-stream
-
-			await AppendWithConcurrencyCheck(client);
 		}
 
 		private static async Task AppendWithSameId(EventStoreClient client) {

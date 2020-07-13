@@ -15,8 +15,21 @@ namespace connecting_to_a_single_node {
 				}
 			};
 
-			var connection = new EventStoreClient(settings);
+			var client = new EventStoreClient(settings);
 			#endregion creating-simple-connection
+		}
+
+		private static void ProvidingDefaultCredentials() {
+			#region providing-default-credentials
+			var settings = new EventStoreClientSettings {
+				ConnectivitySettings = {
+					Address = new Uri("https://localhost:2113")
+				},
+				DefaultCredentials = new UserCredentials("admin", "changeit")
+			};
+
+			var client = new EventStoreClient(settings);
+			#endregion providing-default-credentials
 		}
 
 		private static void SpecifyingAConnectionName() {
@@ -29,7 +42,7 @@ namespace connecting_to_a_single_node {
 			};
 			#endregion setting-the-connection-name
 
-			var connection = new EventStoreClient(settings);
+			var client = new EventStoreClient(settings);
 		}
 
 		private static void OverridingTheTimeout() {
@@ -44,7 +57,7 @@ namespace connecting_to_a_single_node {
 			};
 			#endregion overriding-timeout
 
-			var connection = new EventStoreClient(settings);
+			var client = new EventStoreClient(settings);
 		}
 
 		private static void CreatingAnInterceptor() {
@@ -57,7 +70,7 @@ namespace connecting_to_a_single_node {
 			};
 			#endregion adding-an-interceptor
 
-			var connection = new EventStoreClient(settings);
+			var client = new EventStoreClient(settings);
 		}
 
 		private static void CustomHttpMessageHandler() {
@@ -74,7 +87,7 @@ namespace connecting_to_a_single_node {
 			};
 			#endregion adding-an-custom-http-message-handler
 
-			var connection = new EventStoreClient(settings);
+			var client = new EventStoreClient(settings);
 		}
 	}
 }

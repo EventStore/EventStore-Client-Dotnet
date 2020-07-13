@@ -25,6 +25,25 @@ namespace connecting_to_a_cluster {
 			#endregion connecting-to-a-cluster
 		}
 
+		private static void ProvidingDefaultCredentials() {
+			#region providing-default-credentials
+			var settings = new EventStoreClientSettings {
+				ConnectivitySettings =
+				{
+					DnsGossipSeeds = new[]
+					{
+						new DnsEndPoint("localhost", 1114),
+						new DnsEndPoint("localhost", 2114),
+						new DnsEndPoint("localhost", 3114),
+					}
+				},
+				DefaultCredentials = new UserCredentials("admin", "changeit")
+			};
+
+			var client = new EventStoreClient(settings);
+			#endregion providing-default-credentials
+		}
+
 		private static void ConnectingToAClusterComplex() {
 			#region connecting-to-a-cluster-complex
 			var settings = new EventStoreClientSettings {

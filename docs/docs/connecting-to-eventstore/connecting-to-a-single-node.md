@@ -1,5 +1,7 @@
 # Connecting to a single node
 
+## Simple connection
+
 The simplest way to connect to EventStoreDB is to only use a single node and leave the rest of the options as default. 
 
 <<< @/samples/connecting-to-a-single-node/Program.cs#creating-simple-connection
@@ -26,7 +28,12 @@ The default timeout for a single request is **5 seconds** but this can be modifi
 Subscriptions are not bound by the timeout as they are long-lived
 :::
 
-## Username and password
+## Providing default credentials
 
+When creating a connection EventStoreDB allows you to set default credentials. These will be used for executing all commands unless they are explicitly overridden
+
+<<< @/samples/connecting-to-a-single-node/Program.cs#providing-default-credentials
+
+> TODO: Add link to supply with write
 
 

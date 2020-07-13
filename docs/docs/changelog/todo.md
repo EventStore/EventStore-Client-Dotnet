@@ -2,6 +2,8 @@
 
 - There is an issue with gRPC clients in which they don't appear on the clients page. Because of this setting the of client name may be redundant
 - Add a > section for packages required
+- Add example of using auth token to default credentials 
+
 
 - Add link to cluster page on how to run a cluster
 - Move grpc interceptor and message handler out of basic connection

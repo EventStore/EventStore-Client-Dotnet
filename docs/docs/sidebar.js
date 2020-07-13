@@ -29,6 +29,13 @@ module.exports =[
 		]
 	},
 	{
+		title: "Authentication",
+		collapsable: true,
+		children: [
+			"authentication/authenticating-with-username-password"
+		]
+	},
+	{
 		title: "Writing events",
 		collapsable: true,
 		children: [
@@ -40,7 +47,9 @@ module.exports =[
 		title: "Reading events",
 		collapsable: true,
 		children: [
-			"reading-events/basics"
+			"reading-events/basics",
+			"reading-events/reading-from-a-stream",
+			"reading-events/reading-from-the-all-stream"
 		]
 	},
 	{
