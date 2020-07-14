@@ -2,7 +2,7 @@
 
 ::: tip
 Packages required
-- EventStore.Client.Grpc.Streams 20.6.0
+- EventStore.Client.Grpc.Streams
 :::
 
 TODO: Add link to how to set up cluster
@@ -23,11 +23,13 @@ There are a number of additional settings that can be altered when connecting to
 
 <<< @/samples/connecting-to-a-cluster/Program.cs#connecting-to-a-cluster-complex
 
-### DiscoveryInterval
+### DiscoveryInterval (Default: 100ms)
+
+The interval between node discovery attempts. If the client attempts to discover a node and it is unresponsive this is the length of time the client will wait before trying to discover it again.
 
 ### GossipTimeout (Default: 10sec)
 
-The length of time the client will attempt to get a gossip request from a node. The gossip requests lets the client know the current state of any given node. To find out more see 
+The length of time the client will wait to get a gossip request from a node. The gossip requests lets the client know the current state of any given node. To find out more see 
 
 > TODO: Link to gossip documentation
 
@@ -46,7 +48,9 @@ To find out more about the different node types see
 
 > TODO: Link to node types.
 
-### MaxDiscoveryAttempts
+### MaxDiscoveryAttempts (Default: 10)
+
+This is the number of times we will attempt to discover the node before EventStoreDb aborts and throws an exception.
 
 > TODO: Detail max discovery attempts 
 

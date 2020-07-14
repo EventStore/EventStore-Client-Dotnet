@@ -1,5 +1,10 @@
 # Writing Events
 
+:::tip
+Packages needed:
+- `EventStore.Client.Grpc.Streams`   
+:::
+
 The simplest way to write an event to EventStoreDb is to create an `EventData` object and call `AppendToStreamAsync()`
 
 <<< @/samples/writing-events/Program.cs#append-to-stream
@@ -30,7 +35,7 @@ For most scenarios you can just provide `Uuid.NewUuid()` although there are meth
 
 ### type
 
-An event type should be supplied for each event. This is a unique string to identify the type of event you are saving. 
+An event type should be supplied for each event. This is a unique string used to identify the type of event you are saving. 
 
 It is common to see the CLR type used as the type as it makes serialising and de-serialising of the event easy. However we recommend against this as it couples the storage to the type and will make it more difficult if you need to version the event at a later date.
 
@@ -62,8 +67,7 @@ There are three available stream states:
 This check can be used to implement optimistic concurrency. When you retrieve a stream from EventStoreDB, you take note of the current version number, then when you save it back you can determine if somebody else has modified the record in the meantime.
 
 ## Options
-Throw on append failure etc
+TODO
 
 ## User credentials
-
-## stream format
+The credentials used to append the data can be supplied. Please see [here](/authentication/authenticating-with-username-password.html) for more information.

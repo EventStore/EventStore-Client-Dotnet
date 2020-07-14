@@ -12,13 +12,8 @@ namespace quick_start {
 		static async Task Main(string[] args) {
 			#region creating-connection
 			var settings = new EventStoreClientSettings {
-				CreateHttpMessageHandler = () =>
-					new HttpClientHandler {
-						ServerCertificateCustomValidationCallback =
-							(message, certificate2, x509Chain, sslPolicyErrors) => true
-					},
 				ConnectivitySettings = {
-					Address = new Uri("https://localhost:2113")
+					Address = new Uri("http://localhost:2113")
 				}
 			};
 

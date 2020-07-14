@@ -1,8 +1,8 @@
 version: '3'
 services:
   eventstore:
-    image: eventstore/eventstore:20.6.0-buster-slim
+    image: docker.pkg.github.com/eventstore/eventstore/eventstore:20.6.1-alpha.0.31-buster-slim
     environment:
-      - EVENTSTORE_DEV=true
+      - EVENTSTORE_INSECURE=true
     ports:
       - 2113:2113

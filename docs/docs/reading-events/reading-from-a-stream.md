@@ -24,7 +24,11 @@ When using projections to create new events you can set whether the generated ev
 
 ### configureOperationOptions
 
-This argument is generic setting class for all operations that can be set on all operations executed against EventStoreDB. To find out more see [here]()
+This argument is generic setting class for all operations that can be set on all operations executed against EventStoreDB. To find out more see [here]().
+
+### userCredentials
+The credentials used to read the data can be supplied. Please see [here](authentication/authenticating-with-username-password.html).
+ for more information.
 
 ## Reading from a revision
 
@@ -34,10 +38,17 @@ As well as providing a `StreamPosition` you can also provide a specific stream r
 
 ## Reading backwards
 
-As well as being able to read a stream forwards you can also go backwards. One of the things to be aware of when reading backwards is the the `StreamPosition` will have to be set to the end if you want to read all the events:
+As well as being able to read a stream forwards you can also go backwards. When reading backwards is the the `StreamPosition` will have to be set to the end if you want to read all the events:
 
 <<< @/samples/reading-events/Program.cs#reading-backwards 
 
 :::tip
 You can use reading backwards to find the last position in the stream. Just read backwards one event and get the position.
 :::
+
+## Checking for stream presence 
+Reading a stream returns a `ReadStreamResult` this contains a property `ReadState`. This property can have the value `StreamNotFound` and `Ok`.
+
+It is important to check the value of this field before attempting to iterate an empty stream as it will throw an exception. For example.
+
+<<< @/samples/reading-events/Program.cs#checking-for-stream-presence

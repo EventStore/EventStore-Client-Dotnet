@@ -1,5 +1,10 @@
 # Connecting to a single node
 
+:::tip
+Packages needed:
+- `EventStore.Client.Grpc.Streams`   
+:::
+
 ## Simple connection
 
 The simplest way to connect to EventStoreDB is to only use a single node and leave the rest of the options as default. 
