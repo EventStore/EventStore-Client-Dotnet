@@ -52,9 +52,12 @@ namespace EventStore.Client {
 					.ToArray();
 			}
 
-			protected override Task Given()
-				=> Task.WhenAll(Users.Select(user => Client.CreateUserAsync(user.LoginName, user.FullName,
-					user.Groups, Guid.NewGuid().ToString(), TestCredentials.Root)));
+			protected override async Task Given() {
+				foreach (var user in Users) {
+					await Client.CreateUserAsync(user.LoginName, user.FullName,
+						user.Groups, Guid.NewGuid().ToString(), TestCredentials.Root);
+				}
+			}
 
 			protected override Task When() => Task.CompletedTask;
 		}
