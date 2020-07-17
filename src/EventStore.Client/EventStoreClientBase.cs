@@ -30,7 +30,11 @@ namespace EventStore.Client {
 				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 			}
 
+#if NETCOREAPP3_1
 			_innerHttpHandler = Settings.CreateHttpMessageHandler?.Invoke() ?? new SocketsHttpHandler();
+#elif NETSTANDARD2_1
+			_innerHttpHandler = Settings.CreateHttpMessageHandler?.Invoke() ?? new HttpClientHandler();
+#endif
 
 			_httpHandler = Settings.ConnectivitySettings.IsSingleNode
 				? (HttpMessageHandler)new SingleNodeHttpHandler(Settings) {
