@@ -42,13 +42,18 @@ namespace EventStore.Client {
 				}
 				: ClusterAwareHttpHandler.Create(Settings, _innerHttpHandler);
 
+#if NETSTANDARD2_1
+			_httpHandler = new DefaultRequestVersionHandler(_httpHandler);
+#endif
 
 			_channel = GrpcChannel.ForAddress(new UriBuilder(Settings.ConnectivitySettings.Address) {
 				Scheme = Uri.UriSchemeHttps
 			}.Uri, new GrpcChannelOptions {
 				HttpClient = new HttpClient(_httpHandler) {
 					Timeout = Timeout.InfiniteTimeSpan,
+#if NETCOREAPP3_1
 					DefaultRequestVersion = new Version(2, 0),
+#endif
 				},
 				LoggerFactory = Settings.LoggerFactory,
 				Credentials = Settings.ChannelCredentials

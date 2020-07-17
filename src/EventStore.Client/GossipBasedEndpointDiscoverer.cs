@@ -35,10 +35,17 @@ namespace EventStore.Client {
 			_gossipClients = new Dictionary<EndPoint,  GossipClient>();
 			_gossipClientFactory = (gossipSeedEndPoint) => {
 				string url = gossipSeedEndPoint.ToHttpUrl(gossipOverHttps?EndPointExtensions.HTTPS_SCHEMA:EndPointExtensions.HTTP_SCHEMA);
+				var httpHandler = httpMessageHandler ?? new HttpClientHandler();
+#if NETSTANDARD2_1
+				httpHandler = new DefaultRequestVersionHandler(httpHandler);
+#endif
+
 				var channel = GrpcChannel.ForAddress(url, new GrpcChannelOptions {
-					HttpClient = new HttpClient(httpMessageHandler ?? new HttpClientHandler()) {
+					HttpClient = new HttpClient(httpHandler) {
 						Timeout = gossipTimeout,
+#if NETCOREAPP3_1
 						DefaultRequestVersion = new Version(2, 0),
+#endif
 					}
 				});
 				var callInvoker = channel.CreateCallInvoker();
