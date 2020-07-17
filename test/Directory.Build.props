@@ -1,5 +1,8 @@
 <Project>
 	<Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+	<PropertyGroup>
+		<TargetFrameworks>netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Ductus.FluentDocker" Version="2.7.3" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0"/>
