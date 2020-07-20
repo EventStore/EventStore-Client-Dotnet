@@ -165,7 +165,7 @@ namespace EventStore.Client {
 		 InlineData(false,ClusterMessages.VNodeState.PreReplica),
 		 InlineData(false,ClusterMessages.VNodeState.PreReadOnlyReplica)
 		]
-		public async Task should_not_be_able_to_pick_invalid_node(bool useHttps, ClusterMessages.VNodeState invalidState) {
+		internal async Task should_not_be_able_to_pick_invalid_node(bool useHttps, ClusterMessages.VNodeState invalidState) {
 			var gossip = new ClusterMessages.ClusterInfo {
 				Members = new[] {
 					new ClusterMessages.MemberInfo {
@@ -198,7 +198,7 @@ namespace EventStore.Client {
 		 InlineData(false, NodePreference.ReadOnlyReplica, ClusterMessages.VNodeState.ReadOnlyReplica),
 		 InlineData(false, NodePreference.ReadOnlyReplica, ClusterMessages.VNodeState.ReadOnlyLeaderless)
 		 ]
-		public async Task should_pick_node_based_on_preference(bool useHttps, NodePreference preference,
+		internal async Task should_pick_node_based_on_preference(bool useHttps, NodePreference preference,
 			ClusterMessages.VNodeState expectedState) {
 			var gossip = new ClusterMessages.ClusterInfo {
 				Members = new[] {
@@ -302,7 +302,7 @@ namespace EventStore.Client {
 			public readonly string Host = "localhost";
 			public readonly int SecurePort = GetFreePort();
 			public readonly int InsecurePort = GetFreePort();
-			public readonly ClusterMessages.ClusterInfo CurrentClusterInfo = new ClusterMessages.ClusterInfo();
+			internal readonly ClusterMessages.ClusterInfo CurrentClusterInfo = new ClusterMessages.ClusterInfo();
 			private Server? _server;
 
 			private static int GetFreePort() {

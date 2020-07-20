@@ -6,6 +6,15 @@ using EventStore.Client.Operations;
 #nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreOperationsClient {
+		/// <summary>
+		/// Starts a scavenge operation.
+		/// </summary>
+		/// <param name="threadCount"></param>
+		/// <param name="startFromChunk"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public async Task<DatabaseScavengeResult> StartScavengeAsync(
 			int threadCount = 1,
 			int startFromChunk = 0,
@@ -34,6 +43,13 @@ namespace EventStore.Client {
 			};
 		}
 
+		/// <summary>
+		/// Stops a scavenge operation.
+		/// </summary>
+		/// <param name="scavengeId"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public async Task<DatabaseScavengeResult> StopScavengeAsync(
 			string scavengeId,
 			UserCredentials? userCredentials = null,

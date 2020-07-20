@@ -45,9 +45,11 @@ namespace EventStore.Client {
 			if (loginName == null) {
 				throw new ArgumentNullException(nameof(loginName));
 			}
+
 			if (fullName == null) {
 				throw new ArgumentNullException(nameof(fullName));
 			}
+
 			if (groups == null) {
 				throw new ArgumentNullException(nameof(groups));
 			}
@@ -59,18 +61,35 @@ namespace EventStore.Client {
 			DateLastUpdated = dateLastUpdated;
 		}
 
+		/// <inheritdoc />
 		public bool Equals(UserDetails other) =>
 			LoginName == other.LoginName && FullName == other.FullName && Groups.SequenceEqual(other.Groups) &&
 			Nullable.Equals(DateLastUpdated, other.DateLastUpdated) && Disabled == other.Disabled;
 
+		/// <inheritdoc />
 		public override bool Equals(object? obj) => obj is UserDetails other && Equals(other);
 
+		/// <inheritdoc />
 		public override int GetHashCode() => HashCode.Hash.Combine(LoginName).Combine(FullName).Combine(Groups)
 			.Combine(Disabled).Combine(DateLastUpdated);
 
+		/// <summary>
+		/// Compares left and right for equality.
+		/// </summary>
+		/// <param name="left"></param>
+		/// <param name="right"></param>
+		/// <returns>True if left is equal to right.</returns>
 		public static bool operator ==(UserDetails left, UserDetails right) => left.Equals(right);
+
+		/// <summary>
+		/// Compares left and right for inequality.
+		/// </summary>
+		/// <param name="left"></param>
+		/// <param name="right"></param>
+		/// <returns>True if left is not equal to right.</returns>
 		public static bool operator !=(UserDetails left, UserDetails right) => !left.Equals(right);
 
+		/// <inheritdoc />
 		public override string ToString() =>
 			new {
 				Disabled,

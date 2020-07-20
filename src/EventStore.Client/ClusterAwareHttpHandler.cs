@@ -6,12 +6,19 @@ using System.Threading.Tasks;
 
 #nullable enable
 namespace EventStore.Client {
+	/// <inheritdoc />
 	public class ClusterAwareHttpHandler : DelegatingHandler {
 		private readonly bool _useHttps;
 		private readonly bool _requiresLeader;
 		private readonly IEndpointDiscoverer _endpointDiscoverer;
 		private Lazy<Task<EndPoint>> _endpoint;
 
+		/// <summary>
+		/// Factory method to create a <see cref="ClusterAwareHttpHandler"/>.
+		/// </summary>
+		/// <param name="settings"></param>
+		/// <param name="httpMessageHandler"></param>
+		/// <returns></returns>
 		public static ClusterAwareHttpHandler Create(EventStoreClientSettings settings,
 			HttpMessageHandler? httpMessageHandler = null) => new ClusterAwareHttpHandler(
 			settings.ConnectivitySettings.GossipOverHttps,
@@ -28,6 +35,12 @@ namespace EventStore.Client {
 		};
 
 
+		/// <summary>
+		/// Constructs a new <see cref="ClusterAwareHttpHandler"/>.
+		/// </summary>
+		/// <param name="useHttps"></param>
+		/// <param name="requiresLeader"></param>
+		/// <param name="endpointDiscoverer"></param>
 		public ClusterAwareHttpHandler(bool useHttps, bool requiresLeader, IEndpointDiscoverer endpointDiscoverer) {
 			_useHttps = useHttps;
 			_requiresLeader = requiresLeader;
@@ -36,6 +49,7 @@ namespace EventStore.Client {
 				LazyThreadSafetyMode.ExecutionAndPublication);
 		}
 
+		/// <inheritdoc />
 		protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
 			CancellationToken cancellationToken) {
 			var endpointResolver = _endpoint;
@@ -58,6 +72,10 @@ namespace EventStore.Client {
 			}
 		}
 
+		/// <summary>
+		/// Notifies the <see cref="ClusterAwareHttpHandler"/> that an exception occurred, to allow it to select another <see cref="EndPoint"/>.
+		/// </summary>
+		/// <param name="exception"></param>
 		public void ExceptionOccurred(Exception exception) {
 			if (exception is NotLeaderException ex) {
 				_endpoint = new Lazy<Task<EndPoint>>(Task.FromResult(ex.LeaderEndpoint));

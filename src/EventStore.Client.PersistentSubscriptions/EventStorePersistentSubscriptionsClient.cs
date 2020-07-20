@@ -7,10 +7,17 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 #nullable enable
 namespace EventStore.Client {
+	/// <summary>
+	/// The client used to manage persistent subscriptions in the EventStoreDB.
+	/// </summary>
 	public partial class EventStorePersistentSubscriptionsClient : EventStoreClientBase {
 		private readonly PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient _client;
 		private readonly ILogger _log;
 
+		/// <summary>
+		/// Constructs a new <see cref="EventStorePersistentSubscriptionsClient"/>.
+		/// </summary>
+		/// <param name="settings"></param>
 		public EventStorePersistentSubscriptionsClient(EventStoreClientSettings? settings) : base(settings,
 			new Dictionary<string, Func<RpcException, Exception>> {
 				[Constants.Exceptions.PersistentSubscriptionDoesNotExist] = ex => new

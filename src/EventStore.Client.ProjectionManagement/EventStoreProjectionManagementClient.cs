@@ -7,13 +7,24 @@ using Microsoft.Extensions.Options;
 
 #nullable enable
 namespace EventStore.Client {
+	/// <summary>
+	///The client used to manage projections on the EventStoreDB.
+	/// </summary>
 	public partial class EventStoreProjectionManagementClient : EventStoreClientBase {
 		private readonly Projections.Projections.ProjectionsClient _client;
 		private readonly ILogger _log;
 
+		/// <summary>
+		/// Constructs a new <see cref="EventStoreProjectionManagementClient"/>. This method is not intended to be called directly from your code.
+		/// </summary>
+		/// <param name="options"></param>
 		public EventStoreProjectionManagementClient(IOptions<EventStoreClientSettings> options) : this(options.Value) {
 		}
 
+		/// <summary>
+		/// Constructs a new <see cref="EventStoreProjectionManagementClient"/>.
+		/// </summary>
+		/// <param name="settings"></param>
 		public EventStoreProjectionManagementClient(EventStoreClientSettings? settings) : base(settings,
 			new Dictionary<string, Func<RpcException, Exception>>()) {
 			_client = new Projections.Projections.ProjectionsClient(CallInvoker);

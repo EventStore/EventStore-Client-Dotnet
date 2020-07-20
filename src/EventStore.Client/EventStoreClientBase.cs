@@ -10,14 +10,29 @@ using Grpc.Net.Client;
 
 #nullable enable
 namespace EventStore.Client {
+	/// <summary>
+	/// The base class used by clients used to communicate with the EventStoreDB.
+	/// </summary>
 	public abstract class EventStoreClientBase : IDisposable {
 		private readonly GrpcChannel _channel;
 		private readonly HttpMessageHandler _httpHandler;
 		private readonly HttpMessageHandler _innerHttpHandler;
 
+		/// <summary>
+		/// The <see cref="CallInvoker"/>.
+		/// </summary>
 		protected CallInvoker CallInvoker { get; }
+
+		/// <summary>
+		/// The <see cref="EventStoreClientSettings"/>.
+		/// </summary>
 		protected EventStoreClientSettings Settings { get; }
 
+		/// <summary>
+		/// Constructs a new <see cref="EventStoreClientBase"/>.
+		/// </summary>
+		/// <param name="settings"></param>
+		/// <param name="exceptionMap"></param>
 		protected EventStoreClientBase(EventStoreClientSettings? settings,
 			IDictionary<string, Func<RpcException, Exception>> exceptionMap) {
 			Settings = settings ?? new EventStoreClientSettings();
@@ -62,6 +77,7 @@ namespace EventStore.Client {
 				(invoker, interceptor) => invoker.Intercept(interceptor));
 		}
 
+		/// <inheritdoc />
 		public void Dispose() {
 			_channel?.Dispose();
 			_innerHttpHandler?.Dispose();

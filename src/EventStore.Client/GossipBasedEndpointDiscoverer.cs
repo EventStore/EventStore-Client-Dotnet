@@ -11,7 +11,7 @@ using GossipClient = EventStore.Client.Gossip.Gossip.GossipClient;
 
 #nullable enable
 namespace EventStore.Client {
-	public class ClusterEndpointDiscoverer : IEndpointDiscoverer {
+	internal class ClusterEndpointDiscoverer : IEndpointDiscoverer {
 		private readonly int _maxDiscoverAttempts;
 		private readonly EndPoint[] _gossipSeeds;
 		private readonly TimeSpan _discoveryInterval;
@@ -33,7 +33,7 @@ namespace EventStore.Client {
 			_discoveryInterval = discoveryInterval;
 			_nodePreference = nodePreference;
 			_gossipClients = new Dictionary<EndPoint,  GossipClient>();
-			_gossipClientFactory = (gossipSeedEndPoint) => {
+			_gossipClientFactory = gossipSeedEndPoint => {
 				string url = gossipSeedEndPoint.ToHttpUrl(gossipOverHttps?EndPointExtensions.HTTPS_SCHEMA:EndPointExtensions.HTTP_SCHEMA);
 				var channel = GrpcChannel.ForAddress(url, new GrpcChannelOptions {
 					HttpClient = new HttpClient(httpMessageHandler ?? new HttpClientHandler()) {

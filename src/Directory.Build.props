@@ -9,6 +9,7 @@
 	<ItemGroup Condition="$(MSBuildProjectName) != 'EventStore.Client'">
 		<ProjectReference Include="..\EventStore.Client\EventStore.Client.csproj"/>
 		<Protobuf
+			Access="internal"
 			Include="$(ESProtoPath)"
 			GrpcServices="Client"
 			Link="protos/$(ESProto)"/>
@@ -23,6 +24,7 @@
 		<Authors>Event Store Ltd</Authors>
 		<Copyright>Copyright 2012-2020 Event Store Ltd</Copyright>
 		<MinVerTagPrefix>v</MinVerTagPrefix>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="..\..\LICENSE.md" Pack="true" PackagePath="\"/>

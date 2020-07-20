@@ -122,13 +122,16 @@ namespace EventStore.Client {
 				userCredentials, cancellationToken);
 		}
 
+		/// <summary>
+		/// A class that represents the result of a read operation.
+		/// </summary>
 		public class ReadStreamResult : IAsyncEnumerable<ResolvedEvent>, IAsyncEnumerator<ResolvedEvent> {
 			private readonly IAsyncEnumerator<ReadResp> _call;
 			private bool _moved;
 			private CancellationToken _cancellationToken;
 			private readonly string _streamName;
 
-			public ReadStreamResult(
+			internal ReadStreamResult(
 				Streams.Streams.StreamsClient client,
 				ReadReq request,
 				EventStoreClientSettings settings,
@@ -164,18 +167,22 @@ namespace EventStore.Client {
 				Current = default;
 			}
 
+			/// <summary>
+			/// The <see cref="ReadState"/>.
+			/// </summary>
 			public Task<ReadState> ReadState { get; }
 
+			/// <inheritdoc />
 			public IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(
 				CancellationToken cancellationToken = new CancellationToken()) {
 				_cancellationToken = cancellationToken;
 				return this;
 			}
 
-			public ValueTask DisposeAsync() {
-				return _call.DisposeAsync();
-			}
+			/// <inheritdoc />
+			public ValueTask DisposeAsync() => _call.DisposeAsync();
 
+			/// <inheritdoc />
 			public async ValueTask<bool> MoveNextAsync() {
 				var state = await ReadState.ConfigureAwait(false);
 				if (state != Client.ReadState.Ok) {
@@ -212,6 +219,7 @@ namespace EventStore.Client {
 				};
 			}
 
+			/// <inheritdoc />
 			public ResolvedEvent Current { get; private set; }
 		}
 

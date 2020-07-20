@@ -74,23 +74,34 @@ namespace EventStore.Client {
 			(MetaReadRoles ?? Array.Empty<string>()).SequenceEqual(other.MetaReadRoles ?? Array.Empty<string>()) &&
 			(MetaWriteRoles ?? Array.Empty<string>()).SequenceEqual(other.MetaWriteRoles ?? Array.Empty<string>());
 
+		/// <inheritdoc />
 		public override bool Equals(object? obj) =>
 			!ReferenceEquals(null, obj) &&
 			(ReferenceEquals(this, obj) || obj.GetType() == GetType() && Equals((StreamAcl)obj));
 
+		/// <summary>
+		/// Compares left and right for equality.
+		/// </summary>
+		/// <param name="left"></param>
+		/// <param name="right"></param>
+		/// <returns>True if left is equal to right.</returns>
 		public static bool operator ==(StreamAcl? left, StreamAcl? right) => Equals(left, right);
+
+		/// <summary>
+		/// Compares left and right for inequality.
+		/// </summary>
+		/// <param name="left"></param>
+		/// <param name="right"></param>
+		/// <returns>True if left is not equal to right.</returns>
 		public static bool operator !=(StreamAcl? left, StreamAcl? right) => !Equals(left, right);
+
+		/// <inheritdoc />
 		public override int GetHashCode() =>
 			HashCode.Hash.Combine(ReadRoles).Combine(WriteRoles).Combine(DeleteRoles).Combine(MetaReadRoles)
 				.Combine(MetaWriteRoles);
 
-		/// <summary>
-		/// Returns a string that represents the current object.
-		/// </summary>
-		/// <returns>
-		/// A string that represents the current object.
-		/// </returns>
-		/// <filterpriority>2</filterpriority>
+
+		/// <inheritdoc />
 		public override string ToString() =>
 			$"Read: {(ReadRoles == null ? "<null>" : "[" + string.Join(",", ReadRoles) + "]")}, Write: {(WriteRoles == null ? "<null>" : "[" + string.Join(",", WriteRoles) + "]")}, Delete: {(DeleteRoles == null ? "<null>" : "[" + string.Join(",", DeleteRoles) + "]")}, MetaRead: {(MetaReadRoles == null ? "<null>" : "[" + string.Join(",", MetaReadRoles) + "]")}, MetaWrite: {(MetaWriteRoles == null ? "<null>" : "[" + string.Join(",", MetaWriteRoles) + "]")}";
 	}

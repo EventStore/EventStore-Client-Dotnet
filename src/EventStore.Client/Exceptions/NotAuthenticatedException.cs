@@ -1,20 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Text;
 
+#nullable enable
 namespace EventStore.Client {
+	/// <summary>
+	/// The exception that is thrown when a user is not authenticated.
+	/// </summary>
 	public class NotAuthenticatedException : Exception {
-		public NotAuthenticatedException() {
-		}
-
-		public NotAuthenticatedException(string message) : base(message) {
-		}
-
-		public NotAuthenticatedException(string message, Exception innerException) : base(message, innerException) {
-		}
-
-		protected NotAuthenticatedException(SerializationInfo info, StreamingContext context) : base(info, context) {
+		/// <summary>
+		/// Constructs a new <see cref="NotAuthenticatedException"/>.
+		/// </summary>
+		/// <param name="message"></param>
+		/// <param name="innerException"></param>
+		public NotAuthenticatedException(string message, Exception? innerException = null) : base(message, innerException) {
 		}
 	}
 }

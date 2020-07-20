@@ -2,7 +2,10 @@ using System.Text;
 using Google.Protobuf;
 
 namespace EventStore.Client {
-	public partial class StreamIdentifier{private string _cached;
+#pragma warning disable 1591
+	public partial class StreamIdentifier {
+		private string _cached;
+
 		public static implicit operator string(StreamIdentifier source) {
 			if (source._cached != null || source.StreamName.IsEmpty) return source._cached;
 			var tmp = Encoding.UTF8.GetString(source.StreamName.Span);
@@ -11,10 +14,7 @@ namespace EventStore.Client {
 			return source._cached;
 		}
 
-		public static implicit operator StreamIdentifier(string source) {
-			var result = new StreamIdentifier();
-			result.StreamName = ByteString.CopyFromUtf8(source);
-			return result;
-		}
+		public static implicit operator StreamIdentifier(string source) =>
+			new StreamIdentifier {StreamName = ByteString.CopyFromUtf8(source)};
 	}
 }

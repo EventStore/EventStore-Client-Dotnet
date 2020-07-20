@@ -2,6 +2,9 @@ using System;
 
 #nullable enable
 namespace EventStore.Client {
+	/// <summary>
+	/// A class representing the settings of a persistent subscription.
+	/// </summary>
 	public sealed class PersistentSubscriptionSettings {
 		/// <summary>
 		/// Whether the <see cref="PersistentSubscription"></see> should resolve linkTo events to their linked events.
@@ -68,6 +71,23 @@ namespace EventStore.Client {
 		/// </summary>
 		public readonly string NamedConsumerStrategy;
 
+		/// <summary>
+		/// Constructs a new <see cref="PersistentSubscriptionSettings"/>.
+		/// </summary>
+		/// <param name="resolveLinkTos"></param>
+		/// <param name="startFrom"></param>
+		/// <param name="extraStatistics"></param>
+		/// <param name="messageTimeout"></param>
+		/// <param name="maxRetryCount"></param>
+		/// <param name="liveBufferSize"></param>
+		/// <param name="readBatchSize"></param>
+		/// <param name="historyBufferSize"></param>
+		/// <param name="checkPointAfter"></param>
+		/// <param name="minCheckPointCount"></param>
+		/// <param name="maxCheckPointCount"></param>
+		/// <param name="maxSubscriberCount"></param>
+		/// <param name="namedConsumerStrategy"></param>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public PersistentSubscriptionSettings(bool resolveLinkTos = false, StreamPosition? startFrom = null,
 			bool extraStatistics = false, TimeSpan? messageTimeout = null, int maxRetryCount = 500,
 			int liveBufferSize = 500, int readBatchSize = 10, int historyBufferSize = 20,

@@ -9,18 +9,37 @@ using Grpc.Core;
 #nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreProjectionManagementClient {
+		/// <summary>
+		/// List the <see cref="ProjectionDetails"/> of all one-time projections.
+		/// </summary>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public IAsyncEnumerable<ProjectionDetails> ListOneTimeAsync(UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
 			ListInternalAsync(new StatisticsReq.Types.Options {
 				OneTime = new Empty()
 			}, userCredentials, cancellationToken);
 
+		/// <summary>
+		/// List the <see cref="ProjectionDetails"/> of all continuous projections.
+		/// </summary>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public IAsyncEnumerable<ProjectionDetails> ListContinuousAsync(UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
 			ListInternalAsync(new StatisticsReq.Types.Options {
 				Continuous = new Empty()
 			}, userCredentials, cancellationToken);
 
+		/// <summary>
+		/// Gets the status of a projection.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public Task<ProjectionDetails> GetStatusAsync(string name, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
 			ListInternalAsync(new StatisticsReq.Types.Options {
@@ -54,6 +73,12 @@ namespace EventStore.Client {
 				details.WritePendingEventsAfterCheckpoint);
 		}
 
+		/// <summary>
+		/// List the <see cref="ProjectionDetails"/> of all projections.
+		/// </summary>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public IAsyncEnumerable<ProjectionDetails> ListAllAsync(UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
 			ListInternalAsync(new StatisticsReq.Types.Options {

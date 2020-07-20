@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 #nullable enable
 namespace EventStore.Client {
-	public class SystemSettingsJsonConverter : JsonConverter<SystemSettings> {
+	internal class SystemSettingsJsonConverter : JsonConverter<SystemSettings> {
 		public static readonly SystemSettingsJsonConverter Instance = new SystemSettingsJsonConverter();
 
 		public override SystemSettings Read(ref Utf8JsonReader reader, Type typeToConvert,

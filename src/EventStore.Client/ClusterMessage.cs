@@ -2,7 +2,7 @@
 
 #nullable enable
 namespace EventStore.Client {
-	public class ClusterMessages {
+	internal class ClusterMessages {
 		public class ClusterInfo {
 			public MemberInfo[]? Members { get; set; }
 		}

@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 #nullable enable
 namespace EventStore.Client {
-	public class StreamMetadataJsonConverter : JsonConverter<StreamMetadata> {
+	internal class StreamMetadataJsonConverter : JsonConverter<StreamMetadata> {
 		public static readonly StreamMetadataJsonConverter Instance = new StreamMetadataJsonConverter();
 
 		public override StreamMetadata Read(ref Utf8JsonReader reader, Type typeToConvert,
