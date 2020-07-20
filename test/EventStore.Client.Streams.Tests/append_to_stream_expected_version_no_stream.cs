@@ -12,12 +12,12 @@ namespace EventStore.Client {
 
 		[Fact]
 		public void succeeds() {
-			Assert.Equal(0, _fixture.Result.NextExpectedVersion);
+			Assert.Equal(new StreamRevision(0), _fixture.Result.NextExpectedStreamRevision);
 		}
 
 		[Fact]
 		public void returns_position() {
-			Assert.NotEqual(default, _fixture.Result.LogPosition);
+			Assert.True(_fixture.Result.LogPosition > Position.Start);
 		}
 
 		public class Fixture : EventStoreClientFixture {

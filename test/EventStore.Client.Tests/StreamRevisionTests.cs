@@ -35,6 +35,12 @@ namespace EventStore.Client {
 			Assert.Equal(new StreamRevision(1), 1 + sut);
 		}
 
+		[Fact]
+		public void NextReturnsExpectedResult() {
+			var sut = new StreamRevision(0);
+			Assert.Equal(sut + 1, sut.Next());
+		}
+
 		public static IEnumerable<object[]> AdditionOutOfBoundsCases() {
 			yield return new object[] {new StreamRevision(long.MaxValue), long.MaxValue + 2UL};
 		}
@@ -72,6 +78,18 @@ namespace EventStore.Client {
 		public void ArgumentOutOfRange(ulong value) {
 			var ex = Assert.Throws<ArgumentOutOfRangeException>(() => new StreamRevision(value));
 			Assert.Equal(nameof(value), ex.ParamName);
+		}
+
+		[Fact]
+		public void FromStreamPositionEndThrows() {
+			Assert.Throws<ArgumentOutOfRangeException>(() => StreamRevision.FromStreamPosition(StreamPosition.End));
+		}
+
+		[Fact]
+		public void FromStreamPositionReturnsExpectedResult() {
+			var result = StreamRevision.FromStreamPosition(StreamPosition.Start);
+
+			Assert.Equal(new StreamRevision(0), result);
 		}
 
 		public static IEnumerable<object[]> ComparableTestCases() {

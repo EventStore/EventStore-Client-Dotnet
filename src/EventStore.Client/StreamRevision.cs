@@ -22,6 +22,16 @@ namespace EventStore.Client {
 			value == -1 ? None : new StreamRevision(Convert.ToUInt64(value));
 
 		/// <summary>
+		/// Creates a new <see cref="StreamRevision"/> from the given <see cref="StreamPosition"/>.
+		/// </summary>
+		/// <param name="position"></param>
+		/// <returns></returns>
+		public static StreamRevision FromStreamPosition(StreamPosition position) => position.ToUInt64() switch {
+			ulong.MaxValue => throw new ArgumentOutOfRangeException(nameof(position)),
+			_ => new StreamRevision(position.ToUInt64())
+		};
+
+		/// <summary>
 		/// Constructs a new <see cref="StreamRevision"/>.
 		/// </summary>
 		/// <param name="value"></param>
@@ -33,6 +43,12 @@ namespace EventStore.Client {
 
 			_value = value;
 		}
+
+		/// <summary>
+		/// Advances the <see cref="StreamRevision"/> to the next revision.
+		/// </summary>
+		/// <returns></returns>
+		public StreamRevision Next() => this + 1;
 
 		/// <inheritdoc />
 		public int CompareTo(StreamRevision other) => _value.CompareTo(other._value);
@@ -163,7 +179,7 @@ namespace EventStore.Client {
 		public static implicit operator StreamRevision(ulong value) => new StreamRevision(value);
 
 		/// <inheritdoc />
-		public override string ToString() => this == None ? "End" : _value.ToString();
+		public override string ToString() => this == None ? nameof(None) : _value.ToString();
 
 		/// <summary>
 		/// Converts the <see cref="StreamRevision"/> to a <see cref="ulong" />.

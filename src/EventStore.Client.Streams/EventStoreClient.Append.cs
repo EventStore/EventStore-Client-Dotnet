@@ -128,41 +128,50 @@ namespace EventStore.Client {
 					writeResult = new SuccessResult(
 						response.Success.CurrentRevisionOptionCase ==
 						AppendResp.Types.Success.CurrentRevisionOptionOneofCase.NoStream
-							? StreamState.NoStream.ToInt64()
-							: new StreamRevision(response.Success.CurrentRevision).ToInt64(),
+							? StreamRevision.None
+							: new StreamRevision(response.Success.CurrentRevision),
 						response.Success.PositionOptionCase == AppendResp.Types.Success.PositionOptionOneofCase.Position
 							? new Position(response.Success.Position.CommitPosition,
 								response.Success.Position.PreparePosition)
 							: default);
 					_log.LogDebug("Append to stream succeeded - {streamName}@{logPosition}/{nextExpectedVersion}.",
-						header.Options.StreamIdentifier, writeResult.LogPosition, writeResult.NextExpectedVersion);
+						header.Options.StreamIdentifier, writeResult.LogPosition, writeResult.NextExpectedStreamRevision);
 				} else {
 					if (response.WrongExpectedVersion != null) {
-						var expectedRevision = response.WrongExpectedVersion.ExpectedRevisionOptionCase switch {
-							AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.Any =>
-							StreamState.Any.ToInt64(),
-							AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.StreamExists =>
-							StreamState.StreamExists.ToInt64(),
-							_ => new StreamRevision(response.WrongExpectedVersion.ExpectedRevision).ToInt64()
-						};
-
 						var currentRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase switch {
 							AppendResp.Types.WrongExpectedVersion.CurrentRevisionOptionOneofCase.NoStream =>
-							StreamState.NoStream.ToInt64(),
-							_ => new StreamRevision(response.WrongExpectedVersion.CurrentRevision).ToInt64()
+							StreamRevision.None,
+							_ => new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
 						};
 
 						_log.LogDebug(
 							"Append to stream failed with Wrong Expected Version - {streamName}/{expectedRevision}/{currentRevision}",
-							header.Options.StreamIdentifier, expectedRevision, currentRevision);
+							header.Options.StreamIdentifier, new StreamRevision(header.Options.Revision), currentRevision);
 						
 						if (operationOptions.ThrowOnAppendFailure) {
-							throw new WrongExpectedVersionException(header.Options.StreamIdentifier, expectedRevision,
-								currentRevision);
+							if (header.Options.ExpectedStreamRevisionCase ==
+							    AppendReq.Types.Options.ExpectedStreamRevisionOneofCase.Revision) {
+								throw new WrongExpectedVersionException(header.Options.StreamIdentifier,
+									new StreamRevision(header.Options.Revision),
+									currentRevision);
+							}
+
+							var streamState = header.Options.ExpectedStreamRevisionCase switch {
+								AppendReq.Types.Options.ExpectedStreamRevisionOneofCase.Any =>
+								StreamState.Any,
+								AppendReq.Types.Options.ExpectedStreamRevisionOneofCase.NoStream =>
+								StreamState.NoStream,
+								AppendReq.Types.Options.ExpectedStreamRevisionOneofCase.StreamExists =>
+								StreamState.StreamExists,
+								_ => throw new InvalidOperationException()
+							};
+
+							throw new WrongExpectedVersionException(header.Options.StreamIdentifier,
+								streamState, currentRevision);
 						}
 
 						writeResult = new WrongExpectedVersionResult(
-							header.Options.StreamIdentifier, expectedRevision, currentRevision);
+							header.Options.StreamIdentifier, currentRevision);
 					} else {
 						throw new InvalidOperationException("The operation completed with an unexpected result.");
 					}

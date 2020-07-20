@@ -58,7 +58,7 @@ namespace EventStore.Client {
 				StreamState.NoStream,
 				_fixture.CreateTestEvents());
 
-			var deleteResult = await _fixture.Client.TombstoneAsync(stream, StreamRevision.FromInt64(writeResult.NextExpectedVersion));
+			var deleteResult = await _fixture.Client.TombstoneAsync(stream, writeResult.NextExpectedStreamRevision);
 
 			Assert.True(deleteResult.LogPosition > writeResult.LogPosition);
 		}
@@ -72,7 +72,7 @@ namespace EventStore.Client {
 				StreamState.NoStream,
 				_fixture.CreateTestEvents());
 
-			var deleteResult = await _fixture.Client.SoftDeleteAsync(stream, StreamRevision.FromInt64(writeResult.NextExpectedVersion));
+			var deleteResult = await _fixture.Client.SoftDeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
 			Assert.True(deleteResult.LogPosition > writeResult.LogPosition);
 		}

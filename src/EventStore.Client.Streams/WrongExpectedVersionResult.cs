@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-#nullable enable
+﻿#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// An <see cref="IWriteResult"/> that indicates a failed append to a stream.
@@ -22,16 +20,18 @@ namespace EventStore.Client {
 		/// <inheritdoc />
 		public Position LogPosition { get; }
 
+		/// <inheritdoc />
+		public StreamRevision NextExpectedStreamRevision { get; }
+
 		/// <summary>
 		/// Construct a new <see cref="WrongExpectedVersionResult"/>.
 		/// </summary>
 		/// <param name="streamName"></param>
-		/// <param name="nextExpectedVersion"></param>
-		/// <param name="actualVersion"></param>
-		public WrongExpectedVersionResult(string streamName, long nextExpectedVersion, long actualVersion) {
+		/// <param name="nextExpectedStreamRevision"></param>
+		public WrongExpectedVersionResult(string streamName, StreamRevision nextExpectedStreamRevision) {
 			StreamName = streamName;
-			ActualVersion = actualVersion;
-			NextExpectedVersion = nextExpectedVersion;
+			ActualVersion = NextExpectedVersion = nextExpectedStreamRevision.ToInt64();
+			NextExpectedStreamRevision = nextExpectedStreamRevision;
 			LogPosition = default;
 		}
 	}
