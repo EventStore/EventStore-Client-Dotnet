@@ -158,7 +158,7 @@ namespace EventStore.Client {
 					await Policy.Handle<Exception>()
 						.WaitAndRetryAsync(5, retryCount => TimeSpan.FromSeconds(retryCount * retryCount))
 						.ExecuteAsync(async () => {
-							using var response = await _httpClient.GetAsync("/web/index.html", cancellationToken);
+							using var response = await _httpClient.GetAsync("/health/live", cancellationToken);
 							if (response.StatusCode >= HttpStatusCode.BadRequest) {
 								throw new Exception($"Health check failed with status code {response.StatusCode}");
 							}

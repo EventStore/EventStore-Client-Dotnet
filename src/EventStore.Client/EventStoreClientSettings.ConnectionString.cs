@@ -150,11 +150,17 @@ namespace EventStore.Client {
 
 				if (typedOptions.TryGetValue("TlsVerifyCert", out object tlsVerifyCert)) {
 					if (!(bool)tlsVerifyCert) {
+#if NETCOREAPP3_1
 						settings.CreateHttpMessageHandler = () => new SocketsHttpHandler {
 							SslOptions = {
 								RemoteCertificateValidationCallback = delegate { return true; }
 							}
 						};
+#elif NETSTANDARD2_1
+						settings.CreateHttpMessageHandler = () => new HttpClientHandler {
+							ServerCertificateCustomValidationCallback = delegate { return true; }
+						};
+#endif
 					}
 				}
 

@@ -1,6 +1,5 @@
 <Project>
 	<PropertyGroup>
-		<TargetFramework>netcoreapp3.1</TargetFramework>
 		<Platform>x64</Platform>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<Nullable>disable</Nullable>

@@ -1,5 +1,8 @@
 <Project>
 	<Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"/>
+	<PropertyGroup>
+		<TargetFrameworks>netcoreapp3.1;netstandard2.1</TargetFrameworks>
+	</PropertyGroup>
 	<PropertyGroup Condition="$(MSBuildProjectName) != 'EventStore.Client'">
 		<ESPackageIdSuffix>$(MSBuildProjectName.Remove(0,18))</ESPackageIdSuffix>
 		<ESProto>$(ESPackageIdSuffix.ToLower()).proto</ESProto>
