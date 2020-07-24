@@ -40,7 +40,7 @@ namespace EventStore.Client {
 			}
 
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(Position.End, EventAppeared, false,
-				filterOptions: new SubscriptionFilterOptions(filter, 5, CheckpointReached),
+				filterOptions: new SubscriptionFilterOptions(filter),
 				subscriptionDropped: SubscriptionDropped);
 
 			foreach (var e in afterEvents) {
@@ -48,7 +48,7 @@ namespace EventStore.Client {
 					StreamState.NoStream, new[] {e});
 			}
 
-			await Task.WhenAll(appeared.Task, checkpointSeen.Task).WithTimeout();
+			await appeared.Task.WithTimeout();
 
 			Assert.False(dropped.Task.IsCompleted);
 
@@ -75,12 +75,6 @@ namespace EventStore.Client {
 
 			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception ex) =>
 				dropped.SetResult((reason, ex));
-
-			Task CheckpointReached(StreamSubscription _, Position position, CancellationToken ct) {
-				checkpointSeen.TrySetResult(true);
-
-				return Task.CompletedTask;
-			}
 		}
 
 		public Task InitializeAsync() => _fixture.InitializeAsync();
