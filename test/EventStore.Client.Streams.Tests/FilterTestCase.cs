@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace EventStore.Client.Streams {
+namespace EventStore.Client {
 	public static class Filters {
 		private const string StreamNamePrefix = nameof(StreamNamePrefix);
 		private const string StreamNameRegex = nameof(StreamNameRegex);

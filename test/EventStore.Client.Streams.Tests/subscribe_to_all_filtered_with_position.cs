@@ -43,6 +43,9 @@ namespace EventStore.Client {
 			var writeResult = await _fixture.Client.AppendToStreamAsync("checkpoint",
 				StreamState.NoStream, _fixture.CreateTestEvents());
 
+			await _fixture.Client.AppendToStreamAsync(Guid.NewGuid().ToString(), StreamState.NoStream,
+				_fixture.CreateTestEvents(256));
+
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(writeResult.LogPosition, EventAppeared,
 				false, filterOptions: new SubscriptionFilterOptions(filter, 4, CheckpointReached),
 				subscriptionDropped: SubscriptionDropped);

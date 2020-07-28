@@ -33,6 +33,9 @@ namespace EventStore.Client {
 			using var enumerator = events.OfType<EventData>().GetEnumerator();
 			enumerator.MoveNext();
 
+			await _fixture.Client.AppendToStreamAsync(Guid.NewGuid().ToString(), StreamState.NoStream,
+				_fixture.CreateTestEvents(256));
+
 			foreach (var e in events) {
 				await _fixture.Client.AppendToStreamAsync($"{streamPrefix}_{Guid.NewGuid():n}",
 					StreamState.NoStream, new[] {e});
@@ -99,6 +102,9 @@ namespace EventStore.Client {
 
 			using var enumerator = events.OfType<EventData>().GetEnumerator();
 			enumerator.MoveNext();
+
+			await _fixture.Client.AppendToStreamAsync(Guid.NewGuid().ToString(), StreamState.NoStream,
+				_fixture.CreateTestEvents(256));
 
 			foreach (var e in beforeEvents) {
 				await _fixture.Client.AppendToStreamAsync($"{streamPrefix}_{Guid.NewGuid():n}",
