@@ -59,5 +59,17 @@ namespace EventStore.Client {
 			await _client.SetNodePriorityAsync(new SetNodePriorityReq {Priority = nodePriority},
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
+
+		/// <summary>
+		/// Restart persistent subscriptions
+		/// </summary>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public async Task RestartPersistentSubscriptions(UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
+			await _client.RestartPersistentSubscriptionsAsync(EmptyResult,
+				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+		}
 	}
 }

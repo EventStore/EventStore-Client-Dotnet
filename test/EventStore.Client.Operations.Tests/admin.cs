@@ -49,6 +49,16 @@ namespace EventStore.Client {
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.Client.MergeIndexesAsync());
 		}
 		
+		[Fact]
+		public async Task restart_persistent_subscriptions_does_not_throw() {
+			await _fixture.Client.RestartPersistentSubscriptions(TestCredentials.Root);
+		}
+
+		[Fact]
+		public async Task restart_persistent_subscriptions_without_credentials_throws() {
+			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.Client.RestartPersistentSubscriptions());
+		}
+		
 		public class Fixture : EventStoreClientFixture {
 			protected override Task Given() => Task.CompletedTask;
 			protected override Task When() => Task.CompletedTask;

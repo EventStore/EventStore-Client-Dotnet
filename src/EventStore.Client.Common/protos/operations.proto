@@ -11,6 +11,7 @@ service Operations {
 	rpc MergeIndexes (Empty) returns (Empty);
 	rpc ResignNode (Empty) returns (Empty);
 	rpc SetNodePriority (SetNodePriorityReq) returns (Empty);
+	rpc RestartPersistentSubscriptions (Empty) returns (Empty);
 }
 
 message StartScavengeReq {
