@@ -61,9 +61,7 @@ namespace EventStore.Client {
 			_httpHandler = new DefaultRequestVersionHandler(_httpHandler);
 #endif
 
-			_channel = GrpcChannel.ForAddress(new UriBuilder(Settings.ConnectivitySettings.Address) {
-				Scheme = Uri.UriSchemeHttps
-			}.Uri, new GrpcChannelOptions {
+			_channel = GrpcChannel.ForAddress(Settings.ConnectivitySettings.Address, new GrpcChannelOptions {
 				HttpClient = new HttpClient(_httpHandler) {
 					Timeout = Timeout.InfiniteTimeSpan,
 #if NETCOREAPP3_1

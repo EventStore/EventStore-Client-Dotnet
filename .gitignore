@@ -358,3 +358,7 @@ MigrationBackup/
 
 # Jetbrains IDE
 .idea/
+
+# Generated Certificates
+
+certs/
