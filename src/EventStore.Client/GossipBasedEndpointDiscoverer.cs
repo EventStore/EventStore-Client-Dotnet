@@ -151,8 +151,6 @@ namespace EventStore.Client {
 			NodePreference nodePreference) {
 			var notAllowedStates = new[] {
 				ClusterMessages.VNodeState.Manager,
-				ClusterMessages.VNodeState.ShuttingDown,
-				ClusterMessages.VNodeState.Manager,
 				ClusterMessages.VNodeState.Shutdown,
 				ClusterMessages.VNodeState.Unknown,
 				ClusterMessages.VNodeState.Initializing,
