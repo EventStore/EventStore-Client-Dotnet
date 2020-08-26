@@ -45,9 +45,9 @@ namespace EventStore.Client {
 					GroupName = groupName,
 					Settings = new UpdateReq.Types.Settings {
 						Revision = settings.StartFrom,
-						CheckpointAfter = (int)settings.CheckPointAfter.TotalMilliseconds,
+						CheckpointAfterMs = (int)settings.CheckPointAfter.TotalMilliseconds,
 						ExtraStatistics = settings.ExtraStatistics,
-						MessageTimeout = (int)settings.MessageTimeout.TotalMilliseconds,
+						MessageTimeoutMs = (int)settings.MessageTimeout.TotalMilliseconds,
 						ResolveLinks = settings.ResolveLinkTos,
 						HistoryBufferSize = settings.HistoryBufferSize,
 						LiveBufferSize = settings.LiveBufferSize,
