@@ -34,5 +34,20 @@ namespace EventStore.Client {
 			NextExpectedStreamRevision = nextExpectedStreamRevision;
 			LogPosition = default;
 		}
+
+		/// <summary>
+		/// Construct a new <see cref="WrongExpectedVersionResult"/>.
+		/// </summary>
+		/// <param name="streamName"></param>
+		/// <param name="nextExpectedStreamRevision"></param>
+		/// <param name="actualStreamRevision"></param>
+		public WrongExpectedVersionResult(string streamName, StreamRevision nextExpectedStreamRevision,
+			StreamRevision actualStreamRevision) {
+			StreamName = streamName;
+			ActualVersion = actualStreamRevision.ToInt64();
+			NextExpectedVersion = nextExpectedStreamRevision.ToInt64();
+			NextExpectedStreamRevision = nextExpectedStreamRevision;
+			LogPosition = default;
+		}
 	}
 }
