@@ -139,7 +139,7 @@ namespace EventStore.Client {
 				} else {
 					if (response.WrongExpectedVersion != null) {
 						var actualStreamRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase switch {
-							AppendResp.Types.WrongExpectedVersion.CurrentRevisionOptionOneofCase.None =>
+							AppendResp.Types.WrongExpectedVersion.CurrentRevisionOptionOneofCase.CurrentNoStream =>
 							StreamRevision.None,
 							_ => new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
 						};
@@ -156,18 +156,18 @@ namespace EventStore.Client {
 									actualStreamRevision);
 							}
 
-							var streamState = response.WrongExpectedVersion.ExpectedRevisionOptionCase switch {
-								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.Any =>
+							var expectedStreamState = response.WrongExpectedVersion.ExpectedRevisionOptionCase switch {
+								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedAny =>
 								StreamState.Any,
-								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.None =>
+								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedNoStream =>
 								StreamState.NoStream,
-								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.StreamExists =>
+								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedStreamExists =>
 								StreamState.StreamExists,
 								_ => throw new InvalidOperationException()
 							};
 
 							throw new WrongExpectedVersionException(header.Options.StreamIdentifier,
-								streamState, actualStreamRevision);
+								expectedStreamState, actualStreamRevision);
 						}
 
 						if (response.WrongExpectedVersion.CurrentRevisionOptionCase == AppendResp.Types
