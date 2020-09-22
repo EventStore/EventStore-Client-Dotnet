@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
 using Google.Protobuf;
-using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
 #nullable enable
@@ -125,9 +124,8 @@ namespace EventStore.Client {
 				var response = await call.ResponseAsync.ConfigureAwait(false);
 
 				if (response.Success != null) {
-					writeResult = new SuccessResult(
-						response.Success.CurrentRevisionOptionCase ==
-						AppendResp.Types.Success.CurrentRevisionOptionOneofCase.NoStream
+					writeResult = new SuccessResult(response.Success.CurrentRevisionOptionCase ==
+					                                AppendResp.Types.Success.CurrentRevisionOptionOneofCase.NoStream
 							? StreamRevision.None
 							: new StreamRevision(response.Success.CurrentRevision),
 						response.Success.PositionOptionCase == AppendResp.Types.Success.PositionOptionOneofCase.Position
@@ -139,14 +137,15 @@ namespace EventStore.Client {
 				} else {
 					if (response.WrongExpectedVersion != null) {
 						var actualStreamRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase switch {
-							AppendResp.Types.WrongExpectedVersion.CurrentRevisionOptionOneofCase.CurrentNoStream =>
-							StreamRevision.None,
-							_ => new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
-						};
+								AppendResp.Types.WrongExpectedVersion.CurrentRevisionOptionOneofCase.CurrentNoStream =>
+									StreamRevision.None,
+								_ => new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
+							};
 
 						_log.LogDebug(
 							"Append to stream failed with Wrong Expected Version - {streamName}/{expectedRevision}/{currentRevision}",
-							header.Options.StreamIdentifier, new StreamRevision(header.Options.Revision), actualStreamRevision);
+							header.Options.StreamIdentifier, new StreamRevision(header.Options.Revision),
+							actualStreamRevision);
 
 						if (operationOptions.ThrowOnAppendFailure) {
 							if (response.WrongExpectedVersion.ExpectedRevisionOptionCase == AppendResp.Types
@@ -158,11 +157,11 @@ namespace EventStore.Client {
 
 							var expectedStreamState = response.WrongExpectedVersion.ExpectedRevisionOptionCase switch {
 								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedAny =>
-								StreamState.Any,
+									StreamState.Any,
 								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedNoStream =>
-								StreamState.NoStream,
+									StreamState.NoStream,
 								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedStreamExists =>
-								StreamState.StreamExists,
+									StreamState.StreamExists,
 								_ => throw new InvalidOperationException()
 							};
 
@@ -170,13 +169,15 @@ namespace EventStore.Client {
 								expectedStreamState, actualStreamRevision);
 						}
 
-						if (response.WrongExpectedVersion.CurrentRevisionOptionCase == AppendResp.Types
-							.WrongExpectedVersion.CurrentRevisionOptionOneofCase.CurrentRevision) {
+						if (response.WrongExpectedVersion.ExpectedRevisionOptionCase == AppendResp.Types
+							.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedRevision) {
 							writeResult = new WrongExpectedVersionResult(header.Options.StreamIdentifier,
-								new StreamRevision(response.WrongExpectedVersion.ExpectedRevision));
+								new StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
+								actualStreamRevision);
 						} else {
 							writeResult = new WrongExpectedVersionResult(header.Options.StreamIdentifier,
-								StreamRevision.None);
+								StreamRevision.None,
+								actualStreamRevision);
 						}
 
 					} else {
