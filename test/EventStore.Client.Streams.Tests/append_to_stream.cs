@@ -231,7 +231,7 @@ namespace EventStore.Client {
 
 			var wrongExpectedVersionResult = (WrongExpectedVersionResult)writeResult;
 			
-			Assert.Equal(StreamRevision.None, wrongExpectedVersionResult.NextExpectedStreamRevision);
+			Assert.Equal(new StreamRevision(1), wrongExpectedVersionResult.NextExpectedStreamRevision);
 		}
 
 		[Fact]
