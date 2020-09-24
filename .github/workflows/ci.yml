@@ -89,23 +89,23 @@ jobs:
     runs-on: ubuntu-latest
     name: ci/github/publish
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Get Version
-      id: get_version
-      run: | 
-        echo "::set-output name=branch::${GITHUB_REF:10}"
-        
-        dotnet tool restore
-        version=$(dotnet tool run minver -- --tag-prefix=v)
-        echo "::set-output name=version::${version}"
-    - shell: bash
-      run: |
-        git fetch --prune --unshallow
     - name: Setup Dotnet
       uses: actions/setup-dotnet@v1.4.0
       with:
         dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
+    - name: Checkout
+      uses: actions/checkout@v2
+    - shell: bash
+      run: |
+        git fetch --prune --unshallow
+    - name: Get Version
+      id: get_version
+      run: |
+        echo "::set-output name=branch::${GITHUB_REF:10}"
+
+        dotnet tool restore
+        version=$(dotnet tool run minver -- --tag-prefix=v)
+        echo "::set-output name=version::${version}"
     - name: Dotnet Pack
       shell: bash
       run: |
