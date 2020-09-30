@@ -49,7 +49,7 @@ namespace EventStore.Client {
 			};
 		
 		internal static ConditionalWriteResult FromWrongExpectedVersion(WrongExpectedVersionException ex)
-			=> new ConditionalWriteResult(ex.ActualStreamRevision, Position.End,
+			=> new ConditionalWriteResult(ex.ExpectedStreamRevision, Position.End,
 				ConditionalWriteStatus.VersionMismatch);
 
 		/// <inheritdoc />

@@ -29,6 +29,11 @@ namespace EventStore.Client {
 		public StreamRevision ActualStreamRevision { get; }
 
 		/// <summary>
+		/// If available, the expected version specified for the operation that failed.
+		/// </summary>
+		public StreamRevision ExpectedStreamRevision { get; }
+
+		/// <summary>
 		/// Constructs a new instance of <see cref="WrongExpectedVersionException" /> with the expected and actual versions if available.
 		/// </summary>
 		public WrongExpectedVersionException(string streamName, StreamRevision expectedStreamRevision,
@@ -38,6 +43,7 @@ namespace EventStore.Client {
 				exception) {
 			StreamName = streamName;
 			ActualStreamRevision = actualStreamRevision;
+			ExpectedStreamRevision = expectedStreamRevision;
 			ExpectedVersion = expectedStreamRevision == StreamRevision.None ? new long?() : expectedStreamRevision.ToInt64();
 			ActualVersion = actualStreamRevision == StreamRevision.None ? new long?() : actualStreamRevision.ToInt64();
 		}
@@ -56,6 +62,7 @@ namespace EventStore.Client {
 			StreamName = streamName;
 			ActualStreamRevision = actualStreamRevision;
 			ActualVersion = actualStreamRevision == StreamRevision.None ? new long?() : actualStreamRevision.ToInt64();
+			ExpectedStreamRevision = StreamRevision.None;
 		}
 	}
 }
