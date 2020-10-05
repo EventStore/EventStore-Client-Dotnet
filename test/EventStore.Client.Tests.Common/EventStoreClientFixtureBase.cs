@@ -182,7 +182,8 @@ namespace EventStore.Client {
 						["EVENTSTORE_MEM_DB"] = "true",
 						["EVENTSTORE_CERTIFICATE_FILE"] = "/etc/eventstore/certs/node/node.crt",
 						["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"] = "/etc/eventstore/certs/node/node.key",
-						["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"] = "/etc/eventstore/certs/ca"
+						["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"] = "/etc/eventstore/certs/ca",
+						["EVENTSTORE_LOG_LEVEL"] = "Verbose"
 					}.Select(pair => $"{pair.Key}={pair.Value}").ToArray())
 					.WithName(ContainerName)
 					.MountVolume(HostCertificatePath, "/etc/eventstore/certs", MountType.ReadOnly)
