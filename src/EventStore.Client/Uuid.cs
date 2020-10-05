@@ -9,6 +9,9 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Represents the empty (00000000-0000-0000-0000-000000000000) <see cref="Uuid"/>.
 		/// </summary>
+		/// <remarks>
+		/// This reorders the bits in System.Guid to improve interop with other languages. See: https://stackoverflow.com/a/16722909
+		/// </remarks>
 		public static readonly Uuid Empty = new Uuid(Guid.Empty);
 
 		private readonly long _lsb;
