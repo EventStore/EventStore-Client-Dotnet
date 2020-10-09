@@ -20,8 +20,9 @@ namespace EventStore.Client {
 			var appeared = new TaskCompletionSource<bool>();
 			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
 
-			using var subscription = await _fixture.Client.SubscribeToStreamAsync(stream, StreamPosition.Start,
-				EventAppeared, false, SubscriptionDropped);
+			using var subscription = await _fixture.Client
+				.SubscribeToStreamAsync(stream, StreamPosition.Start, EventAppeared, false, SubscriptionDropped)
+				.WithTimeout();
 
 			Assert.False(appeared.Task.IsCompleted);
 
@@ -50,8 +51,9 @@ namespace EventStore.Client {
 			var appeared = new TaskCompletionSource<bool>();
 			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
 
-			using var subscription = await _fixture.Client.SubscribeToStreamAsync(stream, StreamPosition.Start,
-				EventAppeared, false, SubscriptionDropped);
+			using var subscription = await _fixture.Client
+				.SubscribeToStreamAsync(stream, StreamPosition.Start, EventAppeared, false, SubscriptionDropped)
+				.WithTimeout();
 
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 				_fixture.CreateTestEvents(2));
@@ -90,8 +92,13 @@ namespace EventStore.Client {
 
 			int appearedCount = 0;
 
-			using var s1 = await _fixture.Client.SubscribeToStreamAsync(stream, StreamPosition.Start, EventAppeared);
-			using var s2 = await _fixture.Client.SubscribeToStreamAsync(stream, StreamPosition.Start, EventAppeared);
+			using var s1 = await _fixture.Client
+				.SubscribeToStreamAsync(stream, StreamPosition.Start, EventAppeared)
+				.WithTimeout();
+			using var s2 = await _fixture.Client
+				.SubscribeToStreamAsync(stream, StreamPosition.Start, EventAppeared)
+				.WithTimeout();
+
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents(2));
 
 			Assert.True(await appeared.Task.WithTimeout());
@@ -115,8 +122,9 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
 
-			using var subscription = await _fixture.Client.SubscribeToStreamAsync(stream, StreamPosition.Start,
-				EventAppeared, false, SubscriptionDropped);
+			using var subscription = await _fixture.Client
+				.SubscribeToStreamAsync(stream, StreamPosition.Start, EventAppeared, false, SubscriptionDropped)
+				.WithTimeout();
 
 			if (dropped.Task.IsCompleted) {
 				Assert.False(dropped.Task.IsCompleted, dropped.Task.Result.ToString());
@@ -144,7 +152,8 @@ namespace EventStore.Client {
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents(2));
 
 			using var subscription = await _fixture.Client.SubscribeToStreamAsync(stream, StreamPosition.Start,
-				EventAppeared, false, SubscriptionDropped);
+				EventAppeared, false, SubscriptionDropped)
+				.WithTimeout();
 
 			var (reason, ex) = await dropped.Task.WithTimeout();
 
@@ -178,9 +187,9 @@ namespace EventStore.Client {
 
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, beforeEvents);
 
-			using var subscription =
-				await _fixture.Client.SubscribeToStreamAsync(stream, StreamPosition.Start, EventAppeared, false,
-					SubscriptionDropped);
+			using var subscription = await _fixture.Client
+				.SubscribeToStreamAsync(stream, StreamPosition.Start, EventAppeared, false, SubscriptionDropped)
+				.WithTimeout();
 
 			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents);
 

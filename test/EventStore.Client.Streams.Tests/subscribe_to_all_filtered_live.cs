@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
+using Serilog;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -24,7 +25,7 @@ namespace EventStore.Client {
 
 			var appeared = new TaskCompletionSource<bool>();
 			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
-			var checkpointSeen = new TaskCompletionSource<bool>();
+
 			var filter = getFilter(streamPrefix);
 			var events = _fixture.CreateTestEvents(20).Select(e => prepareEvent(streamPrefix, e))
 				.ToArray();
@@ -41,7 +42,8 @@ namespace EventStore.Client {
 
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(Position.End, EventAppeared, false,
 				filterOptions: new SubscriptionFilterOptions(filter),
-				subscriptionDropped: SubscriptionDropped);
+				subscriptionDropped: SubscriptionDropped)
+				.WithTimeout();
 
 			foreach (var e in afterEvents) {
 				await _fixture.Client.AppendToStreamAsync($"{streamPrefix}_{Guid.NewGuid():n}",

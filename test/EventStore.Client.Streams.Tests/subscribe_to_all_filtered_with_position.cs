@@ -48,7 +48,8 @@ namespace EventStore.Client {
 
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(writeResult.LogPosition, EventAppeared,
 				false, filterOptions: new SubscriptionFilterOptions(filter, 4, CheckpointReached),
-				subscriptionDropped: SubscriptionDropped);
+				subscriptionDropped: SubscriptionDropped)
+					.WithTimeout();
 
 			foreach (var e in afterEvents) {
 				await _fixture.Client.AppendToStreamAsync($"{streamPrefix}_{Guid.NewGuid():n}",
