@@ -40,7 +40,7 @@ jobs:
         docker build \
           --build-arg DOCKER_TAG=${{ matrix.docker-tag }} \
           --tag docker.pkg.github.com/eventstore/eventstore/eventstore:${{ matrix.docker-tag }} \
-          --file ./.github/workflows/regression.Dockerfile
+          --file ./.github/workflows/regression.Dockerfile .
     - name: Checkout Version
       uses: actions/checkout@v2
       with:
