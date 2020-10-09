@@ -8,7 +8,7 @@ on:
     tags:
     - v*
   schedule:
-    - cron: '0 0 2 * * ? *'
+    - cron: '0 0 2 * *'
 env:
   DOTNET_SDK_VERSION: 3.1.302
 jobs:
@@ -43,7 +43,8 @@ jobs:
           --file ./.github/workflows/regression.Dockerfile
     - name: Checkout Version
       uses: actions/checkout@v2
-      ref: ${{ matrix.version }}-regressions
+      with:
+        ref: ${{ matrix.version }}-regressions
     - shell: bash
       run: |
         git fetch --prune --unshallow
