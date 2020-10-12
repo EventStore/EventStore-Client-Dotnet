@@ -8,7 +8,7 @@ on:
     tags:
     - v*
   schedule:
-    - cron: '0 0 2 * * ? *'
+    - cron: '0 0 2 * *'
 env:
   DOTNET_SDK_VERSION: 3.1.302
 jobs:
@@ -40,10 +40,11 @@ jobs:
         docker build \
           --build-arg DOCKER_TAG=${{ matrix.docker-tag }} \
           --tag docker.pkg.github.com/eventstore/eventstore/eventstore:${{ matrix.docker-tag }} \
-          --file ./.github/workflows/regression.Dockerfile
+          --file ./.github/workflows/regression.Dockerfile .
     - name: Checkout Version
       uses: actions/checkout@v2
-      ref: ${{ matrix.version }}-regressions
+      with:
+        ref: ${{ matrix.version }}-regressions
     - shell: bash
       run: |
         git fetch --prune --unshallow
@@ -60,7 +61,6 @@ jobs:
       env:
         ES_DOCKER_TAG: ${{ matrix.docker-tag }}
       run: |
-        ./gencert.sh
         dotnet test --configuration ${{ matrix.configuration }} --blame \
         --logger:html --logger:trx --logger:"console;verbosity=normal" \
         --results-directory=$(pwd)/test-results/test/EventStore.Client${{ matrix.test }}.Tests \
