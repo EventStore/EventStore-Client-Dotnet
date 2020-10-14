@@ -163,7 +163,7 @@ namespace EventStore.Client {
 			private readonly HttpClient _httpClient;
 			private static readonly string ContainerName = "es-client-dotnet-test";
 
-			public EventStoreTestServer(Uri address, IDictionary<string, string>? env) {
+			public EventStoreTestServer(Uri address, IDictionary<string, string>? envOverrides) {
 				_httpClient = new HttpClient(new SocketsHttpHandler {
 					SslOptions = {
 						RemoteCertificateValidationCallback = delegate { return true; }
@@ -174,17 +174,20 @@ namespace EventStore.Client {
 				};
 				var tag = Environment.GetEnvironmentVariable("ES_DOCKER_TAG") ?? "ci";
 
+				var env = new Dictionary<string, string> {
+					["EVENTSTORE_MEM_DB"] = "true",
+					["EVENTSTORE_CERTIFICATE_FILE"] = "/etc/eventstore/certs/node/node.crt",
+					["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"] = "/etc/eventstore/certs/node/node.key",
+					["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"] = "/etc/eventstore/certs/ca",
+					["EVENTSTORE_LOG_LEVEL"] = "Verbose"
+				};
+				foreach (var (key, value) in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
+					env[key] = value;
+				}
 				_eventStore = new Builder()
 					.UseContainer()
 					.UseImage($"docker.pkg.github.com/eventstore/eventstore/eventstore:{tag}")
-					.WithEnvironment(new Dictionary<string, string>(
-						env ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
-						["EVENTSTORE_MEM_DB"] = "true",
-						["EVENTSTORE_CERTIFICATE_FILE"] = "/etc/eventstore/certs/node/node.crt",
-						["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"] = "/etc/eventstore/certs/node/node.key",
-						["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"] = "/etc/eventstore/certs/ca",
-						["EVENTSTORE_LOG_LEVEL"] = "Verbose"
-					}.Select(pair => $"{pair.Key}={pair.Value}").ToArray())
+					.WithEnvironment(env.Select(pair => $"{pair.Key}={pair.Value}").ToArray())
 					.WithName(ContainerName)
 					.MountVolume(HostCertificatePath, "/etc/eventstore/certs", MountType.ReadOnly)
 					.ExposePort(2113, 2113)
