@@ -23,6 +23,24 @@ namespace EventStore.Client {
 		}
 
 		/// <summary>
+		/// Resets a projection. This will re-emit events. Streams that are written to from the projection will also be soft deleted.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public async Task ResetAsync(string name, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
+			using var call = _client.ResetAsync(new ResetReq {
+				Options = new ResetReq.Types.Options {
+					Name = name,
+					WriteCheckpoint = true
+				}
+			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			await call.ResponseAsync.ConfigureAwait(false);
+		}
+
+		/// <summary>
 		/// Aborts a projection. Saves the projection's checkpoint.
 		/// </summary>
 		/// <param name="name"></param>
