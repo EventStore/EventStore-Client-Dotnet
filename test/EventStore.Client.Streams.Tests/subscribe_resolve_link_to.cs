@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,11 +7,11 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace EventStore.Client {
-	public class subscribe_resolve_link_to : IClassFixture<subscribe_resolve_link_to.Fixture> {
+	public class subscribe_resolve_link_to : IAsyncLifetime {
 		private readonly Fixture _fixture;
 
-		public subscribe_resolve_link_to(Fixture fixture, ITestOutputHelper outputHelper) {
-			_fixture = fixture;
+		public subscribe_resolve_link_to(ITestOutputHelper outputHelper) {
+			_fixture = new Fixture();
 			_fixture.CaptureLogs(outputHelper);
 		}
 
@@ -193,5 +192,8 @@ namespace EventStore.Client {
 			protected override Task Given() => Task.CompletedTask;
 			protected override Task When() => Task.CompletedTask;
 		}
+
+		public Task InitializeAsync() => _fixture.InitializeAsync();
+		public Task DisposeAsync() => _fixture.DisposeAsync();
 	}
 }
