@@ -20,9 +20,9 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <param name="address"></param>
 		/// <param name="createHttpMessageHandler"></param>
 		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddEventStoreUserManagementClient(this IServiceCollection services,
-			Uri address,
-			Func<HttpMessageHandler>? createHttpMessageHandler = null)
+			Uri address, Func<HttpMessageHandler>? createHttpMessageHandler = null)
 			=> services.AddEventStoreUserManagementClient(options => {
 				options.ConnectivitySettings.Address = address;
 				options.CreateHttpMessageHandler = createHttpMessageHandler;
@@ -32,17 +32,33 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// Adds an <see cref="EventStoreUserManagementClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
+		/// <param name="connectionString"></param>
 		/// <param name="configureSettings"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddEventStoreUserManagementClient(this IServiceCollection services,
-			Action<EventStoreClientSettings>? configureSettings = null) {
+			string connectionString, Action<EventStoreClientSettings>? configureSettings = null)
+			=> services.AddEventStoreUserManagementClient(EventStoreClientSettings.Create(connectionString),
+				configureSettings);
+
+
+		/// <summary>
+		/// Adds an <see cref="EventStoreUserManagementClient"/> to the <see cref="IServiceCollection"/>.
+		/// </summary>
+		/// <param name="services"></param>
+		/// <param name="configureSettings"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static IServiceCollection AddEventStoreUserManagementClient(this IServiceCollection services,
+			Action<EventStoreClientSettings>? configureSettings = null) =>
+			services.AddEventStoreUserManagementClient(new EventStoreClientSettings(), configureSettings);
+
+		private static IServiceCollection AddEventStoreUserManagementClient(this IServiceCollection services,
+			EventStoreClientSettings settings, Action<EventStoreClientSettings>? configureSettings = null) {
+			configureSettings?.Invoke(settings);
 			if (services == null) {
 				throw new ArgumentNullException(nameof(services));
 			}
-
-			var settings = new EventStoreClientSettings();
-			configureSettings?.Invoke(settings);
 
 			services.TryAddSingleton(provider => {
 				settings.LoggerFactory ??= provider.GetService<ILoggerFactory>();

@@ -20,6 +20,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <param name="address"></param>
 		/// <param name="createHttpMessageHandler"></param>
 		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddEventStorePersistentSubscriptionsClient(this IServiceCollection services,
 			Uri address,
 			Func<HttpMessageHandler>? createHttpMessageHandler = null)
@@ -36,12 +37,29 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddEventStorePersistentSubscriptionsClient(this IServiceCollection services,
-			Action<EventStoreClientSettings>? configureSettings = null) {
+			Action<EventStoreClientSettings>? configureSettings = null) =>
+			services.AddEventStorePersistentSubscriptionsClient(new EventStoreClientSettings(),
+				configureSettings);
+
+		/// <summary>
+		/// Adds an <see cref="EventStorePersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
+		/// </summary>
+		/// <param name="services"></param>
+		/// <param name="connectionString"></param>
+		/// <param name="configureSettings"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static IServiceCollection AddEventStorePersistentSubscriptionsClient(this IServiceCollection services,
+			string connectionString, Action<EventStoreClientSettings>? configureSettings = null) =>
+			services.AddEventStorePersistentSubscriptionsClient(EventStoreClientSettings.Create(connectionString),
+				configureSettings);
+
+		private static IServiceCollection AddEventStorePersistentSubscriptionsClient(this IServiceCollection services,
+			EventStoreClientSettings settings, Action<EventStoreClientSettings>? configureSettings) {
 			if (services == null) {
 				throw new ArgumentNullException(nameof(services));
 			}
 
-			var settings = new EventStoreClientSettings();
 			configureSettings?.Invoke(settings);
 
 			services.TryAddSingleton(provider => {
