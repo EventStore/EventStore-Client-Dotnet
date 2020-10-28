@@ -17,7 +17,7 @@ To run the EventStoreDB, create a new file called `docker-compose.yml` and copy 
 
 Then run the command.
 
-```
+```bash
 docker-compose up
 ```
 
@@ -33,7 +33,7 @@ The following example shows the simplest way to create a connection to EventStor
 
 EventStoreDB runs secure by default. To avoid setting up any certificates we need to override the `HttpClientHandler` to tell it to trust all certificates.
 
-:::tip
+::: tip
 By default, the server listens to port 2113 for requests.
 :::
 
@@ -41,7 +41,7 @@ By default, the server listens to port 2113 for requests.
 
 Writing an event to the database involves two stages. 
 
-Firstly you have to construct a new `EventData` that contains a unique Id, an event type, and a byte array containing the event data. Usually this is represented by json but can take any format.
+Firstly you have to construct a new `EventData` that contains a unique id, an event type, and a byte array containing the event data. Usually this is represented by json but can take any format.
 
 Secondly you have to append that `EventData` to a stream. Making sure to specify the stream name, the expected state of the stream and then the data.
 
@@ -51,7 +51,7 @@ Secondly you have to append that `EventData` to a stream. Making sure to specify
 
 You can read events from a stream in both directions. In this case we are reading the `some-stream` forwards from the start. We are reading a single event. 
 
-This provides an `IAsyncEnumerable` that can then be iterated on.
+This provides an `IAsyncEnumerable`, which you can then iterate on.
  
  <<< @/samples/quick-start/Program.cs#read-stream
 

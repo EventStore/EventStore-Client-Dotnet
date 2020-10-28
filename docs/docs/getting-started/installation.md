@@ -2,11 +2,11 @@
 
 ## Requirements
 
-All Nuget packages require .NET Core SDK 3.1.
+All NuGet packages require .NET Core SDK 3.1.
 
 ## Installation
 
-The client is broken down in to several packages, each which expose different functionality depending on what you need your application to do
+The client consists of several packages, each which expose different functionality depending on what you need your application to do
 These are:
 
 | Package | Purpose |
@@ -18,6 +18,6 @@ These are:
 | `EventStore.Client.Grpc.Operations` | Contains methods for initiating a scavenge and other operations |
 | `EventStore.Client.Grpc.UserManagement` | Contains methods for user management, such as creating and removing |
 
-:::tip
-This guide will note which packages are needed at the beginning of each section
+::: tip
+This guide will note which packages you'd needed at the beginning of each section
 :::

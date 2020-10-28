@@ -5,8 +5,6 @@ Packages required
 - EventStore.Client.Grpc.Streams
 :::
 
-TODO: Add link to how to set up cluster
-
 ## Simple connection
 
 For redundancy, you can run EventStoreDB in a cluster. In this scenario you should specify all the nodes in your cluster when connecting. This allows your client to discover which node it should be speaking to at any given time.
@@ -23,17 +21,19 @@ There are a number of additional settings that can be altered when connecting to
 
 <<< @/samples/connecting-to-a-cluster/Program.cs#connecting-to-a-cluster-complex
 
-### DiscoveryInterval (Default: 100ms)
+### DiscoveryInterval
 
-The interval between node discovery attempts. If the client attempts to discover a node and it is unresponsive this is the length of time the client will wait before trying to discover it again.
+The interval between node discovery attempts. If the client attempts to discover a node, and it is unresponsive this is the length of time the client will wait before trying to discover it again.
 
-### GossipTimeout (Default: 10sec)
+**Default**: `100` (ms)
 
-The length of time the client will wait to get a gossip request from a node. The gossip requests lets the client know the current state of any given node. To find out more see 
+### GossipTimeout
 
-> TODO: Link to gossip documentation
+The length of time the client will wait to get a gossip request from a node. The gossip requests lets the client know the current state of any given node. To find out more see the gossip protocol [documentation](/server/20.6/server/clustering/gossip).
 
-### NodePreference (Default: NodePreference.Leader)
+**Default**: `10` (sec)
+
+### NodePreference
 
 You can tell your client which node type you would prefer to connect to. The options are:
 
@@ -44,21 +44,21 @@ You can tell your client which node type you would prefer to connect to. The opt
 | `NodePreference.Random` | Connect to a random node type (useful if you want to spread the connections around) |
 | `NodePreference.ReadOnlyReplica` | Always try and connect to a read only replica |
 
-To find out more about the different node types see
+Find out more about different node roles in the [serevr documentation](/server/20.6/server/clustering/node-roles). 
 
-> TODO: Link to node types.
+**Default**: `NodePreference.Leader`
 
-### MaxDiscoveryAttempts (Default: 10)
+### MaxDiscoveryAttempts
 
 This is the number of times we will attempt to discover the node before EventStoreDb aborts and throws an exception.
 
-> TODO: Detail max discovery attempts 
+**Default**: `10`
 
 ## Providing default credentials
 
-When creating a connection EventStoreDB allows you to set default credentials. These will be used for executing all commands unless they are explicitly overridden
+When creating a connection EventStoreDB allows you to set default credentials. These will be used for executing all commands unless they are explicitly overridden.
 
 <<< @/samples/connecting-to-a-cluster/Program.cs#providing-default-credentials
 
-> TODO: Add link to supply with write
+<!-- TODO: Add link to supply with write -->
 

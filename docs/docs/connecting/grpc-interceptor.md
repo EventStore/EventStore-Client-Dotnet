@@ -4,7 +4,7 @@ gRPC clients allow you to create [Interceptors](https://grpc.github.io/grpc/csha
 
 The EventStoreDB client allows you to add one of these to the connection that can be used for logging all requests made or other such things. 
 
-To create one, add a new class that inherits from `Interceptor` and override the methods that you want to intercept.
+To create one, add a new class, which inherits from `Interceptor` and override the methods that you want to intercept.
 
 <<< @/samples/connecting-to-a-single-node/DemoInterceptor.cs#interceptor
 
