@@ -21,21 +21,21 @@ module.exports = [
 			"connecting/",
 			"connecting/single-node",
 			"connecting/cluster",
-			"connecting/es-cloud",
+			// "connecting/es-cloud",
 			"connecting/custom-httpmessagehandler",
 			"connecting/grpc-interceptor",
 			// "connecting/tls",
 			"connecting/di-extensions"
 		]
 	},
-	{
-		title: "Authentication",
-		collapsable: true,
-		path: "authentication/",
-		children: [
-			"authentication/"
-		]
-	},
+	// {
+	// 	title: "Authentication",
+	// 	collapsable: true,
+	// 	path: "authentication/",
+	// 	children: [
+	// 		"authentication/"
+	// 	]
+	// },
 	{
 		title: "Writing events",
 		collapsable: true,
