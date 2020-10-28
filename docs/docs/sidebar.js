@@ -31,7 +31,7 @@ module.exports = [
 	{
 		title: "Authentication",
 		collapsable: true,
-		path: "authentication/"
+		path: "authentication/",
 		children: [
 			"authentication/"
 		]
