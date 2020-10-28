@@ -1,7 +1,7 @@
 module.exports = {
 	base: "/sdk/dotnet/",
 	dest: "public",
-	title: "Event Store .NET Client",
+	title: "EventStoreDB .NET Client",
 	description: "The stream database built for event sourcing",
 	plugins: [
 		"@vuepress/active-header-links",
@@ -14,8 +14,6 @@ module.exports = {
 		searchPlaceholder: "Search...",
 		lastUpdated: "Last Updated",
 		nav: [
-			{text: "Server", link: "https://ecstatic-borg-bc8046.netlify.com/", target: "_self"},
-			{text: "Drivers", link: "https://ecstatic-borg-bc8046.netlify.com/drivers/", target: "_self"},
 			{text: "Get help", link: "/get-help/"},
 		],
 		sidebar: require("../sidebar")
@@ -23,7 +21,6 @@ module.exports = {
 	markdown: {
 		extendMarkdown: md => {
 	//		md.use(require('markdown-it-vuepress-code-snippet-enhanced'));
-			md.use(require("markdown-it-include"));
 		}
 	}
 };

@@ -13,7 +13,7 @@ The simplest way to connect to EventStoreDB is to only use a single node and lea
 
 ## Setting the connection name
 
-If you have multiple clients connecting to Event Store it is advisable to set the connection name so that it can be easily identified via the UI. This is done via a property on the `EventStoreClientSettings`.
+If you have multiple clients connecting to EventStoreDB it is advisable to set the connection name so that it can be easily identified via the UI. This is done via a property on the `EventStoreClientSettings`.
 
 <<< @/samples/connecting-to-a-single-node/Program.cs#setting-the-connection-name
 
