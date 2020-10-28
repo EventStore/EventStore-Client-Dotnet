@@ -2,6 +2,7 @@ module.exports = [
 	{
 		title: "Getting started",
 		collapsable: true,
+		path: "getting-started/",
 		children: [
 			"getting-started/",
 			"getting-started/installation",
@@ -15,6 +16,7 @@ module.exports = [
 	{
 		title: "Connecting to EventStoreDB",
 		collapsable: true,
+		path: "connecting/",
 		children: [
 			"connecting/",
 			"connecting/single-node",
@@ -29,6 +31,7 @@ module.exports = [
 	{
 		title: "Authentication",
 		collapsable: true,
+		path: "authentication/"
 		children: [
 			"authentication/"
 		]
@@ -36,6 +39,7 @@ module.exports = [
 	{
 		title: "Writing events",
 		collapsable: true,
+		path: "writing-events/",
 		children: [
 			"writing-events/",
 			"writing-events/event-versioning-strategies"
@@ -44,6 +48,7 @@ module.exports = [
 	{
 		title: "Reading events",
 		collapsable: true,
+		path: "reading-events/",
 		children: [
 			"reading-events/",
 			"reading-events/reading-from-a-stream",
@@ -53,6 +58,7 @@ module.exports = [
 	{
 		title: "Subscribing to streams",
 		collapsable: true,
+		path: "subscribing-to-streams/",
 		children: [
 			"subscribing-to-streams/",
 			"subscribing-to-streams/filtering",
