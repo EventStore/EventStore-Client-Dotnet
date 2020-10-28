@@ -5,7 +5,7 @@ module.exports = [
 		children: [
 			"getting-started/",
 			"getting-started/installation",
-			"getting-started/quick-tour"
+			// "getting-started/quick-tour"
 		]
 	},
 	// {
