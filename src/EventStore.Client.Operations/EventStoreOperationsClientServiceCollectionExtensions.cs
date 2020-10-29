@@ -22,6 +22,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <param name="address"></param>
 		/// <param name="createHttpMessageHandler"></param>
 		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddEventStoreOperationsClient(this IServiceCollection services, Uri address,
 			Func<HttpMessageHandler>? createHttpMessageHandler = null)
 			=> services.AddEventStoreOperationsClient(options => {
@@ -37,12 +38,27 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddEventStoreOperationsClient(this IServiceCollection services,
-			Action<EventStoreClientSettings>? configureOptions = null) {
+			Action<EventStoreClientSettings>? configureOptions = null) =>
+			services.AddEventStoreOperationsClient(new EventStoreClientSettings(), configureOptions);
+
+		/// <summary>
+		/// Adds an <see cref="EventStoreOperationsClient"/> to the <see cref="IServiceCollection"/>.
+		/// </summary>
+		/// <param name="services"></param>
+		/// <param name="connectionString"></param>
+		/// <param name="configureOptions"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static IServiceCollection AddEventStoreOperationsClient(this IServiceCollection services,
+			string connectionString, Action<EventStoreClientSettings>? configureOptions = null) =>
+			services.AddEventStoreOperationsClient(EventStoreClientSettings.Create(connectionString), configureOptions);
+
+		private static IServiceCollection AddEventStoreOperationsClient(this IServiceCollection services,
+			EventStoreClientSettings options, Action<EventStoreClientSettings>? configureOptions) {
 			if (services == null) {
 				throw new ArgumentNullException(nameof(services));
 			}
 
-			var options = new EventStoreClientSettings();
 			configureOptions?.Invoke(options);
 
 			services.TryAddSingleton(provider => {

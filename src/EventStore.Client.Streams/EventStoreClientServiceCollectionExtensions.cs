@@ -20,6 +20,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <param name="address"></param>
 		/// <param name="createHttpMessageHandler"></param>
 		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddEventStoreClient(this IServiceCollection services, Uri address,
 			Func<HttpMessageHandler>? createHttpMessageHandler = null)
 			=> services.AddEventStoreClient(options => {
@@ -36,12 +37,31 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddEventStoreClient(this IServiceCollection services,
-			Action<EventStoreClientSettings>? configureSettings = null) {
+			Action<EventStoreClientSettings>? configureSettings = null) =>
+			services.AddEventStoreClient(new EventStoreClientSettings(), configureSettings);
+
+
+		/// <summary>
+		/// Adds an <see cref="EventStoreClient"/> to the <see cref="IServiceCollection"/>.
+		/// </summary>
+		/// <param name="services"></param>
+		/// <param name="connectionString"></param>
+		/// <param name="configureSettings"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static IServiceCollection AddEventStoreClient(this IServiceCollection services,
+			string connectionString, Action<EventStoreClientSettings>? configureSettings = null) {
 			if (services == null) {
 				throw new ArgumentNullException(nameof(services));
 			}
 
-			var settings = new EventStoreClientSettings();
+			return services.AddEventStoreClient(EventStoreClientSettings.Create(connectionString), configureSettings);
+		}
+
+
+		private static IServiceCollection AddEventStoreClient(this IServiceCollection services,
+			EventStoreClientSettings settings,
+			Action<EventStoreClientSettings>? configureSettings) {
 			configureSettings?.Invoke(settings);
 
 			services.TryAddSingleton(provider => {
