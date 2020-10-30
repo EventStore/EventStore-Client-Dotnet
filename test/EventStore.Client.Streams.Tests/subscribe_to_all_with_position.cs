@@ -25,8 +25,9 @@ namespace EventStore.Client {
 			var firstEvent = await _fixture.Client.ReadAllAsync(Direction.Forwards, Position.Start, 1)
 				.FirstOrDefaultAsync();
 
-			using var subscription = await _fixture.Client.SubscribeToAllAsync(firstEvent.OriginalEvent.Position, EventAppeared,
-				false, SubscriptionDropped);
+			using var subscription = await _fixture.Client
+				.SubscribeToAllAsync(firstEvent.OriginalEvent.Position, EventAppeared, false, SubscriptionDropped)
+				.WithTimeout();
 
 			if (dropped.Task.IsCompleted) {
 				Assert.False(dropped.Task.IsCompleted, dropped.Task.Result.ToString());
@@ -54,8 +55,9 @@ namespace EventStore.Client {
 			var firstEvent = await _fixture.Client.ReadAllAsync(Direction.Forwards, Position.Start, 1)
 				.FirstOrDefaultAsync();
 
-			using var subscription = _fixture.Client.SubscribeToAllAsync(firstEvent.OriginalEvent.Position, EventAppeared,
-				false, SubscriptionDropped);
+			using var subscription = await _fixture.Client
+				.SubscribeToAllAsync(firstEvent.OriginalEvent.Position, EventAppeared, false, SubscriptionDropped)
+				.WithTimeout();
 
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents(2));
 
@@ -79,8 +81,9 @@ namespace EventStore.Client {
 			var firstEvent = await _fixture.Client.ReadAllAsync(Direction.Forwards, Position.Start, 1)
 				.FirstOrDefaultAsync();
 
-			using var subscription = await _fixture.Client.SubscribeToAllAsync(firstEvent.OriginalEvent.Position, EventAppeared,
-				false, SubscriptionDropped);
+			using var subscription = await _fixture.Client
+				.SubscribeToAllAsync(firstEvent.OriginalEvent.Position, EventAppeared, false, SubscriptionDropped)
+				.WithTimeout();
 
 			Assert.False(appeared.Task.IsCompleted);
 
@@ -135,8 +138,9 @@ namespace EventStore.Client {
 					new[] {@event});
 			}
 
-			using var subscription =
-				await _fixture.Client.SubscribeToAllAsync(position, EventAppeared, false, SubscriptionDropped);
+			using var subscription = await _fixture.Client
+				.SubscribeToAllAsync(position, EventAppeared, false, SubscriptionDropped)
+				.WithTimeout();
 
 			foreach (var @event in afterEvents) {
 				await _fixture.Client.AppendToStreamAsync($"stream-{@event.EventId:n}", StreamState.NoStream,

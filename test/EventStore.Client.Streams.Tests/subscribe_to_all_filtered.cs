@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Client.Streams;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -43,7 +42,8 @@ namespace EventStore.Client {
 
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(EventAppeared, false,
 				filterOptions: new SubscriptionFilterOptions(filter, 5, CheckpointReached),
-				subscriptionDropped: SubscriptionDropped);
+				subscriptionDropped: SubscriptionDropped)
+				.WithTimeout();
 
 			await Task.WhenAll(appeared.Task, checkpointSeen.Task).WithTimeout();
 
@@ -113,7 +113,8 @@ namespace EventStore.Client {
 
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(EventAppeared, false,
 				filterOptions: new SubscriptionFilterOptions(filter, 5, CheckpointReached),
-				subscriptionDropped: SubscriptionDropped);
+				subscriptionDropped: SubscriptionDropped)
+				.WithTimeout();
 
 			foreach (var e in afterEvents) {
 				await _fixture.Client.AppendToStreamAsync($"{streamPrefix}_{Guid.NewGuid():n}",
