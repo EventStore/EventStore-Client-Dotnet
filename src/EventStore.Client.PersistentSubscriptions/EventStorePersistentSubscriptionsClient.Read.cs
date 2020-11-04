@@ -50,7 +50,10 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(bufferSize));
 			}
 
-			var call = _client.Read(EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials,
+			var operationOptions = Settings.OperationOptions.Clone();
+			operationOptions.TimeoutAfter = new TimeSpan?();
+
+			var call = _client.Read(EventStoreCallOptions.Create(Settings, operationOptions, userCredentials,
 				cancellationToken));
 
 			return PersistentSubscription.Confirm(call, new ReadReq.Types.Options {
