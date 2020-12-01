@@ -114,31 +114,6 @@ namespace EventStore.Client {
 		}
 
 		/// <summary>
-		///  Represents a fold result
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		public struct FoldResult<T> {
-			/// <summary>
-			/// the position of the last event folded
-			/// </summary>
-			public StreamRevision Revision { get; }
-			/// <summary>
-			/// the fold value
-			/// </summary>
-			public T Value { get; }
-
-			/// <summary>
-			/// build a fold resuult
-			/// </summary>
-			/// <param name="revision"></param>
-			/// <param name="value"></param>
-			public FoldResult(StreamRevision revision, T value) {
-				Revision = revision;
-				Value = value;
-			}
-		}
-
-		/// <summary>
 		/// folds a stream using provided aggregator and seed
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
@@ -187,20 +162,26 @@ namespace EventStore.Client {
 						EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken))
 					.ResponseStream.ReadAllAsync().GetAsyncEnumerator();
 
-			if (!await call.MoveNextAsync(cancellationToken).ConfigureAwait(false) || call.Current.ContentCase == ReadResp.ContentOneofCase.StreamNotFound) {
-				return new FoldResult<T>(StreamRevision.None, seed);
-			}
+			var hasNext = await call.MoveNextAsync(cancellationToken).ConfigureAwait(false);
 
-			while (true) {
+			StreamRevision rev =
+				!hasNext || call.Current.ContentCase == ReadResp.ContentOneofCase.StreamNotFound
+					? StreamRevision.None
+					: StreamRevision.FromStreamPosition(revision);
+				
+			while(hasNext) {
 				if (call.Current.ContentCase == ReadResp.ContentOneofCase.Event) {
 					var re = ConvertToResolvedEvent(call.Current.Event);
-					foreach (var e in deserialize(re))
-						seed = aggregator(seed, e);
-					if (!await call.MoveNextAsync(cancellationToken).ConfigureAwait(false))
-						return new FoldResult<T>(StreamRevision.FromStreamPosition(re.Event.EventNumber), seed);
-
+					if (re.Event != null) {
+						rev = StreamRevision.FromStreamPosition(re.Event.EventNumber);
+						foreach (var e in deserialize(re))
+							seed = aggregator(seed, e);
+					}
 				}
+				hasNext = await call.MoveNextAsync(cancellationToken).ConfigureAwait(false);
 			}
+
+			return new FoldResult<T>(rev, seed);
 		}
 
 		/// <summary>
