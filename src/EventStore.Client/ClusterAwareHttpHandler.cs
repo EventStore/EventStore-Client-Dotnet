@@ -65,7 +65,7 @@ namespace EventStore.Client {
 				return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
 			} catch (Exception) {
 				Interlocked.CompareExchange(ref _endpoint,
-					new Lazy<Task<EndPoint>>(() => _endpointDiscoverer.DiscoverAsync(),
+					new Lazy<Task<EndPoint>>(_endpointDiscoverer.DiscoverAsync,
 						LazyThreadSafetyMode.ExecutionAndPublication), endpointResolver);
 
 				throw;

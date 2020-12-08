@@ -35,8 +35,9 @@ namespace EventStore.Client {
 			private const string OperationTimeout = "OperationTimeout";
 			private const string ThrowOnAppendFailure = "ThrowOnAppendFailure";
 
+			private const string UriSchemeDiscover = "esdb+discover";
 
-			private static readonly string[] Schemes = {"esdb"};
+			private static readonly string[] Schemes = {"esdb", UriSchemeDiscover};
 			private static readonly int DefaultPort = EventStoreClientConnectivitySettings.Default.Address.Port;
 			private static readonly bool DefaultUseTls = true;
 
@@ -97,10 +98,10 @@ namespace EventStore.Client {
 					options = ParseKeyValuePairs(connectionString.Substring(currentIndex));
 				}
 
-				return CreateSettings(userInfo, hosts, options);
+				return CreateSettings(scheme, userInfo, hosts, options);
 			}
 
-			private static EventStoreClientSettings CreateSettings((string user, string pass) userInfo,
+			private static EventStoreClientSettings CreateSettings(string scheme, (string user, string pass) userInfo,
 				EndPoint[] hosts, Dictionary<string, string> options) {
 				var settings = new EventStoreClientSettings {
 					ConnectivitySettings = EventStoreClientConnectivitySettings.Default,
@@ -178,7 +179,7 @@ namespace EventStore.Client {
 				if (typedOptions.TryGetValue(ThrowOnAppendFailure, out object throwOnAppendFailure))
 					settings.OperationOptions.ThrowOnAppendFailure = (bool)throwOnAppendFailure;
 
-				if (hosts.Length == 1) {
+				if (hosts.Length == 1 && scheme != UriSchemeDiscover) {
 					connSettings.Address = new Uri(hosts[0].ToHttpUrl(useTls ? Uri.UriSchemeHttps : Uri.UriSchemeHttp));
 				} else {
 					if (hosts.Any(x => x is DnsEndPoint))

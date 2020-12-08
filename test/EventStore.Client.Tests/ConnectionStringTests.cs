@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using Xunit;
 
@@ -60,7 +61,9 @@ namespace EventStore.Client {
 
 		[Theory,
 		 InlineData("esdb://user:pass@127.0.0.1"),
-		 InlineData("esdb://user:pass@127.0.0.1/")]
+		 InlineData("esdb://user:pass@127.0.0.1/"),
+		 InlineData("esdb+discover://user:pass@127.0.0.1"),
+		 InlineData("esdb+discover://user:pass@127.0.0.1/")]
 		public void connection_string_with_no_key_value_pairs_specified_should_not_throw(string connectionString) {
 			EventStoreClientSettings.Create(connectionString);
 		}
@@ -264,6 +267,32 @@ namespace EventStore.Client {
 			settings = EventStoreClientSettings.Create(
 				"esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/?tlsVerifyCert=false");
 			Assert.NotNull(settings.CreateHttpMessageHandler);
+		}
+
+		private static IEnumerable<object[]> DiscoverSchemeCases() {
+			yield return new object[] {
+				"esdb+discover://hostname:4321", new EndPoint[] {
+					new DnsEndPoint("hostname", 4321)
+				}
+			};
+			yield return new object[] {
+				"esdb+discover://hostname:4321/", new EndPoint[] {
+					new DnsEndPoint("hostname", 4321)
+				}
+			};
+			yield return new object[] {
+				"esdb+discover://hostname0:4321,hostname1:4321,hostname2:4321/", new EndPoint[] {
+					new DnsEndPoint("hostname0", 4321),
+					new DnsEndPoint("hostname1", 4321),
+					new DnsEndPoint("hostname2", 4321)
+				}
+			};
+		}
+
+		[Theory, MemberData(nameof(DiscoverSchemeCases))]
+		public void with_esdb_discover_scheme(string connectionString, EndPoint[] expected) {
+			var settings = EventStoreClientSettings.Create(connectionString);
+			Assert.Equal(expected, settings.ConnectivitySettings.GossipSeeds);
 		}
 	}
 }
