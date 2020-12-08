@@ -50,7 +50,7 @@ jobs:
       run: |
         docker pull docker.pkg.github.com/eventstore/eventstore/eventstore:${{ matrix.docker-tag }}
     - name: Install Dotnet
-      uses: actions/setup-dotnet@v1.4.0
+      uses: actions/setup-dotnet@v1
       with:
         dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
     - name: Compile
@@ -103,7 +103,7 @@ jobs:
       run: |
         git fetch --prune --unshallow
     - name: Setup Dotnet
-      uses: actions/setup-dotnet@v1.4.0
+      uses: actions/setup-dotnet@v1
       with:
         dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
     - name: Dotnet Pack
