@@ -72,25 +72,14 @@ namespace EventStore.Client {
 			IDictionary<string, string>? env = null) {
 			_disposables = new List<IDisposable>();
 			ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
-			Settings = clientSettings ?? new EventStoreClientSettings {
-				CreateHttpMessageHandler = () => new SocketsHttpHandler {
-					SslOptions = {
-						RemoteCertificateValidationCallback = delegate { return true; }
-					}
-				},
-				OperationOptions = {
-					TimeoutAfter = Debugger.IsAttached
-						? new TimeSpan?()
-						: TimeSpan.FromSeconds(30)
-				},
-				ConnectivitySettings = {
-					Address = new UriBuilder {
-						Scheme = Uri.UriSchemeHttps,
-						Port = 2113
-					}.Uri
-				},
-				LoggerFactory = new SerilogLoggerFactory()
-			};
+
+			Settings = clientSettings ?? EventStoreClientSettings.Create("esdb://localhost:2113/?tlsVerifyCert=false");
+
+			Settings.OperationOptions.TimeoutAfter = Debugger.IsAttached
+				? new TimeSpan?()
+				: TimeSpan.FromSeconds(30);
+
+			Settings.LoggerFactory ??= new SerilogLoggerFactory();
 
 			TestServer = new EventStoreTestServer(Settings.ConnectivitySettings.Address, env);
 		}
