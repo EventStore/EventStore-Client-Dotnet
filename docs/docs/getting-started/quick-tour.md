@@ -7,7 +7,7 @@ This is a quick tour into the basic operations with EventStoreDb. We will look a
 These examples have the following requirements:
 - At least [.NET Core SDK 3.1](https://dotnet.microsoft.com/download)
 - [Docker](https://www.docker.com/get-started)
-- A reference to the [EventStore.Client.Grpc](https://www.nuget.org/packages/EventStore.Client.Grpc/) NuGet package
+- A reference to the [EventStore.Client.Grpc.Streams](https://www.nuget.org/packages/EventStore.Client.Grpc.Streams/) NuGet package
 
 ## Setup the certificates and running the server
 
