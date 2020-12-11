@@ -114,20 +114,20 @@ namespace EventStore.Client {
 		}
 
 		/// <summary>
-		/// folds a stream using provided aggregator and seed
+		/// folds a stream using provided aggregator and seed.
 		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <typeparam name="E"></typeparam>
-		/// <param name="deserialize"></param>
-		/// <param name="aggregator"></param>
-		/// <param name="streamName"></param>
-		/// <param name="revision"></param>
-		/// <param name="seed"></param>
-		/// <param name="configureOperationOptions"></param>
-		/// <param name="resolveLinkTos"></param>
-		/// <param name="userCredentials"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
+		/// <typeparam name="T">The type of the folded stated.</typeparam>
+		/// <typeparam name="E">The type of deserialized events.</typeparam>
+		/// <param name="deserialize">A deserialization function returning zero, one, or multiple events for a the given <see cref="ResolvedEvent"/>.</param>
+		/// <param name="aggregator">An aggregation function returning a new state from last state and current deserialized event.</param>
+		/// <param name="streamName">The name of the field to fold.</param>
+		/// <param name="revision">The <see cref="Position"/> of the first event to fold.</param>
+		/// <param name="seed">The seed state to start the aggregation.</param>
+		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
+		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
+		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns>A <see cref="FoldResult{T}"/> containing the aggregation result and the <see cref="StreamRevision"/> of the last event aggregated.</returns>
 		public async ValueTask<FoldResult<T>> FoldStreamAsync<T,E>(
 			Func<ResolvedEvent, IEnumerable<E>> deserialize,
 			Func<T,E,T> aggregator,
@@ -164,7 +164,7 @@ namespace EventStore.Client {
 
 			var hasNext = await call.MoveNextAsync(cancellationToken).ConfigureAwait(false);
 
-			StreamRevision rev =
+			var rev =
 				!hasNext || call.Current.ContentCase == ReadResp.ContentOneofCase.StreamNotFound
 					? StreamRevision.None
 					: StreamRevision.FromStreamPosition(revision);
