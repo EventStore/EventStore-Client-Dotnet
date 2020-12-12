@@ -116,11 +116,11 @@ namespace EventStore.Client {
 		/// <summary>
 		/// folds a stream using provided aggregator and seed.
 		/// </summary>
-		/// <typeparam name="T">The type of the folded stated.</typeparam>
+		/// <typeparam name="T">The type of the folded State.</typeparam>
 		/// <typeparam name="E">The type of deserialized events.</typeparam>
 		/// <param name="deserialize">A deserialization function returning zero, one, or multiple events for a the given <see cref="ResolvedEvent"/>.</param>
 		/// <param name="aggregator">An aggregation function returning a new state from last state and current deserialized event.</param>
-		/// <param name="streamName">The name of the field to fold.</param>
+		/// <param name="streamName">The name of the stream to fold.</param>
 		/// <param name="revision">The <see cref="Position"/> of the first event to fold.</param>
 		/// <param name="seed">The seed state to start the aggregation.</param>
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
