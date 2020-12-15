@@ -3,6 +3,11 @@
 	<PropertyGroup>
 		<TargetFrameworks>netcoreapp3.1;netstandard2.1</TargetFrameworks>
 	</PropertyGroup>
+	<Target Name="UpdateAssemblyVersion" AfterTargets="MinVer">
+		<PropertyGroup>
+			<AssemblyVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch)</AssemblyVersion>
+		</PropertyGroup>
+	</Target>
 	<PropertyGroup Condition="$(MSBuildProjectName) != 'EventStore.Client'">
 		<ESPackageIdSuffix>$(MSBuildProjectName.Remove(0,18))</ESPackageIdSuffix>
 		<ESProto>$(ESPackageIdSuffix.ToLower()).proto</ESProto>
