@@ -108,6 +108,29 @@ namespace EventStore.Client {
 			Assert.Same(seed, result.Value);
 		}
 
+
+		[Fact]
+		public async Task fold_starting_after_last_event_has_position() {
+			var streamName = _fixture.GetStreamName();
+			const int pos = 20;
+			const int count = 20;
+
+			await _fixture.Client.AppendToStreamAsync(streamName, StreamState.NoStream,
+				_fixture.CreateTestEvents(count));
+
+			var result = await _fixture.Client.FoldStreamAsync(
+				e => new[] { e.Event.EventNumber },
+				(acc, e) => { acc.Add(e); return acc; },
+				streamName,
+				StreamPosition.FromInt64(pos),
+				new List<StreamPosition>());
+
+
+			var expected = StreamRevision.FromInt64(pos);
+			Assert.Equal(expected, result.Revision);
+		}
+
+
 		[Fact]
 		public async Task fold_starting_from_position_contains_expected_events () {
 			var streamName = _fixture.GetStreamName();

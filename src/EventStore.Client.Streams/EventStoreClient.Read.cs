@@ -165,7 +165,7 @@ namespace EventStore.Client {
 			var hasNext = await call.MoveNextAsync(cancellationToken).ConfigureAwait(false);
 
 			var rev =
-				!hasNext || call.Current.ContentCase == ReadResp.ContentOneofCase.StreamNotFound
+				hasNext && call.Current.ContentCase == ReadResp.ContentOneofCase.StreamNotFound
 					? StreamRevision.None
 					: StreamRevision.FromStreamPosition(revision);
 				
