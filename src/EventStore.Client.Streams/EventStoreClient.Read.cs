@@ -149,7 +149,6 @@ namespace EventStore.Client {
 						Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(streamName, revision),
 						Count = long.MaxValue
 					}
-					
 				};
 			if (readReq.Options.Filter == null) {
 				readReq.Options.NoFilter = new Empty();
@@ -157,17 +156,20 @@ namespace EventStore.Client {
 
 			readReq.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption { Structured = new Empty() };
 
-			var call = 
+			var call =
 					_client.Read(readReq,
 						EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken))
 					.ResponseStream.ReadAllAsync().GetAsyncEnumerator();
+
 
 			var hasNext = await call.MoveNextAsync(cancellationToken).ConfigureAwait(false);
 
 			var rev =
 				hasNext && call.Current.ContentCase == ReadResp.ContentOneofCase.StreamNotFound
 					? StreamRevision.None
-					: StreamRevision.FromStreamPosition(revision);
+					: hasNext
+						? StreamRevision.FromStreamPosition(revision)
+						: StreamRevision.FromStreamPosition(revision-1);
 				
 			while(hasNext) {
 				if (call.Current.ContentCase == ReadResp.ContentOneofCase.Event) {

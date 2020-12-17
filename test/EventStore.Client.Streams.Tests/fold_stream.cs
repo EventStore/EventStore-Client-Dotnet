@@ -126,7 +126,7 @@ namespace EventStore.Client {
 				new List<StreamPosition>());
 
 
-			var expected = StreamRevision.FromInt64(pos);
+			var expected = StreamRevision.FromInt64(pos-1);
 			Assert.Equal(expected, result.Revision);
 		}
 
