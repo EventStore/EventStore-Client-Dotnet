@@ -44,7 +44,7 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken = default) =>
 			ListInternalAsync(new StatisticsReq.Types.Options {
 				Name = name
-			}, userCredentials, cancellationToken).FirstOrDefaultAsync(cancellationToken).AsTask();
+			}, userCredentials, cancellationToken).FirstOrDefaultAsync(cancellationToken).AsTask()!;
 
 		private async IAsyncEnumerable<ProjectionDetails> ListInternalAsync(StatisticsReq.Types.Options options,
 			UserCredentials? userCredentials,

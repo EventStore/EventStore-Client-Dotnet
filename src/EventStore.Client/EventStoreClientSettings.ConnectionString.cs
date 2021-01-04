@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+#if !GRPC_CORE
 using System.Net.Http;
+#endif
 
 namespace EventStore.Client {
 	public partial class EventStoreClientSettings {
@@ -159,15 +161,11 @@ namespace EventStore.Client {
 
 				if (typedOptions.TryGetValue(TlsVerifyCert, out object tlsVerifyCert)) {
 					if (!(bool)tlsVerifyCert) {
-#if NETCOREAPP3_1
+#if !GRPC_CORE
 						settings.CreateHttpMessageHandler = () => new SocketsHttpHandler {
 							SslOptions = {
 								RemoteCertificateValidationCallback = delegate { return true; }
 							}
-						};
-#elif NETSTANDARD2_1
-						settings.CreateHttpMessageHandler = () => new HttpClientHandler {
-							ServerCertificateCustomValidationCallback = delegate { return true; }
 						};
 #endif
 					}
@@ -180,7 +178,7 @@ namespace EventStore.Client {
 					settings.OperationOptions.ThrowOnAppendFailure = (bool)throwOnAppendFailure;
 
 				if (hosts.Length == 1 && scheme != UriSchemeDiscover) {
-					connSettings.Address = new Uri(hosts[0].ToHttpUrl(useTls ? Uri.UriSchemeHttps : Uri.UriSchemeHttp));
+					connSettings.Address = hosts[0].ToUri(useTls);
 				} else {
 					if (hosts.Any(x => x is DnsEndPoint))
 						connSettings.DnsGossipSeeds =

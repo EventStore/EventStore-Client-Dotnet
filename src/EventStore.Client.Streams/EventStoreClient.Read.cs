@@ -275,7 +275,7 @@ namespace EventStore.Client {
 					_ => throw new InvalidOperationException()
 				});
 
-		private static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent e) =>
+		private static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>
 			e == null
 				? null
 				: new EventRecord(

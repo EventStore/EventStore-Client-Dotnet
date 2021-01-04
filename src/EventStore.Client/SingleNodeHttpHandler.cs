@@ -14,7 +14,7 @@ namespace EventStore.Client {
 
 		protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
 			CancellationToken cancellationToken) {
-			request.RequestUri = new UriBuilder(request.RequestUri) {
+			request.RequestUri = new UriBuilder(request.RequestUri!) {
 				Scheme = _settings.ConnectivitySettings.Address.Scheme
 			}.Uri;
 			return base.SendAsync(request, cancellationToken);

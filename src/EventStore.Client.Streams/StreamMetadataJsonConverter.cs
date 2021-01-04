@@ -73,7 +73,7 @@ namespace EventStore.Client {
 						acl = StreamAclJsonConverter.Instance.Read(ref reader, typeof(StreamAcl), options);
 						break;
 					default:
-						customMetadataWriter.WritePropertyName(reader.GetString());
+						customMetadataWriter.WritePropertyName(reader.GetString()!);
 						reader.Read();
 						switch (reader.TokenType) {
 							case JsonTokenType.Comment:

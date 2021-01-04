@@ -269,7 +269,7 @@ namespace EventStore.Client {
 			Assert.NotNull(settings.CreateHttpMessageHandler);
 		}
 
-		private static IEnumerable<object[]> DiscoverSchemeCases() {
+		public static IEnumerable<object[]> DiscoverSchemeCases() {
 			yield return new object[] {
 				"esdb+discover://hostname:4321", new EndPoint[] {
 					new DnsEndPoint("hostname", 4321)

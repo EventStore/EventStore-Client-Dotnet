@@ -47,6 +47,10 @@ namespace EventStore.Client {
 				return false;
 			}
 
+			if (_authorization.Parameter == null) {
+				return false;
+			}
+
 			var parts = Encoding.ASCII.GetString(Convert.FromBase64String(_authorization.Parameter)).Split(':');
 			if (parts.Length <= index) {
 				return false;

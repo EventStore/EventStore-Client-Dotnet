@@ -55,7 +55,7 @@ namespace EventStore.Client {
 			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 			stream.Position = 0;
 
-			return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions);
+			return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
 		}
 
 		private async ValueTask<Value> GetResultInternalAsync(string name, string? partition,
@@ -118,7 +118,7 @@ namespace EventStore.Client {
 			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 			stream.Position = 0;
 
-			return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions);
+			return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
 		}
 
 		private async ValueTask<Value> GetStateInternalAsync(string name, string? partition,

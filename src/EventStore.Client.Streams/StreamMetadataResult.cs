@@ -71,18 +71,10 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static StreamMetadataResult Create(string streamName, StreamPosition revision,
-			StreamMetadata metadata) {
-			if (metadata == null) throw new ArgumentNullException(nameof(metadata));
-
-			return new StreamMetadataResult(streamName, revision, metadata);
-		}
+			StreamMetadata metadata) => new StreamMetadataResult(streamName, revision, metadata);
 
 		private StreamMetadataResult(string streamName, StreamPosition? metastreamRevision = null,
 			StreamMetadata metadata = default, bool streamDeleted = false) {
-			if (streamName == null) {
-				throw new ArgumentNullException(nameof(streamName));
-			}
-
 			StreamName = streamName;
 			StreamDeleted = streamDeleted;
 			Metadata = metadata;
