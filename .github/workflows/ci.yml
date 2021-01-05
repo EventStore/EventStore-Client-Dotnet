@@ -10,9 +10,13 @@ on:
 
 jobs:
   vulnerability-scan:
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: ['5.0-focal', '3.1-bionic']
     runs-on: ubuntu-latest
-    name: ci/github/scan-vulnerabilities
-    container: mcr.microsoft.com/dotnet/sdk:5.0-bionic
+    name: scan-vulnerabilities/${{ matrix.sdk }}
+    container: mcr.microsoft.com/dotnet/sdk:${{ matrix.sdk }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
