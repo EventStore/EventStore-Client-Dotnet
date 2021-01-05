@@ -11,14 +11,15 @@ using Xunit;
 namespace EventStore.Client {
 	public class ClusterAwareHttpHandlerTests {
 		[Theory,
-		InlineData(true,true),
-		InlineData(true,false),
-		InlineData(false,true),
-		InlineData(false,false)
+		 InlineData(true, true),
+		 InlineData(true, false),
+		 InlineData(false, true),
+		 InlineData(false, false)
 		]
-		public async Task should_set_requires_leader_header(bool useHttps,bool requiresLeader) {
+		public async Task should_set_requires_leader_header(bool useHttps, bool requiresLeader) {
 			var sut = new ClusterAwareHttpHandler(
-				useHttps, requiresLeader, new FakeEndpointDiscoverer(() => new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113))) {
+				useHttps, requiresLeader,
+				new FakeEndpointDiscoverer(() => new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113))) {
 				InnerHandler = new TestMessageHandler()
 			};
 
@@ -77,29 +78,29 @@ namespace EventStore.Client {
 		[Theory, ClassData(typeof(EndPoints))]
 		public async Task should_set_endpoint_to_leader_endpoint_on_exception(bool useHttps, EndPoint endpoint) {
 			var sut = new ClusterAwareHttpHandler(
-				useHttps, true, new FakeEndpointDiscoverer(() => new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113))) {
-				InnerHandler = new TestMessageHandler()
+				useHttps, true, new FakeEndpointDiscoverer(() => new IPEndPoint(IPAddress.Loopback, 2113))) {
+				InnerHandler = new TestNotLeaderMessageHandler(endpoint)
 			};
 
-			var client = new HttpClient(sut);
+			using var client = new HttpClient(sut);
 
-			var request = new HttpRequestMessage(HttpMethod.Get, new UriBuilder().Uri);
+			using var _ = await client.GetAsync(new UriBuilder().Uri); // first request results in leadernotfound
 
-			sut.ExceptionOccurred(new NotLeaderException(endpoint.GetHost(), endpoint.GetPort()));
-			await client.SendAsync(request);
-			
+			using var request = new HttpRequestMessage(HttpMethod.Get, new UriBuilder().Uri);
+
+			using var __ = await client.SendAsync(request);
+
 			Assert.Equal(endpoint.GetHost(), request.RequestUri.Host);
 			Assert.Equal(endpoint.GetPort(), request.RequestUri.Port);
 		}
 	}
-	
+
 	public class EndPoints : IEnumerable<object[]> {
 		public IEnumerator<object[]> GetEnumerator() {
-			yield return new object[] {true, new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113)};
-			yield return new object[] {true, new DnsEndPoint("nodea.eventstore.dev", 2113), };
-			yield return new object[] {false, new IPEndPoint(IPAddress.Parse("0.0.0.0"), 2113)};
-			yield return new object[] {false, new DnsEndPoint("nodea.eventstore.dev", 2113), };
-
+			yield return new object[] {true, new IPEndPoint(IPAddress.Any, 2113)};
+			yield return new object[] {true, new DnsEndPoint("nodea.eventstore.dev", 2113),};
+			yield return new object[] {false, new IPEndPoint(IPAddress.Any, 2113)};
+			yield return new object[] {false, new DnsEndPoint("nodea.eventstore.dev", 2113),};
 		}
 
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -112,15 +113,32 @@ namespace EventStore.Client {
 			_function = function;
 		}
 
-		public Task<EndPoint> DiscoverAsync() {
-			return Task.FromResult(_function());
-		}
+		public Task<EndPoint> DiscoverAsync(CancellationToken cancellationToken = default) =>
+			Task.FromResult(_function());
 	}
 
 	internal class TestMessageHandler : HttpMessageHandler {
 		protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
-			CancellationToken cancellationToken) {
-			return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+			CancellationToken cancellationToken) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+	}
+
+	internal class TestNotLeaderMessageHandler : TestMessageHandler {
+		private readonly EndPoint _endpoint;
+		private int _messageCount = -1;
+
+		public TestNotLeaderMessageHandler(EndPoint endpoint) {
+			_endpoint = endpoint;
 		}
+
+		protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+			CancellationToken cancellationToken) => Interlocked.Increment(ref _messageCount) == 0
+			? Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) {
+				TrailingHeaders = {
+					{Constants.Exceptions.ExceptionKey, Constants.Exceptions.NotLeader},
+					{Constants.Exceptions.LeaderEndpointHost, _endpoint.GetHost()},
+					{Constants.Exceptions.LeaderEndpointPort, _endpoint.GetPort().ToString()}
+				}
+			})
+			: base.SendAsync(request, cancellationToken);
 	}
 }
