@@ -22,14 +22,8 @@ namespace EventStore.Client {
 				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 			}
 			return GrpcChannel.ForAddress(address, new GrpcChannelOptions {
-				HttpClient = new HttpClient(new ClusterAwareHttpHandler(settings.ConnectivitySettings.GossipOverHttps,
-					settings.ConnectivitySettings.NodePreference == NodePreference.Leader,
-					settings.ConnectivitySettings.IsSingleNode
-						? (IEndpointDiscoverer)new SingleNodeEndpointDiscoverer(settings.ConnectivitySettings.Address)
-						: new GossipBasedEndpointDiscoverer(settings.ConnectivitySettings,
-							new GrpcGossipClient(settings))) {
-					InnerHandler = settings.CreateHttpMessageHandler?.Invoke() ?? new SocketsHttpHandler()
-				}, true) {
+				HttpClient = new HttpClient(settings.CreateHttpMessageHandler?.Invoke() ?? new SocketsHttpHandler(),
+					true) {
 					Timeout = Timeout.InfiniteTimeSpan,
 					DefaultRequestVersion = new Version(2, 0),
 				},

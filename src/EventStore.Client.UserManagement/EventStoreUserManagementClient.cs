@@ -15,7 +15,6 @@ namespace EventStore.Client {
 	/// The client used for operations on internal users.
 	/// </summary>
 	public class EventStoreUserManagementClient : EventStoreClientBase {
-		private readonly Users.Users.UsersClient _client;
 		private readonly ILogger _log;
 
 		/// <summary>
@@ -24,7 +23,6 @@ namespace EventStore.Client {
 		/// <param name="settings"></param>
 		public EventStoreUserManagementClient(EventStoreClientSettings? settings = null) :
 			base(settings, ExceptionMap) {
-			_client = new Users.Users.UsersClient(CallInvoker);
 			_log = Settings.LoggerFactory?.CreateLogger<EventStoreUserManagementClient>() ??
 			       new NullLogger<EventStoreUserManagementClient>();
 		}
@@ -52,7 +50,8 @@ namespace EventStore.Client {
 			if (fullName == string.Empty) throw new ArgumentOutOfRangeException(nameof(fullName));
 			if (password == string.Empty) throw new ArgumentOutOfRangeException(nameof(password));
 
-			await _client.CreateAsync(new CreateReq {
+			await new Users.Users.UsersClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					LoginName = loginName,
 					FullName = fullName,
@@ -81,7 +80,8 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(loginName));
 			}
 
-			using var call = _client.Details(new DetailsReq {
+			using var call = new Users.Users.UsersClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Details(new DetailsReq {
 				Options = new DetailsReq.Types.Options {
 					LoginName = loginName
 				}
@@ -110,11 +110,13 @@ namespace EventStore.Client {
 			if (loginName == null) {
 				throw new ArgumentNullException(nameof(loginName));
 			}
+
 			if (loginName == string.Empty) {
 				throw new ArgumentOutOfRangeException(nameof(loginName));
 			}
 
-			await _client.DeleteAsync(new DeleteReq {
+			await new Users.Users.UsersClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).DeleteAsync(new DeleteReq {
 				Options = new DeleteReq.Types.Options {
 					LoginName = loginName
 				}
@@ -140,7 +142,8 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(loginName));
 			}
 
-			await _client.EnableAsync(new EnableReq {
+			await new Users.Users.UsersClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).EnableAsync(new EnableReq {
 				Options = new EnableReq.Types.Options {
 					LoginName = loginName
 				}
@@ -159,7 +162,8 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken = default) {
 			if (loginName == string.Empty) throw new ArgumentOutOfRangeException(nameof(loginName));
 
-			await _client.DisableAsync(new DisableReq {
+			await new Users.Users.UsersClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).DisableAsync(new DisableReq {
 				Options = new DisableReq.Types.Options {
 					LoginName = loginName
 				}
@@ -174,7 +178,8 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async IAsyncEnumerable<UserDetails> ListAllAsync(UserCredentials? userCredentials = null,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default) {
-			using var call = _client.Details(new DetailsReq(),
+			using var call = new Users.Users.UsersClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Details(new DetailsReq(),
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 
 			await foreach (var userDetail in call.ResponseStream
@@ -206,13 +211,16 @@ namespace EventStore.Client {
 			if (currentPassword == string.Empty) throw new ArgumentOutOfRangeException(nameof(currentPassword));
 			if (newPassword == string.Empty) throw new ArgumentOutOfRangeException(nameof(newPassword));
 
-			await _client.ChangePasswordAsync(new ChangePasswordReq {
-				Options = new ChangePasswordReq.Types.Options {
-					CurrentPassword = currentPassword,
-					NewPassword = newPassword,
-					LoginName = loginName
-				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			await new Users.Users.UsersClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).ChangePasswordAsync(
+				new ChangePasswordReq {
+					Options = new ChangePasswordReq.Types.Options {
+						CurrentPassword = currentPassword,
+						NewPassword = newPassword,
+						LoginName = loginName
+					}
+				},
+				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
 		/// <summary>
@@ -232,12 +240,15 @@ namespace EventStore.Client {
 			if (loginName == string.Empty) throw new ArgumentOutOfRangeException(nameof(loginName));
 			if (newPassword == string.Empty) throw new ArgumentOutOfRangeException(nameof(newPassword));
 
-			await _client.ResetPasswordAsync(new ResetPasswordReq {
-				Options = new ResetPasswordReq.Types.Options {
-					NewPassword = newPassword,
-					LoginName = loginName
-				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			await new Users.Users.UsersClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).ResetPasswordAsync(
+				new ResetPasswordReq {
+					Options = new ResetPasswordReq.Types.Options {
+						NewPassword = newPassword,
+						LoginName = loginName
+					}
+				},
+				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
 		private static readonly IDictionary<string, Func<RpcException, Exception>> ExceptionMap =

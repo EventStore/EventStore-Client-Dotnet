@@ -11,7 +11,6 @@ namespace EventStore.Client {
 	/// The client used to manage persistent subscriptions in the EventStoreDB.
 	/// </summary>
 	public partial class EventStorePersistentSubscriptionsClient : EventStoreClientBase {
-		private readonly PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient _client;
 		private readonly ILogger _log;
 
 		/// <summary>
@@ -33,7 +32,6 @@ namespace EventStore.Client {
 						ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
 						ex.Trailers.First(x => x.Key == Constants.Exceptions.GroupName).Value, ex)
 			}) {
-			_client = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(CallInvoker);
 			_log = Settings.LoggerFactory?.CreateLogger<EventStorePersistentSubscriptionsClient>()
 			       ?? new NullLogger<EventStorePersistentSubscriptionsClient>();
 		}

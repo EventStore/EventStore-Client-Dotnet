@@ -67,30 +67,24 @@ namespace EventStore.Client {
 				cancellationToken);
 		}
 
-		private ReadStreamResult ReadStreamAsync(
-			Direction direction,
-			string streamName,
-			StreamPosition revision,
-			long maxCount,
-			EventStoreClientOperationOptions operationOptions,
-			bool resolveLinkTos = false,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) => new ReadStreamResult(_client, new ReadReq {
-				Options = new ReadReq.Types.Options {
-					ReadDirection = direction switch {
-						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
-						Direction.Forwards => ReadReq.Types.Options.Types.ReadDirection.Forwards,
-						_ => throw new InvalidOperationException()
-					},
-					ResolveLinks = resolveLinkTos,
-					Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(streamName, revision),
-					Count = (ulong)maxCount
-				}
-			},
-			Settings,
-			operationOptions,
-			userCredentials,
-			cancellationToken);
+		private ReadStreamResult ReadStreamAsync(Direction direction,
+			string streamName, StreamPosition revision, long maxCount,
+			EventStoreClientOperationOptions operationOptions, bool resolveLinkTos = false,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+			return new ReadStreamResult(SelectCallInvoker, new ReadReq {
+					Options = new ReadReq.Types.Options {
+						ReadDirection = direction switch {
+							Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
+							Direction.Forwards => ReadReq.Types.Options.Types.ReadDirection.Forwards,
+							_ => throw new InvalidOperationException()
+						},
+						ResolveLinks = resolveLinkTos,
+						Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(streamName,
+							revision),
+						Count = (ulong)maxCount
+					}
+				}, Settings, operationOptions, userCredentials, cancellationToken);
+		}
 
 		/// <summary>
 		/// Asynchronously reads all the events from a stream.
@@ -118,21 +112,21 @@ namespace EventStore.Client {
 			var operationOptions = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(operationOptions);
 
-			return ReadStreamAsync(direction, streamName, revision, maxCount, operationOptions, resolveLinkTos,
-				userCredentials, cancellationToken);
+			return ReadStreamAsync(direction, streamName, revision, maxCount, operationOptions, resolveLinkTos, userCredentials, cancellationToken);
 		}
 
 		/// <summary>
 		/// A class that represents the result of a read operation.
 		/// </summary>
 		public class ReadStreamResult : IAsyncEnumerable<ResolvedEvent>, IAsyncEnumerator<ResolvedEvent> {
-			private readonly IAsyncEnumerator<ReadResp> _call;
+			private readonly string _streamName;
+			private readonly TaskCompletionSource<IAsyncEnumerator<ReadResp>> _callSource;
+
 			private bool _moved;
 			private CancellationToken _cancellationToken;
-			private readonly string _streamName;
 
 			internal ReadStreamResult(
-				Streams.Streams.StreamsClient client,
+				Func<CancellationToken, Task<CallInvoker>> selectCallInvoker,
 				ReadReq request,
 				EventStoreClientSettings settings,
 				EventStoreClientOperationOptions operationOptions,
@@ -149,16 +143,24 @@ namespace EventStore.Client {
 				}
 
 				request.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()};
+				_callSource = new TaskCompletionSource<IAsyncEnumerator<ReadResp>>();
+				_ = Task.Run(async () => {
+					var client = new Streams.Streams.StreamsClient(await selectCallInvoker(cancellationToken)
+						.ConfigureAwait(false));
+					_callSource.SetResult(client
+						.Read(request,
+							EventStoreCallOptions.Create(settings, operationOptions, userCredentials,
+								cancellationToken)).ResponseStream.ReadAllAsync().GetAsyncEnumerator());
+				});
 				_moved = false;
-				_call = client.Read(request,
-						EventStoreCallOptions.Create(settings, operationOptions, userCredentials, cancellationToken))
-					.ResponseStream.ReadAllAsync().GetAsyncEnumerator();
 
 				ReadState = GetStateInternal();
 
 				async Task<ReadState> GetStateInternal() {
-					_moved = await _call.MoveNextAsync(cancellationToken).ConfigureAwait(false);
-					return _call.Current?.ContentCase switch {
+					var call = await _callSource.Task.ConfigureAwait(false);
+
+					_moved = await call.MoveNextAsync(cancellationToken).ConfigureAwait(false);
+					return call.Current?.ContentCase switch {
 						ReadResp.ContentOneofCase.StreamNotFound => Client.ReadState.StreamNotFound,
 						_ => Client.ReadState.Ok
 					};
@@ -180,7 +182,8 @@ namespace EventStore.Client {
 			}
 
 			/// <inheritdoc />
-			public ValueTask DisposeAsync() => _call.DisposeAsync();
+			public async ValueTask DisposeAsync() =>
+				await (await _callSource.Task.ConfigureAwait(false)).DisposeAsync().ConfigureAwait(false);
 
 			/// <inheritdoc />
 			public async ValueTask<bool> MoveNextAsync() {
@@ -189,20 +192,26 @@ namespace EventStore.Client {
 					throw ExceptionFromState(state, _streamName);
 				}
 
+				var call = await _callSource.Task.ConfigureAwait(false);
+
 				if (_moved) {
 					_moved = false;
-					if (IsCurrentItemEvent()) return true;
+					if (IsCurrentItemEvent()) {
+						return true;
+					}
 				}
 
-				while (await _call.MoveNextAsync(_cancellationToken).ConfigureAwait(false)) {
-					if (IsCurrentItemEvent()) return true;
+				while (await call.MoveNextAsync(_cancellationToken).ConfigureAwait(false)) {
+					if (IsCurrentItemEvent()) {
+						return true;
+					}
 				}
 
 				Current = default;
 				return false;
 
 				bool IsCurrentItemEvent() {
-					var (confirmation, position, @event) = ConvertToItem(_call.Current);
+					var (confirmation, position, @event) = ConvertToItem(call.Current);
 					if (confirmation == SubscriptionConfirmation.None && position == null) {
 						Current = @event;
 						return true;
@@ -212,12 +221,11 @@ namespace EventStore.Client {
 				}
 			}
 
-			private static Exception ExceptionFromState(ReadState state, string streamName) {
-				return state switch {
+			private static Exception ExceptionFromState(ReadState state, string streamName) =>
+				state switch {
 					Client.ReadState.StreamNotFound => new StreamNotFoundException(streamName),
 					_ => throw new ArgumentOutOfRangeException(nameof(state), state, null)
 				};
-			}
 
 			/// <inheritdoc />
 			public ResolvedEvent Current { get; private set; }
@@ -240,7 +248,8 @@ namespace EventStore.Client {
 
 			request.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()};
 
-			using var call = _client.Read(request,
+			using var call = new Streams.Streams.StreamsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Read(request,
 				EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken));
 
 			await foreach (var e in call.ResponseStream

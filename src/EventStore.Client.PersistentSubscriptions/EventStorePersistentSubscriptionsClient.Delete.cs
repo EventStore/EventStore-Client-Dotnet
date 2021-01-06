@@ -15,7 +15,8 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task DeleteAsync(string streamName, string groupName, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			await _client.DeleteAsync(new DeleteReq {
+			await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).DeleteAsync(new DeleteReq {
 				Options = new DeleteReq.Types.Options {
 					StreamIdentifier = streamName,
 					GroupName = groupName

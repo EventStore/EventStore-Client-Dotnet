@@ -4,16 +4,17 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
 
 namespace EventStore.Client {
 	internal class GrpcGossipClient : IGossipClient, IDisposable {
 		private readonly EventStoreClientSettings _settings;
-		private readonly ConcurrentDictionary<EndPoint, Gossip.Gossip.GossipClient> _clients;
+		private readonly ConcurrentDictionary<EndPoint, ChannelBase> _channels;
 		private int _disposed;
 
 		public GrpcGossipClient(EventStoreClientSettings settings) {
 			_settings = settings;
-			_clients = new ConcurrentDictionary<EndPoint, Gossip.Gossip.GossipClient>();
+			_channels = new ConcurrentDictionary<EndPoint, ChannelBase>();
 		}
 
 		public async ValueTask<ClusterMessages.ClusterInfo> GetAsync(EndPoint endPoint,
@@ -22,19 +23,20 @@ namespace EventStore.Client {
 				throw new ObjectDisposedException(GetType().ToString());
 			}
 
-			var client = _clients.GetOrAdd(endPoint,
-				endpoint => new Gossip.Gossip.GossipClient(ChannelFactory.CreateChannel(_settings, endpoint)));
+			var channel = _channels.GetOrAdd(endPoint, endpoint => ChannelFactory.CreateChannel(_settings, endpoint));
+
+			var client = new Gossip.Gossip.GossipClient(channel);
 
 			var result = await client.ReadAsync(new Empty(), cancellationToken: cancellationToken);
 
 			return new ClusterMessages.ClusterInfo {
-				Members = Array.ConvertAll(result.Members.ToArray(), x =>
+				Members = result.Members.Select(x =>
 					new ClusterMessages.MemberInfo {
 						InstanceId = Uuid.FromDto(x.InstanceId).ToGuid(),
 						State = (ClusterMessages.VNodeState)x.State,
 						IsAlive = x.IsAlive,
 						EndPoint = new DnsEndPoint(x.HttpEndPoint.Address, (int)x.HttpEndPoint.Port)
-					})
+					}).ToArray()
 			};
 		}
 
@@ -43,10 +45,12 @@ namespace EventStore.Client {
 				return;
 			}
 
-			foreach (var client in _clients.Values) {
+			foreach (var channel in _channels.Values) {
 				// ReSharper disable once SuspiciousTypeConversion.Global
-				if (client is IDisposable disposable) {
+				if (channel is IDisposable disposable) {
 					disposable.Dispose();
+				} else {
+					channel.ShutdownAsync();
 				}
 			}
 		}

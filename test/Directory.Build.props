@@ -15,6 +15,9 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
 	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+		<PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="11.0.0" />
+	</ItemGroup>
 	<ItemGroup Condition="$(MSBuildProjectName) != 'EventStore.Client.IntegrationTests'">
 		<Compile Include="..\EventStore.Client.Tests.Common\*.cs"/>
 	</ItemGroup>

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using EventStore.Client.Interceptors;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
@@ -11,12 +13,12 @@ namespace EventStore.Client {
 	/// The base class used by clients used to communicate with the EventStoreDB.
 	/// </summary>
 	public abstract class EventStoreClientBase : IDisposable {
-		private readonly ChannelBase _channel;
-
+		private readonly IDictionary<string, Func<RpcException, Exception>> _exceptionMap;
+		private readonly MultiChannel _channels;
 		/// <summary>
-		/// The <see cref="CallInvoker"/>.
+		/// The name of the connection.
 		/// </summary>
-		protected CallInvoker CallInvoker { get; }
+		public string ConnectionName { get; }
 
 		/// <summary>
 		/// The <see cref="EventStoreClientSettings"/>.
@@ -30,35 +32,30 @@ namespace EventStore.Client {
 		/// <param name="exceptionMap"></param>
 		protected EventStoreClientBase(EventStoreClientSettings? settings,
 			IDictionary<string, Func<RpcException, Exception>> exceptionMap) {
+			_exceptionMap = exceptionMap;
 			Settings = settings ?? new EventStoreClientSettings();
 
-			var connectionName = Settings.ConnectionName ?? $"ES-{Guid.NewGuid()}";
+			ConnectionName = Settings.ConnectionName ?? $"ES-{Guid.NewGuid()}";
 
-			_channel = ChannelFactory.CreateChannel(Settings, Settings.ConnectivitySettings.Address);
-
-			CallInvoker = (Settings.Interceptors ?? Array.Empty<Interceptor>()).Aggregate(
-				_channel.CreateCallInvoker()
-					.Intercept(new TypedExceptionInterceptor(exceptionMap, ex => { }))
-					.Intercept(new ConnectionNameInterceptor(connectionName))
-#if GRPC_CORE
-					.Intercept(new HostSelectorInterceptor(Settings.ConnectivitySettings.IsSingleNode
-							? (IEndpointDiscoverer)new SingleNodeEndpointDiscoverer(
-								Settings.ConnectivitySettings.Address)
-							: new GossipBasedEndpointDiscoverer(Settings.ConnectivitySettings,
-								new GrpcGossipClient(Settings)),
-						Settings.ConnectivitySettings.NodePreference))
-#endif
-				,
-				(invoker, interceptor) => invoker.Intercept(interceptor));
+			_channels = new MultiChannel(Settings);
 		}
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		protected async Task<CallInvoker> SelectCallInvoker(CancellationToken cancellationToken) =>
+			(Settings.Interceptors ?? Array.Empty<Interceptor>()).Aggregate(
+				(await _channels.GetCurrentChannel(cancellationToken).ConfigureAwait(false)).CreateCallInvoker()
+				.Intercept(new TypedExceptionInterceptor(_exceptionMap, ex => { }))
+				.Intercept(new ConnectionNameInterceptor(ConnectionName))
+				.Intercept(new ReportLeaderInterceptor(_channels.SetEndPoint)),
+				(invoker, interceptor) => invoker.Intercept(interceptor));
 
 		/// <inheritdoc />
 		public void Dispose() {
-			// ReSharper disable SuspiciousTypeConversion.Global
-			if (_channel is IDisposable disposable) {
-				// ReSharper restore SuspiciousTypeConversion.Global
-				disposable.Dispose();
-			}
+			_channels.Dispose();
 		}
 	}
 }

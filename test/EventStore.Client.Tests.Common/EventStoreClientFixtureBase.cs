@@ -14,6 +14,10 @@ using System.Threading.Tasks;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Model.Builders;
 using Ductus.FluentDocker.Services;
+#if GRPC_CORE
+using System.Security.Cryptography.X509Certificates;
+using Grpc.Core;
+#endif
 using Polly;
 using Serilog;
 using Serilog.Events;
@@ -26,6 +30,14 @@ using Xunit.Abstractions;
 namespace EventStore.Client {
 	public abstract class EventStoreClientFixtureBase : IAsyncLifetime {
 		public const string TestEventType = "-";
+
+		private const string ConnectionString =
+#if GRPC_CORE
+				"esdb://127.0.0.1:2113/?tlsVerifyCert=false"
+#else
+				"esdb://localhost:2113/?tlsVerifyCert=false"
+#endif
+			;
 
 		private static readonly Subject<LogEvent> LogEventSubject = new Subject<LogEvent>();
 
@@ -73,11 +85,18 @@ namespace EventStore.Client {
 			_disposables = new List<IDisposable>();
 			ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
 
-			Settings = clientSettings ?? EventStoreClientSettings.Create("esdb://localhost:2113/?tlsVerifyCert=false");
+			Settings = clientSettings ?? EventStoreClientSettings.Create(ConnectionString);
 
 			Settings.OperationOptions.TimeoutAfter = Debugger.IsAttached
 				? new TimeSpan?()
 				: TimeSpan.FromSeconds(30);
+
+#if GRPC_CORE
+			Settings.ChannelCredentials ??= GetServerCertificate();
+
+			static SslCredentials GetServerCertificate() => new SslCredentials(
+				File.ReadAllText(Path.Combine(HostCertificatePath, "ca", "ca.crt")), null, _ => true);
+#endif
 
 			Settings.LoggerFactory ??= new SerilogLoggerFactory();
 
@@ -159,7 +178,6 @@ namespace EventStore.Client {
 					}
 				}) {
 					BaseAddress = address,
-
 				};
 				var tag = Environment.GetEnvironmentVariable("ES_DOCKER_TAG") ?? "ci";
 
@@ -174,6 +192,7 @@ namespace EventStore.Client {
 				foreach (var (key, value) in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
 					env[key] = value;
 				}
+
 				_eventStore = new Builder()
 					.UseContainer()
 					.UseImage($"docker.pkg.github.com/eventstore/eventstore/eventstore:{tag}")

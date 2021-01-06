@@ -16,7 +16,8 @@ namespace EventStore.Client {
 		public async Task ShutdownAsync(
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			await _client.ShutdownAsync(EmptyResult,
+			await new Operations.Operations.OperationsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).ShutdownAsync(EmptyResult,
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
@@ -29,7 +30,8 @@ namespace EventStore.Client {
 		public async Task MergeIndexesAsync(
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			await _client.MergeIndexesAsync(EmptyResult,
+			await new Operations.Operations.OperationsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).MergeIndexesAsync(EmptyResult,
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
@@ -42,7 +44,8 @@ namespace EventStore.Client {
 		public async Task ResignNodeAsync(
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			await _client.ResignNodeAsync(EmptyResult,
+			await new Operations.Operations.OperationsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).ResignNodeAsync(EmptyResult,
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
@@ -56,7 +59,9 @@ namespace EventStore.Client {
 		public async Task SetNodePriorityAsync(int nodePriority,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			await _client.SetNodePriorityAsync(new SetNodePriorityReq {Priority = nodePriority},
+			await new Operations.Operations.OperationsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).SetNodePriorityAsync(
+				new SetNodePriorityReq {Priority = nodePriority},
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
@@ -68,7 +73,9 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task RestartPersistentSubscriptions(UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			await _client.RestartPersistentSubscriptionsAsync(EmptyResult,
+			await new Operations.Operations.OperationsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).RestartPersistentSubscriptionsAsync(
+				EmptyResult,
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 	}

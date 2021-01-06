@@ -28,12 +28,16 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(startFromChunk));
 			}
 
-			var result = await _client.StartScavengeAsync(new StartScavengeReq {
-				Options = new StartScavengeReq.Types.Options {
-					ThreadCount = threadCount,
-					StartFromChunk = startFromChunk
-				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			var result = await new Operations.Operations.OperationsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).StartScavengeAsync(
+				new StartScavengeReq {
+					Options = new StartScavengeReq.Types.Options {
+						ThreadCount = threadCount,
+						StartFromChunk = startFromChunk
+					}
+				},
+				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials,
+					cancellationToken));
 
 			return result.ScavengeResult switch {
 				ScavengeResp.Types.ScavengeResult.Started => DatabaseScavengeResult.Started(result.ScavengeId),
@@ -54,7 +58,8 @@ namespace EventStore.Client {
 			string scavengeId,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var result = await _client.StopScavengeAsync(new StopScavengeReq {
+			var result = await new Operations.Operations.OperationsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).StopScavengeAsync(new StopScavengeReq {
 				Options = new StopScavengeReq.Types.Options {
 					ScavengeId = scavengeId
 				}

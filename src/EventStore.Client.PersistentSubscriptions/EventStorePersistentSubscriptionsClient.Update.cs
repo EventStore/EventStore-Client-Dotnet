@@ -39,7 +39,8 @@ namespace EventStore.Client {
 				throw new ArgumentNullException(nameof(settings));
 			}
 
-			await _client.UpdateAsync(new UpdateReq {
+			await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).UpdateAsync(new UpdateReq {
 				Options = new UpdateReq.Types.Options {
 					StreamIdentifier = streamName,
 					GroupName = groupName,

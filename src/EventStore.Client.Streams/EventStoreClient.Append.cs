@@ -96,8 +96,9 @@ namespace EventStore.Client {
 			EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
-			using var call = _client.Append(EventStoreCallOptions.Create(Settings, operationOptions,
-				userCredentials, cancellationToken));
+			using var call = new Streams.Streams.StreamsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Append(EventStoreCallOptions.Create(
+				Settings, operationOptions, userCredentials, cancellationToken));
 
 			IWriteResult writeResult;
 			try {

@@ -18,7 +18,6 @@ namespace EventStore.Client {
 					.FirstOrDefault(x => x.Key == Constants.Exceptions.ScavengeId)?.Value)
 			};
 
-		private readonly Operations.Operations.OperationsClient _client;
 		private readonly ILogger _log;
 
 		/// <summary>
@@ -33,7 +32,6 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="settings"></param>
 		public EventStoreOperationsClient(EventStoreClientSettings? settings = null) : base(settings, ExceptionMap) {
-			_client = new Operations.Operations.OperationsClient(CallInvoker);
 			_log = Settings.LoggerFactory?.CreateLogger<EventStoreOperationsClient>() ??
 			       new NullLogger<EventStoreOperationsClient>();
 		}
