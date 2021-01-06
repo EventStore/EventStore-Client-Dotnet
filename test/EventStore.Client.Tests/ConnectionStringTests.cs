@@ -121,8 +121,12 @@ namespace EventStore.Client {
 			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
 			Assert.Equal(33, settings.ConnectivitySettings.GossipTimeout.TotalMilliseconds);
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
+#if !GRPC_CORE
+#if !GRPC_CORE
 			Assert.NotNull(settings.CreateHttpMessageHandler);
+#endif
 
+#endif
 			settings = EventStoreClientSettings.Create(
 				"esdb://127.0.0.1?connectionName=test&maxDiscoverAttempts=13&DiscoveryInterval=37&nOdEPrEfErence=FoLLoWer&tls=true&tlsVerifyCert=true&operationTimeout=330&throwOnAppendFailure=faLse");
 			Assert.Null(settings.DefaultCredentials);
@@ -135,7 +139,10 @@ namespace EventStore.Client {
 			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
 			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
+#if !GRPC_CORE
 			Assert.Null(settings.CreateHttpMessageHandler);
+#endif
+
 			Assert.Equal(330, settings.OperationOptions.TimeoutAfter.Value.TotalMilliseconds);
 			Assert.False(settings.OperationOptions.ThrowOnAppendFailure);
 
@@ -146,7 +153,9 @@ namespace EventStore.Client {
 			Assert.Null(settings.ConnectivitySettings.IpGossipSeeds);
 			Assert.Null(settings.ConnectivitySettings.DnsGossipSeeds);
 			Assert.True(settings.ConnectivitySettings.GossipOverHttps);
+#if !GRPC_CORE
 			Assert.Null(settings.CreateHttpMessageHandler);
+#endif
 		}
 
 		[Fact]
@@ -198,7 +207,9 @@ namespace EventStore.Client {
 			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
 			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
+#if !GRPC_CORE
 			Assert.NotNull(settings.CreateHttpMessageHandler);
+#endif
 
 
 			settings = EventStoreClientSettings.Create(
@@ -219,7 +230,9 @@ namespace EventStore.Client {
 			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
 			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
+#if !GRPC_CORE
 			Assert.NotNull(settings.CreateHttpMessageHandler);
+#endif
 		}
 
 		[Fact]
@@ -245,6 +258,7 @@ namespace EventStore.Client {
 			Assert.False(settings.ConnectivitySettings.GossipOverHttps);
 		}
 
+#if !GRPC_CORE
 		[Fact]
 		public void with_different_tls_verify_cert_settings() {
 			EventStoreClientSettings settings;
@@ -268,6 +282,7 @@ namespace EventStore.Client {
 				"esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/?tlsVerifyCert=false");
 			Assert.NotNull(settings.CreateHttpMessageHandler);
 		}
+#endif
 
 		public static IEnumerable<object[]> DiscoverSchemeCases() {
 			yield return new object[] {

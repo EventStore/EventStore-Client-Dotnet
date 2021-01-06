@@ -22,11 +22,16 @@ namespace EventStore.Client {
 		/// </summary>
 		public string? ConnectionName { get; set; }
 
+#if !NETFRAMEWORK
 		/// <summary>
 		/// An optional <see cref="HttpMessageHandler"/> factory.
 		/// </summary>
+#if NETCOREAPP3_1
+		[Obsolete]
+#endif
 		public Func<HttpMessageHandler>? CreateHttpMessageHandler { get; set; }
 
+#endif
 		/// <summary>
 		/// An optional <see cref="ILoggerFactory"/> to use.
 		/// </summary>

@@ -13,6 +13,20 @@ namespace Microsoft.Extensions.DependencyInjection {
 	/// A set of extension methods for <see cref="IServiceCollection"/> which provide support for an <see cref="EventStoreUserManagementClient"/>.
 	/// </summary>
 	public static class EventStoreUserManagementClientCollectionExtensions {
+#if GRPC_CORE
+		/// <summary>
+		/// Adds an <see cref="EventStoreUserManagementClient"/> to the <see cref="IServiceCollection"/>.
+		/// </summary>
+		/// <param name="services"></param>
+		/// <param name="address"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static IServiceCollection AddEventStoreUserManagementClient(this IServiceCollection services,
+			Uri address)
+			=> services.AddEventStoreUserManagementClient(options => {
+				options.ConnectivitySettings.Address = address;
+			});
+#else
 		/// <summary>
 		/// Adds an <see cref="EventStoreUserManagementClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
@@ -27,6 +41,26 @@ namespace Microsoft.Extensions.DependencyInjection {
 				options.ConnectivitySettings.Address = address;
 				options.CreateHttpMessageHandler = createHttpMessageHandler;
 			});
+#endif
+
+#if NETCOREAPP3_1
+		/// <summary>
+		/// Adds an <see cref="EventStoreUserManagementClient"/> to the <see cref="IServiceCollection"/>.
+		/// </summary>
+		/// <param name="services"></param>
+		/// <param name="address"></param>
+		/// <param name="createHttpMessageHandler"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		[Obsolete]
+		public static IServiceCollection AddEventStoreUserManagementClient(this IServiceCollection services,
+			// ReSharper disable once MethodOverloadWithOptionalParameter
+			Uri address, Func<HttpMessageHandler>? createHttpMessageHandler = null)
+			=> services.AddEventStoreUserManagementClient(options => {
+				options.ConnectivitySettings.Address = address;
+			});
+
+#endif
 
 		/// <summary>
 		/// Adds an <see cref="EventStoreUserManagementClient"/> to the <see cref="IServiceCollection"/>.
