@@ -47,8 +47,8 @@ namespace EventStore.Client {
 			Assert.Equal(isJson
 				? Constants.Metadata.ContentTypes.ApplicationJson
 				: Constants.Metadata.ContentTypes.ApplicationOctetStream, @event.Event.ContentType);
-			Assert.Equal(data, encoding.GetString(@event.Event.Data.Span));
-			Assert.Equal(metadata, encoding.GetString(@event.Event.Metadata.Span));
+			Assert.Equal(data, encoding.GetString(@event.Event.Data.ToArray()));
+			Assert.Equal(metadata, encoding.GetString(@event.Event.Metadata.ToArray()));
 		}
 
 		private string GetStreamName(bool isJson, string data, string metadata,

@@ -8,7 +8,14 @@ namespace EventStore.Client {
 
 		public static implicit operator string(StreamIdentifier source) {
 			if (source._cached != null || source.StreamName.IsEmpty) return source._cached;
-			var tmp = Encoding.UTF8.GetString(source.StreamName.Span);
+
+			var tmp = Encoding.UTF8.GetString(
+#if NETFRAMEWORK
+				source.StreamName.ToByteArray()
+#else
+				source.StreamName.Span
+#endif
+			);
 			//this doesn't have to be thread safe, its just a cache in case the identifier is turned into a string several times
 			source._cached = tmp;
 			return source._cached;

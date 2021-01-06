@@ -196,16 +196,16 @@ namespace EventStore.Client {
 				!Schemes.Contains(s) ? throw new InvalidSchemeException(s, Schemes) : s;
 
 			private static (string, string) ParseUserInfo(string s) {
-				var tokens = s.Split(Colon);
+				var tokens = s.Split(Colon[0]);
 				if (tokens.Length != 2) throw new InvalidUserCredentialsException(s);
 				return (tokens[0], tokens[1]);
 			}
 
 			private static EndPoint[] ParseHosts(string s) {
-				var hostsTokens = s.Split(Comma);
+				var hostsTokens = s.Split(Comma[0]);
 				var hosts = new List<EndPoint>();
 				foreach (var hostToken in hostsTokens) {
-					var hostPortToken = hostToken.Split(Colon);
+					var hostPortToken = hostToken.Split(Colon[0]);
 					string host;
 					int port;
 					switch (hostPortToken.Length) {
@@ -239,7 +239,7 @@ namespace EventStore.Client {
 
 			private static Dictionary<string, string> ParseKeyValuePairs(string s) {
 				var options = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
-				var optionsTokens = s.Split(Ampersand);
+				var optionsTokens = s.Split(Ampersand[0]);
 				foreach (var optionToken in optionsTokens) {
 					var (key, val) = ParseKeyValuePair(optionToken);
 					try {
@@ -253,7 +253,7 @@ namespace EventStore.Client {
 			}
 
 			private static (string, string) ParseKeyValuePair(string s) {
-				var keyValueToken = s.Split(Equal);
+				var keyValueToken = s.Split(Equal[0]);
 				if (keyValueToken.Length != 2) {
 					throw new InvalidKeyValuePairException(s);
 				}

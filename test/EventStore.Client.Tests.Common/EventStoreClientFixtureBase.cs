@@ -15,7 +15,6 @@ using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Model.Builders;
 using Ductus.FluentDocker.Services;
 #if GRPC_CORE
-using System.Security.Cryptography.X509Certificates;
 using Grpc.Core;
 #endif
 using Polly;
@@ -42,8 +41,7 @@ namespace EventStore.Client {
 		private static readonly Subject<LogEvent> LogEventSubject = new Subject<LogEvent>();
 
 		private static readonly string HostCertificatePath =
-			Path.GetFullPath(Path.Combine("..", "..", "..", "..", "certs"), Environment.CurrentDirectory);
-
+			Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "..", "..", "..", "..", "certs"));
 		private readonly IList<IDisposable> _disposables;
 		protected EventStoreTestServer TestServer { get; }
 		protected EventStoreClientSettings Settings { get; }
@@ -172,11 +170,19 @@ namespace EventStore.Client {
 			private static readonly string ContainerName = "es-client-dotnet-test";
 
 			public EventStoreTestServer(Uri address, IDictionary<string, string>? envOverrides) {
-				_httpClient = new HttpClient(new SocketsHttpHandler {
-					SslOptions = {
-						RemoteCertificateValidationCallback = delegate { return true; }
+				_httpClient = new HttpClient(
+#if NETFRAMEWORK
+					new HttpClientHandler {
+						ServerCertificateCustomValidationCallback = delegate { return true; }
 					}
-				}) {
+#else
+					new SocketsHttpHandler {
+						SslOptions = {
+							RemoteCertificateValidationCallback = delegate { return true; }
+						}
+					}
+#endif
+				) {
 					BaseAddress = address,
 				};
 				var tag = Environment.GetEnvironmentVariable("ES_DOCKER_TAG") ?? "ci";
