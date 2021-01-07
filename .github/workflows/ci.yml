@@ -10,6 +10,7 @@ on:
 
 jobs:
   vulnerability-scan:
+    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
@@ -26,6 +27,7 @@ jobs:
         dotnet restore
         dotnet tool run dotnet-retire
   build-dotnet:
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -93,6 +95,7 @@ jobs:
         name: test-results-${{ matrix.configuration }}-EventStore.Client${{ matrix.test }}
         path: test-results
   publish:
+    timeout-minutes: 5
     needs: [vulnerability-scan, build-dotnet]
     runs-on: ubuntu-latest
     name: publish
