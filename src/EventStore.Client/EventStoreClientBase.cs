@@ -12,7 +12,7 @@ namespace EventStore.Client {
 	/// <summary>
 	/// The base class used by clients used to communicate with the EventStoreDB.
 	/// </summary>
-	public abstract class EventStoreClientBase : IDisposable {
+	public abstract class EventStoreClientBase : IDisposable, IAsyncDisposable {
 		private readonly IDictionary<string, Func<RpcException, Exception>> _exceptionMap;
 		private readonly MultiChannel _channels;
 		/// <summary>
@@ -54,8 +54,9 @@ namespace EventStore.Client {
 				(invoker, interceptor) => invoker.Intercept(interceptor));
 
 		/// <inheritdoc />
-		public void Dispose() {
-			_channels.Dispose();
-		}
+		public void Dispose() => _channels.Dispose();
+
+		/// <inheritdoc />
+		public ValueTask DisposeAsync() => _channels.DisposeAsync();
 	}
 }

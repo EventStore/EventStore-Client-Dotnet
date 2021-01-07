@@ -7,7 +7,7 @@ using Grpc.Core;
 
 #nullable enable
 namespace EventStore.Client {
-	internal class MultiChannel : IDisposable {
+	internal class MultiChannel : IDisposable, IAsyncDisposable {
 		private readonly EventStoreClientSettings _settings;
 		private readonly IEndpointDiscoverer _endpointDiscoverer;
 		private readonly ConcurrentDictionary<EndPoint, ChannelBase> _channels;
@@ -35,9 +35,9 @@ namespace EventStore.Client {
 			return _channels.GetOrAdd(current, ChannelFactory.CreateChannel(_settings, current));
 		}
 
+		public void Dispose() => DisposeAsync().GetAwaiter().GetResult();
 
-
-		public void Dispose() {
+		public async ValueTask DisposeAsync() {
 			if (Interlocked.Exchange(ref _disposed, 1) == 1) {
 				return;
 			}
@@ -46,7 +46,7 @@ namespace EventStore.Client {
 				if (channel is IDisposable disposable) {
 					disposable.Dispose();
 				} else {
-					channel.ShutdownAsync();
+					await channel.ShutdownAsync().ConfigureAwait(false);
 				}
 			}
 		}
