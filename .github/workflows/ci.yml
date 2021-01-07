@@ -87,12 +87,12 @@ jobs:
       if: always()
       with:
         path: test-results.html
-        name: test-results-${{ matrix.configuration }}-EventStore.Client${{ matrix.test }}.html
+        name: test-results-${{ matrix.configuration }}-${{ matrix.framework }}-EventStore.Client${{ matrix.test }}.html
     - name: Publish Test Results (All)
       uses: actions/upload-artifact@v1
       if: always()
       with:
-        name: test-results-${{ matrix.configuration }}-EventStore.Client${{ matrix.test }}
+        name: test-results-${{ matrix.configuration }}-${{ matrix.framework }}-EventStore.Client${{ matrix.test }}
         path: test-results
   publish:
     timeout-minutes: 5
