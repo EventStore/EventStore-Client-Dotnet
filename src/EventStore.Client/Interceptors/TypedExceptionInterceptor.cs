@@ -99,9 +99,11 @@ namespace EventStore.Client.Interceptors {
 			return (ex.Trailers.TryGetValue(Constants.Exceptions.ExceptionKey, out var key) &&
 			        exceptionMap.TryGetValue(key!, out factory)) switch {
 				true => factory!.Invoke(ex),
-				false => ex.StatusCode switch {
-					StatusCode.DeadlineExceeded => ex,
-					StatusCode.Unauthenticated => new NotAuthenticatedException(ex.Message, ex),
+				false => (ex.StatusCode, ex.Status.Detail) switch {
+					(StatusCode.Unavailable, "Deadline Exceeded") => new RpcException(new Status(
+						StatusCode.DeadlineExceeded, ex.Status.Detail, ex.Status.DebugException)),
+					(StatusCode.DeadlineExceeded, _) => ex,
+					(StatusCode.Unauthenticated, _) => new NotAuthenticatedException(ex.Message, ex),
 					_ => new InvalidOperationException(ex.Message, ex)
 				}
 			};
