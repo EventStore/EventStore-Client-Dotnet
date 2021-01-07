@@ -40,13 +40,11 @@ namespace EventStore.Client {
 					new PersistentSubscriptionSettings(startFrom: StreamPosition.End, resolveLinkTos: true),
 					TestCredentials.Root);
 				_subscription = await Client.SubscribeAsync(Stream, Group,
-					(subscription, e, retryCount, ct) => {
-						subscription.Ack(e);
+					async (subscription, e, retryCount, ct) => {
+						await subscription.Ack(e);
 						if (Interlocked.Increment(ref _eventReceivedCount) == _events.Length) {
 							_eventsReceived.TrySetResult(true);
 						}
-
-						return Task.CompletedTask;
 					}, (s, r, e) => {
 						if (e != null) {
 							_eventsReceived.TrySetException(e);
