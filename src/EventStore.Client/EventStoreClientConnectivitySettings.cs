@@ -60,6 +60,10 @@ namespace EventStore.Client {
 		/// </summary>
 		public NodePreference NodePreference { get; set; }
 
+		/// <summary>
+		/// The optional amount of time to wait after which a keepalive ping is sent on the transport.
+		/// </summary>
+		public TimeSpan? KeepAlive { get; set; }
 
 		/// <summary>
 		/// True if pointing to a single EventStoreDB node.

@@ -13,9 +13,8 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="connectionString"></param>
 		/// <returns></returns>
-		public static EventStoreClientSettings Create(string connectionString) {
-			return ConnectionStringParser.Parse(connectionString);
-		}
+		public static EventStoreClientSettings Create(string connectionString) =>
+			ConnectionStringParser.Parse(connectionString);
 
 		private static class ConnectionStringParser {
 			private const string SchemeSeparator = "://";
@@ -28,14 +27,15 @@ namespace EventStore.Client {
 			private const string QuestionMark = "?";
 
 			private const string Tls = nameof(Tls);
-			private const string ConnectionName = "ConnectionName";
-			private const string MaxDiscoverAttempts = "MaxDiscoverAttempts";
-			private const string DiscoveryInterval = "DiscoveryInterval";
-			private const string GossipTimeout = "GossipTimeout";
-			private const string NodePreference = "NodePreference";
-			private const string TlsVerifyCert = "TlsVerifyCert";
-			private const string OperationTimeout = "OperationTimeout";
-			private const string ThrowOnAppendFailure = "ThrowOnAppendFailure";
+			private const string ConnectionName = nameof(ConnectionName);
+			private const string MaxDiscoverAttempts = nameof(MaxDiscoverAttempts);
+			private const string DiscoveryInterval = nameof(DiscoveryInterval);
+			private const string GossipTimeout = nameof(GossipTimeout);
+			private const string NodePreference = nameof(NodePreference);
+			private const string TlsVerifyCert = nameof(TlsVerifyCert);
+			private const string OperationTimeout = nameof(OperationTimeout);
+			private const string ThrowOnAppendFailure = nameof(ThrowOnAppendFailure);
+			private const string KeepAlive = nameof(KeepAlive);
 
 			private const string UriSchemeDiscover = "esdb+discover";
 
@@ -53,7 +53,8 @@ namespace EventStore.Client {
 					{Tls, typeof(bool)},
 					{TlsVerifyCert, typeof(bool)},
 					{OperationTimeout, typeof(int)},
-					{ThrowOnAppendFailure, typeof(bool)}
+					{ThrowOnAppendFailure, typeof(bool)},
+					{KeepAlive, typeof(int)}
 				};
 
 			public static EventStoreClientSettings Parse(string connectionString) {
@@ -159,23 +160,15 @@ namespace EventStore.Client {
 					useTls = (bool)tls;
 				}
 
-				if (typedOptions.TryGetValue(TlsVerifyCert, out object tlsVerifyCert)) {
-					if (!(bool)tlsVerifyCert) {
-#if !GRPC_CORE
-						settings.CreateHttpMessageHandler = () => new SocketsHttpHandler {
-							SslOptions = {
-								RemoteCertificateValidationCallback = delegate { return true; }
-							}
-						};
-#endif
-					}
-				}
-
 				if (typedOptions.TryGetValue(OperationTimeout, out object operationTimeout))
 					settings.OperationOptions.TimeoutAfter = TimeSpan.FromMilliseconds((int)operationTimeout);
 
 				if (typedOptions.TryGetValue(ThrowOnAppendFailure, out object throwOnAppendFailure))
 					settings.OperationOptions.ThrowOnAppendFailure = (bool)throwOnAppendFailure;
+
+				if (typedOptions.TryGetValue(KeepAlive, out var keepAliveMs)) {
+					settings.ConnectivitySettings.KeepAlive = TimeSpan.FromMilliseconds((int)keepAliveMs);
+				}
 
 				if (hosts.Length == 1 && scheme != UriSchemeDiscover) {
 					connSettings.Address = hosts[0].ToUri(useTls);
@@ -188,6 +181,22 @@ namespace EventStore.Client {
 
 					connSettings.GossipOverHttps = useTls;
 				}
+
+#if !GRPC_CORE
+				settings.CreateHttpMessageHandler = () => {
+					var handler = new SocketsHttpHandler();
+
+					if (typedOptions.TryGetValue(TlsVerifyCert, out var tlsVerifyCert) && !(bool)tlsVerifyCert) {
+						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+					}
+
+					if (settings.ConnectivitySettings.KeepAlive.HasValue) {
+						handler.KeepAlivePingDelay = settings.ConnectivitySettings.KeepAlive.Value;
+					}
+
+					return handler;
+				};
+#endif
 
 				return settings;
 			}
