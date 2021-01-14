@@ -6,7 +6,7 @@ namespace EventStore.Client {
 			if (i >= j)
 				return;
 			var rnd = new Random(Guid.NewGuid().GetHashCode());
-			for (int k = i; k <= j; ++k) {
+			for (int k = i; k < j; ++k) {
 				var index = rnd.Next(k, j + 1);
 				var tmp = arr[index];
 				arr[index] = arr[k];
