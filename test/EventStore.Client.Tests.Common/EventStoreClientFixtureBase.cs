@@ -30,13 +30,7 @@ namespace EventStore.Client {
 	public abstract class EventStoreClientFixtureBase : IAsyncLifetime {
 		public const string TestEventType = "-";
 
-		private const string ConnectionString =
-#if GRPC_CORE
-				"esdb://127.0.0.1:2113/?tlsVerifyCert=false"
-#else
-				"esdb://localhost:2113/?tlsVerifyCert=false"
-#endif
-			;
+		private const string ConnectionString = "esdb://localhost:2113/?tlsVerifyCert=false";
 
 		private static readonly Subject<LogEvent> LogEventSubject = new Subject<LogEvent>();
 
