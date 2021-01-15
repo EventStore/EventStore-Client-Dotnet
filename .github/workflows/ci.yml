@@ -31,9 +31,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [netcoreapp3.1, net5.0, net48]
+        framework: [net48]
         os: [ubuntu-18.04]
-        test: ["", .Streams, .PersistentSubscriptions, .Operations, .UserManagement, .ProjectionManagement]
+        test: [.PersistentSubscriptions]
         configuration: [release]
         docker-tag: ['ci']
     runs-on: ${{ matrix.os }}
