@@ -118,9 +118,9 @@ namespace EventStore.Client {
 						}
 					}).ConfigureAwait(false);
 				}
-
-				await call.RequestStream.CompleteAsync().ConfigureAwait(false);
 			} finally {
+				await call.RequestStream.CompleteAsync().ConfigureAwait(false);
+
 				var response = await call.ResponseAsync.ConfigureAwait(false);
 
 				if (response.Success != null) {
