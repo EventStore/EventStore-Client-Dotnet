@@ -11,18 +11,16 @@ namespace EventStore.Client {
 			cancellationToken: cancellationToken,
 			deadline: DeadlineAfter(operationOptions.TimeoutAfter),
 			headers: new Metadata(),
-			credentials: CallCredentials.FromInterceptor(async (context, metadata) => {
-				var credentials = settings.DefaultCredentials ?? userCredentials;
+			credentials: (settings.DefaultCredentials ?? userCredentials) == null
+				? null
+				: CallCredentials.FromInterceptor(async (context, metadata) => {
+					var credentials = settings.DefaultCredentials ?? userCredentials;
 
-				if (credentials == null) {
-					return;
-				}
-
-				var authorizationHeader = await settings.OperationOptions
-					.GetAuthenticationHeaderValue(credentials, CancellationToken.None)
-					.ConfigureAwait(false);
-				metadata.Add(Constants.Headers.Authorization, authorizationHeader);
-			})
+					var authorizationHeader = await settings.OperationOptions
+						.GetAuthenticationHeaderValue(credentials!, CancellationToken.None)
+						.ConfigureAwait(false);
+					metadata.Add(Constants.Headers.Authorization, authorizationHeader);
+				})
 		);
 
 		private static DateTime? DeadlineAfter(TimeSpan? timeoutAfter) => !timeoutAfter.HasValue
