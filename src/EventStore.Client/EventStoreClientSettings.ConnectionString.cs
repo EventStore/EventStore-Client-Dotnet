@@ -170,6 +170,8 @@ namespace EventStore.Client {
 					settings.ConnectivitySettings.KeepAlive = TimeSpan.FromMilliseconds((int)keepAliveMs);
 				}
 
+				connSettings.Insecure = !useTls;
+
 				if (hosts.Length == 1 && scheme != UriSchemeDiscover) {
 					connSettings.Address = hosts[0].ToUri(useTls);
 				} else {
@@ -178,8 +180,6 @@ namespace EventStore.Client {
 							Array.ConvertAll(hosts, x => new DnsEndPoint(x.GetHost(), x.GetPort()));
 					else
 						connSettings.IpGossipSeeds = Array.ConvertAll(hosts, x => x as IPEndPoint);
-
-					connSettings.GossipOverHttps = useTls;
 				}
 
 #if !GRPC_CORE

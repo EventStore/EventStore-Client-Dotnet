@@ -14,20 +14,19 @@ using System.Collections.Generic;
 namespace EventStore.Client {
 	internal static class ChannelFactory {
 		public static ChannelBase CreateChannel(EventStoreClientSettings settings, EndPoint endPoint) =>
-			CreateChannel(settings, endPoint.ToUri(settings.ConnectivitySettings.GossipOverHttps));
+			CreateChannel(settings, endPoint.ToUri(!settings.ConnectivitySettings.Insecure));
 
 		public static ChannelBase CreateChannel(EventStoreClientSettings settings, Uri? address) {
 			address ??= settings.ConnectivitySettings.Address;
 
 #if !GRPC_CORE
-			if (address.Scheme == Uri.UriSchemeHttp ||!settings.ConnectivitySettings.GossipOverHttps) {
+			if (address.Scheme == Uri.UriSchemeHttp ||settings.ConnectivitySettings.Insecure) {
 				//this must be switched on before creation of the HttpMessageHandler
 				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 			}
 
 			return GrpcChannel.ForAddress(address, new GrpcChannelOptions {
-				HttpClient = new HttpClient(CreateHandler(),
-					true) {
+				HttpClient = new HttpClient(CreateHandler(), true) {
 					Timeout = Timeout.InfiniteTimeSpan,
 					DefaultRequestVersion = new Version(2, 0),
 				},

@@ -33,7 +33,7 @@ namespace EventStore.Client {
 				new EventStoreClientConnectivitySettings {
 					MaxDiscoverAttempts = 1,
 					GossipTimeout = Timeout.InfiniteTimeSpan,
-					GossipOverHttps = useHttps,
+					Insecure = !useHttps,
 					DiscoveryInterval = TimeSpan.Zero,
 					NodePreference = NodePreference.Leader,
 					DnsGossipSeeds = new[] {_gossipSeed}
@@ -78,7 +78,7 @@ namespace EventStore.Client {
 				new EventStoreClientConnectivitySettings {
 					MaxDiscoverAttempts = 5,
 					GossipTimeout = Timeout.InfiniteTimeSpan,
-					GossipOverHttps = useHttps,
+					Insecure = !useHttps,
 					DiscoveryInterval = TimeSpan.Zero,
 					NodePreference = NodePreference.Leader,
 					DnsGossipSeeds = new[] {_gossipSeed}
@@ -107,7 +107,7 @@ namespace EventStore.Client {
 				new EventStoreClientConnectivitySettings {
 					MaxDiscoverAttempts = 5,
 					GossipTimeout = Timeout.InfiniteTimeSpan,
-					GossipOverHttps = useHttps,
+					Insecure = !useHttps,
 					DiscoveryInterval = TimeSpan.Zero,
 					NodePreference = NodePreference.Leader,
 					DnsGossipSeeds = new[] {_gossipSeed}
@@ -156,7 +156,7 @@ namespace EventStore.Client {
 				new EventStoreClientConnectivitySettings {
 					MaxDiscoverAttempts = 1,
 					GossipTimeout = Timeout.InfiniteTimeSpan,
-					GossipOverHttps = useHttps,
+					Insecure = !useHttps,
 					DiscoveryInterval = TimeSpan.Zero,
 					NodePreference = NodePreference.Leader,
 					DnsGossipSeeds = new[] {_gossipSeed}
@@ -209,7 +209,7 @@ namespace EventStore.Client {
 				new EventStoreClientConnectivitySettings {
 					MaxDiscoverAttempts = 1,
 					GossipTimeout = Timeout.InfiniteTimeSpan,
-					GossipOverHttps = useHttps,
+					Insecure = !useHttps,
 					DiscoveryInterval = TimeSpan.Zero,
 					NodePreference = preference,
 					DnsGossipSeeds = new[] {_gossipSeed}
@@ -243,7 +243,7 @@ namespace EventStore.Client {
 				new EventStoreClientConnectivitySettings {
 					MaxDiscoverAttempts = 1,
 					GossipTimeout = Timeout.InfiniteTimeSpan,
-					GossipOverHttps = useHttps,
+					Insecure = !useHttps,
 					DiscoveryInterval = TimeSpan.Zero,
 					NodePreference = NodePreference.Leader,
 					DnsGossipSeeds = new[] {_gossipSeed}

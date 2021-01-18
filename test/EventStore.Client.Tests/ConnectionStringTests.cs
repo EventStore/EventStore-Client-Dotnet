@@ -135,7 +135,7 @@ namespace EventStore.Client {
 			Assert.Empty(settings.ConnectivitySettings.GossipSeeds);
 			Assert.Null(settings.ConnectivitySettings.IpGossipSeeds);
 			Assert.Null(settings.ConnectivitySettings.DnsGossipSeeds);
-			Assert.True(settings.ConnectivitySettings.GossipOverHttps);
+			Assert.False(settings.ConnectivitySettings.Insecure);
 			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
 			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
@@ -153,7 +153,7 @@ namespace EventStore.Client {
 			Assert.Empty(settings.ConnectivitySettings.GossipSeeds);
 			Assert.Null(settings.ConnectivitySettings.IpGossipSeeds);
 			Assert.Null(settings.ConnectivitySettings.DnsGossipSeeds);
-			Assert.True(settings.ConnectivitySettings.GossipOverHttps);
+			Assert.True(settings.ConnectivitySettings.Insecure);
 			Assert.Null(settings.ConnectivitySettings.KeepAlive);
 #if !GRPC_CORE
 			Assert.NotNull(settings.CreateHttpMessageHandler);
@@ -178,8 +178,8 @@ namespace EventStore.Client {
 				settings.ConnectivitySettings.MaxDiscoverAttempts);
 			Assert.Equal(EventStoreClientConnectivitySettings.Default.NodePreference,
 				settings.ConnectivitySettings.NodePreference);
-			Assert.Equal(EventStoreClientConnectivitySettings.Default.GossipOverHttps,
-				settings.ConnectivitySettings.GossipOverHttps);
+			Assert.Equal(EventStoreClientConnectivitySettings.Default.Insecure,
+				settings.ConnectivitySettings.Insecure);
 			Assert.Equal(EventStoreClientOperationOptions.Default.TimeoutAfter!.Value.TotalMilliseconds,
 				settings.OperationOptions.TimeoutAfter!.Value.TotalMilliseconds);
 			Assert.Equal(EventStoreClientOperationOptions.Default.ThrowOnAppendFailure,
@@ -197,7 +197,7 @@ namespace EventStore.Client {
 			Assert.NotEmpty(settings.ConnectivitySettings.GossipSeeds);
 			Assert.NotNull(settings.ConnectivitySettings.IpGossipSeeds);
 			Assert.Null(settings.ConnectivitySettings.DnsGossipSeeds);
-			Assert.True(settings.ConnectivitySettings.GossipOverHttps);
+			Assert.False(settings.ConnectivitySettings.Insecure);
 			Assert.True(settings.ConnectivitySettings.IpGossipSeeds.Length == 3 &&
 			            Equals(settings.ConnectivitySettings.IpGossipSeeds[0].Address, IPAddress.Parse("127.0.0.1")) &&
 			            Equals(settings.ConnectivitySettings.IpGossipSeeds[0].Port, 2113) &&
@@ -221,7 +221,7 @@ namespace EventStore.Client {
 			Assert.NotEmpty(settings.ConnectivitySettings.GossipSeeds);
 			Assert.Null(settings.ConnectivitySettings.IpGossipSeeds);
 			Assert.NotNull(settings.ConnectivitySettings.DnsGossipSeeds);
-			Assert.False(settings.ConnectivitySettings.GossipOverHttps);
+			Assert.True(settings.ConnectivitySettings.Insecure);
 			Assert.True(settings.ConnectivitySettings.DnsGossipSeeds.Length == 3 &&
 			            Equals(settings.ConnectivitySettings.DnsGossipSeeds[0].Host, "host1") &&
 			            Equals(settings.ConnectivitySettings.DnsGossipSeeds[0].Port, 2113) &&
@@ -252,13 +252,13 @@ namespace EventStore.Client {
 			Assert.Equal(Uri.UriSchemeHttp, settings.ConnectivitySettings.Address.Scheme);
 
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/");
-			Assert.True(settings.ConnectivitySettings.GossipOverHttps);
+			Assert.False(settings.ConnectivitySettings.Insecure);
 
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3?tls=true");
-			Assert.True(settings.ConnectivitySettings.GossipOverHttps);
+			Assert.False(settings.ConnectivitySettings.Insecure);
 
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/?tls=fAlSe");
-			Assert.False(settings.ConnectivitySettings.GossipOverHttps);
+			Assert.True(settings.ConnectivitySettings.Insecure);
 		}
 
 #if !GRPC_CORE
