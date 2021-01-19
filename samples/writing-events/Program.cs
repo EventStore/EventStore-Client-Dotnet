@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
 
@@ -134,6 +136,25 @@ namespace writing_events {
 					clientTwoData
 				});
 			#endregion append-with-concurrency-check
+		}
+		
+		protected async Task AppendOverridingUserCredentials(EventStoreClient client, CancellationToken cancellationToken)
+		{
+			var eventData = new EventData(
+				Uuid.NewUuid(),
+				"TestEvent",
+				Encoding.UTF8.GetBytes("{\"id\": \"1\" \"value\": \"some value\"}")
+			);
+			
+			#region overriding-user-credentials
+			await client.AppendToStreamAsync(
+				"some-stream",
+				StreamState.Any,
+				new[] { eventData },
+				userCredentials: new UserCredentials("admin", "changeit"),
+				cancellationToken: cancellationToken
+			);
+			#endregion overriding-user-credentials
 		}
 	}
 }

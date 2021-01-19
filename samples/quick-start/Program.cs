@@ -1,51 +1,74 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
 
 namespace quick_start {
+	public class TestEvent {
+		public string EntityId      { get; set; }
+		public string ImportantData { get; set; }
+	}
+	
 	class Program {
 		static async Task Main(string[] args) {
-			#region creating-connection
-			var settings = new EventStoreClientSettings {
-				ConnectivitySettings = {
-					Address = new Uri("http://localhost:2113")
-				}
+			CancellationTokenSource tokenSource = new CancellationTokenSource();
+			CancellationToken cancellationToken = tokenSource.Token;
+			
+			#region createClient
+			var settings = EventStoreClientSettings
+				.Create("{connectionString}");
+			var client = new EventStoreClient(settings);
+			#endregion createClient
+
+			#region createEvent
+			var evt = new TestEvent
+			{
+				EntityId = Guid.NewGuid().ToString("N"),
+				ImportantData = "I wrote my first event!"
 			};
 
-			var client = new EventStoreClient(settings);
-			#endregion creating-connection
-
-			#region append-to-stream
 			var eventData = new EventData(
 				Uuid.NewUuid(),
-				"some-event",
-				Encoding.UTF8.GetBytes("{\"id\": \"1\" \"value\": \"some value\"}")
+				"TestEvent",
+				JsonSerializer.SerializeToUtf8Bytes(evt)
 			);
+			#endregion createEvent
 
+			#region appendEvents
 			await client.AppendToStreamAsync(
 				"some-stream",
-				StreamState.NoStream,
-				new List<EventData> {
-					eventData
-				});
-			#endregion append-to-stream
-
-			#region read-stream
-			var events = client.ReadStreamAsync(
-				Direction.Forwards,
+				StreamState.Any,
+				new[] { eventData },
+				cancellationToken: cancellationToken
+			);
+			#endregion appendEvents
+            
+			#region overriding-user-credentials
+			await client.AppendToStreamAsync(
 				"some-stream",
-				StreamPosition.Start,
-				1);
+				StreamState.Any,
+				new[] { eventData },
+				userCredentials: new UserCredentials("admin", "changeit"),
+				cancellationToken: cancellationToken
+			);
+			#endregion overriding-user-credentials
 
-			await foreach (var @event in events) {
-				Console.WriteLine(Encoding.UTF8.GetString(@event.Event.Data.Span));
-			}
-			#endregion read-stream
+			#region readStream
+            var result = client.ReadStreamAsync(
+                Direction.Forwards,
+                "some-stream",
+                StreamPosition.Start,
+                cancellationToken: cancellationToken);
+
+            var events = await result.ToListAsync(cancellationToken);
+            #endregion readStream
 		}
 	}
 }
