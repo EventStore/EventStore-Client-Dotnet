@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
 
@@ -148,12 +149,39 @@ namespace reading_events {
 			}
 		}
 
-		private static async Task ReadFromStreamResolvingLinkTos(EventStoreClient client) {
-			var events = client.ReadAllAsync(Direction.Forwards, Position.Start, resolveLinkTos: true);
+		private void ReadStreamOverridingUserCredentials(EventStoreClient client, CancellationToken cancellationToken)
+		{
+			#region overriding-user-credentials
+			var result = client.ReadStreamAsync(
+				Direction.Forwards,
+				"some-stream",
+				StreamPosition.Start,
+				userCredentials: new UserCredentials("admin", "changeit"),
+				cancellationToken: cancellationToken);
+			#endregion overriding-user-credentials
+		}
 
-			await foreach (var e in events) {
-				Console.WriteLine(Encoding.UTF8.GetString(e.Event.Data.ToArray()));
-			}
+		private void ReadAllOverridingUserCredentials(EventStoreClient client, CancellationToken cancellationToken)
+		{
+			#region read-all-overriding-user-credentials
+			var result = client.ReadAllAsync(
+				Direction.Forwards,
+				Position.Start,
+				userCredentials: new UserCredentials("admin", "changeit"),
+				cancellationToken: cancellationToken);
+			#endregion read-all-overriding-user-credentials
+		}
+        
+
+		private void ReadAllResolvingLinkTos(EventStoreClient client, CancellationToken cancellationToken)
+		{
+			#region read-from-all-stream-resolving-link-Tos
+			var result = client.ReadAllAsync(
+				Direction.Forwards,
+				Position.Start,
+				resolveLinkTos: true,
+				cancellationToken: cancellationToken);
+			#endregion read-from-all-stream-resolving-link-Tos
 		}
 	}
 }
