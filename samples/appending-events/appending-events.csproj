@@ -3,7 +3,7 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>netcoreapp3.1</TargetFramework>
-        <RootNamespace>writing_events</RootNamespace>
+        <RootNamespace>appending_events</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
