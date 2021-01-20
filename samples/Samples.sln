@@ -10,7 +10,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client", "..\src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "connecting-to-a-cluster", "connecting-to-a-cluster\connecting-to-a-cluster.csproj", "{C4CA324A-450D-4621-82F1-B4ECD18216B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "writing-events", "writing-events\writing-events.csproj", "{496D9886-AF65-4579-AECE-2C147B9AF3C1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "appending-events", "appending-events\appending-events.csproj", "{496D9886-AF65-4579-AECE-2C147B9AF3C1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "secure-with-tls", "secure-with-tls\secure-with-tls.csproj", "{EF68E123-6187-48F3-B7E2-3EE826106B90}"
 EndProject

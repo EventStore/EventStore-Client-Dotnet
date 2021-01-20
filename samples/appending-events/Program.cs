@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
 
-namespace writing_events {
+namespace appending_events {
 	class Program {
 		static void Main(string[] args) {
 			var settings = new EventStoreClientSettings {
