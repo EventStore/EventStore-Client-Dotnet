@@ -122,10 +122,7 @@ namespace EventStore.Client {
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
 			Assert.Equal(TimeSpan.FromMilliseconds(10), settings.ConnectivitySettings.KeepAlive);
 #if !GRPC_CORE
-#if !GRPC_CORE
 			Assert.NotNull(settings.CreateHttpMessageHandler);
-#endif
-
 #endif
 			settings = EventStoreClientSettings.Create(
 				"esdb://127.0.0.1?connectionName=test&maxDiscoverAttempts=13&DiscoveryInterval=37&nOdEPrEfErence=FoLLoWer&tls=true&tlsVerifyCert=true&operationTimeout=330&throwOnAppendFailure=faLse&KEepAlive=10");
