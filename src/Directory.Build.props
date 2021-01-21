@@ -1,8 +1,5 @@
 <Project>
 	<Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"/>
-	<PropertyGroup>
-		<TargetFrameworks>netcoreapp3.1;netstandard2.1</TargetFrameworks>
-	</PropertyGroup>
 	<PropertyGroup Condition="$(MSBuildProjectName) != 'EventStore.Client'">
 		<ESPackageIdSuffix>$(MSBuildProjectName.Remove(0,18))</ESPackageIdSuffix>
 		<ESProto>$(ESPackageIdSuffix.ToLower()).proto</ESProto>
@@ -28,6 +25,7 @@
 		<Copyright>Copyright 2012-2020 Event Store Ltd</Copyright>
 		<MinVerTagPrefix>v</MinVerTagPrefix>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<GrpcPackageVersion>2.33.1</GrpcPackageVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="..\..\LICENSE.md" Pack="true" PackagePath="\"/>
@@ -38,11 +36,11 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Grpc.Tools" Version="2.30.0">
+		<PackageReference Include="Grpc.Tools" Version="$(GrpcPackageVersion)">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="MinVer" Version="2.3.0" PrivateAssets="All" />
+		<PackageReference Include="MinVer" Version="2.4.0" PrivateAssets="All" />
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="../EventStore.Client.Common/**/*.cs"/>

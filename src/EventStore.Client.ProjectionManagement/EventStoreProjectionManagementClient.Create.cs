@@ -14,7 +14,8 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task CreateOneTimeAsync(string query, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			using var call = _client.CreateAsync(new CreateReq {
+			using var call = new Projections.Projections.ProjectionsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					OneTime = new Empty(),
 					Query = query
@@ -34,7 +35,8 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task CreateContinuousAsync(string name, string query, bool trackEmittedStreams = false,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			using var call = _client.CreateAsync(new CreateReq {
+			using var call = new Projections.Projections.ProjectionsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					Continuous = new CreateReq.Types.Options.Types.Continuous {
 						Name = name,
@@ -56,7 +58,8 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task CreateTransientAsync(string name, string query, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			using var call = _client.CreateAsync(new CreateReq {
+			using var call = new Projections.Projections.ProjectionsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					Transient = new CreateReq.Types.Options.Types.Transient {
 						Name = name

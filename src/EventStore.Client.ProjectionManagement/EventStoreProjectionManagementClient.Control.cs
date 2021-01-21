@@ -14,7 +14,8 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task EnableAsync(string name, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			using var call = _client.EnableAsync(new EnableReq {
+			using var call = new Projections.Projections.ProjectionsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).EnableAsync(new EnableReq {
 				Options = new EnableReq.Types.Options {
 					Name = name
 				}
@@ -31,7 +32,8 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task ResetAsync(string name, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			using var call = _client.ResetAsync(new ResetReq {
+			using var call = new Projections.Projections.ProjectionsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).ResetAsync(new ResetReq {
 				Options = new ResetReq.Types.Options {
 					Name = name,
 					WriteCheckpoint = true
@@ -64,7 +66,8 @@ namespace EventStore.Client {
 
 		private async Task DisableInternalAsync(string name, bool writeCheckpoint, UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
-			using var call = _client.DisableAsync(new DisableReq {
+			using var call = new Projections.Projections.ProjectionsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).DisableAsync(new DisableReq {
 				Options = new DisableReq.Types.Options {
 					Name = name,
 					WriteCheckpoint = writeCheckpoint
@@ -81,7 +84,8 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task RestartSubsystemAsync(UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			await _client.RestartSubsystemAsync(new Empty(),
+			await new Projections.Projections.ProjectionsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).RestartSubsystemAsync(new Empty(),
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 	}

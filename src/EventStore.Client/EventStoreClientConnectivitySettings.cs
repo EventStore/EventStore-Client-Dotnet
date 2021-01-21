@@ -45,10 +45,14 @@ namespace EventStore.Client {
 		/// </summary>
 		public TimeSpan GossipTimeout { get; set; }
 
+#if !NETFRAMEWORK
+
 		/// <summary>
 		/// Whether or not to use HTTPS when communicating via gossip.
 		/// </summary>
+		[Obsolete]
 		public bool GossipOverHttps { get; set; } = true;
+#endif
 
 		/// <summary>
 		/// The polling interval used to discover the <see cref="EndPoint"/>.
@@ -60,6 +64,10 @@ namespace EventStore.Client {
 		/// </summary>
 		public NodePreference NodePreference { get; set; }
 
+		/// <summary>
+		/// The optional amount of time to wait after which a keepalive ping is sent on the transport.
+		/// </summary>
+		public TimeSpan? KeepAlive { get; set; }
 
 		/// <summary>
 		/// True if pointing to a single EventStoreDB node.
@@ -67,12 +75,16 @@ namespace EventStore.Client {
 		public bool IsSingleNode => GossipSeeds.Length == 0;
 
 		/// <summary>
+		/// True if communicating over a secure channel; otherwise false.
+		/// </summary>
+		public bool Insecure { get; set; }
+
+		/// <summary>
 		/// The default <see cref="EventStoreClientConnectivitySettings"/>.
 		/// </summary>
 		public static EventStoreClientConnectivitySettings Default => new EventStoreClientConnectivitySettings {
 			MaxDiscoverAttempts = 10,
 			GossipTimeout = TimeSpan.FromSeconds(5),
-			GossipOverHttps = true,
 			DiscoveryInterval = TimeSpan.FromMilliseconds(100),
 			NodePreference = NodePreference.Leader
 		};

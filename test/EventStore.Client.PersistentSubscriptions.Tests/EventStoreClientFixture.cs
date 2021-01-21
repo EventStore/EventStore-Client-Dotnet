@@ -23,11 +23,11 @@ namespace EventStore.Client {
 			await When().WithTimeout(TimeSpan.FromMinutes(5));
 		}
 
-		public override Task DisposeAsync() {
-			UserManagementClient?.Dispose();
-			StreamsClient?.Dispose();
-			Client?.Dispose();
-			return base.DisposeAsync();
+		public override async Task DisposeAsync() {
+			await UserManagementClient.DisposeAsync();
+			await StreamsClient.DisposeAsync();
+			await Client.DisposeAsync();
+			await base.DisposeAsync();
 		}
 	}
 }

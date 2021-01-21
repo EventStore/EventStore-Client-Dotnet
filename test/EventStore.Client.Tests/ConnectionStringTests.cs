@@ -89,7 +89,8 @@ namespace EventStore.Client {
 		 InlineData("esdb://user:pass@127.0.0.1/?discoveryInterval=abcd"),
 		 InlineData("esdb://user:pass@127.0.0.1/?gossipTimeout=defg"),
 		 InlineData("esdb://user:pass@127.0.0.1/?tlsVerifyCert=truee"),
-		 InlineData("esdb://user:pass@127.0.0.1/?nodePreference=blabla")]
+		 InlineData("esdb://user:pass@127.0.0.1/?nodePreference=blabla"),
+		 InlineData("esdb://user:pass@127.0.0.1/?keepAlive=blabla")]
 		public void connection_string_with_invalid_settings_should_throw(string connectionString) {
 			Assert.Throws<InvalidSettingException>(() => EventStoreClientSettings.Create(connectionString));
 		}
@@ -107,10 +108,8 @@ namespace EventStore.Client {
 
 		[Fact]
 		public void with_valid_single_node_connection_string() {
-			EventStoreClientSettings settings;
-
-			settings = EventStoreClientSettings.Create(
-				"esdb://user:pass@127.0.0.1/?maxDiscoverAttempts=13&DiscoveryInterval=37&gossipTimeout=33&nOdEPrEfErence=FoLLoWer&tlsVerifyCert=false");
+			var settings = EventStoreClientSettings.Create(
+				"esdb://user:pass@127.0.0.1/?maxDiscoverAttempts=13&DiscoveryInterval=37&gossipTimeout=33&nOdEPrEfErence=FoLLoWer&tlsVerifyCert=false&keepAlive=10");
 			Assert.Equal("user", settings.DefaultCredentials.Username);
 			Assert.Equal("pass", settings.DefaultCredentials.Password);
 			Assert.Equal("https://127.0.0.1:2113/", settings.ConnectivitySettings.Address.ToString());
@@ -121,21 +120,27 @@ namespace EventStore.Client {
 			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
 			Assert.Equal(33, settings.ConnectivitySettings.GossipTimeout.TotalMilliseconds);
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
+			Assert.Equal(TimeSpan.FromMilliseconds(10), settings.ConnectivitySettings.KeepAlive);
+#if !GRPC_CORE
 			Assert.NotNull(settings.CreateHttpMessageHandler);
-
+#endif
 			settings = EventStoreClientSettings.Create(
-				"esdb://127.0.0.1?connectionName=test&maxDiscoverAttempts=13&DiscoveryInterval=37&nOdEPrEfErence=FoLLoWer&tls=true&tlsVerifyCert=true&operationTimeout=330&throwOnAppendFailure=faLse");
+				"esdb://127.0.0.1?connectionName=test&maxDiscoverAttempts=13&DiscoveryInterval=37&nOdEPrEfErence=FoLLoWer&tls=true&tlsVerifyCert=true&operationTimeout=330&throwOnAppendFailure=faLse&KEepAlive=10");
 			Assert.Null(settings.DefaultCredentials);
 			Assert.Equal("test", settings.ConnectionName);
 			Assert.Equal("https://127.0.0.1:2113/", settings.ConnectivitySettings.Address.ToString());
 			Assert.Empty(settings.ConnectivitySettings.GossipSeeds);
 			Assert.Null(settings.ConnectivitySettings.IpGossipSeeds);
 			Assert.Null(settings.ConnectivitySettings.DnsGossipSeeds);
-			Assert.True(settings.ConnectivitySettings.GossipOverHttps);
+			Assert.False(settings.ConnectivitySettings.Insecure);
 			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
 			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
-			Assert.Null(settings.CreateHttpMessageHandler);
+			Assert.Equal(TimeSpan.FromMilliseconds(10), settings.ConnectivitySettings.KeepAlive);
+#if !GRPC_CORE
+			Assert.NotNull(settings.CreateHttpMessageHandler);
+#endif
+
 			Assert.Equal(330, settings.OperationOptions.TimeoutAfter.Value.TotalMilliseconds);
 			Assert.False(settings.OperationOptions.ThrowOnAppendFailure);
 
@@ -145,14 +150,16 @@ namespace EventStore.Client {
 			Assert.Empty(settings.ConnectivitySettings.GossipSeeds);
 			Assert.Null(settings.ConnectivitySettings.IpGossipSeeds);
 			Assert.Null(settings.ConnectivitySettings.DnsGossipSeeds);
-			Assert.True(settings.ConnectivitySettings.GossipOverHttps);
-			Assert.Null(settings.CreateHttpMessageHandler);
+			Assert.True(settings.ConnectivitySettings.Insecure);
+			Assert.Null(settings.ConnectivitySettings.KeepAlive);
+#if !GRPC_CORE
+			Assert.NotNull(settings.CreateHttpMessageHandler);
+#endif
 		}
 
 		[Fact]
 		public void with_default_settings() {
-			EventStoreClientSettings settings;
-			settings = EventStoreClientSettings.Create("esdb://hostname:4321/");
+			var settings = EventStoreClientSettings.Create("esdb://hostname:4321/");
 
 			Assert.Null(settings.ConnectionName);
 			Assert.Equal(EventStoreClientConnectivitySettings.Default.Address.Scheme,
@@ -168,26 +175,26 @@ namespace EventStore.Client {
 				settings.ConnectivitySettings.MaxDiscoverAttempts);
 			Assert.Equal(EventStoreClientConnectivitySettings.Default.NodePreference,
 				settings.ConnectivitySettings.NodePreference);
-			Assert.Equal(EventStoreClientConnectivitySettings.Default.GossipOverHttps,
-				settings.ConnectivitySettings.GossipOverHttps);
-			Assert.Equal(EventStoreClientOperationOptions.Default.TimeoutAfter.Value.TotalMilliseconds,
-				settings.OperationOptions.TimeoutAfter.Value.TotalMilliseconds);
+			Assert.Equal(EventStoreClientConnectivitySettings.Default.Insecure,
+				settings.ConnectivitySettings.Insecure);
+			Assert.Equal(EventStoreClientOperationOptions.Default.TimeoutAfter!.Value.TotalMilliseconds,
+				settings.OperationOptions.TimeoutAfter!.Value.TotalMilliseconds);
 			Assert.Equal(EventStoreClientOperationOptions.Default.ThrowOnAppendFailure,
 				settings.OperationOptions.ThrowOnAppendFailure);
+			Assert.Equal(EventStoreClientConnectivitySettings.Default.KeepAlive,
+				settings.ConnectivitySettings.KeepAlive);
 		}
 
 		[Fact]
 		public void with_valid_cluster_connection_string() {
-			EventStoreClientSettings settings;
-
-			settings = EventStoreClientSettings.Create(
-				"esdb://user:pass@127.0.0.1,127.0.0.2:3321,127.0.0.3/?maxDiscoverAttempts=13&DiscoveryInterval=37&nOdEPrEfErence=FoLLoWer&tlsVerifyCert=false");
+			var settings = EventStoreClientSettings.Create(
+				"esdb://user:pass@127.0.0.1,127.0.0.2:3321,127.0.0.3/?maxDiscoverAttempts=13&DiscoveryInterval=37&nOdEPrEfErence=FoLLoWer&tlsVerifyCert=false&KEepAlive=10");
 			Assert.Equal("user", settings.DefaultCredentials.Username);
 			Assert.Equal("pass", settings.DefaultCredentials.Password);
 			Assert.NotEmpty(settings.ConnectivitySettings.GossipSeeds);
 			Assert.NotNull(settings.ConnectivitySettings.IpGossipSeeds);
 			Assert.Null(settings.ConnectivitySettings.DnsGossipSeeds);
-			Assert.True(settings.ConnectivitySettings.GossipOverHttps);
+			Assert.False(settings.ConnectivitySettings.Insecure);
 			Assert.True(settings.ConnectivitySettings.IpGossipSeeds.Length == 3 &&
 			            Equals(settings.ConnectivitySettings.IpGossipSeeds[0].Address, IPAddress.Parse("127.0.0.1")) &&
 			            Equals(settings.ConnectivitySettings.IpGossipSeeds[0].Port, 2113) &&
@@ -198,17 +205,20 @@ namespace EventStore.Client {
 			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
 			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
+			Assert.Equal(TimeSpan.FromMilliseconds(10), settings.ConnectivitySettings.KeepAlive);
+#if !GRPC_CORE
 			Assert.NotNull(settings.CreateHttpMessageHandler);
+#endif
 
 
 			settings = EventStoreClientSettings.Create(
-				"esdb://user:pass@host1,host2:3321,127.0.0.3/?tls=false&maxDiscoverAttempts=13&DiscoveryInterval=37&nOdEPrEfErence=FoLLoWer&tlsVerifyCert=false");
+				"esdb://user:pass@host1,host2:3321,127.0.0.3/?tls=false&maxDiscoverAttempts=13&DiscoveryInterval=37&nOdEPrEfErence=FoLLoWer&tlsVerifyCert=false&KEepAlive=10");
 			Assert.Equal("user", settings.DefaultCredentials.Username);
 			Assert.Equal("pass", settings.DefaultCredentials.Password);
 			Assert.NotEmpty(settings.ConnectivitySettings.GossipSeeds);
 			Assert.Null(settings.ConnectivitySettings.IpGossipSeeds);
 			Assert.NotNull(settings.ConnectivitySettings.DnsGossipSeeds);
-			Assert.False(settings.ConnectivitySettings.GossipOverHttps);
+			Assert.True(settings.ConnectivitySettings.Insecure);
 			Assert.True(settings.ConnectivitySettings.DnsGossipSeeds.Length == 3 &&
 			            Equals(settings.ConnectivitySettings.DnsGossipSeeds[0].Host, "host1") &&
 			            Equals(settings.ConnectivitySettings.DnsGossipSeeds[0].Port, 2113) &&
@@ -219,7 +229,10 @@ namespace EventStore.Client {
 			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
 			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
 			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
+			Assert.Equal(TimeSpan.FromMilliseconds(10), settings.ConnectivitySettings.KeepAlive);
+#if !GRPC_CORE
 			Assert.NotNull(settings.CreateHttpMessageHandler);
+#endif
 		}
 
 		[Fact]
@@ -236,40 +249,42 @@ namespace EventStore.Client {
 			Assert.Equal(Uri.UriSchemeHttp, settings.ConnectivitySettings.Address.Scheme);
 
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/");
-			Assert.True(settings.ConnectivitySettings.GossipOverHttps);
+			Assert.False(settings.ConnectivitySettings.Insecure);
 
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3?tls=true");
-			Assert.True(settings.ConnectivitySettings.GossipOverHttps);
+			Assert.False(settings.ConnectivitySettings.Insecure);
 
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/?tls=fAlSe");
-			Assert.False(settings.ConnectivitySettings.GossipOverHttps);
+			Assert.True(settings.ConnectivitySettings.Insecure);
 		}
 
+#if !GRPC_CORE
 		[Fact]
 		public void with_different_tls_verify_cert_settings() {
 			EventStoreClientSettings settings;
 
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1/");
-			Assert.Null(settings.CreateHttpMessageHandler);
+			Assert.NotNull(settings.CreateHttpMessageHandler);
 
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1/?tlsVerifyCert=TrUe");
-			Assert.Null(settings.CreateHttpMessageHandler);
+			Assert.NotNull(settings.CreateHttpMessageHandler);
 
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1/?tlsVerifyCert=FaLsE");
 			Assert.NotNull(settings.CreateHttpMessageHandler);
 
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/");
-			Assert.Null(settings.CreateHttpMessageHandler);
+			Assert.NotNull(settings.CreateHttpMessageHandler);
 
 			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/?tlsVerifyCert=true");
-			Assert.Null(settings.CreateHttpMessageHandler);
+			Assert.NotNull(settings.CreateHttpMessageHandler);
 
 			settings = EventStoreClientSettings.Create(
 				"esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/?tlsVerifyCert=false");
 			Assert.NotNull(settings.CreateHttpMessageHandler);
 		}
+#endif
 
-		private static IEnumerable<object[]> DiscoverSchemeCases() {
+		public static IEnumerable<object[]> DiscoverSchemeCases() {
 			yield return new object[] {
 				"esdb+discover://hostname:4321", new EndPoint[] {
 					new DnsEndPoint("hostname", 4321)

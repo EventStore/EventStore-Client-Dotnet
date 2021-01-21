@@ -11,7 +11,6 @@ namespace EventStore.Client {
 	///The client used to manage projections on the EventStoreDB.
 	/// </summary>
 	public partial class EventStoreProjectionManagementClient : EventStoreClientBase {
-		private readonly Projections.Projections.ProjectionsClient _client;
 		private readonly ILogger _log;
 
 		/// <summary>
@@ -27,7 +26,6 @@ namespace EventStore.Client {
 		/// <param name="settings"></param>
 		public EventStoreProjectionManagementClient(EventStoreClientSettings? settings) : base(settings,
 			new Dictionary<string, Func<RpcException, Exception>>()) {
-			_client = new Projections.Projections.ProjectionsClient(CallInvoker);
 			_log = settings?.LoggerFactory?.CreateLogger<EventStoreProjectionManagementClient>() ??
 			       new NullLogger<EventStoreProjectionManagementClient>();
 		}

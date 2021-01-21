@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 
 #nullable enable
 namespace EventStore.Client {
@@ -12,8 +13,7 @@ namespace EventStore.Client {
 
 			public VNodeState State { get; set; }
 			public bool IsAlive { get; set; }
-			public string? HttpEndPointAddress { get; set; }
-			public int HttpEndPointPort { get; set; }
+			public DnsEndPoint EndPoint { get; set; } = null!;
 		}
 
 		public enum VNodeState {

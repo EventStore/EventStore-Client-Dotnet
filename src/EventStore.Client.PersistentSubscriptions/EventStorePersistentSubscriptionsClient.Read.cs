@@ -21,7 +21,7 @@ namespace EventStore.Client {
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
-		public Task<PersistentSubscription> SubscribeAsync(string streamName, string groupName,
+		public async Task<PersistentSubscription> SubscribeAsync(string streamName, string groupName,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
 			UserCredentials? userCredentials = null, int bufferSize = 10, bool autoAck = true,
@@ -53,16 +53,16 @@ namespace EventStore.Client {
 			var operationOptions = Settings.OperationOptions.Clone();
 			operationOptions.TimeoutAfter = new TimeSpan?();
 
-			var call = _client.Read(EventStoreCallOptions.Create(Settings, operationOptions, userCredentials,
-				cancellationToken));
+			var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Read(EventStoreCallOptions.Create(
+				Settings, operationOptions, userCredentials, cancellationToken));
 
-			return PersistentSubscription.Confirm(call, new ReadReq.Types.Options {
-					BufferSize = bufferSize,
-					GroupName = groupName,
-					StreamIdentifier = streamName,
-					UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()}
-				}, autoAck, eventAppeared,
-				subscriptionDropped ?? delegate { }, cancellationToken);
+			return await PersistentSubscription.Confirm(call, new ReadReq.Types.Options {
+				BufferSize = bufferSize,
+				GroupName = groupName,
+				StreamIdentifier = streamName,
+				UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()}
+			}, autoAck, eventAppeared, subscriptionDropped ?? delegate { }, cancellationToken).ConfigureAwait(false);
 		}
 	}
 }

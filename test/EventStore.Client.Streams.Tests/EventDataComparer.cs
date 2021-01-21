@@ -9,11 +9,11 @@ namespace EventStore.Client {
 			if (expected.Type != actual.EventType)
 				return false;
 
-			var expectedDataString = Encoding.UTF8.GetString(expected.Data.Span);
-			var expectedMetadataString = Encoding.UTF8.GetString(expected.Metadata.Span);
+			var expectedDataString = Encoding.UTF8.GetString(expected.Data.ToArray());
+			var expectedMetadataString = Encoding.UTF8.GetString(expected.Metadata.ToArray());
 
-			var actualDataString = Encoding.UTF8.GetString(actual.Data.Span);
-			var actualMetadataDataString = Encoding.UTF8.GetString(actual.Metadata.Span);
+			var actualDataString = Encoding.UTF8.GetString(actual.Data.ToArray());
+			var actualMetadataDataString = Encoding.UTF8.GetString(actual.Metadata.ToArray());
 
 			return expectedDataString == actualDataString && expectedMetadataString == actualMetadataDataString;
 		}

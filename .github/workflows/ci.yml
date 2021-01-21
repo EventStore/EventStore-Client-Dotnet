@@ -8,13 +8,16 @@ on:
     tags:
     - v*
 
-env:
-  DOTNET_SDK_VERSION: 3.1.302
 jobs:
   vulnerability-scan:
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: [5.0-focal, 3.1-bionic]
     runs-on: ubuntu-latest
-    name: ci/github/scan-vulnerabilities
-    container: mcr.microsoft.com/dotnet/core/sdk:3.1-bionic
+    name: scan-vulnerabilities/${{ matrix.sdk }}
+    container: mcr.microsoft.com/dotnet/sdk:${{ matrix.sdk }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -23,16 +26,18 @@ jobs:
         dotnet tool restore
         dotnet restore
         dotnet tool run dotnet-retire
-  build:
+  build-dotnet:
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
+        framework: [netcoreapp3.1, net5.0, net48]
         os: [ubuntu-18.04]
         test: ["", .Streams, .PersistentSubscriptions, .Operations, .UserManagement, .ProjectionManagement]
         configuration: [release]
         docker-tag: ['ci']
     runs-on: ${{ matrix.os }}
-    name: ci/github/build-${{ matrix.os }}/EventStore.Client${{ matrix.test }}
+    name: build-${{ matrix.os }}/${{ matrix.framework }}/EventStore.Client${{ matrix.test }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -49,14 +54,20 @@ jobs:
       shell: bash
       run: |
         docker pull docker.pkg.github.com/eventstore/eventstore/eventstore:${{ matrix.docker-tag }}
-    - name: Install Dotnet
+    - name: Install netcoreapp3.1
       uses: actions/setup-dotnet@v1
+      if: matrix.framework == 'netcoreapp3.1'
       with:
-        dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
+        dotnet-version: 3.1.x
+    - name: Install net5.0
+      uses: actions/setup-dotnet@v1
+      if: matrix.framework == 'net5.0'
+      with:
+        dotnet-version: 5.0.x
     - name: Compile
       shell: bash
       run: |
-        dotnet build --configuration ${{ matrix.configuration }} src/EventStore.Client${{ matrix.test }}
+        dotnet build --configuration ${{ matrix.configuration }} --framework ${{ matrix.framework }} src/EventStore.Client${{ matrix.test }}
     - name: Run Tests
       shell: bash
       env:
@@ -64,9 +75,10 @@ jobs:
       run: |
         ./gencert.sh
         dotnet test --configuration ${{ matrix.configuration }} --blame \
-        --logger:html --logger:trx --logger:"console;verbosity=normal" \
-        --results-directory=$(pwd)/test-results/test/EventStore.Client${{ matrix.test }}.Tests \
-        test/EventStore.Client${{ matrix.test }}.Tests
+          --logger:html --logger:trx --logger:"console;verbosity=normal" \
+          --results-directory=$(pwd)/test-results/test/EventStore.Client${{ matrix.test }}.Tests \
+          --framework ${{ matrix.framework }} \
+          test/EventStore.Client${{ matrix.test }}.Tests
     - name: Collect Test Results
       shell: bash
       if: always()
@@ -77,17 +89,18 @@ jobs:
       if: always()
       with:
         path: test-results.html
-        name: test-results-${{ matrix.configuration }}-EventStore.Client${{ matrix.test }}.html
+        name: test-results-${{ matrix.configuration }}-${{ matrix.framework }}-EventStore.Client${{ matrix.test }}.html
     - name: Publish Test Results (All)
       uses: actions/upload-artifact@v1
       if: always()
       with:
-        name: test-results-${{ matrix.configuration }}-EventStore.Client${{ matrix.test }}
+        name: test-results-${{ matrix.configuration }}-${{ matrix.framework }}-EventStore.Client${{ matrix.test }}
         path: test-results
   publish:
-    needs: [vulnerability-scan, build]
+    timeout-minutes: 5
+    needs: [vulnerability-scan, build-dotnet]
     runs-on: ubuntu-latest
-    name: ci/github/publish
+    name: publish
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -102,10 +115,14 @@ jobs:
     - shell: bash
       run: |
         git fetch --prune --unshallow
-    - name: Setup Dotnet
+    - name: Install netcoreapp3.1
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
+        dotnet-version: 3.1.x
+    - name: Install net5.0
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
     - name: Dotnet Pack
       shell: bash
       run: |

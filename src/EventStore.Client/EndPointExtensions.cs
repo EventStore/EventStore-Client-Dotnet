@@ -3,9 +3,6 @@ using System.Net;
 
 namespace EventStore.Client {
 	internal static class EndPointExtensions {
-		public static string HTTP_SCHEMA => Uri.UriSchemeHttp;
-		public static string HTTPS_SCHEMA => Uri.UriSchemeHttps;
-
 		public static string GetHost(this EndPoint endpoint) =>
 			endpoint switch {
 				IPEndPoint ip => ip.Address.ToString(),
@@ -21,6 +18,12 @@ namespace EventStore.Client {
 				_ => throw new ArgumentOutOfRangeException(nameof(endpoint), endpoint?.GetType(),
 					"An invalid endpoint has been provided")
 			};
+
+		public static Uri ToUri(this EndPoint endPoint, bool https) => new UriBuilder {
+			Scheme = https ? Uri.UriSchemeHttps : Uri.UriSchemeHttp,
+			Host = endPoint.GetHost(),
+			Port = endPoint.GetPort()
+		}.Uri;
 
 		public static string ToHttpUrl(this EndPoint endPoint, string schema, string rawUrl = null) =>
 			endPoint switch {

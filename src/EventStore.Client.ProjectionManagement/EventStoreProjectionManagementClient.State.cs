@@ -22,7 +22,10 @@ namespace EventStore.Client {
 			var value = await GetResultInternalAsync(name, partition, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 
-			await using var stream = new MemoryStream();
+#if !NETFRAMEWORK
+			await
+#endif
+			using var stream = new MemoryStream();
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
 			serializer.Write(writer, value, new JsonSerializerOptions());
@@ -47,21 +50,24 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken = default) {
 			var value = await GetResultInternalAsync(name, partition, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
-
-			await using var stream = new MemoryStream();
+#if !NETFRAMEWORK
+			await
+#endif
+				using var stream = new MemoryStream();
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
 			serializer.Write(writer, value, new JsonSerializerOptions());
 			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 			stream.Position = 0;
 
-			return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions);
+			return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
 		}
 
 		private async ValueTask<Value> GetResultInternalAsync(string name, string? partition,
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
-			using var call = _client.ResultAsync(new ResultReq {
+			using var call = new Projections.Projections.ProjectionsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).ResultAsync(new ResultReq {
 				Options = new ResultReq.Types.Options {
 					Name = name,
 					Partition = partition ?? string.Empty
@@ -85,7 +91,10 @@ namespace EventStore.Client {
 			var value = await GetStateInternalAsync(name, partition, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 
-			await using var stream = new MemoryStream();
+#if !NETFRAMEWORK
+			await
+#endif
+			using var stream = new MemoryStream();
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
 			serializer.Write(writer, value, new JsonSerializerOptions());
@@ -111,20 +120,24 @@ namespace EventStore.Client {
 			var value = await GetStateInternalAsync(name, partition, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 
-			await using var stream = new MemoryStream();
+#if !NETFRAMEWORK
+			await
+#endif
+			using var stream = new MemoryStream();
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
 			serializer.Write(writer, value, new JsonSerializerOptions());
 			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 			stream.Position = 0;
 
-			return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions);
+			return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
 		}
 
 		private async ValueTask<Value> GetStateInternalAsync(string name, string? partition,
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
-			using var call = _client.StateAsync(new StateReq {
+			using var call = new Projections.Projections.ProjectionsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).StateAsync(new StateReq {
 				Options = new StateReq.Types.Options {
 					Name = name,
 					Partition = partition ?? string.Empty

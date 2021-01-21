@@ -9,7 +9,7 @@
       ]
     },
     "dotnet-retire": {
-      "version": "4.0.1",
+      "version": "5.0.0",
       "commands": [
         "dotnet-retire"
       ]

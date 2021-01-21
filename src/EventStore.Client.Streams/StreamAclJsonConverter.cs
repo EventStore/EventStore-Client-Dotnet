@@ -60,7 +60,7 @@ namespace EventStore.Client {
 			}
 
 			if (reader.TokenType == JsonTokenType.String) {
-				return new[] {reader.GetString()};
+				return new[] {reader.GetString()!};
 			}
 
 			if (reader.TokenType != JsonTokenType.StartArray) {
@@ -78,7 +78,7 @@ namespace EventStore.Client {
 					throw new InvalidOperationException();
 				}
 
-				roles.Add(reader.GetString());
+				roles.Add(reader.GetString()!);
 			}
 
 			return roles.ToArray();

@@ -8,9 +8,9 @@ namespace EventStore.Client {
 			Client = new EventStoreUserManagementClient(Settings);
 		}
 
-		public override Task DisposeAsync() {
-			Client?.Dispose();
-			return base.DisposeAsync();
+		public override async Task DisposeAsync() {
+			await Client.DisposeAsync();
+			await base.DisposeAsync();
 		}
 	}
 }

@@ -1,5 +1,6 @@
 <Project>
 	<PropertyGroup>
+		<TargetFrameworks>net48;netcoreapp3.1;net5.0</TargetFrameworks>
 		<Platform>x64</Platform>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<Nullable>disable</Nullable>
@@ -13,8 +14,15 @@
 		<RootNamespace>EventStore.Client</RootNamespace>
 		<UseLinkBase>true</UseLinkBase>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'netcoreapp3.1'">
+		<DefineConstants>$(DefineConstants);GRPC_CORE</DefineConstants>
+	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="NETStandard.Library" Version="2.0.3"/>
 		<PackageReference Include="System.Net.Http" Version="4.3.4"/>
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+		<PackageReference Include="IndexRange" Version="1.0.0" />
+		<PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="All" />
 	</ItemGroup>
 </Project>

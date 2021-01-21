@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
-using Grpc.Net.Client;
+
 using Microsoft.Extensions.Logging;
 
 #nullable enable
@@ -22,18 +22,23 @@ namespace EventStore.Client {
 		/// </summary>
 		public string? ConnectionName { get; set; }
 
+#if !NETFRAMEWORK
 		/// <summary>
 		/// An optional <see cref="HttpMessageHandler"/> factory.
 		/// </summary>
+#if NETCOREAPP3_1
+		[Obsolete]
+#endif
 		public Func<HttpMessageHandler>? CreateHttpMessageHandler { get; set; }
 
+#endif
 		/// <summary>
 		/// An optional <see cref="ILoggerFactory"/> to use.
 		/// </summary>
 		public ILoggerFactory? LoggerFactory { get; set; }
 
 		/// <summary>
-		/// The optional <see cref="ChannelCredentials"/> to use when creating the <see cref="GrpcChannel"/>.
+		/// The optional <see cref="ChannelCredentials"/> to use when creating the <see cref="ChannelBase"/>.
 		/// </summary>
 		public ChannelCredentials? ChannelCredentials { get; set; }
 

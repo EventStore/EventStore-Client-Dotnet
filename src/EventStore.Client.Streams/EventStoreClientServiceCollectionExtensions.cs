@@ -13,6 +13,19 @@ namespace Microsoft.Extensions.DependencyInjection {
 	/// A set of extension methods for <see cref="IServiceCollection"/> which provide support for an <see cref="EventStoreClient"/>.
 	/// </summary>
 	public static class EventStoreClientServiceCollectionExtensions {
+#if GRPC_CORE
+		/// <summary>
+		/// Adds an <see cref="EventStoreClient"/> to the <see cref="IServiceCollection"/>.
+		/// </summary>
+		/// <param name="services"></param>
+		/// <param name="address"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static IServiceCollection AddEventStoreClient(this IServiceCollection services, Uri address)
+			=> services.AddEventStoreClient(options => {
+				options.ConnectivitySettings.Address = address;
+			});
+#else
 		/// <summary>
 		/// Adds an <see cref="EventStoreClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
@@ -27,8 +40,24 @@ namespace Microsoft.Extensions.DependencyInjection {
 				options.ConnectivitySettings.Address = address;
 				options.CreateHttpMessageHandler = createHttpMessageHandler;
 			});
+#endif
 
-
+#if NETCOREAPP3_1
+		/// <summary>
+		/// Adds an <see cref="EventStoreClient"/> to the <see cref="IServiceCollection"/>.
+		/// </summary>
+		/// <param name="services"></param>
+		/// <param name="address"></param>
+		/// <param name="createHttpMessageHandler"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static IServiceCollection AddEventStoreClient(this IServiceCollection services, Uri address,
+			// ReSharper disable once MethodOverloadWithOptionalParameter
+			Func<HttpMessageHandler>? createHttpMessageHandler = null)
+			=> services.AddEventStoreClient(options => {
+				options.ConnectivitySettings.Address = address;
+			});
+#endif
 		/// <summary>
 		/// Adds an <see cref="EventStoreClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>

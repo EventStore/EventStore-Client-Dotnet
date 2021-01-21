@@ -39,7 +39,8 @@ namespace EventStore.Client {
 				throw new ArgumentNullException(nameof(settings));
 			}
 
-			await _client.CreateAsync(new CreateReq {
+			await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
+				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					StreamIdentifier = streamName,
 					GroupName = groupName,

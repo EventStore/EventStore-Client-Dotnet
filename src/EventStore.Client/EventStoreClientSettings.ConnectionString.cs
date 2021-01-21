@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+#if !GRPC_CORE
 using System.Net.Http;
+#endif
 
 namespace EventStore.Client {
 	public partial class EventStoreClientSettings {
@@ -11,9 +13,8 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="connectionString"></param>
 		/// <returns></returns>
-		public static EventStoreClientSettings Create(string connectionString) {
-			return ConnectionStringParser.Parse(connectionString);
-		}
+		public static EventStoreClientSettings Create(string connectionString) =>
+			ConnectionStringParser.Parse(connectionString);
 
 		private static class ConnectionStringParser {
 			private const string SchemeSeparator = "://";
@@ -26,14 +27,15 @@ namespace EventStore.Client {
 			private const string QuestionMark = "?";
 
 			private const string Tls = nameof(Tls);
-			private const string ConnectionName = "ConnectionName";
-			private const string MaxDiscoverAttempts = "MaxDiscoverAttempts";
-			private const string DiscoveryInterval = "DiscoveryInterval";
-			private const string GossipTimeout = "GossipTimeout";
-			private const string NodePreference = "NodePreference";
-			private const string TlsVerifyCert = "TlsVerifyCert";
-			private const string OperationTimeout = "OperationTimeout";
-			private const string ThrowOnAppendFailure = "ThrowOnAppendFailure";
+			private const string ConnectionName = nameof(ConnectionName);
+			private const string MaxDiscoverAttempts = nameof(MaxDiscoverAttempts);
+			private const string DiscoveryInterval = nameof(DiscoveryInterval);
+			private const string GossipTimeout = nameof(GossipTimeout);
+			private const string NodePreference = nameof(NodePreference);
+			private const string TlsVerifyCert = nameof(TlsVerifyCert);
+			private const string OperationTimeout = nameof(OperationTimeout);
+			private const string ThrowOnAppendFailure = nameof(ThrowOnAppendFailure);
+			private const string KeepAlive = nameof(KeepAlive);
 
 			private const string UriSchemeDiscover = "esdb+discover";
 
@@ -51,7 +53,8 @@ namespace EventStore.Client {
 					{Tls, typeof(bool)},
 					{TlsVerifyCert, typeof(bool)},
 					{OperationTimeout, typeof(int)},
-					{ThrowOnAppendFailure, typeof(bool)}
+					{ThrowOnAppendFailure, typeof(bool)},
+					{KeepAlive, typeof(int)}
 				};
 
 			public static EventStoreClientSettings Parse(string connectionString) {
@@ -157,39 +160,43 @@ namespace EventStore.Client {
 					useTls = (bool)tls;
 				}
 
-				if (typedOptions.TryGetValue(TlsVerifyCert, out object tlsVerifyCert)) {
-					if (!(bool)tlsVerifyCert) {
-#if NETCOREAPP3_1
-						settings.CreateHttpMessageHandler = () => new SocketsHttpHandler {
-							SslOptions = {
-								RemoteCertificateValidationCallback = delegate { return true; }
-							}
-						};
-#elif NETSTANDARD2_1
-						settings.CreateHttpMessageHandler = () => new HttpClientHandler {
-							ServerCertificateCustomValidationCallback = delegate { return true; }
-						};
-#endif
-					}
-				}
-
 				if (typedOptions.TryGetValue(OperationTimeout, out object operationTimeout))
 					settings.OperationOptions.TimeoutAfter = TimeSpan.FromMilliseconds((int)operationTimeout);
 
 				if (typedOptions.TryGetValue(ThrowOnAppendFailure, out object throwOnAppendFailure))
 					settings.OperationOptions.ThrowOnAppendFailure = (bool)throwOnAppendFailure;
 
+				if (typedOptions.TryGetValue(KeepAlive, out var keepAliveMs)) {
+					settings.ConnectivitySettings.KeepAlive = TimeSpan.FromMilliseconds((int)keepAliveMs);
+				}
+
+				connSettings.Insecure = !useTls;
+
 				if (hosts.Length == 1 && scheme != UriSchemeDiscover) {
-					connSettings.Address = new Uri(hosts[0].ToHttpUrl(useTls ? Uri.UriSchemeHttps : Uri.UriSchemeHttp));
+					connSettings.Address = hosts[0].ToUri(useTls);
 				} else {
 					if (hosts.Any(x => x is DnsEndPoint))
 						connSettings.DnsGossipSeeds =
 							Array.ConvertAll(hosts, x => new DnsEndPoint(x.GetHost(), x.GetPort()));
 					else
 						connSettings.IpGossipSeeds = Array.ConvertAll(hosts, x => x as IPEndPoint);
-
-					connSettings.GossipOverHttps = useTls;
 				}
+
+#if !GRPC_CORE
+				settings.CreateHttpMessageHandler = () => {
+					var handler = new SocketsHttpHandler();
+
+					if (typedOptions.TryGetValue(TlsVerifyCert, out var tlsVerifyCert) && !(bool)tlsVerifyCert) {
+						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+					}
+
+					if (settings.ConnectivitySettings.KeepAlive.HasValue) {
+						handler.KeepAlivePingDelay = settings.ConnectivitySettings.KeepAlive.Value;
+					}
+
+					return handler;
+				};
+#endif
 
 				return settings;
 			}
@@ -198,16 +205,16 @@ namespace EventStore.Client {
 				!Schemes.Contains(s) ? throw new InvalidSchemeException(s, Schemes) : s;
 
 			private static (string, string) ParseUserInfo(string s) {
-				var tokens = s.Split(Colon);
+				var tokens = s.Split(Colon[0]);
 				if (tokens.Length != 2) throw new InvalidUserCredentialsException(s);
 				return (tokens[0], tokens[1]);
 			}
 
 			private static EndPoint[] ParseHosts(string s) {
-				var hostsTokens = s.Split(Comma);
+				var hostsTokens = s.Split(Comma[0]);
 				var hosts = new List<EndPoint>();
 				foreach (var hostToken in hostsTokens) {
-					var hostPortToken = hostToken.Split(Colon);
+					var hostPortToken = hostToken.Split(Colon[0]);
 					string host;
 					int port;
 					switch (hostPortToken.Length) {
@@ -241,7 +248,7 @@ namespace EventStore.Client {
 
 			private static Dictionary<string, string> ParseKeyValuePairs(string s) {
 				var options = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
-				var optionsTokens = s.Split(Ampersand);
+				var optionsTokens = s.Split(Ampersand[0]);
 				foreach (var optionToken in optionsTokens) {
 					var (key, val) = ParseKeyValuePair(optionToken);
 					try {
@@ -255,7 +262,7 @@ namespace EventStore.Client {
 			}
 
 			private static (string, string) ParseKeyValuePair(string s) {
-				var keyValueToken = s.Split(Equal);
+				var keyValueToken = s.Split(Equal[0]);
 				if (keyValueToken.Length != 2) {
 					throw new InvalidKeyValuePairException(s);
 				}

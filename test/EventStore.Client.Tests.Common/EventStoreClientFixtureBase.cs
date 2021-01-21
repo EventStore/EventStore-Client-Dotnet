@@ -14,6 +14,9 @@ using System.Threading.Tasks;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Model.Builders;
 using Ductus.FluentDocker.Services;
+#if GRPC_CORE
+using Grpc.Core;
+#endif
 using Polly;
 using Serilog;
 using Serilog.Events;
@@ -27,11 +30,12 @@ namespace EventStore.Client {
 	public abstract class EventStoreClientFixtureBase : IAsyncLifetime {
 		public const string TestEventType = "-";
 
+		private const string ConnectionString = "esdb://localhost:2113/?tlsVerifyCert=false";
+
 		private static readonly Subject<LogEvent> LogEventSubject = new Subject<LogEvent>();
 
 		private static readonly string HostCertificatePath =
-			Path.GetFullPath(Path.Combine("..", "..", "..", "..", "certs"), Environment.CurrentDirectory);
-
+			Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "..", "..", "..", "..", "certs"));
 		private readonly IList<IDisposable> _disposables;
 		protected EventStoreTestServer TestServer { get; }
 		protected EventStoreClientSettings Settings { get; }
@@ -73,11 +77,18 @@ namespace EventStore.Client {
 			_disposables = new List<IDisposable>();
 			ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
 
-			Settings = clientSettings ?? EventStoreClientSettings.Create("esdb://localhost:2113/?tlsVerifyCert=false");
+			Settings = clientSettings ?? EventStoreClientSettings.Create(ConnectionString);
 
 			Settings.OperationOptions.TimeoutAfter = Debugger.IsAttached
 				? new TimeSpan?()
 				: TimeSpan.FromSeconds(30);
+
+#if GRPC_CORE
+			Settings.ChannelCredentials ??= GetServerCertificate();
+
+			static SslCredentials GetServerCertificate() => new SslCredentials(
+				File.ReadAllText(Path.Combine(HostCertificatePath, "ca", "ca.crt")), null, _ => true);
+#endif
 
 			Settings.LoggerFactory ??= new SerilogLoggerFactory();
 
@@ -153,13 +164,20 @@ namespace EventStore.Client {
 			private static readonly string ContainerName = "es-client-dotnet-test";
 
 			public EventStoreTestServer(Uri address, IDictionary<string, string>? envOverrides) {
-				_httpClient = new HttpClient(new SocketsHttpHandler {
-					SslOptions = {
-						RemoteCertificateValidationCallback = delegate { return true; }
+				_httpClient = new HttpClient(
+#if NETFRAMEWORK
+					new HttpClientHandler {
+						ServerCertificateCustomValidationCallback = delegate { return true; }
 					}
-				}) {
+#else
+					new SocketsHttpHandler {
+						SslOptions = {
+							RemoteCertificateValidationCallback = delegate { return true; }
+						}
+					}
+#endif
+				) {
 					BaseAddress = address,
-
 				};
 				var tag = Environment.GetEnvironmentVariable("ES_DOCKER_TAG") ?? "ci";
 
@@ -174,6 +192,7 @@ namespace EventStore.Client {
 				foreach (var (key, value) in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
 					env[key] = value;
 				}
+
 				_eventStore = new Builder()
 					.UseContainer()
 					.UseImage($"docker.pkg.github.com/eventstore/eventstore/eventstore:{tag}")

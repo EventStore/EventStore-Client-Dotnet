@@ -20,7 +20,6 @@ namespace EventStore.Client {
 			},
 		};
 
-		private readonly Streams.Streams.StreamsClient _client;
 		private readonly ILogger<EventStoreClient> _log;
 
 		private static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap =
@@ -60,7 +59,6 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="settings"></param>
 		public EventStoreClient(EventStoreClientSettings? settings = null) : base(settings, ExceptionMap) {
-			_client = new Streams.Streams.StreamsClient(CallInvoker);
 			_log = Settings.LoggerFactory?.CreateLogger<EventStoreClient>() ?? new NullLogger<EventStoreClient>();
 		}
 
