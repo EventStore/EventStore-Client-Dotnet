@@ -1,12 +1,39 @@
-version: '3'
+version: "3.5"
+
 services:
-  eventstore:
-    image: docker.pkg.github.com/eventstore/eventstore/eventstore:ci
-    volumes:
-      - ./certs:/usr/certs
-    environment:
-      - EVENTSTORE_CERTIFICATE_FILE=/usr/certs/dev.crt
-      - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/usr/certs/dev.key
-      - EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH=/usr/certs
-    ports:
-      - 2113:2113
+    grpc.client:
+        build: ./
+        environment:
+            - ESDB_ADDRESS=https://eventstoredb:2113
+        networks:
+            - esdb_network
+        depends_on:
+            eventstore.db:
+                condition: service_healthy
+
+    eventstore.db:
+        image: eventstore/eventstore:20.10.0-buster-slim
+        container_name: eventstoredb
+        environment:
+            - EVENTSTORE_CLUSTER_SIZE=1
+            - EVENTSTORE_RUN_PROJECTIONS=All
+            - EVENTSTORE_ENABLE_EXTERNAL_TCP=true
+            - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
+            - EVENTSTORE_EXT_TCP_PORT=1113
+            - EVENTSTORE_EXT_HTTP_PORT=2113
+            - EVENTSTORE_CERTIFICATE_FILE=/etc/eventstore/certs/node/node.crt
+            - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/etc/eventstore/certs/node/node.key
+            - EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH=/etc/eventstore/certs/ca
+        ports:
+            - 1111:1113
+            - 2111:2113
+        networks:
+            - esdb_network
+        volumes:
+            - ./certs:/etc/eventstore/certs
+        restart: unless-stopped
+
+networks:
+    esdb_network:
+        name: eventstoredb.local
+        driver: bridge
