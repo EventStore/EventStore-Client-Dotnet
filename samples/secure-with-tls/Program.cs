@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.Client;
@@ -9,15 +7,19 @@ using EventStore.Client;
 namespace secure_with_tls {
 	class Program {
 		static async Task Main(string[] args) {
+			var address = Environment.GetEnvironmentVariable("ESDB_ADDRESS") ?? "https://localhost:2113";
+			
+			Console.WriteLine($"Connecting to EventStoreDB at: {address}");
+			
 			//creating-connection
 			var settings = new EventStoreClientSettings {
 				ConnectivitySettings = {
-					Address = new Uri("https://localhost:2113")
+					Address = new Uri(address)
 				}
 			};
 
 			var client = new EventStoreClient(settings);
-			
+
 			//append-to-stream
 			var eventData = new EventData(
 				Uuid.NewUuid(),
@@ -25,13 +27,15 @@ namespace secure_with_tls {
 				Encoding.UTF8.GetBytes("{\"id\": \"1\" \"value\": \"some value\"}")
 			);
 
-			await client.AppendToStreamAsync(
+			var appendResult = await client.AppendToStreamAsync(
 				"some-stream",
-				StreamState.NoStream,
+				StreamState.Any,
 				new List<EventData> {
 					eventData
 				});
 			//append-to-stream
+
+			Console.WriteLine($"Append result: {appendResult.LogPosition}");
 		}
 	}
 }

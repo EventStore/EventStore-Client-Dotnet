@@ -1,0 +1,18 @@
+version: "3.5"
+
+services:
+    cert-gen:
+        image: eventstore/es-gencert-cli:1.0.2
+        entrypoint: bash
+        command: >
+            -c "es-gencert-cli create-ca -out /tmp/certs/ca &&
+                es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out \
+                /tmp/certs/node -ip-addresses 127.0.0.1 -dns-names localhost,eventstoredb"
+        user: "1000:1000"
+        volumes:
+            - "./certs:/tmp/certs"
+
+networks:
+    esdb_network:
+        name: eventstoredb.local
+        driver: bridge
