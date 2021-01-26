@@ -4,15 +4,17 @@ services:
     grpc.client:
         build: ./
         environment:
-            - ESDB_ADDRESS=https://eventstoredb:2113
+            # URL should match the DNS name in certificate and container name
+            - ESDB_ADDRESS=https://eventstoredb:2114
         networks:
             - esdb_network
         depends_on:
-            eventstore.db:
+            eventstoredb:
                 condition: service_healthy
 
-    eventstore.db:
+    eventstoredb:
         image: eventstore/eventstore:20.10.0-buster-slim
+        # container_name should match the DNS name in certificate
         container_name: eventstoredb
         environment:
             - EVENTSTORE_CLUSTER_SIZE=1
@@ -21,15 +23,17 @@ services:
             - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
             - EVENTSTORE_EXT_TCP_PORT=1113
             - EVENTSTORE_EXT_HTTP_PORT=2113
+            # set certificates location
             - EVENTSTORE_CERTIFICATE_FILE=/etc/eventstore/certs/node/node.crt
             - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/etc/eventstore/certs/node/node.key
             - EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH=/etc/eventstore/certs/ca
         ports:
-            - 1111:1113
-            - 2111:2113
+            - 1113:1113
+            - 2113:2113
         networks:
             - esdb_network
         volumes:
+            # define volume that will copy pregenerated certificates
             - ./certs:/etc/eventstore/certs
         restart: unless-stopped
 
