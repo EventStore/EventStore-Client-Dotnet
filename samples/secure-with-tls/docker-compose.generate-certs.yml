@@ -4,6 +4,7 @@ services:
     cert-gen:
         image: eventstore/es-gencert-cli:1.0.2
         entrypoint: bash
+        # dns-name in this case `eventstoredb` matches EventStoreDB container_name and URL it's accessed at `docker-compose.yml`
         command: >
             -c "es-gencert-cli create-ca -out /tmp/certs/ca &&
                 es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out \
@@ -11,8 +12,3 @@ services:
         user: "1000:1000"
         volumes:
             - "./certs:/tmp/certs"
-
-networks:
-    esdb_network:
-        name: eventstoredb.local
-        driver: bridge
