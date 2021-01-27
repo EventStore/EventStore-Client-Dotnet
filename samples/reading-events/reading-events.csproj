@@ -2,11 +2,13 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <TargetFramework>net5.0</TargetFramework>
         <RootNamespace>reading_events</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
+			<!-- Use NuGet instead of ProjectReferences -->
+			<!-- <PackageReference Include="EventStore.Client.Grpc.Streams" Version="20.10.0" /> -->
       <ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
     </ItemGroup>
 
