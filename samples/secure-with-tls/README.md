@@ -111,10 +111,10 @@ To run samples locally, you need to install the generated CA certificate.
   ```
 - Update the CA store: 
   ```console
-  sudo update-ca-certificates.
+  sudo update-ca-certificates
   ```
 #### 3.2 Install certificate - Windows
-Windows certificate will be automatically installed when [.\create-certs.ps1](.\create-certs.ps1) was run.
+Windows certificate will be automatically installed when [./create-certs.ps1](./create-certs.ps1) was run.
 
 #### 3.3. Run EventStoreDB node
 
@@ -128,6 +128,6 @@ docker-compose up eventstoredb
 Run application from console:
 
 ```console
-dotnet run .\secure-with-tls.csproj
+dotnet run ./secure-with-tls.csproj
 ```
 or from your favourite IDE.

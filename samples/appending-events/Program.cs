@@ -11,18 +11,9 @@ using EventStore.Client;
 namespace appending_events {
 	class Program {
 		static void Main(string[] args) {
-			var settings = new EventStoreClientSettings {
-				CreateHttpMessageHandler = () =>
-					new HttpClientHandler {
-						ServerCertificateCustomValidationCallback =
-							(message, certificate2, x509Chain, sslPolicyErrors) => true
-					},
-				ConnectivitySettings = {
-					Address = new Uri("https://localhost:2113")
-				}
-			};
-
-			var client = new EventStoreClient(settings);
+			using var client = new EventStoreClient(
+				EventStoreClientSettings.Create("esdb://admin:changeit@localhost:2113?TlsVerifyCert=false")
+			);
 		}
 
 		private static async Task AppendToStream(EventStoreClient client) {

@@ -9,60 +9,28 @@ namespace connecting_to_a_cluster {
 
 		private static void ConnectingToACluster() {
 			#region connecting-to-a-cluster
-			var settings = new EventStoreClientSettings {
-				ConnectivitySettings =
-				{
-					DnsGossipSeeds = new[]
-					{
-						new DnsEndPoint("localhost", 1114),
-						new DnsEndPoint("localhost", 2114),
-						new DnsEndPoint("localhost", 3114),
-					}
-				}
-			};
-
-			var client = new EventStoreClient(settings);
+			
+			using var client = new EventStoreClient(
+				EventStoreClientSettings.Create("esdb://localhost:1114,localhost:2114,localhost:3114")
+			);
 			#endregion connecting-to-a-cluster
 		}
 
 		private static void ProvidingDefaultCredentials() {
 			#region providing-default-credentials
-			var settings = new EventStoreClientSettings {
-				ConnectivitySettings =
-				{
-					DnsGossipSeeds = new[]
-					{
-						new DnsEndPoint("localhost", 1114),
-						new DnsEndPoint("localhost", 2114),
-						new DnsEndPoint("localhost", 3114),
-					}
-				},
-				DefaultCredentials = new UserCredentials("admin", "changeit")
-			};
-
-			var client = new EventStoreClient(settings);
+			
+			using var client = new EventStoreClient(
+				EventStoreClientSettings.Create("esdb://admin:changeit@localhost:1114,localhost:2114,localhost:3114")
+			);
 			#endregion providing-default-credentials
 		}
 
 		private static void ConnectingToAClusterComplex() {
 			#region connecting-to-a-cluster-complex
-			var settings = new EventStoreClientSettings {
-				ConnectivitySettings =
-				{
-					DnsGossipSeeds = new[]
-					{
-						new DnsEndPoint("localhost", 1114),
-						new DnsEndPoint("localhost", 2114),
-						new DnsEndPoint("localhost", 3114),
-					},
-					DiscoveryInterval = TimeSpan.FromMilliseconds(30),
-					GossipTimeout = TimeSpan.FromSeconds(10),
-					NodePreference = NodePreference.Leader,
-					MaxDiscoverAttempts = 5
-				}
-			};
-
-			var client = new EventStoreClient(settings);
+			
+			using var client = new EventStoreClient(
+				EventStoreClientSettings.Create("esdb://admin:changeit@localhost:1114,localhost:2114,localhost:3114?DiscoveryInterval=30000;GossipTimeout=10000;NodePreference=leader;MaxDiscoverAttempts=5")
+			);
 			#endregion connecting-to-a-cluster-complex
 		}
 	}

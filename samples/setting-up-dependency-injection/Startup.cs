@@ -19,18 +19,8 @@ namespace setting_up_dependency_injection {
 			services.AddControllers();
 
 			#region setting-up-dependency
-			services.AddEventStoreClient(settings => {
-				settings.ConnectivitySettings.Address = new Uri("https://localhost:2113");
-				settings.DefaultCredentials = new UserCredentials("admin", "changeit");
-				settings.CreateHttpMessageHandler = () =>
-					new SocketsHttpHandler {
-						SslOptions = {
-							RemoteCertificateValidationCallback = delegate {
-								return true;
-							}
-						}
-					};
-			});
+			
+			services.AddEventStoreClient("esdb://admin:changeit@localhost:2113?TlsVerifyCert=false");
 			#endregion setting-up-dependency
 		}
 
