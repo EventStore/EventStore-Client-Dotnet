@@ -1,31 +1,37 @@
 ﻿# BUILDER
-FROM mcr.microsoft.com/dotnet/sdk:3.1-alpine AS builder
+FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim AS builder
 
 WORKDIR /app
 
-# copy csproj and restore
-COPY ./secure-with-tls.Docker.csproj ./
-RUN dotnet restore ./secure-with-tls.Docker.csproj
+# Copy csproj and restore
+COPY ./secure-with-tls.csproj ./
 
-# copy source code and build
+# we need comment out project reference and uncomment the package reference
+# If you're using the package reference those lines are not needed
+RUN sed -i 's/<ProjectReference\(.*\)\/>/<!-- <ProjectReference\1 -->/' secure-with-tls.csproj && \
+    sed -i 's/<!-- <PackageReference\(.*\)-->/<PackageReference\1/' secure-with-tls.csproj
+
+RUN dotnet restore ./secure-with-tls.csproj
+
+# Copy source code and build
 COPY ./Program.cs ./
-RUN dotnet build -c Release --no-restore ./secure-with-tls.Docker.csproj
+RUN dotnet build -c Release --no-restore ./secure-with-tls.csproj
 
-# package
-RUN dotnet publish -c Release --no-build -o ./out ./secure-with-tls.Docker.csproj
+# Package
+RUN dotnet publish -c Release --no-build -o ./out ./secure-with-tls.csproj
 
 # HOST
-FROM mcr.microsoft.com/dotnet/runtime:3.1-buster-slim
+FROM mcr.microsoft.com/dotnet/runtime:5.0-buster-slim
 
 WORKDIR /app
 
-# copy binaries
+# Copy binaries
 COPY --from=builder /app/out .
 
-# copy pregenerated certificates into usr local CA location
+# Copy pregenerated certificates into usr local CA location
 COPY ./certs/ca/ca.crt /usr/local/share/ca-certificates/eventstoredb_ca.crt
-# set permissions and install certificates
+# Set permissions and install certificates
 RUN chmod 644 /usr/local/share/ca-certificates/eventstoredb_ca.crt && update-ca-certificates
 
-# run
-ENTRYPOINT ["dotnet", "secure-with-tls.Docker.dll"]
+# Run
+ENTRYPOINT ["dotnet", "secure-with-tls.dll"]

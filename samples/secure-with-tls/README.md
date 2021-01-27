@@ -76,7 +76,7 @@ The sample shows how to connect with the gRPC client and append new event. You c
 
 Suggested order of reading:
 - whole code is located in [Program.cs](./Program.cs) file
-- [Dockerfile](./Dockerfile) for building sample image (**_Note:_** it uses [project file](./secure-with-tls.Docker.csproj) with the NuGet package instead of reference to the source code)
+- [Dockerfile](./Dockerfile) for building sample image
 - [Docker compose config](./docker-compose.yml) that has configuration for both sample client app and EventStoreDB node.
 
 ## Running Sample

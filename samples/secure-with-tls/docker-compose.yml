@@ -5,7 +5,7 @@ services:
         build: ./
         environment:
             # URL should match the DNS name in certificate and container name
-            - ESDB_ADDRESS=https://eventstoredb:2114
+            - ESDB_ADDRESS=https://eventstoredb:2113
         networks:
             - esdb_network
         depends_on:
