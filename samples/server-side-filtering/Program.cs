@@ -11,14 +11,9 @@ using EventTypeFilter = EventStore.Client.EventTypeFilter;
 namespace server_side_filtering {
 	class Program {
 		static async Task Main() {
-			var settings = new EventStoreClientSettings {
-				DefaultCredentials = new UserCredentials("admin", "changeit"),
-				ConnectivitySettings = {
-					Address = new Uri("http://localhost:2113")
-				}
-			};
-
-			var client = new EventStoreClient(settings);
+			using var client = new EventStoreClient(
+				EventStoreClientSettings.Create("esdb://localhost:2113?Tls=false")
+			);
 
 			await client.SubscribeToAllAsync(Position.Start,
 				(s, e, c) => {

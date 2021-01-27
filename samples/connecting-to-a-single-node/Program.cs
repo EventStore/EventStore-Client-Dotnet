@@ -9,55 +9,38 @@ namespace connecting_to_a_single_node {
 
 		private static void SimpleConnection() {
 			#region creating-simple-connection
-			var settings = new EventStoreClientSettings {
-				ConnectivitySettings = {
-					Address = new Uri("https://localhost:2113")
-				}
-			};
-
-			var client = new EventStoreClient(settings);
+			
+			using var client = new EventStoreClient(
+				EventStoreClientSettings.Create("esdb://localhost:2113")
+			);
 			#endregion creating-simple-connection
 		}
 
 		private static void ProvidingDefaultCredentials() {
 			#region providing-default-credentials
-			var settings = new EventStoreClientSettings {
-				ConnectivitySettings = {
-					Address = new Uri("https://localhost:2113")
-				},
-				DefaultCredentials = new UserCredentials("admin", "changeit")
-			};
 
-			var client = new EventStoreClient(settings);
+			using var client = new EventStoreClient(
+				EventStoreClientSettings.Create("esdb://admin:changeit@localhost:2113")
+			);
 			#endregion providing-default-credentials
 		}
 
 		private static void SpecifyingAConnectionName() {
 			#region setting-the-connection-name
-			var settings = new EventStoreClientSettings {
-				ConnectionName = "Some Connection",
-				ConnectivitySettings = {
-					Address = new Uri("https://localhost:2113")
-				}
-			};
-			#endregion setting-the-connection-name
 
-			var client = new EventStoreClient(settings);
+			using var client = new EventStoreClient(
+				EventStoreClientSettings.Create("esdb://admin:changeit@localhost:2113?ConnectionName=SomeConnection")
+			);
+			#endregion setting-the-connection-name
 		}
 
 		private static void OverridingTheTimeout() {
 			#region overriding-timeout
-			var settings = new EventStoreClientSettings {
-				OperationOptions = new EventStoreClientOperationOptions {
-					TimeoutAfter = TimeSpan.FromSeconds(30)
-				},
-				ConnectivitySettings = {
-					Address = new Uri("https://localhost:2113")
-				}
-			};
-			#endregion overriding-timeout
 
-			var client = new EventStoreClient(settings);
+			using var client = new EventStoreClient(
+				EventStoreClientSettings.Create($"esdb://admin:changeit@localhost:2113?OperationTimeout=30000")
+			);
+			#endregion overriding-timeout
 		}
 
 		private static void CreatingAnInterceptor() {

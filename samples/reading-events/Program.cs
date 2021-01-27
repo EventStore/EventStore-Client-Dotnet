@@ -9,18 +9,9 @@ using EventStore.Client;
 namespace reading_events {
 	class Program {
 		static async Task Main(string[] args) {
-			var settings = new EventStoreClientSettings {
-				CreateHttpMessageHandler = () =>
-					new HttpClientHandler {
-						ServerCertificateCustomValidationCallback =
-							(message, certificate2, x509Chain, sslPolicyErrors) => true
-					},
-				ConnectivitySettings = {
-					Address = new Uri("https://localhost:2113")
-				}
-			};
-
-			var client = new EventStoreClient(settings);
+			using var client = new EventStoreClient(
+				EventStoreClientSettings.Create("esdb://admin:changeit@localhost:2113?TlsVerifyCert=false")
+			);
 
 			var events = Enumerable.Range(0, 20)
 				.Select(r => new EventData(
