@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
+
 namespace EventStore.Client.Bugs {
 	public class Issue_1125 : IClassFixture<Issue_1125.Fixture> {
 		private readonly Fixture _fixture;
@@ -18,10 +19,8 @@ namespace EventStore.Client.Bugs {
 
 		[Theory, MemberData(nameof(TestCases))]
 		public async Task persistent_subscription_delivers_all_events(int iteration) {
-			if (Environment.OSVersion.IsWindows()) {
-
-			}
- 			const int eventCount = 250;
+			Utils.DuplicateOutput("/tmp/testoutput.txt");
+			const int eventCount = 250;
 			const int totalEvents = eventCount * 2;
 
 			var completed = new TaskCompletionSource<bool>();
