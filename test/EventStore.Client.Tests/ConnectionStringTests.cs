@@ -144,7 +144,7 @@ namespace EventStore.Client {
 			Assert.Equal(330, settings.OperationOptions.TimeoutAfter.Value.TotalMilliseconds);
 			Assert.False(settings.OperationOptions.ThrowOnAppendFailure);
 
-			settings = EventStoreClientSettings.Create("esdb://hostname:4321/?tls=false");
+			settings = EventStoreClientSettings.Create("esdb://hostname:4321/?tls=false&keepAlive=-1");
 			Assert.Null(settings.DefaultCredentials);
 			Assert.Equal("http://hostname:4321/", settings.ConnectivitySettings.Address.ToString());
 			Assert.Empty(settings.ConnectivitySettings.GossipSeeds);

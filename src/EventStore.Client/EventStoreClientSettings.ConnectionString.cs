@@ -167,7 +167,9 @@ namespace EventStore.Client {
 					settings.OperationOptions.ThrowOnAppendFailure = (bool)throwOnAppendFailure;
 
 				if (typedOptions.TryGetValue(KeepAlive, out var keepAliveMs)) {
-					settings.ConnectivitySettings.KeepAlive = TimeSpan.FromMilliseconds((int)keepAliveMs);
+					settings.ConnectivitySettings.KeepAlive = (int)keepAliveMs == -1
+						? new TimeSpan?()
+						: TimeSpan.FromMilliseconds((int)keepAliveMs);
 				}
 
 				connSettings.Insecure = !useTls;
