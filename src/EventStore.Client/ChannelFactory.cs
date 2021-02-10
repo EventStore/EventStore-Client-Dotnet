@@ -41,8 +41,8 @@ namespace EventStore.Client {
 				}
 
 				var handler = new SocketsHttpHandler();
-				if (settings.ConnectivitySettings.KeepAlive.HasValue) {
-					handler.KeepAlivePingDelay = settings.ConnectivitySettings.KeepAlive.Value;
+				if (settings.ConnectivitySettings.KeepAliveInterval.HasValue) {
+					handler.KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval.Value;
 				}
 
 				return handler;
@@ -52,9 +52,9 @@ namespace EventStore.Client {
 				GetChannelOptions());
 
 			IEnumerable<ChannelOption> GetChannelOptions() {
-				if (settings.ConnectivitySettings.KeepAlive.HasValue) {
+				if (settings.ConnectivitySettings.KeepAliveInterval.HasValue) {
 					yield return new ChannelOption("grpc.keepalive_time_ms",
-						(int)settings.ConnectivitySettings.KeepAlive.Value.TotalMilliseconds);
+						(int)settings.ConnectivitySettings.KeepAliveInterval.Value.TotalMilliseconds);
 				}
 			}
 #endif

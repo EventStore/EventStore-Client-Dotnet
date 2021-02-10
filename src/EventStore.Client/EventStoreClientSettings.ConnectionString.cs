@@ -35,7 +35,8 @@ namespace EventStore.Client {
 			private const string TlsVerifyCert = nameof(TlsVerifyCert);
 			private const string OperationTimeout = nameof(OperationTimeout);
 			private const string ThrowOnAppendFailure = nameof(ThrowOnAppendFailure);
-			private const string KeepAlive = nameof(KeepAlive);
+			private const string KeepAliveInterval = nameof(KeepAliveInterval);
+			private const string KeepAliveTimeout = nameof(KeepAliveTimeout);
 
 			private const string UriSchemeDiscover = "esdb+discover";
 
@@ -54,7 +55,8 @@ namespace EventStore.Client {
 					{TlsVerifyCert, typeof(bool)},
 					{OperationTimeout, typeof(int)},
 					{ThrowOnAppendFailure, typeof(bool)},
-					{KeepAlive, typeof(int)}
+					{KeepAliveInterval, typeof(int)},
+					{KeepAliveTimeout, typeof(int)},
 				};
 
 			public static EventStoreClientSettings Parse(string connectionString) {
@@ -166,10 +168,10 @@ namespace EventStore.Client {
 				if (typedOptions.TryGetValue(ThrowOnAppendFailure, out object throwOnAppendFailure))
 					settings.OperationOptions.ThrowOnAppendFailure = (bool)throwOnAppendFailure;
 
-				if (typedOptions.TryGetValue(KeepAlive, out var keepAliveMs)) {
-					settings.ConnectivitySettings.KeepAlive = (int)keepAliveMs == -1
+				if (typedOptions.TryGetValue(KeepAliveInterval, out var keepAliveIntervalMs)) {
+					settings.ConnectivitySettings.KeepAliveInterval = (int)keepAliveIntervalMs == -1
 						? new TimeSpan?()
-						: TimeSpan.FromMilliseconds((int)keepAliveMs);
+						: TimeSpan.FromMilliseconds((int)keepAliveIntervalMs);
 				}
 
 				connSettings.Insecure = !useTls;
@@ -192,8 +194,8 @@ namespace EventStore.Client {
 						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
 					}
 
-					if (settings.ConnectivitySettings.KeepAlive.HasValue) {
-						handler.KeepAlivePingDelay = settings.ConnectivitySettings.KeepAlive.Value;
+					if (settings.ConnectivitySettings.KeepAliveInterval.HasValue) {
+						handler.KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval.Value;
 					}
 
 					return handler;
