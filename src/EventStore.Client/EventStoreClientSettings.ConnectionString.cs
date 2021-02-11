@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 #if !GRPC_CORE
 using System.Net.Http;
 #endif
@@ -169,9 +170,19 @@ namespace EventStore.Client {
 					settings.OperationOptions.ThrowOnAppendFailure = (bool)throwOnAppendFailure;
 
 				if (typedOptions.TryGetValue(KeepAliveInterval, out var keepAliveIntervalMs)) {
-					settings.ConnectivitySettings.KeepAliveInterval = (int)keepAliveIntervalMs == -1
-						? new TimeSpan?()
-						: TimeSpan.FromMilliseconds((int)keepAliveIntervalMs);
+					settings.ConnectivitySettings.KeepAliveInterval = keepAliveIntervalMs switch {
+						int value when value == -1 => Timeout.InfiniteTimeSpan,
+						int value when value >= 0 => TimeSpan.FromMilliseconds(value),
+						_ => throw new InvalidSettingException($"Invalid KeepAliveInterval: {keepAliveIntervalMs}")
+					};
+				}
+
+				if (typedOptions.TryGetValue(KeepAliveTimeout, out var keepAliveTimeoutMs)) {
+					settings.ConnectivitySettings.KeepAliveTimeout = keepAliveTimeoutMs switch {
+						int value when value == -1 => Timeout.InfiniteTimeSpan,
+						int value when value >= 0 => TimeSpan.FromMilliseconds(value),
+						_ => throw new InvalidSettingException($"Invalid KeepAliveTimeout: {keepAliveTimeoutMs}")
+					};
 				}
 
 				connSettings.Insecure = !useTls;
@@ -188,14 +199,13 @@ namespace EventStore.Client {
 
 #if !GRPC_CORE
 				settings.CreateHttpMessageHandler = () => {
-					var handler = new SocketsHttpHandler();
+					var handler = new SocketsHttpHandler {
+						KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,
+						KeepAlivePingTimeout = settings.ConnectivitySettings.KeepAliveTimeout
+					};
 
 					if (typedOptions.TryGetValue(TlsVerifyCert, out var tlsVerifyCert) && !(bool)tlsVerifyCert) {
 						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
-					}
-
-					if (settings.ConnectivitySettings.KeepAliveInterval.HasValue) {
-						handler.KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval.Value;
 					}
 
 					return handler;

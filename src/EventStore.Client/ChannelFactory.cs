@@ -40,23 +40,27 @@ namespace EventStore.Client {
 					return settings.CreateHttpMessageHandler.Invoke();
 				}
 
-				var handler = new SocketsHttpHandler();
-				if (settings.ConnectivitySettings.KeepAliveInterval.HasValue) {
-					handler.KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval.Value;
-				}
-
-				return handler;
+				return new SocketsHttpHandler {
+					KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,
+					KeepAlivePingTimeout = settings.ConnectivitySettings.KeepAliveTimeout
+				};
 			}
 #else
 			return new Channel(address.Host, address.Port, settings.ChannelCredentials ?? ChannelCredentials.Insecure,
 				GetChannelOptions());
 
 			IEnumerable<ChannelOption> GetChannelOptions() {
-				if (settings.ConnectivitySettings.KeepAliveInterval.HasValue) {
-					yield return new ChannelOption("grpc.keepalive_time_ms",
-						(int)settings.ConnectivitySettings.KeepAliveInterval.Value.TotalMilliseconds);
-				}
+				yield return new ChannelOption("grpc.keepalive_time_ms",
+					GetValue((int)settings.ConnectivitySettings.KeepAliveInterval.TotalMilliseconds));
+
+				yield return new ChannelOption("grpc.keepalive_timeout_ms",
+					GetValue((int)settings.ConnectivitySettings.KeepAliveTimeout.TotalMilliseconds));
 			}
+
+			static int GetValue(int value) => value switch {
+				{ } v when v < 0 => int.MaxValue,
+				_ => value
+			};
 #endif
 		}
 	}
