@@ -4,6 +4,8 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 #nullable enable
 namespace EventStore.Client {
@@ -11,9 +13,9 @@ namespace EventStore.Client {
 		private readonly EventStoreClientSettings _settings;
 		private readonly IEndpointDiscoverer _endpointDiscoverer;
 		private readonly ConcurrentDictionary<EndPoint, ChannelBase> _channels;
+		private readonly ILogger<MultiChannel> _log;
 
 		private EndPoint? _current;
-
 		private int _disposed;
 
 		public MultiChannel(EventStoreClientSettings settings) {
@@ -22,6 +24,12 @@ namespace EventStore.Client {
 				? (IEndpointDiscoverer)new SingleNodeEndpointDiscoverer(settings.ConnectivitySettings.Address)
 				: new GossipBasedEndpointDiscoverer(settings.ConnectivitySettings, new GrpcGossipClient(settings));
 			_channels = new ConcurrentDictionary<EndPoint, ChannelBase>();
+			_log = settings.LoggerFactory?.CreateLogger<MultiChannel>() ?? new NullLogger<MultiChannel>();
+
+			if (settings.ConnectivitySettings.KeepAliveInterval < TimeSpan.FromSeconds(10)) {
+				_log.LogWarning("Specified KeepAliveInterval of {interval} is less than recommended 10_000 ms.",
+					settings.ConnectivitySettings.KeepAliveInterval);
+			}
 		}
 
 		public void SetEndPoint(EndPoint value) => _current = value;
