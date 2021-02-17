@@ -1,11 +1,145 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading;
+#if !GRPC_CORE
+using System.Net.Http;
+#endif
+using AutoFixture;
 using Xunit;
 
 namespace EventStore.Client {
 	public class ConnectionStringTests {
+		public static IEnumerable<object[]> ValidCases() {
+			var fixture = new Fixture();
+			fixture.Customize<TimeSpan>(composer => composer.FromFactory<int>(s => TimeSpan.FromSeconds(s % 60)));
+			fixture.Customize<Uri>(composer => composer.FromFactory<DnsEndPoint>(e => new UriBuilder {
+				Host = e.Host,
+				Port = e.Port == 80 ? 81 : e.Port
+			}.Uri));
+
+			return Enumerable.Range(0, 3).SelectMany(GetTestCases);
+
+			IEnumerable<object[]> GetTestCases(int _) {
+				var settings = new EventStoreClientSettings {
+					ConnectionName = fixture.Create<string>(),
+					ConnectivitySettings = fixture.Create<EventStoreClientConnectivitySettings>(),
+					OperationOptions = fixture.Create<EventStoreClientOperationOptions>()
+				};
+
+				settings.ConnectivitySettings.Address =
+					new UriBuilder(EventStoreClientConnectivitySettings.Default.Address) {
+						Scheme = settings.ConnectivitySettings.Insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps
+					}.Uri;
+
+				yield return new object[] {
+					GetConnectionString(settings),
+					settings
+				};
+
+				yield return new object[] {
+					GetConnectionString(settings, MockingTone),
+					settings
+				};
+
+				var ipGossipSettings = new EventStoreClientSettings {
+					ConnectionName = fixture.Create<string>(),
+					ConnectivitySettings = fixture.Create<EventStoreClientConnectivitySettings>(),
+					OperationOptions = fixture.Create<EventStoreClientOperationOptions>()
+				};
+
+				ipGossipSettings.ConnectivitySettings.Address =
+					new UriBuilder(EventStoreClientConnectivitySettings.Default.Address) {
+						Scheme = ipGossipSettings.ConnectivitySettings.Insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps
+					}.Uri;
+
+				ipGossipSettings.ConnectivitySettings.DnsGossipSeeds = null;
+
+				yield return new object[] {
+					GetConnectionString(ipGossipSettings),
+					ipGossipSettings
+				};
+
+				yield return new object[] {
+					GetConnectionString(ipGossipSettings, MockingTone),
+					ipGossipSettings
+				};
+
+				var singleNodeSettings = new EventStoreClientSettings {
+					ConnectionName = fixture.Create<string>(),
+					ConnectivitySettings = fixture.Create<EventStoreClientConnectivitySettings>(),
+					OperationOptions = fixture.Create<EventStoreClientOperationOptions>()
+				};
+				singleNodeSettings.ConnectivitySettings.DnsGossipSeeds = null;
+				singleNodeSettings.ConnectivitySettings.IpGossipSeeds = null;
+				singleNodeSettings.ConnectivitySettings.Address = new UriBuilder(fixture.Create<Uri>()) {
+					Scheme = singleNodeSettings.ConnectivitySettings.Insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps
+				}.Uri;
+
+				yield return new object[] {
+					GetConnectionString(singleNodeSettings),
+					singleNodeSettings
+				};
+
+				yield return new object[] {
+					GetConnectionString(singleNodeSettings, MockingTone),
+					singleNodeSettings
+				};
+			}
+
+			static string MockingTone(string key) =>
+				new string(key.Select((c, i) => i % 2 == 0 ? char.ToUpper(c) : char.ToLower(c)).ToArray());
+		}
+
+		[Theory, MemberData(nameof(ValidCases))]
+		public void valid_connection_string(string connectionString, EventStoreClientSettings expected) {
+			var result = EventStoreClientSettings.Create(connectionString);
+
+			Assert.Equal(expected, result, EventStoreClientSettingsEqualityComparer.Instance);
+		}
+
+		[Theory, MemberData(nameof(ValidCases))]
+		public void valid_connection_string_with_empty_path(string connectionString, EventStoreClientSettings expected) {
+			var result = EventStoreClientSettings.Create(connectionString.Replace("?", "/?"));
+
+			Assert.Equal(expected, result, EventStoreClientSettingsEqualityComparer.Instance);
+		}
+
+#if !GRPC_CORE
+		[Theory, InlineData(false), InlineData(true)]
+		public void tls_verify_cert(bool tlsVerifyCert) {
+			var connectionString = $"esdb://localhost:2113/?tlsVerifyCert={tlsVerifyCert}";
+			var result = EventStoreClientSettings.Create(connectionString);
+			using var handler = result.CreateHttpMessageHandler?.Invoke();
+			var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
+			if (!tlsVerifyCert) {
+				Assert.NotNull(socketsHandler.SslOptions.RemoteCertificateValidationCallback);
+				Assert.True(socketsHandler.SslOptions.RemoteCertificateValidationCallback.Invoke(null!, default,
+					default, default));
+			} else {
+				Assert.Null(socketsHandler.SslOptions.RemoteCertificateValidationCallback);
+			}
+		}
+
+#endif
+
+		[Fact]
+		public void infinite_grpc_timeouts() {
+			var result =
+				EventStoreClientSettings.Create("esdb://localhost:2113?keepAliveInterval=-1&keepAliveTimeout=-1");
+
+			Assert.Equal(Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveInterval);
+			Assert.Equal(Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveTimeout);
+
+#if !GRPC_CORE
+			using var handler = result.CreateHttpMessageHandler?.Invoke();
+			var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
+			Assert.Equal(Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingTimeout);
+			Assert.Equal(Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingDelay);
+#endif
+		}
+
 		[Fact]
 		public void connection_string_with_no_schema() {
 			Assert.Throws<NoSchemeException>(() => EventStoreClientSettings.Create(":so/mething/random"));
@@ -42,15 +176,6 @@ namespace EventStore.Client {
 			Assert.Throws<InvalidHostException>(() => EventStoreClientSettings.Create(connectionString));
 		}
 
-		[Theory,
-		 InlineData("esdb://user:pass@127.0.0.1"),
-		 InlineData("esdb://user:pass@127.0.0.1:1234"),
-		 InlineData("esdb://user:pass@127.0.0.1/"),
-		 InlineData("esdb://user:pass@127.0.0.1?maxDiscoverAttempts=10"),
-		 InlineData("esdb://user:pass@127.0.0.1/?maxDiscoverAttempts=10")]
-		public void connection_string_with_empty_path_after_host_should_not_throw(string connectionString) {
-			EventStoreClientSettings.Create(connectionString);
-		}
 
 		[Theory,
 		 InlineData("esdb://user:pass@127.0.0.1/test"),
@@ -91,75 +216,10 @@ namespace EventStore.Client {
 		 InlineData("esdb://user:pass@127.0.0.1/?gossipTimeout=defg"),
 		 InlineData("esdb://user:pass@127.0.0.1/?tlsVerifyCert=truee"),
 		 InlineData("esdb://user:pass@127.0.0.1/?nodePreference=blabla"),
-		 InlineData("esdb://user:pass@127.0.0.1/?keepAliveInterval=blabla"),
-		 InlineData("esdb://user:pass@127.0.0.1/?keepAliveTimeout=blabla")]
+		 InlineData("esdb://user:pass@127.0.0.1/?keepAliveInterval=-2"),
+		 InlineData("esdb://user:pass@127.0.0.1/?keepAliveTimeout=-2")]
 		public void connection_string_with_invalid_settings_should_throw(string connectionString) {
 			Assert.Throws<InvalidSettingException>(() => EventStoreClientSettings.Create(connectionString));
-		}
-
-		[Theory,
-		 InlineData("leader", NodePreference.Leader),
-		 InlineData("Follower", NodePreference.Follower),
-		 InlineData("rAndom", NodePreference.Random),
-		 InlineData("ReadOnlyReplica", NodePreference.ReadOnlyReplica)]
-		public void with_different_node_preferences(string nodePreference, NodePreference expected) {
-			Assert.Equal(expected,
-				EventStoreClientSettings.Create($"esdb://user:pass@127.0.0.1/?nodePreference={nodePreference}")
-					.ConnectivitySettings.NodePreference);
-		}
-
-		[Fact]
-		public void with_valid_single_node_connection_string() {
-			var settings = EventStoreClientSettings.Create(
-				"esdb://user:pass@127.0.0.1/?maxDiscoverAttempts=13&DiscoveryInterval=37&gossipTimeout=33&nOdEPrEfErence=FoLLoWer&tlsVerifyCert=false&keepAliveInterval=10&keepAliveTimeout=2000");
-			Assert.Equal("user", settings.DefaultCredentials.Username);
-			Assert.Equal("pass", settings.DefaultCredentials.Password);
-			Assert.Equal("https://127.0.0.1:2113/", settings.ConnectivitySettings.Address.ToString());
-			Assert.Empty(settings.ConnectivitySettings.GossipSeeds);
-			Assert.Null(settings.ConnectivitySettings.IpGossipSeeds);
-			Assert.Null(settings.ConnectivitySettings.DnsGossipSeeds);
-			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
-			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
-			Assert.Equal(33, settings.ConnectivitySettings.GossipTimeout.TotalMilliseconds);
-			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
-			Assert.Equal(TimeSpan.FromMilliseconds(10), settings.ConnectivitySettings.KeepAliveInterval);
-			Assert.Equal(TimeSpan.FromSeconds(2), settings.ConnectivitySettings.KeepAliveTimeout);
-#if !GRPC_CORE
-			Assert.NotNull(settings.CreateHttpMessageHandler);
-#endif
-			settings = EventStoreClientSettings.Create(
-				"esdb://127.0.0.1?connectionName=test&maxDiscoverAttempts=13&DiscoveryInterval=37&nOdEPrEfErence=FoLLoWer&tls=true&tlsVerifyCert=true&operationTimeout=330&throwOnAppendFailure=faLse&KEepAliveInTeRvAl=10&KeEpAlIvEtImEoUt=2000");
-			Assert.Null(settings.DefaultCredentials);
-			Assert.Equal("test", settings.ConnectionName);
-			Assert.Equal("https://127.0.0.1:2113/", settings.ConnectivitySettings.Address.ToString());
-			Assert.Empty(settings.ConnectivitySettings.GossipSeeds);
-			Assert.Null(settings.ConnectivitySettings.IpGossipSeeds);
-			Assert.Null(settings.ConnectivitySettings.DnsGossipSeeds);
-			Assert.False(settings.ConnectivitySettings.Insecure);
-			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
-			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
-			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
-			Assert.Equal(TimeSpan.FromMilliseconds(10), settings.ConnectivitySettings.KeepAliveInterval);
-			Assert.Equal(TimeSpan.FromSeconds(2), settings.ConnectivitySettings.KeepAliveTimeout);
-#if !GRPC_CORE
-			Assert.NotNull(settings.CreateHttpMessageHandler);
-#endif
-
-			Assert.Equal(330, settings.OperationOptions.TimeoutAfter.Value.TotalMilliseconds);
-			Assert.False(settings.OperationOptions.ThrowOnAppendFailure);
-
-			settings = EventStoreClientSettings.Create("esdb://hostname:4321/?tls=false&keepAliveInterval=-1&keepAliveTimeout=-1");
-			Assert.Null(settings.DefaultCredentials);
-			Assert.Equal("http://hostname:4321/", settings.ConnectivitySettings.Address.ToString());
-			Assert.Empty(settings.ConnectivitySettings.GossipSeeds);
-			Assert.Null(settings.ConnectivitySettings.IpGossipSeeds);
-			Assert.Null(settings.ConnectivitySettings.DnsGossipSeeds);
-			Assert.True(settings.ConnectivitySettings.Insecure);
-			Assert.Equal(Timeout.InfiniteTimeSpan, settings.ConnectivitySettings.KeepAliveInterval);
-			Assert.Equal(Timeout.InfiniteTimeSpan, settings.ConnectivitySettings.KeepAliveTimeout);
-#if !GRPC_CORE
-			Assert.NotNull(settings.CreateHttpMessageHandler);
-#endif
 		}
 
 		[Fact]
@@ -192,131 +252,125 @@ namespace EventStore.Client {
 				settings.ConnectivitySettings.KeepAliveTimeout);
 		}
 
-		[Fact]
-		public void with_valid_cluster_connection_string() {
-			var settings = EventStoreClientSettings.Create(
-				"esdb://user:pass@127.0.0.1,127.0.0.2:3321,127.0.0.3/?maxDiscoverAttempts=13&DiscoveryInterval=37&nOdEPrEfErence=FoLLoWer&tlsVerifyCert=false&KEepAliveInTeRVAl=10&KeEpAlIvEtImEoUt=2000");
-			Assert.Equal("user", settings.DefaultCredentials.Username);
-			Assert.Equal("pass", settings.DefaultCredentials.Password);
-			Assert.NotEmpty(settings.ConnectivitySettings.GossipSeeds);
-			Assert.NotNull(settings.ConnectivitySettings.IpGossipSeeds);
-			Assert.Null(settings.ConnectivitySettings.DnsGossipSeeds);
-			Assert.False(settings.ConnectivitySettings.Insecure);
-			Assert.True(settings.ConnectivitySettings.IpGossipSeeds.Length == 3 &&
-			            Equals(settings.ConnectivitySettings.IpGossipSeeds[0].Address, IPAddress.Parse("127.0.0.1")) &&
-			            Equals(settings.ConnectivitySettings.IpGossipSeeds[0].Port, 2113) &&
-			            Equals(settings.ConnectivitySettings.IpGossipSeeds[1].Address, IPAddress.Parse("127.0.0.2")) &&
-			            Equals(settings.ConnectivitySettings.IpGossipSeeds[1].Port, 3321) &&
-			            Equals(settings.ConnectivitySettings.IpGossipSeeds[2].Address, IPAddress.Parse("127.0.0.3")) &&
-			            Equals(settings.ConnectivitySettings.IpGossipSeeds[2].Port, 2113));
-			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
-			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
-			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
-			Assert.Equal(TimeSpan.FromMilliseconds(10), settings.ConnectivitySettings.KeepAliveInterval);
-			Assert.Equal(TimeSpan.FromSeconds(2), settings.ConnectivitySettings.KeepAliveTimeout);
+		private static string GetConnectionString(EventStoreClientSettings settings,
+			Func<string, string> getKey = default)
+			=> $"{GetScheme(settings)}{GetAuthority(settings)}?{GetKeyValuePairs(settings, getKey)}";
+
+		private static string GetScheme(EventStoreClientSettings settings) => settings.ConnectivitySettings.IsSingleNode
+			? "esdb://"
+			: "esdb+discover://";
+
+		private static string GetAuthority(EventStoreClientSettings settings) =>
+			settings.ConnectivitySettings.IsSingleNode
+				? $"{settings.ConnectivitySettings.Address.Host}:{settings.ConnectivitySettings.Address.Port}"
+				: string.Join(",",
+					settings.ConnectivitySettings.GossipSeeds.Select(x => $"{x.GetHost()}:{x.GetPort()}"));
+
+		private static string GetKeyValuePairs(EventStoreClientSettings settings,
+			Func<string, string> getKey = default) {
+			var pairs = new Dictionary<string, string> {
+				["tls"] = (!settings.ConnectivitySettings.Insecure).ToString(),
+				["connectionName"] = settings.ConnectionName,
+				["maxDiscoverAttempts"] = settings.ConnectivitySettings.MaxDiscoverAttempts.ToString(),
+				["discoveryInterval"] = settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds.ToString(),
+				["gossipTimeout"] = settings.ConnectivitySettings.GossipTimeout.TotalMilliseconds.ToString(),
+				["nodePreference"] = settings.ConnectivitySettings.NodePreference.ToString(),
+				["keepAliveInterval"] = settings.ConnectivitySettings.KeepAliveInterval.TotalMilliseconds.ToString(),
+				["keepAliveTimeout"] = settings.ConnectivitySettings.KeepAliveTimeout.TotalMilliseconds.ToString(),
+			};
+
+			if (settings.OperationOptions.TimeoutAfter.HasValue) {
+				pairs.Add("operationTimeout",
+					settings.OperationOptions.TimeoutAfter.Value.TotalMilliseconds.ToString());
+			}
+
 #if !GRPC_CORE
-			Assert.NotNull(settings.CreateHttpMessageHandler);
+			if (settings.CreateHttpMessageHandler != null) {
+				using var handler = settings.CreateHttpMessageHandler.Invoke();
+				if (handler is SocketsHttpHandler socketsHttpHandler &&
+				    socketsHttpHandler.SslOptions.RemoteCertificateValidationCallback != null) {
+					pairs.Add("tlsVerifyCert", "false");
+				}
+			}
 #endif
 
 
-			settings = EventStoreClientSettings.Create(
-				"esdb://user:pass@host1,host2:3321,127.0.0.3/?tls=false&maxDiscoverAttempts=13&DiscoveryInterval=37&nOdEPrEfErence=FoLLoWer&tlsVerifyCert=false&KEepAliveInTeRvAl=10&KeEpAlIvEtImEoUt=2000");
-			Assert.Equal("user", settings.DefaultCredentials.Username);
-			Assert.Equal("pass", settings.DefaultCredentials.Password);
-			Assert.NotEmpty(settings.ConnectivitySettings.GossipSeeds);
-			Assert.Null(settings.ConnectivitySettings.IpGossipSeeds);
-			Assert.NotNull(settings.ConnectivitySettings.DnsGossipSeeds);
-			Assert.True(settings.ConnectivitySettings.Insecure);
-			Assert.True(settings.ConnectivitySettings.DnsGossipSeeds.Length == 3 &&
-			            Equals(settings.ConnectivitySettings.DnsGossipSeeds[0].Host, "host1") &&
-			            Equals(settings.ConnectivitySettings.DnsGossipSeeds[0].Port, 2113) &&
-			            Equals(settings.ConnectivitySettings.DnsGossipSeeds[1].Host, "host2") &&
-			            Equals(settings.ConnectivitySettings.DnsGossipSeeds[1].Port, 3321) &&
-			            Equals(settings.ConnectivitySettings.DnsGossipSeeds[2].Host, "127.0.0.3") &&
-			            Equals(settings.ConnectivitySettings.DnsGossipSeeds[2].Port, 2113));
-			Assert.Equal(13, settings.ConnectivitySettings.MaxDiscoverAttempts);
-			Assert.Equal(37, settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
-			Assert.Equal(NodePreference.Follower, settings.ConnectivitySettings.NodePreference);
-			Assert.Equal(TimeSpan.FromMilliseconds(10), settings.ConnectivitySettings.KeepAliveInterval);
-			Assert.Equal(TimeSpan.FromSeconds(2), settings.ConnectivitySettings.KeepAliveTimeout);
-#if !GRPC_CORE
-			Assert.NotNull(settings.CreateHttpMessageHandler);
-#endif
+			return string.Join("&", pairs.Select(pair => $"{getKey?.Invoke(pair.Key) ?? pair.Key}={pair.Value}"));
 		}
 
-		[Fact]
-		public void with_different_tls_settings() {
-			EventStoreClientSettings settings;
+		private class EventStoreClientSettingsEqualityComparer : IEqualityComparer<EventStoreClientSettings> {
+			public static readonly EventStoreClientSettingsEqualityComparer Instance =
+				new EventStoreClientSettingsEqualityComparer();
 
-			settings = EventStoreClientSettings.Create("esdb://127.0.0.1/");
-			Assert.Equal(Uri.UriSchemeHttps, settings.ConnectivitySettings.Address.Scheme);
+			public bool Equals(EventStoreClientSettings x, EventStoreClientSettings y) {
+				if (ReferenceEquals(x, y)) return true;
+				if (ReferenceEquals(x, null)) return false;
+				if (ReferenceEquals(y, null)) return false;
+				if (x.GetType() != y.GetType()) return false;
+				return x.ConnectionName == y.ConnectionName &&
+				       EventStoreClientConnectivitySettingsEqualityComparer.Instance.Equals(x.ConnectivitySettings,
+					       y.ConnectivitySettings) &&
+				       EventStoreClientOperationOptionsEqualityComparer.Instance.Equals(x.OperationOptions,
+					       y.OperationOptions) &&
+				       Equals(x.DefaultCredentials?.ToString(), y.DefaultCredentials?.ToString());
+			}
 
-			settings = EventStoreClientSettings.Create("esdb://127.0.0.1?tls=true");
-			Assert.Equal(Uri.UriSchemeHttps, settings.ConnectivitySettings.Address.Scheme);
-
-			settings = EventStoreClientSettings.Create("esdb://127.0.0.1/?tls=FaLsE");
-			Assert.Equal(Uri.UriSchemeHttp, settings.ConnectivitySettings.Address.Scheme);
-
-			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/");
-			Assert.False(settings.ConnectivitySettings.Insecure);
-
-			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3?tls=true");
-			Assert.False(settings.ConnectivitySettings.Insecure);
-
-			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/?tls=fAlSe");
-			Assert.True(settings.ConnectivitySettings.Insecure);
+			public int GetHashCode(EventStoreClientSettings obj) => HashCode.Hash
+				.Combine(obj.ConnectionName)
+				.Combine(EventStoreClientConnectivitySettingsEqualityComparer.Instance.GetHashCode(
+					obj.ConnectivitySettings))
+				.Combine(EventStoreClientOperationOptionsEqualityComparer.Instance.GetHashCode(obj.OperationOptions));
 		}
 
-#if !GRPC_CORE
-		[Fact]
-		public void with_different_tls_verify_cert_settings() {
-			EventStoreClientSettings settings;
+		private class EventStoreClientConnectivitySettingsEqualityComparer
+			: IEqualityComparer<EventStoreClientConnectivitySettings> {
+			public static readonly EventStoreClientConnectivitySettingsEqualityComparer Instance =
+				new EventStoreClientConnectivitySettingsEqualityComparer();
 
-			settings = EventStoreClientSettings.Create("esdb://127.0.0.1/");
-			Assert.NotNull(settings.CreateHttpMessageHandler);
+			public bool Equals(EventStoreClientConnectivitySettings x, EventStoreClientConnectivitySettings y) {
+				if (ReferenceEquals(x, y)) return true;
+				if (ReferenceEquals(x, null)) return false;
+				if (ReferenceEquals(y, null)) return false;
+				if (x.GetType() != y.GetType()) return false;
+				return (!x.IsSingleNode || x.Address.Equals(y.Address)) &&
+				       x.MaxDiscoverAttempts == y.MaxDiscoverAttempts &&
+				       x.GossipSeeds.SequenceEqual(y.GossipSeeds) &&
+				       x.GossipTimeout.Equals(y.GossipTimeout) &&
+				       x.DiscoveryInterval.Equals(y.DiscoveryInterval) &&
+				       x.NodePreference == y.NodePreference &&
+				       x.KeepAliveInterval.Equals(y.KeepAliveInterval) &&
+				       x.KeepAliveTimeout.Equals(y.KeepAliveTimeout) &&
+				       x.Insecure == y.Insecure;
+			}
 
-			settings = EventStoreClientSettings.Create("esdb://127.0.0.1/?tlsVerifyCert=TrUe");
-			Assert.NotNull(settings.CreateHttpMessageHandler);
-
-			settings = EventStoreClientSettings.Create("esdb://127.0.0.1/?tlsVerifyCert=FaLsE");
-			Assert.NotNull(settings.CreateHttpMessageHandler);
-
-			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/");
-			Assert.NotNull(settings.CreateHttpMessageHandler);
-
-			settings = EventStoreClientSettings.Create("esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/?tlsVerifyCert=true");
-			Assert.NotNull(settings.CreateHttpMessageHandler);
-
-			settings = EventStoreClientSettings.Create(
-				"esdb://127.0.0.1,127.0.0.2:3321,127.0.0.3/?tlsVerifyCert=false");
-			Assert.NotNull(settings.CreateHttpMessageHandler);
-		}
-#endif
-
-		public static IEnumerable<object[]> DiscoverSchemeCases() {
-			yield return new object[] {
-				"esdb+discover://hostname:4321", new EndPoint[] {
-					new DnsEndPoint("hostname", 4321)
-				}
-			};
-			yield return new object[] {
-				"esdb+discover://hostname:4321/", new EndPoint[] {
-					new DnsEndPoint("hostname", 4321)
-				}
-			};
-			yield return new object[] {
-				"esdb+discover://hostname0:4321,hostname1:4321,hostname2:4321/", new EndPoint[] {
-					new DnsEndPoint("hostname0", 4321),
-					new DnsEndPoint("hostname1", 4321),
-					new DnsEndPoint("hostname2", 4321)
-				}
-			};
+			public int GetHashCode(EventStoreClientConnectivitySettings obj) =>
+				obj.GossipSeeds.Aggregate(
+					HashCode.Hash
+						.Combine(obj.Address.GetHashCode())
+						.Combine(obj.MaxDiscoverAttempts)
+						.Combine(obj.GossipTimeout)
+						.Combine(obj.DiscoveryInterval)
+						.Combine(obj.NodePreference)
+						.Combine(obj.KeepAliveInterval)
+						.Combine(obj.KeepAliveTimeout)
+						.Combine(obj.Insecure), (hashcode, endpoint) => hashcode.Combine(endpoint.GetHashCode()));
 		}
 
-		[Theory, MemberData(nameof(DiscoverSchemeCases))]
-		public void with_esdb_discover_scheme(string connectionString, EndPoint[] expected) {
-			var settings = EventStoreClientSettings.Create(connectionString);
-			Assert.Equal(expected, settings.ConnectivitySettings.GossipSeeds);
+		private class EventStoreClientOperationOptionsEqualityComparer
+			: IEqualityComparer<EventStoreClientOperationOptions> {
+			public static readonly EventStoreClientOperationOptionsEqualityComparer Instance =
+				new EventStoreClientOperationOptionsEqualityComparer();
+
+			public bool Equals(EventStoreClientOperationOptions x, EventStoreClientOperationOptions y) {
+				if (ReferenceEquals(x, y)) return true;
+				if (ReferenceEquals(x, null)) return false;
+				if (ReferenceEquals(y, null)) return false;
+				if (x.GetType() != y.GetType()) return false;
+				return Nullable.Equals(x.TimeoutAfter, y.TimeoutAfter);
+			}
+
+			public int GetHashCode(EventStoreClientOperationOptions obj) =>
+				HashCode.Hash.Combine(obj.TimeoutAfter).Combine(obj.ThrowOnAppendFailure);
 		}
 	}
 }
