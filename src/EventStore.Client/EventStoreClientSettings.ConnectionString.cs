@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 #if !GRPC_CORE
 using System.Net.Http;
 #endif
@@ -35,7 +36,8 @@ namespace EventStore.Client {
 			private const string TlsVerifyCert = nameof(TlsVerifyCert);
 			private const string OperationTimeout = nameof(OperationTimeout);
 			private const string ThrowOnAppendFailure = nameof(ThrowOnAppendFailure);
-			private const string KeepAlive = nameof(KeepAlive);
+			private const string KeepAliveInterval = nameof(KeepAliveInterval);
+			private const string KeepAliveTimeout = nameof(KeepAliveTimeout);
 
 			private const string UriSchemeDiscover = "esdb+discover";
 
@@ -54,7 +56,8 @@ namespace EventStore.Client {
 					{TlsVerifyCert, typeof(bool)},
 					{OperationTimeout, typeof(int)},
 					{ThrowOnAppendFailure, typeof(bool)},
-					{KeepAlive, typeof(int)}
+					{KeepAliveInterval, typeof(int)},
+					{KeepAliveTimeout, typeof(int)},
 				};
 
 			public static EventStoreClientSettings Parse(string connectionString) {
@@ -166,8 +169,20 @@ namespace EventStore.Client {
 				if (typedOptions.TryGetValue(ThrowOnAppendFailure, out object throwOnAppendFailure))
 					settings.OperationOptions.ThrowOnAppendFailure = (bool)throwOnAppendFailure;
 
-				if (typedOptions.TryGetValue(KeepAlive, out var keepAliveMs)) {
-					settings.ConnectivitySettings.KeepAlive = TimeSpan.FromMilliseconds((int)keepAliveMs);
+				if (typedOptions.TryGetValue(KeepAliveInterval, out var keepAliveIntervalMs)) {
+					settings.ConnectivitySettings.KeepAliveInterval = keepAliveIntervalMs switch {
+						int value when value == -1 => Timeout.InfiniteTimeSpan,
+						int value when value >= 0 => TimeSpan.FromMilliseconds(value),
+						_ => throw new InvalidSettingException($"Invalid KeepAliveInterval: {keepAliveIntervalMs}")
+					};
+				}
+
+				if (typedOptions.TryGetValue(KeepAliveTimeout, out var keepAliveTimeoutMs)) {
+					settings.ConnectivitySettings.KeepAliveTimeout = keepAliveTimeoutMs switch {
+						int value when value == -1 => Timeout.InfiniteTimeSpan,
+						int value when value >= 0 => TimeSpan.FromMilliseconds(value),
+						_ => throw new InvalidSettingException($"Invalid KeepAliveTimeout: {keepAliveTimeoutMs}")
+					};
 				}
 
 				connSettings.Insecure = !useTls;
@@ -184,14 +199,13 @@ namespace EventStore.Client {
 
 #if !GRPC_CORE
 				settings.CreateHttpMessageHandler = () => {
-					var handler = new SocketsHttpHandler();
+					var handler = new SocketsHttpHandler {
+						KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,
+						KeepAlivePingTimeout = settings.ConnectivitySettings.KeepAliveTimeout
+					};
 
 					if (typedOptions.TryGetValue(TlsVerifyCert, out var tlsVerifyCert) && !(bool)tlsVerifyCert) {
 						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
-					}
-
-					if (settings.ConnectivitySettings.KeepAlive.HasValue) {
-						handler.KeepAlivePingDelay = settings.ConnectivitySettings.KeepAlive.Value;
 					}
 
 					return handler;

@@ -67,7 +67,12 @@ namespace EventStore.Client {
 		/// <summary>
 		/// The optional amount of time to wait after which a keepalive ping is sent on the transport.
 		/// </summary>
-		public TimeSpan? KeepAlive { get; set; }
+		public TimeSpan KeepAliveInterval { get; set; } = TimeSpan.FromSeconds(10);
+
+		/// <summary>
+		/// The optional amount of time to wait after which a sent keepalive ping is considered timed out.
+		/// </summary>
+		public TimeSpan KeepAliveTimeout { get; set; } = TimeSpan.FromSeconds(10);
 
 		/// <summary>
 		/// True if pointing to a single EventStoreDB node.
@@ -86,7 +91,9 @@ namespace EventStore.Client {
 			MaxDiscoverAttempts = 10,
 			GossipTimeout = TimeSpan.FromSeconds(5),
 			DiscoveryInterval = TimeSpan.FromMilliseconds(100),
-			NodePreference = NodePreference.Leader
+			NodePreference = NodePreference.Leader,
+			KeepAliveInterval = TimeSpan.FromSeconds(10),
+			KeepAliveTimeout =  TimeSpan.FromSeconds(10),
 		};
 	}
 }
