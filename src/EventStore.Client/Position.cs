@@ -6,7 +6,7 @@ namespace EventStore.Client {
 	/// A structure referring to a potential logical record position
 	/// in the Event Store transaction file.
 	/// </summary>
-	public readonly struct Position : IEquatable<Position>, IComparable<Position> {
+	public readonly struct Position : IEquatable<Position>, IComparable<Position>, IPosition {
 		/// <summary>
 		/// Position representing the start of the transaction file
 		/// </summary>

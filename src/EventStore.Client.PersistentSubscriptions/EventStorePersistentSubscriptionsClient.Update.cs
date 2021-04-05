@@ -14,6 +14,49 @@ namespace EventStore.Client {
 				[SystemConsumerStrategies.Pinned] = UpdateReq.Types.ConsumerStrategy.Pinned,
 			};
 
+		private static UpdateReq.Types.StreamOptions StreamOptionsForUpdateProto(string streamName, StreamPosition position) {
+			if (position == StreamPosition.Start) {
+				return new UpdateReq.Types.StreamOptions {
+					StreamIdentifier = streamName,
+					Start = new Empty()
+				};
+			}
+
+			if (position == StreamPosition.End) {
+				return new UpdateReq.Types.StreamOptions {
+					StreamIdentifier = streamName,
+					End = new Empty()
+				};
+			}
+
+			return new UpdateReq.Types.StreamOptions {
+				StreamIdentifier = streamName,
+				Revision = position.ToUInt64()
+			};
+		}
+
+		private static UpdateReq.Types.AllOptions AllOptionsForUpdateProto(Position position) {
+			if (position == Position.Start) {
+				return new UpdateReq.Types.AllOptions {
+					Start = new Empty()
+				};
+			}
+
+			if (position == Position.End) {
+				return new UpdateReq.Types.AllOptions {
+					End = new Empty()
+				};
+			}
+
+			return new UpdateReq.Types.AllOptions {
+				Position = new UpdateReq.Types.Position {
+					CommitPosition = position.CommitPosition,
+					PreparePosition = position.PreparePosition
+				}
+			};
+		}
+
+
 		/// <summary>
 		/// Updates a persistent subscription.
 		/// </summary>
@@ -39,13 +82,29 @@ namespace EventStore.Client {
 				throw new ArgumentNullException(nameof(settings));
 			}
 
+			if (streamName != SystemStreams.AllStream && settings.StartFrom != null && !(settings.StartFrom is StreamPosition)) {
+				throw new ArgumentException($"{nameof(settings.StartFrom)} must be of type '{nameof(StreamPosition)}' when subscribing to a stream");
+			}
+
+			if (streamName == SystemStreams.AllStream && settings.StartFrom != null && !(settings.StartFrom is Position)) {
+				throw new ArgumentException($"{nameof(settings.StartFrom)} must be of type '{nameof(Position)}' when subscribing to {SystemStreams.AllStream}");
+			}
+
 			await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
 				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).UpdateAsync(new UpdateReq {
 				Options = new UpdateReq.Types.Options {
-					StreamIdentifier = streamName,
 					GroupName = groupName,
+					Stream = streamName != SystemStreams.AllStream ?
+						StreamOptionsForUpdateProto(streamName, (StreamPosition)(settings.StartFrom ?? StreamPosition.End)) : null,
+					All = streamName == SystemStreams.AllStream ?
+						AllOptionsForUpdateProto((Position)(settings.StartFrom ?? Position.End)) : null,
+					#pragma warning disable 612
+					StreamIdentifier = streamName != SystemStreams.AllStream ? streamName : string.Empty, /*for backwards compatibility*/
+					#pragma warning restore 612
 					Settings = new UpdateReq.Types.Settings {
-						Revision = settings.StartFrom,
+						#pragma warning disable 612
+						Revision = streamName != SystemStreams.AllStream ? ((StreamPosition)(settings.StartFrom ?? StreamPosition.End)).ToUInt64() : default, /*for backwards compatibility*/
+						#pragma warning restore 612
 						CheckpointAfterMs = (int)settings.CheckPointAfter.TotalMilliseconds,
 						ExtraStatistics = settings.ExtraStatistics,
 						MessageTimeoutMs = (int)settings.MessageTimeout.TotalMilliseconds,
@@ -62,5 +121,24 @@ namespace EventStore.Client {
 				}
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
+
+		/// <summary>
+		/// Updates a persistent subscription to $all.
+		/// </summary>
+		/// <param name="groupName"></param>
+		/// <param name="settings"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public async Task UpdateToAllAsync(string groupName, PersistentSubscriptionSettings settings,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) =>
+			await UpdateAsync(
+					streamName: SystemStreams.AllStream,
+					groupName: groupName,
+					settings: settings,
+					userCredentials: userCredentials,
+					cancellationToken: cancellationToken)
+				.ConfigureAwait(false);
 	}
 }

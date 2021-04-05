@@ -57,12 +57,47 @@ namespace EventStore.Client {
 				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Read(EventStoreCallOptions.Create(
 				Settings, operationOptions, userCredentials, cancellationToken));
 
-			return await PersistentSubscription.Confirm(call, new ReadReq.Types.Options {
+			var readOptions = new ReadReq.Types.Options {
 				BufferSize = bufferSize,
 				GroupName = groupName,
-				StreamIdentifier = streamName,
 				UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()}
-			}, autoAck, eventAppeared, subscriptionDropped ?? delegate { }, cancellationToken).ConfigureAwait(false);
+			};
+
+			if (streamName == SystemStreams.AllStream) {
+				readOptions.All = new Empty();
+			} else {
+				readOptions.StreamIdentifier = streamName;
+			}
+
+			return await PersistentSubscription.Confirm(call, readOptions, autoAck, eventAppeared,
+				subscriptionDropped ?? delegate { }, cancellationToken).ConfigureAwait(false);
 		}
+
+		/// <summary>
+		/// Subscribes to a persistent subscription to $all.
+		/// </summary>
+		/// <param name="groupName"></param>
+		/// <param name="eventAppeared"></param>
+		/// <param name="subscriptionDropped"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="bufferSize"></param>
+		/// <param name="autoAck"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public async Task<PersistentSubscription> SubscribeToAllAsync(string groupName,
+			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
+			UserCredentials? userCredentials = null, int bufferSize = 10, bool autoAck = true,
+			CancellationToken cancellationToken = default) =>
+			await SubscribeAsync(
+				streamName: SystemStreams.AllStream,
+				groupName: groupName,
+				eventAppeared: eventAppeared,
+				subscriptionDropped: subscriptionDropped,
+				userCredentials: userCredentials,
+				bufferSize: bufferSize,
+				autoAck: autoAck,
+				cancellationToken: cancellationToken)
+				.ConfigureAwait(false);
 	}
 }

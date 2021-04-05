@@ -12,9 +12,9 @@ namespace EventStore.Client {
 		public readonly bool ResolveLinkTos;
 
 		/// <summary>
-		/// Which event position in the stream the subscription should start from.
+		/// Which event position in the stream or transaction file the subscription should start from.
 		/// </summary>
-		public readonly StreamPosition StartFrom;
+		public readonly IPosition? StartFrom;
 
 		/// <summary>
 		/// Whether to track latency statistics on this subscription.
@@ -22,7 +22,7 @@ namespace EventStore.Client {
 		public readonly bool ExtraStatistics;
 
 		/// <summary>
-		/// The amount of time after which to consider a message as timedout and retried.
+		/// The amount of time after which to consider a message as timed out and retried.
 		/// </summary>
 		public readonly TimeSpan MessageTimeout;
 
@@ -88,14 +88,13 @@ namespace EventStore.Client {
 		/// <param name="maxSubscriberCount"></param>
 		/// <param name="namedConsumerStrategy"></param>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
-		public PersistentSubscriptionSettings(bool resolveLinkTos = false, StreamPosition? startFrom = null,
+		public PersistentSubscriptionSettings(bool resolveLinkTos = false, IPosition? startFrom = null,
 			bool extraStatistics = false, TimeSpan? messageTimeout = null, int maxRetryCount = 500,
 			int liveBufferSize = 500, int readBatchSize = 10, int historyBufferSize = 20,
 			TimeSpan? checkPointAfter = null, int minCheckPointCount = 10, int maxCheckPointCount = 1000,
 			int maxSubscriberCount = 0, string namedConsumerStrategy = SystemConsumerStrategies.RoundRobin) {
 			messageTimeout ??= TimeSpan.FromSeconds(30);
 			checkPointAfter ??= TimeSpan.FromSeconds(2);
-			startFrom ??= StreamPosition.End;
 
 			if (messageTimeout.Value < TimeSpan.Zero || messageTimeout.Value.TotalMilliseconds > int.MaxValue) {
 				throw new ArgumentOutOfRangeException(
@@ -110,7 +109,7 @@ namespace EventStore.Client {
 			}
 
 			ResolveLinkTos = resolveLinkTos;
-			StartFrom = startFrom.Value;
+			StartFrom = startFrom;
 			ExtraStatistics = extraStatistics;
 			MessageTimeout = messageTimeout.Value;
 			MaxRetryCount = maxRetryCount;

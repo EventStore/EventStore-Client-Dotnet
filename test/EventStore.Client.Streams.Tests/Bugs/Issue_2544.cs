@@ -121,7 +121,7 @@ namespace EventStore.Client.Bugs {
 			}) {
 			}
 
-			protected override Task Given() => Client.SetStreamMetadataAsync("$all", StreamState.Any,
+			protected override Task Given() => Client.SetStreamMetadataAsync(SystemStreams.AllStream, StreamState.Any,
 				new StreamMetadata(acl: new StreamAcl(SystemRoles.All)), userCredentials: TestCredentials.Root);
 
 			protected override Task When() => Task.CompletedTask;

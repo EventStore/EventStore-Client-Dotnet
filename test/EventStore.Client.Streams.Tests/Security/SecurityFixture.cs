@@ -11,7 +11,7 @@ namespace EventStore.Client.Security {
 		public const string WriteStream = nameof(WriteStream);
 		public const string MetaReadStream = nameof(MetaReadStream);
 		public const string MetaWriteStream = nameof(MetaWriteStream);
-		public const string AllStream = "$all";
+		public const string AllStream = SystemStreams.AllStream;
 		public const string NormalAllStream = nameof(NormalAllStream);
 		public const string SystemAllStream = "$" + nameof(SystemAllStream);
 		public const string SystemAdminStream = "$" + nameof(SystemAdminStream);
