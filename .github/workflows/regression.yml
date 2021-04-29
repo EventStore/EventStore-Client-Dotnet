@@ -32,15 +32,10 @@ jobs:
         login-server: docker.pkg.github.com/eventstore
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Build Server Image
+    - name: Pull Server Image
       shell: bash
       run: |
-        ./gencert.sh
         docker pull docker.pkg.github.com/eventstore/eventstore/eventstore:${{ matrix.docker-tag }}
-        docker build \
-          --build-arg DOCKER_TAG=${{ matrix.docker-tag }} \
-          --tag docker.pkg.github.com/eventstore/eventstore/eventstore:${{ matrix.docker-tag }} \
-          --file ./.github/workflows/regression.Dockerfile .
     - name: Checkout Version
       uses: actions/checkout@v2
       with:
@@ -61,6 +56,7 @@ jobs:
       env:
         ES_DOCKER_TAG: ${{ matrix.docker-tag }}
       run: |
+        ./gencert.sh
         dotnet test --configuration ${{ matrix.configuration }} --blame \
         --logger:html --logger:trx --logger:"console;verbosity=normal" \
         --results-directory=$(pwd)/test-results/test/EventStore.Client${{ matrix.test }}.Tests \
