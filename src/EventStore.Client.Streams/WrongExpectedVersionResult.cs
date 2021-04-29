@@ -17,6 +17,11 @@ namespace EventStore.Client {
 		/// </summary>
 		public long ActualVersion { get; }
 
+		/// <summary>
+		/// The <see cref="StreamRevision"/> the stream is at.
+		/// </summary>
+		public StreamRevision ActualStreamRevision { get; }
+
 		/// <inheritdoc />
 		public Position LogPosition { get; }
 
@@ -31,7 +36,7 @@ namespace EventStore.Client {
 		public WrongExpectedVersionResult(string streamName, StreamRevision nextExpectedStreamRevision) {
 			StreamName = streamName;
 			ActualVersion = NextExpectedVersion = nextExpectedStreamRevision.ToInt64();
-			NextExpectedStreamRevision = nextExpectedStreamRevision;
+			ActualStreamRevision = NextExpectedStreamRevision = nextExpectedStreamRevision;
 			LogPosition = default;
 		}
 
@@ -45,6 +50,7 @@ namespace EventStore.Client {
 			StreamRevision actualStreamRevision) {
 			StreamName = streamName;
 			ActualVersion = actualStreamRevision.ToInt64();
+			ActualStreamRevision = actualStreamRevision;
 			NextExpectedVersion = nextExpectedStreamRevision.ToInt64();
 			NextExpectedStreamRevision = nextExpectedStreamRevision;
 			LogPosition = default;

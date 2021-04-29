@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Threading;
+using Timeout_ = System.Threading.Timeout;
 #if !GRPC_CORE
 using System.Net.Http;
 #endif
@@ -171,7 +171,7 @@ namespace EventStore.Client {
 
 				if (typedOptions.TryGetValue(KeepAliveInterval, out var keepAliveIntervalMs)) {
 					settings.ConnectivitySettings.KeepAliveInterval = keepAliveIntervalMs switch {
-						int value when value == -1 => Timeout.InfiniteTimeSpan,
+						int value when value == -1 => Timeout_.InfiniteTimeSpan,
 						int value when value >= 0 => TimeSpan.FromMilliseconds(value),
 						_ => throw new InvalidSettingException($"Invalid KeepAliveInterval: {keepAliveIntervalMs}")
 					};
@@ -179,7 +179,7 @@ namespace EventStore.Client {
 
 				if (typedOptions.TryGetValue(KeepAliveTimeout, out var keepAliveTimeoutMs)) {
 					settings.ConnectivitySettings.KeepAliveTimeout = keepAliveTimeoutMs switch {
-						int value when value == -1 => Timeout.InfiniteTimeSpan,
+						int value when value == -1 => Timeout_.InfiniteTimeSpan,
 						int value when value >= 0 => TimeSpan.FromMilliseconds(value),
 						_ => throw new InvalidSettingException($"Invalid KeepAliveTimeout: {keepAliveTimeoutMs}")
 					};

@@ -1,14 +1,18 @@
 syntax = "proto3";
 package event_store.client.streams;
-option java_package = "com.eventstore.client.streams";
+option java_package = "com.eventstore.dbclient.proto.streams";
 
 import "shared.proto";
+import "status.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 service Streams {
 	rpc Read (ReadReq) returns (stream ReadResp);
 	rpc Append (stream AppendReq) returns (AppendResp);
 	rpc Delete (DeleteReq) returns (DeleteResp);
 	rpc Tombstone (TombstoneReq) returns (TombstoneResp);
+	rpc BatchAppend (stream BatchAppendReq) returns (stream BatchAppendResp);
 }
 
 message ReadReq {
@@ -101,7 +105,7 @@ message ReadResp {
 		uint64 prepare_position = 2;
 	}
 	message StreamNotFound {
-
+		event_store.client.StreamIdentifier stream_identifier = 1;
 	}
 }
 
@@ -174,6 +178,59 @@ message AppendResp {
 	}
 }
 
+message BatchAppendReq {
+	event_store.client.UUID correlation_id = 1;
+	Options options = 2;
+	repeated ProposedMessage proposed_messages = 3;
+	bool is_final = 4;
+
+	message Options {
+		event_store.client.StreamIdentifier stream_identifier = 1;
+		oneof expected_stream_position {
+			uint64 stream_position = 2;
+			google.protobuf.Empty no_stream = 3;
+			google.protobuf.Empty any = 4;
+			google.protobuf.Empty stream_exists = 5;
+		}
+		google.protobuf.Timestamp deadline = 6;
+	}
+
+	message ProposedMessage {
+		event_store.client.UUID id = 1;
+		map<string, string> metadata = 2;
+		bytes custom_metadata = 3;
+		bytes data = 4;
+	}
+}
+
+message BatchAppendResp {
+	event_store.client.UUID correlation_id = 1;
+	oneof result {
+		google.rpc.Status error = 2;
+		Success success = 3;
+	}
+
+	event_store.client.StreamIdentifier stream_identifier = 4;
+
+	oneof expected_stream_position {
+		uint64 stream_position = 5;
+		google.protobuf.Empty no_stream = 6;
+		google.protobuf.Empty any = 7;
+		google.protobuf.Empty stream_exists = 8;
+	}
+
+	message Success {
+		oneof current_revision_option {
+			uint64 current_revision = 1;
+			google.protobuf.Empty no_stream = 2;
+		}
+		oneof position_option {
+			event_store.client.AllStreamPosition position = 3;
+			google.protobuf.Empty no_position = 4;
+		}
+	}
+}
+
 message DeleteReq {
 	Options options = 1;
 
@@ -225,3 +282,4 @@ message TombstoneResp {
 		uint64 prepare_position = 2;
 	}
 }
+

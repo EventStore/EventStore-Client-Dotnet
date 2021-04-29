@@ -25,10 +25,11 @@ namespace EventStore.Client {
 		public async Task fails_when_size_exceeds_max_append_size() {
 			var stream = _fixture.GetStreamName();
 
-			await Assert.ThrowsAsync<MaximumAppendSizeExceededException>(() => _fixture.Client.AppendToStreamAsync(
+			var ex = await Assert.ThrowsAsync<MaximumAppendSizeExceededException>(() => _fixture.Client.AppendToStreamAsync(
 				stream,
 				StreamState.NoStream,
 				_fixture.GetEvents(MaxAppendSize * 2)));
+			Assert.Equal((uint)MaxAppendSize, ex.MaxAppendSize);
 		}
 
 		public class Fixture : EventStoreClientFixture {

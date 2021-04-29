@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using EventStore.Client.Streams;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -13,7 +16,7 @@ namespace EventStore.Client {
 	/// <summary>
 	/// The client used for operations on streams.
 	/// </summary>
-	public partial class EventStoreClient : EventStoreClientBase {
+	public partial class EventStoreClient : EventStoreClientBase, IDisposable, IAsyncDisposable {
 		private static readonly JsonSerializerOptions StreamMetadataJsonSerializerOptions = new JsonSerializerOptions {
 			Converters = {
 				StreamMetadataJsonConverter.Instance
@@ -21,6 +24,8 @@ namespace EventStore.Client {
 		};
 
 		private readonly ILogger<EventStoreClient> _log;
+		private StreamAppender _streamAppender;
+		private readonly CancellationTokenSource _disposedTokenSource;
 
 		private static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap =
 			new Dictionary<string, Func<RpcException, Exception>> {
@@ -60,6 +65,25 @@ namespace EventStore.Client {
 		/// <param name="settings"></param>
 		public EventStoreClient(EventStoreClientSettings? settings = null) : base(settings, ExceptionMap) {
 			_log = Settings.LoggerFactory?.CreateLogger<EventStoreClient>() ?? new NullLogger<EventStoreClient>();
+			_disposedTokenSource = new CancellationTokenSource();
+			_streamAppender = CreateStreamAppender();
+		}
+
+		private void SwapStreamAppender(Exception ex) =>
+			Interlocked.Exchange(ref _streamAppender, CreateStreamAppender());
+
+		private StreamAppender CreateStreamAppender() {
+			return new StreamAppender(Settings, GetCall(), _disposedTokenSource.Token, SwapStreamAppender);
+
+			async Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>> GetCall() {
+				var callInvoker = await SelectCallInvoker(_disposedTokenSource.Token).ConfigureAwait(false);
+				var client = new Streams.Streams.StreamsClient(callInvoker);
+				var operationOptions = Settings.OperationOptions.Clone();
+				operationOptions.TimeoutAfter = new TimeSpan?();
+
+				return client.BatchAppend(EventStoreCallOptions.Create(Settings,
+					operationOptions, Settings.DefaultCredentials, _disposedTokenSource.Token));
+			}
 		}
 
 		private static FilterOptions? GetFilterOptions(
@@ -119,6 +143,18 @@ namespace EventStore.Client {
 			options.CheckpointIntervalMultiplier = filterOptions.CheckpointInterval;
 
 			return options;
+		}
+
+		void IDisposable.Dispose() {
+			_streamAppender.Dispose();
+			_disposedTokenSource.Dispose();
+			base.Dispose();
+		}
+
+		async ValueTask IAsyncDisposable.DisposeAsync() {
+			_streamAppender.Dispose();
+			_disposedTokenSource.Dispose();
+			await base.DisposeAsync().ConfigureAwait(false);
 		}
 	}
 }

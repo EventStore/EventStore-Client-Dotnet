@@ -47,7 +47,7 @@ namespace EventStore.Client {
 			return GetStreamMetadataAsync(streamName, options, userCredentials, cancellationToken);
 		}
 
-		private Task<IWriteResult> SetStreamMetadataAsync(string streamName, StreamState expectedState,
+		private ValueTask<IWriteResult> SetStreamMetadataAsync(string streamName, StreamState expectedState,
 			StreamMetadata metadata, EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default)
 			=> SetStreamMetadataInternal(metadata, new AppendReq {
@@ -73,10 +73,10 @@ namespace EventStore.Client {
 			var options = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(options);
 			return SetStreamMetadataAsync(streamName, expectedState, metadata, options,
-				userCredentials, cancellationToken);
+				userCredentials, cancellationToken).AsTask();
 		}
 
-		private Task<IWriteResult> SetStreamMetadataAsync(string streamName, StreamRevision expectedRevision,
+		private ValueTask<IWriteResult> SetStreamMetadataAsync(string streamName, StreamRevision expectedRevision,
 			StreamMetadata metadata, EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default)
 			=> SetStreamMetadataInternal(metadata, new AppendReq {
@@ -103,10 +103,10 @@ namespace EventStore.Client {
 			var options = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(options);
 			return SetStreamMetadataAsync(streamName, expectedRevision, metadata, options,
-				userCredentials, cancellationToken);
+				userCredentials, cancellationToken).AsTask();
 		}
 
-		private Task<IWriteResult> SetStreamMetadataInternal(StreamMetadata metadata,
+		private ValueTask<IWriteResult> SetStreamMetadataInternal(StreamMetadata metadata,
 			AppendReq appendReq,
 			EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials,

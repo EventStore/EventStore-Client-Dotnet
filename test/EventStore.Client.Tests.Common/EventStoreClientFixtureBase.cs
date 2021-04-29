@@ -43,7 +43,7 @@ namespace EventStore.Client {
 				.Enrich.FromLogContext()
 				.MinimumLevel.Is(LogEventLevel.Verbose)
 				.MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-				.MinimumLevel.Override("Grpc", LogEventLevel.Warning)
+				.MinimumLevel.Override("Grpc", LogEventLevel.Verbose)
 				.WriteTo.Observers(observable => observable.Subscribe(LogEventSubject.OnNext))
 				.WriteTo.Seq("http://localhost:5341/", period: TimeSpan.FromMilliseconds(1));
 			Log.Logger = loggerConfiguration.CreateLogger();

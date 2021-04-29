@@ -129,14 +129,14 @@ namespace EventStore.Client {
 			var result =
 				EventStoreClientSettings.Create("esdb://localhost:2113?keepAliveInterval=-1&keepAliveTimeout=-1");
 
-			Assert.Equal(Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveInterval);
-			Assert.Equal(Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveTimeout);
+			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveInterval);
+			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveTimeout);
 
 #if !GRPC_CORE
 			using var handler = result.CreateHttpMessageHandler?.Invoke();
 			var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
-			Assert.Equal(Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingTimeout);
-			Assert.Equal(Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingDelay);
+			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingTimeout);
+			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingDelay);
 #endif
 		}
 
