@@ -24,7 +24,7 @@
 		</AssemblyAttribute>
 	</ItemGroup>
 	<ItemGroup>
-		<Protobuf Include="..\EventStore.Client.Common\protos\shared.proto" GrpcServices="Client" ProtoRoot="..\EventStore.Client.Common\protos" />
+		<Protobuf Include="..\EventStore.Client.Common\protos\shared.proto;..\EventStore.Client.Common\protos\status.proto;..\EventStore.Client.Common\protos\code.proto;" GrpcServices="Client" ProtoRoot="..\EventStore.Client.Common\protos" />
 		<Protobuf Include="..\EventStore.Client.Common\protos\gossip.proto" ProtoRoot="..\EventStore.Client.Common\protos" />
 	</ItemGroup>
 	<ItemGroup>

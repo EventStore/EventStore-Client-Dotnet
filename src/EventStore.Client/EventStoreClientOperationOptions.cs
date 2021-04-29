@@ -19,6 +19,11 @@ namespace EventStore.Client {
 		public bool ThrowOnAppendFailure { get; set; }
 
 		/// <summary>
+		/// The batch size, in bytes.
+		/// </summary>
+		public int BatchAppendSize { get; set; }
+
+		/// <summary>
 		/// A callback function to extract the authorize header value from the <see cref="UserCredentials"/> used in the operation.
 		/// </summary>
 		public Func<UserCredentials, CancellationToken, ValueTask<string>> GetAuthenticationHeaderValue { get; set; } =
@@ -30,7 +35,8 @@ namespace EventStore.Client {
 		public static EventStoreClientOperationOptions Default => new EventStoreClientOperationOptions {
 			TimeoutAfter = TimeSpan.FromSeconds(5),
 			ThrowOnAppendFailure = true,
-			GetAuthenticationHeaderValue = (userCredentials, ct) => new ValueTask<string>(userCredentials.ToString())
+			GetAuthenticationHeaderValue = (userCredentials, ct) => new ValueTask<string>(userCredentials.ToString()),
+			BatchAppendSize = 3 * 1024 * 1024
 		};
 
 
@@ -42,7 +48,8 @@ namespace EventStore.Client {
 			new EventStoreClientOperationOptions {
 				TimeoutAfter = TimeoutAfter,
 				ThrowOnAppendFailure = ThrowOnAppendFailure,
-				GetAuthenticationHeaderValue = GetAuthenticationHeaderValue
+				GetAuthenticationHeaderValue = GetAuthenticationHeaderValue,
+				BatchAppendSize = BatchAppendSize
 			};
 	}
 }

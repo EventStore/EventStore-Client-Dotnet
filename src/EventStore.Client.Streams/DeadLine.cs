@@ -6,7 +6,8 @@ namespace EventStore.Client {
 	internal static class DeadLine {
 		public static DateTime? After(TimeSpan? timeoutAfter){
 			if(!timeoutAfter.HasValue) return null;
-			if(timeoutAfter.Value == TimeSpan.MaxValue || timeoutAfter.Value == Timeout.InfiniteTimeSpan) return DateTime.MaxValue;
+			if (timeoutAfter.Value == TimeSpan.MaxValue ||
+			    timeoutAfter.Value == System.Threading.Timeout.InfiniteTimeSpan) return DateTime.MaxValue;
 			return DateTime.UtcNow.Add(timeoutAfter.Value);
 		}
 
