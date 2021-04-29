@@ -12,5 +12,12 @@ namespace EventStore.Client {
 		/// </summary>
 		public AccessDeniedException(string message, Exception innerException) : base(message, innerException) {
 		}
+
+		/// <summary>
+		/// Constructs a new <see cref="AccessDeniedException" />.
+		/// </summary>
+		public AccessDeniedException() : base("Access denied.") {
+
+		}
 	}
 }

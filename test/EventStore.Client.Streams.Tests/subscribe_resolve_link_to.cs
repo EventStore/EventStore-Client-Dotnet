@@ -141,7 +141,7 @@ namespace EventStore.Client {
 
 			enumerator.MoveNext();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, beforeEvents)
+			var result = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, beforeEvents)
 				.WithTimeout();
 
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(EventAppeared, true, SubscriptionDropped,
@@ -149,7 +149,7 @@ namespace EventStore.Client {
 					userCredentials: TestCredentials.Root)
 				.WithTimeout();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents)
+			result = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents)
 				.WithTimeout();
 
 			await appeared.Task.WithTimeout();

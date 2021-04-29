@@ -27,7 +27,7 @@ namespace EventStore.Client {
 
 			return GrpcChannel.ForAddress(address, new GrpcChannelOptions {
 				HttpClient = new HttpClient(CreateHandler(), true) {
-					Timeout = Timeout.InfiniteTimeSpan,
+					Timeout = System.Threading.Timeout.InfiniteTimeSpan,
 					DefaultRequestVersion = new Version(2, 0),
 				},
 				LoggerFactory = settings.LoggerFactory,
@@ -42,7 +42,8 @@ namespace EventStore.Client {
 
 				return new SocketsHttpHandler {
 					KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,
-					KeepAlivePingTimeout = settings.ConnectivitySettings.KeepAliveTimeout
+					KeepAlivePingTimeout = settings.ConnectivitySettings.KeepAliveTimeout,
+					EnableMultipleHttp2Connections = true
 				};
 			}
 #else

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Client.Streams;
 using Xunit;
 
 namespace EventStore.Client {
@@ -218,6 +217,7 @@ namespace EventStore.Client {
 			var ex = await Assert.ThrowsAsync<WrongExpectedVersionException>(
 				() => _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(1), _fixture.CreateTestEvents()));
 			Assert.Equal(StreamRevision.None, ex.ActualStreamRevision);
+			Assert.Equal(new StreamRevision(1), ex.ExpectedStreamRevision);
 		}
 
 		[Fact]

@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -130,6 +131,7 @@ namespace EventStore.Client {
 
 			var events = _fixture.CreateTestEvents().ToArray();
 
+			await Task.Delay(TimeSpan.FromSeconds(30));
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Take(1));
 

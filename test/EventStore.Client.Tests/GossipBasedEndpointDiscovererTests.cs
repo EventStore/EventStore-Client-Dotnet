@@ -32,7 +32,7 @@ namespace EventStore.Client {
 			var sut = new GossipBasedEndpointDiscoverer(
 				new EventStoreClientConnectivitySettings {
 					MaxDiscoverAttempts = 1,
-					GossipTimeout = Timeout.InfiniteTimeSpan,
+					GossipTimeout = System.Threading.Timeout.InfiniteTimeSpan,
 					Insecure = !useHttps,
 					DiscoveryInterval = TimeSpan.Zero,
 					NodePreference = NodePreference.Leader,
@@ -77,7 +77,7 @@ namespace EventStore.Client {
 			var sut = new GossipBasedEndpointDiscoverer(
 				new EventStoreClientConnectivitySettings {
 					MaxDiscoverAttempts = 5,
-					GossipTimeout = Timeout.InfiniteTimeSpan,
+					GossipTimeout = System.Threading.Timeout.InfiniteTimeSpan,
 					Insecure = !useHttps,
 					DiscoveryInterval = TimeSpan.Zero,
 					NodePreference = NodePreference.Leader,
@@ -106,7 +106,7 @@ namespace EventStore.Client {
 			var sut = new GossipBasedEndpointDiscoverer(
 				new EventStoreClientConnectivitySettings {
 					MaxDiscoverAttempts = 5,
-					GossipTimeout = Timeout.InfiniteTimeSpan,
+					GossipTimeout = System.Threading.Timeout.InfiniteTimeSpan,
 					Insecure = !useHttps,
 					DiscoveryInterval = TimeSpan.Zero,
 					NodePreference = NodePreference.Leader,
@@ -155,7 +155,7 @@ namespace EventStore.Client {
 			var sut = new GossipBasedEndpointDiscoverer(
 				new EventStoreClientConnectivitySettings {
 					MaxDiscoverAttempts = 1,
-					GossipTimeout = Timeout.InfiniteTimeSpan,
+					GossipTimeout = System.Threading.Timeout.InfiniteTimeSpan,
 					Insecure = !useHttps,
 					DiscoveryInterval = TimeSpan.Zero,
 					NodePreference = NodePreference.Leader,
@@ -208,7 +208,7 @@ namespace EventStore.Client {
 			var sut = new GossipBasedEndpointDiscoverer(
 				new EventStoreClientConnectivitySettings {
 					MaxDiscoverAttempts = 1,
-					GossipTimeout = Timeout.InfiniteTimeSpan,
+					GossipTimeout = System.Threading.Timeout.InfiniteTimeSpan,
 					Insecure = !useHttps,
 					DiscoveryInterval = TimeSpan.Zero,
 					NodePreference = preference,
@@ -242,7 +242,7 @@ namespace EventStore.Client {
 			var sut = new GossipBasedEndpointDiscoverer(
 				new EventStoreClientConnectivitySettings {
 					MaxDiscoverAttempts = 1,
-					GossipTimeout = Timeout.InfiniteTimeSpan,
+					GossipTimeout = System.Threading.Timeout.InfiniteTimeSpan,
 					Insecure = !useHttps,
 					DiscoveryInterval = TimeSpan.Zero,
 					NodePreference = NodePreference.Leader,

@@ -51,7 +51,7 @@ namespace EventStore.Client {
 				.Enrich.FromLogContext()
 				.MinimumLevel.Is(LogEventLevel.Verbose)
 				.MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-				.MinimumLevel.Override("Grpc", LogEventLevel.Warning)
+				.MinimumLevel.Override("Grpc", LogEventLevel.Verbose)
 				.WriteTo.Observers(observable => observable.Subscribe(LogEventSubject.OnNext))
 				.WriteTo.Seq("http://localhost:5341/", period: TimeSpan.FromMilliseconds(1));
 			Log.Logger = loggerConfiguration.CreateLogger();
@@ -158,6 +158,14 @@ namespace EventStore.Client {
 			_disposables.Add(subscription);
 		}
 
+		protected class EventStoreTestServer2 : IAsyncDisposable {
+			public EventStoreTestServer2(Uri connectivitySettingsAddress, IDictionary<string, string>? env) {
+			}
+
+			public Task Start() => Task.CompletedTask;
+			public ValueTask DisposeAsync() => new(Task.CompletedTask);
+		}
+
 		protected class EventStoreTestServer : IAsyncDisposable {
 			private readonly IContainerService _eventStore;
 			private readonly HttpClient _httpClient;
@@ -187,7 +195,8 @@ namespace EventStore.Client {
 					["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"] = "/etc/eventstore/certs/node/node.key",
 					["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"] = "/etc/eventstore/certs/ca",
 					["EVENTSTORE_LOG_LEVEL"] = "Verbose",
-					["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"] = "True"
+					["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"] = "True",
+					["EVENTSTORE_LOG_FAILED_AUTHENTICATION_ATTEMPTS"] = "True"
 				};
 				foreach (var (key, value) in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
 					env[key] = value;
