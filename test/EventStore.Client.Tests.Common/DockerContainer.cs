@@ -47,6 +47,7 @@ namespace EventStore.Client {
 		public string ContainerName { get; set; } = Guid.NewGuid().ToString("n");
 		public IDictionary<string, string> Env { get; set; }
 		public IList<string> Cmd { get; set; }
+		public IDictionary<string, string> Volumes { get; } = new Dictionary<string, string>();
 
 		private static AsyncPolicy RetryPolicy => Policy.Handle<DockerApiException>()
 			.WaitAndRetryAsync(5, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)));
@@ -114,6 +115,11 @@ namespace EventStore.Client {
 								}
 							}),
 						AutoRemove = true,
+						Mounts = Volumes.Select(pair => new Mount {
+							Source = pair.Key,
+							Target = pair.Value,
+							Type = "bind"
+						}).ToList()
 					},
 					Cmd = Cmd
 				},

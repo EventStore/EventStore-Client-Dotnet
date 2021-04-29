@@ -23,6 +23,8 @@ namespace EventStore.Client {
 		public const string TestEventType = "-";
 
 		private static readonly Subject<LogEvent> LogEventSubject = new Subject<LogEvent>();
+		private static readonly string HostCertificatePath =
+			Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "..", "..", "..", "..", "certs"));
 		private readonly IList<IDisposable> _disposables;
 		protected EventStoreTestServer TestServer { get; }
 		protected EventStoreClientSettings Settings { get; }
@@ -38,6 +40,21 @@ namespace EventStore.Client {
 			Log.Logger = loggerConfiguration.CreateLogger();
 
 			AppDomain.CurrentDomain.DomainUnload += (_, e) => Log.CloseAndFlush();
+
+			VerifyCertificates();
+		}
+
+		private static void VerifyCertificates() {
+			var certificateFiles = new[] {
+				Path.Combine("ca", "ca.crt"),
+				Path.Combine("ca", "ca.key"),
+				Path.Combine("node", "node.crt"),
+				Path.Combine("node", "node.key")
+			}.Select(path => Path.Combine(HostCertificatePath, path));
+			if (certificateFiles.Any(file => !File.Exists(file))) {
+				throw new InvalidOperationException(
+					$"Could not locate the certificates needed to run EventStoreDB ({string.Join(", ", certificateFiles)}). Please run the 'gencert' tool at the root of the repository.");
+			}
 		}
 
 		protected EventStoreClientFixtureBase(EventStoreClientSettings? clientSettings,
@@ -142,7 +159,7 @@ namespace EventStore.Client {
 				_container = new DockerContainer("docker.pkg.github.com/eventstore/eventstore/eventstore", tag,
 					async ct => {
 						try {
-							using var response = await _httpClient.GetAsync("/web/index.html", ct);
+							using var response = await _httpClient.GetAsync("/health/live", ct);
 							return (int)response.StatusCode < 400;
 						} catch {
 						}
@@ -153,9 +170,17 @@ namespace EventStore.Client {
 				}) {
 					Env = new Dictionary<string, string>(
 						env ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
-						["EVENTSTORE_DEV"] = "true"
+						["EVENTSTORE_MEM_DB"] = "true",
+						["EVENTSTORE_CERTIFICATE_FILE"] = "/etc/eventstore/certs/node/node.crt",
+						["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"] = "/etc/eventstore/certs/node/node.key",
+						["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"] = "/etc/eventstore/certs/ca",
+						["EVENTSTORE_LOG_LEVEL"] = "Verbose",
+						["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"] = "True"
 					},
-					ContainerName = "es-client-dotnet-test"
+					ContainerName = "es-client-dotnet-test",
+					Volumes = {
+						{HostCertificatePath, "/etc/eventstore/certs"}
+					}
 				};
 			}
 
