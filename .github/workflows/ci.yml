@@ -14,18 +14,28 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sdk: [5.0-focal, 3.1-bionic]
-    runs-on: ubuntu-latest
-    name: scan-vulnerabilities/${{ matrix.sdk }}
-    container: mcr.microsoft.com/dotnet/sdk:${{ matrix.sdk }}
+        framework: [netcoreapp3.1, net5.0, net48]
+        os: [ubuntu-18.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    name: scan-vulnerabilities/${{ matrix.os }}/${{ matrix.framework }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Install netcoreapp3.1
+      uses: actions/setup-dotnet@v1
+      if: matrix.framework == 'netcoreapp3.1'
+      with:
+        dotnet-version: 3.1.x
+    - name: Install net5.0
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
     - name: Scan for Vulnerabilities
+      shell: bash
       run: |
-        dotnet tool restore
         dotnet restore
-        dotnet tool run dotnet-retire
+        dotnet list package --vulnerable --include-transitive --framework ${{ matrix.framework }} | tee vulnerabilities.txt
+        ! cat vulnerabilities.txt | grep -q "has the following vulnerable packages"
   build-dotnet:
     timeout-minutes: 20
     strategy:
