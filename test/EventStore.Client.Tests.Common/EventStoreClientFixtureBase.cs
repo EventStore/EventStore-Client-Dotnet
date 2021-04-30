@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Security;
 using System.Reactive.Linq;
@@ -11,8 +12,16 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Ductus.FluentDocker.Builders;
+using Ductus.FluentDocker.Model.Builders;
+using Ductus.FluentDocker.Services;
+#if GRPC_CORE
+using Grpc.Core;
+#endif
+using Polly;
 using Serilog;
 using Serilog.Events;
+using Serilog.Extensions.Logging;
 using Serilog.Formatting.Display;
 using Xunit;
 using Xunit.Abstractions;
@@ -22,12 +31,23 @@ namespace EventStore.Client {
 	public abstract class EventStoreClientFixtureBase : IAsyncLifetime {
 		public const string TestEventType = "-";
 
+		private const string ConnectionString = "esdb://localhost:2113/?tlsVerifyCert=false";
+
 		private static readonly Subject<LogEvent> LogEventSubject = new Subject<LogEvent>();
+
+		private static readonly string HostCertificatePath =
+			Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "..", "..", "..", "..", "certs"));
 		private readonly IList<IDisposable> _disposables;
 		protected EventStoreTestServer TestServer { get; }
 		protected EventStoreClientSettings Settings { get; }
 
 		static EventStoreClientFixtureBase() {
+			ConfigureLogging();
+
+			VerifyCertificates();
+		}
+
+		private static void ConfigureLogging() {
 			var loggerConfiguration = new LoggerConfiguration()
 				.Enrich.FromLogContext()
 				.MinimumLevel.Is(LogEventLevel.Verbose)
@@ -40,9 +60,23 @@ namespace EventStore.Client {
 			AppDomain.CurrentDomain.DomainUnload += (_, e) => Log.CloseAndFlush();
 		}
 
+		private static void VerifyCertificates() {
+			var certificateFiles = new[] {
+				Path.Combine("ca", "ca.crt"),
+				Path.Combine("ca", "ca.key"),
+				Path.Combine("node", "node.crt"),
+				Path.Combine("node", "node.key")
+			}.Select(path => Path.Combine(HostCertificatePath, path));
+			if (certificateFiles.Any(file => !File.Exists(file))) {
+				throw new InvalidOperationException(
+					"Could not locate the certificates needed to run EventStoreDB. Please run the 'gencert' tool at the root of the repository.");
+			}
+		}
+
 		protected EventStoreClientFixtureBase(EventStoreClientSettings? clientSettings,
 			IDictionary<string, string>? env = null) {
 			_disposables = new List<IDisposable>();
+			ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
 
 			Settings = clientSettings ?? new EventStoreClientSettings {
 				OperationOptions = {
@@ -57,7 +91,20 @@ namespace EventStore.Client {
 				}
 			};
 
-			TestServer = new EventStoreTestServer(env);
+			Settings.OperationOptions.TimeoutAfter = Debugger.IsAttached
+				? new TimeSpan?()
+				: TimeSpan.FromSeconds(30);
+
+#if GRPC_CORE
+			Settings.ChannelCredentials ??= GetServerCertificate();
+
+			static SslCredentials GetServerCertificate() => new SslCredentials(
+				File.ReadAllText(Path.Combine(HostCertificatePath, "ca", "ca.crt")), null, _ => true);
+#endif
+
+			Settings.LoggerFactory ??= new SerilogLoggerFactory();
+
+			TestServer = new EventStoreTestServer(Settings.ConnectivitySettings.Address, env);
 		}
 
 		protected abstract Task Given();
@@ -124,46 +171,72 @@ namespace EventStore.Client {
 		}
 
 		protected class EventStoreTestServer : IAsyncDisposable {
-			private readonly DockerContainer _container;
+			private readonly IContainerService _eventStore;
 			private readonly HttpClient _httpClient;
+			private static readonly string ContainerName = "es-client-dotnet-test";
 
-			public EventStoreTestServer(IDictionary<string, string>? env) {
-				_httpClient = new HttpClient(new SocketsHttpHandler {
-					SslOptions = {
-						RemoteCertificateValidationCallback = delegate { return true; }
+			public EventStoreTestServer(Uri address, IDictionary<string, string>? envOverrides) {
+				_httpClient = new HttpClient(
+#if NETFRAMEWORK
+					new HttpClientHandler {
+						ServerCertificateCustomValidationCallback = delegate { return true; }
 					}
-				}) {
-					BaseAddress = new UriBuilder {
-						Scheme = Uri.UriSchemeHttps,
-						Port = 2113
-					}.Uri
+#else
+					new SocketsHttpHandler {
+						SslOptions = {
+							RemoteCertificateValidationCallback = delegate { return true; }
+						}
+					}
+#endif
+				) {
+					BaseAddress = address,
 				};
 				var tag = Environment.GetEnvironmentVariable("ES_DOCKER_TAG") ?? "ci";
-				_container = new DockerContainer("docker.pkg.github.com/eventstore/eventstore/eventstore", tag,
-					async ct => {
-						try {
-							using var response = await _httpClient.GetAsync("/web/index.html", ct);
-							return (int)response.StatusCode < 400;
-						} catch {
-						}
 
-					return false;
-				}, new Dictionary<int, int> {
-					[2113] = 2113
-				}) {
-					Env = new Dictionary<string, string>(
-						env ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
-						["EVENTSTORE_DEV"] = "true"
-					},
-					ContainerName = "es-client-dotnet-test"
+				var env = new Dictionary<string, string> {
+					["EVENTSTORE_MEM_DB"] = "true",
+					["EVENTSTORE_CERTIFICATE_FILE"] = "/etc/eventstore/certs/node/node.crt",
+					["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"] = "/etc/eventstore/certs/node/node.key",
+					["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"] = "/etc/eventstore/certs/ca",
+					["EVENTSTORE_LOG_LEVEL"] = "Verbose",
+					["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"] = "True"
 				};
+				foreach (var (key, value) in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
+					env[key] = value;
+				}
+
+				_eventStore = new Builder()
+					.UseContainer()
+					.UseImage($"docker.pkg.github.com/eventstore/eventstore/eventstore:{tag}")
+					.WithEnvironment(env.Select(pair => $"{pair.Key}={pair.Value}").ToArray())
+					.WithName(ContainerName)
+					.MountVolume(HostCertificatePath, "/etc/eventstore/certs", MountType.ReadOnly)
+					.ExposePort(2113, 2113)
+					.Build();
 			}
 
-			public Task Start(CancellationToken cancellationToken = default) => _container.Start(cancellationToken);
+			public async Task Start(CancellationToken cancellationToken = default) {
+				_eventStore.Start();
+				try {
+					await Policy.Handle<Exception>()
+						.WaitAndRetryAsync(5, retryCount => TimeSpan.FromSeconds(retryCount * retryCount))
+						.ExecuteAsync(async () => {
+							using var response = await _httpClient.GetAsync("/health/live", cancellationToken);
+							if (response.StatusCode >= HttpStatusCode.BadRequest) {
+								throw new Exception($"Health check failed with status code: {response.StatusCode}.");
+							}
+						});
+				} catch (Exception) {
+					_eventStore.Dispose();
+					throw;
+				}
+			}
 
 			public ValueTask DisposeAsync() {
-				_httpClient.Dispose();
-				return _container.DisposeAsync();
+				_httpClient?.Dispose();
+				_eventStore?.Dispose();
+
+				return new ValueTask(Task.CompletedTask);
 			}
 		}
 	}
