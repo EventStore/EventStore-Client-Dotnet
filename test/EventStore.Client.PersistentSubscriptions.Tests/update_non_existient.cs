@@ -15,7 +15,7 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task the_completion_fails_with_not_found() {
-			await Assert.ThrowsAsync<InvalidOperationException>(
+			await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
 				() => _fixture.Client.UpdateAsync(Stream, Group,
 					new PersistentSubscriptionSettings(), TestCredentials.Root));
 		}
