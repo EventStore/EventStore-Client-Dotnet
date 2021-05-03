@@ -5,7 +5,7 @@ namespace EventStore.Client {
 	/// <summary>
 	/// A structure referring to the expected stream revision when writing to a stream.
 	/// </summary>
-	public readonly struct StreamRevision : IEquatable<StreamRevision>, IComparable<StreamRevision> {
+	public readonly struct StreamRevision : IEquatable<StreamRevision>, IComparable<StreamRevision>, IComparable {
 		private readonly ulong _value;
 
 		/// <summary>
@@ -52,6 +52,13 @@ namespace EventStore.Client {
 
 		/// <inheritdoc />
 		public int CompareTo(StreamRevision other) => _value.CompareTo(other._value);
+
+		/// <inheritdoc />
+		public int CompareTo(object? obj) => obj switch {
+			null => 1,
+			StreamRevision other => CompareTo(other),
+			_ => throw new ArgumentException("Object is not a StreamRevision"),
+		};
 
 		/// <inheritdoc />
 		public bool Equals(StreamRevision other) => _value == other._value;

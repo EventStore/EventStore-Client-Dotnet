@@ -5,7 +5,7 @@ namespace EventStore.Client {
 	/// <summary>
 	/// A structure referring to an <see cref="EventRecord"/>'s position within a stream.
 	/// </summary>
-	public readonly struct StreamPosition : IEquatable<StreamPosition>, IComparable<StreamPosition> {
+	public readonly struct StreamPosition : IEquatable<StreamPosition>, IComparable<StreamPosition>, IComparable {
 		private readonly ulong _value;
 
 		/// <summary>
@@ -57,6 +57,13 @@ namespace EventStore.Client {
 
 		/// <inheritdoc />
 		public int CompareTo(StreamPosition other) => _value.CompareTo(other._value);
+
+		/// <inheritdoc />
+		public int CompareTo(object? obj) => obj switch {
+			null => 1,
+			StreamPosition other => CompareTo(other),
+			_ => throw new ArgumentException("Object is not a StreamPosition"),
+		};
 
 		/// <inheritdoc />
 		public bool Equals(StreamPosition other) => _value == other._value;
