@@ -70,9 +70,9 @@ namespace EventStore.Client {
 			}
 			protected override async Task Given() {
 				var result = await Client.SetStreamMetadataAsync(
-					"$all",
+					SystemStreams.AllStream,
 					StreamState.NoStream,
-					new StreamMetadata(acl: new StreamAcl(readRole: "$all")),
+					new StreamMetadata(acl: new StreamAcl(readRole: SystemRoles.All)),
 					userCredentials: TestCredentials.Root);
 
 				await Client.AppendToStreamAsync(Stream, StreamState.NoStream, Events);

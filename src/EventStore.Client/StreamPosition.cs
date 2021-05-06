@@ -5,7 +5,7 @@ namespace EventStore.Client {
 	/// <summary>
 	/// A structure referring to an <see cref="EventRecord"/>'s position within a stream.
 	/// </summary>
-	public readonly struct StreamPosition : IEquatable<StreamPosition>, IComparable<StreamPosition>, IComparable {
+	public readonly struct StreamPosition : IEquatable<StreamPosition>, IComparable<StreamPosition>, IComparable, IPosition {
 		private readonly ulong _value;
 
 		/// <summary>
