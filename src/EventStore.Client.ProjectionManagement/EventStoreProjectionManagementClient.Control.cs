@@ -43,7 +43,7 @@ namespace EventStore.Client {
 		}
 
 		/// <summary>
-		/// Aborts a projection. Saves the projection's checkpoint.
+		/// Aborts a projection. Does not save the projection's checkpoint.
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="userCredentials"></param>
@@ -51,10 +51,10 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public Task AbortAsync(string name, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
-			DisableInternalAsync(name, true, userCredentials, cancellationToken);
+			DisableInternalAsync(name, false, userCredentials, cancellationToken);
 
 		/// <summary>
-		/// Disables a projection. Does not save the projection's checkpoint.
+		/// Disables a projection. Saves the projection's checkpoint.
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="userCredentials"></param>
@@ -62,7 +62,7 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public Task DisableAsync(string name, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
-			DisableInternalAsync(name, false, userCredentials, cancellationToken);
+			DisableInternalAsync(name, true, userCredentials, cancellationToken);
 
 		private async Task DisableInternalAsync(string name, bool writeCheckpoint, UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
