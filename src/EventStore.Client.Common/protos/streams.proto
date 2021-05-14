@@ -26,7 +26,7 @@ message ReadReq {
 			SubscriptionOptions subscription = 6;
 		}
 		oneof filter_option {
-			FilterOptions filter = 7;
+			event_store.client.FilterOptions filter = 7;
 			event_store.client.Empty no_filter = 8;
 		}
 		UUIDOption uuid_option = 9;
@@ -56,22 +56,7 @@ message ReadReq {
 			uint64 commit_position = 1;
 			uint64 prepare_position = 2;
 		}
-		message FilterOptions {
-			oneof filter {
-				Expression stream_name = 1;
-				Expression event_type = 2;
-			}
-			oneof window {
-				uint32 max = 3;
-				event_store.client.Empty count = 4;
-			}
-			uint32 checkpointIntervalMultiplier = 5;
 
-			message Expression {
-				string regex = 1;
-				repeated string prefix = 2;
-			}
-		}
 		message UUIDOption {
 			oneof content {
 				event_store.client.Empty structured = 1;

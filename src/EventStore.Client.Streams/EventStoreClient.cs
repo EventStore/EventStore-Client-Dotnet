@@ -62,7 +62,7 @@ namespace EventStore.Client {
 			_log = Settings.LoggerFactory?.CreateLogger<EventStoreClient>() ?? new NullLogger<EventStoreClient>();
 		}
 
-		private static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(
+		private static FilterOptions? GetFilterOptions(
 			SubscriptionFilterOptions? filterOptions) {
 			if (filterOptions == null) {
 				return null;
@@ -71,33 +71,33 @@ namespace EventStore.Client {
 			var filter = filterOptions.Filter;
 
 			var options = filter switch {
-				StreamFilter _ => new ReadReq.Types.Options.Types.FilterOptions {
+				StreamFilter _ => new FilterOptions {
 					StreamName = (filter.Prefixes, filter.Regex) switch {
 						(PrefixFilterExpression[] _, RegularFilterExpression _)
 						when (filter.Prefixes?.Length ?? 0) == 0 &&
 						     filter.Regex != RegularFilterExpression.None =>
-						new ReadReq.Types.Options.Types.FilterOptions.Types.Expression
+						new FilterOptions.Types.Expression
 							{Regex = filter.Regex},
 						(PrefixFilterExpression[] _, RegularFilterExpression _)
 						when (filter.Prefixes?.Length ?? 0) != 0 &&
 						     filter.Regex == RegularFilterExpression.None =>
-						new ReadReq.Types.Options.Types.FilterOptions.Types.Expression {
+						new FilterOptions.Types.Expression {
 							Prefix = {Array.ConvertAll(filter.Prefixes!, e => e.ToString())}
 						},
 						_ => throw new InvalidOperationException()
 					}
 				},
-				EventTypeFilter _ => new ReadReq.Types.Options.Types.FilterOptions {
+				EventTypeFilter _ => new FilterOptions {
 					EventType = (filter.Prefixes, filter.Regex) switch {
 						(PrefixFilterExpression[] _, RegularFilterExpression _)
 						when (filter.Prefixes?.Length ?? 0) == 0 &&
 						     filter.Regex != RegularFilterExpression.None =>
-						new ReadReq.Types.Options.Types.FilterOptions.Types.Expression
+						new FilterOptions.Types.Expression
 							{Regex = filter.Regex},
 						(PrefixFilterExpression[] _, RegularFilterExpression _)
 						when (filter.Prefixes?.Length ?? 0) != 0 &&
 						     filter.Regex == RegularFilterExpression.None =>
-						new ReadReq.Types.Options.Types.FilterOptions.Types.Expression {
+						new FilterOptions.Types.Expression {
 							Prefix = {Array.ConvertAll(filter.Prefixes!, e => e.ToString())}
 						},
 						_ => throw new InvalidOperationException()
