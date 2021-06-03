@@ -23,16 +23,14 @@ namespace EventStore.Client {
 						ReadDirection = direction switch {
 							Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
 							Direction.Forwards => ReadReq.Types.Options.Types.ReadDirection.Forwards,
-							_ => throw new InvalidOperationException()
+							_ => throw InvalidOption(direction)
 						},
 						ResolveLinks = resolveLinkTos,
 						All = ReadReq.Types.Options.Types.AllOptions.FromPosition(position),
 						Count = (ulong)maxCount,
 					}
 				},
-				operationOptions,
-				userCredentials,
-				cancellationToken)) {
+				operationOptions, userCredentials, cancellationToken)) {
 				if (confirmation != SubscriptionConfirmation.None) {
 					continue;
 				}
@@ -76,7 +74,7 @@ namespace EventStore.Client {
 						ReadDirection = direction switch {
 							Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
 							Direction.Forwards => ReadReq.Types.Options.Types.ReadDirection.Forwards,
-							_ => throw new InvalidOperationException()
+							_ => throw InvalidOption(direction)
 						},
 						ResolveLinks = resolveLinkTos,
 						Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(streamName,
@@ -211,7 +209,11 @@ namespace EventStore.Client {
 				return false;
 
 				bool IsCurrentItemEvent() {
-					var (confirmation, position, @event) = ConvertToItem(call.Current);
+					var item = ConvertToItem(call.Current);
+					if (!item.HasValue) {
+						return false;
+					}
+					var (confirmation, position, @event) = item.Value;
 					if (confirmation == SubscriptionConfirmation.None && position == null) {
 						Current = @event;
 						return true;
@@ -257,11 +259,13 @@ namespace EventStore.Client {
 				.Select(ConvertToItem)
 				.WithCancellation(cancellationToken)
 				.ConfigureAwait(false)) {
-				yield return e;
+				if (e.HasValue) {
+					yield return e.Value;
+				}
 			}
 		}
 
-		private static (SubscriptionConfirmation, Position?, ResolvedEvent) ConvertToItem(ReadResp response) =>
+		private static (SubscriptionConfirmation, Position?, ResolvedEvent)? ConvertToItem(ReadResp response) =>
 			response.ContentCase switch {
 				ReadResp.ContentOneofCase.Confirmation => (
 					new SubscriptionConfirmation(response.Confirmation.SubscriptionId), null, default),
@@ -271,7 +275,7 @@ namespace EventStore.Client {
 				ReadResp.ContentOneofCase.Checkpoint => (SubscriptionConfirmation.None,
 					new Position(response.Checkpoint.CommitPosition, response.Checkpoint.PreparePosition),
 					default),
-				_ => throw new InvalidOperationException()
+				_ => null
 			};
 
 		private static ResolvedEvent ConvertToResolvedEvent(ReadResp.Types.ReadEvent readEvent) =>
@@ -280,8 +284,7 @@ namespace EventStore.Client {
 				ConvertToEventRecord(readEvent.Link),
 				readEvent.PositionCase switch {
 					ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => readEvent.CommitPosition,
-					ReadResp.Types.ReadEvent.PositionOneofCase.NoPosition => null,
-					_ => throw new InvalidOperationException()
+					_ => null
 				});
 
 		private static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>

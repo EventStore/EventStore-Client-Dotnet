@@ -175,15 +175,13 @@ namespace EventStore.Client {
 				}
 			}
 
-			ResolvedEvent ConvertToResolvedEvent(ReadResp response) =>
-				new ResolvedEvent(
-					ConvertToEventRecord(response.Event.Event)!,
-					ConvertToEventRecord(response.Event.Link),
-					response.Event.PositionCase switch {
-						ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => response.Event.CommitPosition,
-						ReadResp.Types.ReadEvent.PositionOneofCase.NoPosition => null,
-						_ => throw new InvalidOperationException()
-					});
+			ResolvedEvent ConvertToResolvedEvent(ReadResp response) => new ResolvedEvent(
+				ConvertToEventRecord(response.Event.Event)!,
+				ConvertToEventRecord(response.Event.Link),
+				response.Event.PositionCase switch {
+					ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => response.Event.CommitPosition,
+					_ => null
+				});
 
 			EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent e) =>
 				e == null
@@ -228,8 +226,7 @@ namespace EventStore.Client {
 						PersistentSubscriptionNakEventAction.Retry => ReadReq.Types.Nack.Types.Action.Retry,
 						PersistentSubscriptionNakEventAction.Skip => ReadReq.Types.Nack.Types.Action.Skip,
 						PersistentSubscriptionNakEventAction.Stop => ReadReq.Types.Nack.Types.Action.Stop,
-						PersistentSubscriptionNakEventAction.Unknown => ReadReq.Types.Nack.Types.Action.Unknown,
-						_ => throw new ArgumentOutOfRangeException(nameof(action))
+						_ => ReadReq.Types.Nack.Types.Action.Unknown
 					},
 					Reason = reason
 				}
