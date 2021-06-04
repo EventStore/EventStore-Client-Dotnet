@@ -16,6 +16,11 @@ namespace EventStore.Client {
 		/// <summary>
 		/// The scavenge operation has stopped.
 		/// </summary>
-		Stopped
+		Stopped,
+
+		/// <summary>
+		/// The status of the scavenge operation was unknown.
+		/// </summary>
+		Unknown
 	}
 }
