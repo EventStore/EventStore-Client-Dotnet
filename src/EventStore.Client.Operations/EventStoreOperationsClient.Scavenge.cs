@@ -43,7 +43,7 @@ namespace EventStore.Client {
 				ScavengeResp.Types.ScavengeResult.Started => DatabaseScavengeResult.Started(result.ScavengeId),
 				ScavengeResp.Types.ScavengeResult.Stopped => DatabaseScavengeResult.Stopped(result.ScavengeId),
 				ScavengeResp.Types.ScavengeResult.InProgress => DatabaseScavengeResult.InProgress(result.ScavengeId),
-				_ => throw new InvalidOperationException()
+				_ => DatabaseScavengeResult.Unknown(result.ScavengeId)
 			};
 		}
 
@@ -69,7 +69,7 @@ namespace EventStore.Client {
 				ScavengeResp.Types.ScavengeResult.Started => DatabaseScavengeResult.Started(result.ScavengeId),
 				ScavengeResp.Types.ScavengeResult.Stopped => DatabaseScavengeResult.Stopped(result.ScavengeId),
 				ScavengeResp.Types.ScavengeResult.InProgress => DatabaseScavengeResult.InProgress(result.ScavengeId),
-				_ => throw new InvalidOperationException()
+				_ => DatabaseScavengeResult.Unknown(result.ScavengeId)
 			};
 		}
 	}

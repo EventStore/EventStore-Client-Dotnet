@@ -103,8 +103,12 @@ namespace EventStore.Client {
 						_ => throw new InvalidOperationException()
 					}
 				},
-				_ => throw new InvalidOperationException()
+				_ => null
 			};
+
+			if (options == null) {
+				return null;
+			}
 
 			if (filter.MaxSearchWindow.HasValue) {
 				options.Max = filter.MaxSearchWindow.Value;

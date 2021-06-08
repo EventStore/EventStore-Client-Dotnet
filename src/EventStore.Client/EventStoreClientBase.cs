@@ -58,5 +58,12 @@ namespace EventStore.Client {
 
 		/// <inheritdoc />
 		public ValueTask DisposeAsync() => _channels.DisposeAsync();
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="option">The invalid option</param>
+		/// <typeparam name="T">The type of the option</typeparam>
+		protected Exception InvalidOption<T>(T option) where T : Enum => new InvalidOperationException($"The {typeof(T).Name} {option:x} was not valid.");
 	}
 }

@@ -40,6 +40,14 @@ namespace EventStore.Client {
 		public static DatabaseScavengeResult InProgress(string scavengeId) =>
 			new DatabaseScavengeResult(scavengeId, ScavengeResult.InProgress);
 
+		/// <summary>
+		/// A scavenge operation whose state is unknown.
+		/// </summary>
+		/// <param name="scavengeId"></param>
+		/// <returns></returns>
+		public static DatabaseScavengeResult Unknown(string scavengeId) =>
+			new DatabaseScavengeResult(scavengeId, ScavengeResult.Unknown);
+
 		private DatabaseScavengeResult(string scavengeId, ScavengeResult result) {
 			ScavengeId = scavengeId;
 			Result = result;
