@@ -35,25 +35,84 @@ namespace EventStore.Client {
 			};
 		}
 
-		private static CreateReq.Types.AllOptions AllOptionsForCreateProto(Position position) {
+		private static CreateReq.Types.AllOptions AllOptionsForCreateProto(Position position, IEventFilter? filter) {
+			var allFilter = GetFilterOptions(filter);
+			CreateReq.Types.AllOptions allOptions;
 			if (position == Position.Start) {
-				return new CreateReq.Types.AllOptions {
-					Start = new Empty()
+				allOptions = new CreateReq.Types.AllOptions {
+					Start = new Empty(),
 				};
 			}
-
-			if (position == Position.End) {
-				return new CreateReq.Types.AllOptions {
+			else if (position == Position.End) {
+				allOptions = new CreateReq.Types.AllOptions {
 					End = new Empty()
 				};
+			} else {
+				allOptions = new CreateReq.Types.AllOptions {
+					Position = new CreateReq.Types.Position {
+						CommitPosition = position.CommitPosition,
+						PreparePosition = position.PreparePosition
+					}
+				};
 			}
 
-			return new CreateReq.Types.AllOptions {
-				Position = new CreateReq.Types.Position {
-					CommitPosition = position.CommitPosition,
-					PreparePosition = position.PreparePosition
-				}
+			if (allFilter is null) {
+				allOptions.NoFilter = new Empty();
+			} else {
+				allOptions.Filter = allFilter;
+			}
+
+			return allOptions;
+		}
+
+		private static FilterOptions? GetFilterOptions(IEventFilter? filter) {
+			if (filter == null) {
+				return null;
+			}
+
+			var options = filter switch {
+				StreamFilter _ => new FilterOptions {
+					StreamName = (filter.Prefixes, filter.Regex) switch {
+						(PrefixFilterExpression[] _, RegularFilterExpression _)
+							when (filter.Prefixes?.Length ?? 0) == 0 &&
+							     filter.Regex != RegularFilterExpression.None =>
+							new FilterOptions.Types.Expression
+								{Regex = filter.Regex},
+						(PrefixFilterExpression[] _, RegularFilterExpression _)
+							when (filter.Prefixes?.Length ?? 0) != 0 &&
+							     filter.Regex == RegularFilterExpression.None =>
+							new FilterOptions.Types.Expression {
+								Prefix = {Array.ConvertAll(filter.Prefixes!, e => e.ToString())}
+							},
+						_ => throw new InvalidOperationException()
+					}
+				},
+				EventTypeFilter _ => new FilterOptions {
+					EventType = (filter.Prefixes, filter.Regex) switch {
+						(PrefixFilterExpression[] _, RegularFilterExpression _)
+							when (filter.Prefixes?.Length ?? 0) == 0 &&
+							     filter.Regex != RegularFilterExpression.None =>
+							new FilterOptions.Types.Expression
+								{Regex = filter.Regex},
+						(PrefixFilterExpression[] _, RegularFilterExpression _)
+							when (filter.Prefixes?.Length ?? 0) != 0 &&
+							     filter.Regex == RegularFilterExpression.None =>
+							new FilterOptions.Types.Expression {
+								Prefix = {Array.ConvertAll(filter.Prefixes!, e => e.ToString())}
+							},
+						_ => throw new InvalidOperationException()
+					}
+				},
+				_ => throw new InvalidOperationException()
 			};
+
+			if (filter.MaxSearchWindow.HasValue) {
+				options.Max = filter.MaxSearchWindow.Value;
+			} else {
+				options.Count = new Empty();
+			}
+
+			return options;
 		}
 
 
@@ -68,6 +127,18 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public async Task CreateAsync(string streamName, string groupName,
+			PersistentSubscriptionSettings settings, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) =>
+			await CreateInternalAsync(
+					streamName: streamName,
+					groupName: groupName,
+					eventFilter: null,
+					settings: settings,
+					userCredentials: userCredentials,
+					cancellationToken: cancellationToken)
+				.ConfigureAwait(false);
+
+		private async Task CreateInternalAsync(string streamName, string groupName, IEventFilter? eventFilter,
 			PersistentSubscriptionSettings settings, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			if (streamName == null) {
@@ -90,13 +161,17 @@ namespace EventStore.Client {
 				throw new ArgumentException($"{nameof(settings.StartFrom)} must be of type '{nameof(Position)}' when subscribing to {SystemStreams.AllStream}");
 			}
 
+			if (eventFilter != null && streamName != SystemStreams.AllStream) {
+				throw new ArgumentException($"Filters are only supported when subscribing to {SystemStreams.AllStream}");
+			}
+
 			await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
 				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					Stream = streamName != SystemStreams.AllStream ?
 						StreamOptionsForCreateProto(streamName, (StreamPosition)(settings.StartFrom ?? StreamPosition.End)) : null,
 					All = streamName == SystemStreams.AllStream ?
-						AllOptionsForCreateProto((Position)(settings.StartFrom ?? Position.End)) : null,
+						AllOptionsForCreateProto((Position)(settings.StartFrom ?? Position.End), eventFilter) : null,
 					#pragma warning disable 612
 					StreamIdentifier = streamName != SystemStreams.AllStream ? streamName : string.Empty, /*for backwards compatibility*/
 					#pragma warning restore 612
@@ -123,6 +198,27 @@ namespace EventStore.Client {
 		}
 
 		/// <summary>
+		/// Creates a filtered persistent subscription to $all.
+		/// </summary>
+		/// <param name="groupName"></param>
+		/// <param name="eventFilter"></param>
+		/// <param name="settings"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public async Task CreateToAllAsync(string groupName, IEventFilter eventFilter,
+			PersistentSubscriptionSettings settings, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) =>
+			await CreateInternalAsync(
+				streamName: SystemStreams.AllStream,
+				groupName: groupName,
+				eventFilter: eventFilter,
+				settings: settings,
+				userCredentials: userCredentials,
+				cancellationToken: cancellationToken)
+				.ConfigureAwait(false);
+
+		/// <summary>
 		/// Creates a persistent subscription to $all.
 		/// </summary>
 		/// <param name="groupName"></param>
@@ -133,12 +229,13 @@ namespace EventStore.Client {
 		public async Task CreateToAllAsync(string groupName,
 			PersistentSubscriptionSettings settings, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
-			await CreateAsync(
-				streamName: SystemStreams.AllStream,
-				groupName: groupName,
-				settings: settings,
-				userCredentials: userCredentials,
-				cancellationToken: cancellationToken)
+			await CreateInternalAsync(
+					streamName: SystemStreams.AllStream,
+					groupName: groupName,
+					eventFilter: null,
+					settings: settings,
+					userCredentials: userCredentials,
+					cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
 	}
 }

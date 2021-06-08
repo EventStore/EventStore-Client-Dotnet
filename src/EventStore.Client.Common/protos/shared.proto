@@ -20,3 +20,20 @@ message StreamIdentifier {
 	reserved 1 to 2;
 	bytes streamName = 3;
 }
+
+message FilterOptions {
+	oneof filter {
+		Expression stream_name = 1;
+		Expression event_type = 2;
+	}
+	oneof window {
+		uint32 max = 3;
+		event_store.client.Empty count = 4;
+	}
+	uint32 checkpointIntervalMultiplier = 5;
+
+	message Expression {
+		string regex = 1;
+		repeated string prefix = 2;
+	}
+}
