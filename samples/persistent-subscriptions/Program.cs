@@ -1,0 +1,138 @@
+﻿using System;
+using System.Threading.Tasks;
+using EventStore.Client;
+
+namespace persistent_subscriptions
+{
+    class Program
+    {
+	    static async Task Main(string[] args) {
+		    using var client = new EventStorePersistentSubscriptionsClient(
+			    EventStoreClientSettings.Create("esdb://admin:changeit@localhost:2113?TlsVerifyCert=false")
+		    );
+		    await CreatePersistentSubscription(client);
+		    await ConnectToPersistentSubscriptionToStream(client);
+		    await CreatePersistentSubscriptionToAll(client);
+		    await ConnectToPersistentSubscriptionToAll(client);
+		    await ConnectToPersistentSubscriptionWithManualAcks(client);
+		    await UpdatePersistentSubscription(client);
+		    await DeletePersistentSubscription(client);
+	    }
+
+	    static async Task CreatePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
+		    #region create-persistent-subscription-to-stream
+
+		    var userCredentials = new UserCredentials("admin", "changeit");
+
+		    var settings = new PersistentSubscriptionSettings();
+		    await client.CreateAsync(
+			    "test-stream",
+			    "subscription-group",
+			    settings,
+			    userCredentials);
+
+		    #endregion
+	    }
+
+	    static async Task ConnectToPersistentSubscriptionToStream(EventStorePersistentSubscriptionsClient client) {
+		    #region subscribe-to-persistent-subscription-to-stream
+
+		    var subscription = await client.SubscribeAsync(
+			    "test-stream",
+			    "subscription-group",
+			    async (subscription, evnt, retryCount, cancellationToken) => {
+				    await HandleEvent(evnt);
+			    }, (subscription, dropReason, exception) => {
+				    Console.WriteLine($"Subscription was dropped due to {dropReason}. {exception}");
+			    });
+
+		    #endregion
+	    }
+
+	    static async Task CreatePersistentSubscriptionToAll(EventStorePersistentSubscriptionsClient client) {
+		    #region create-persistent-subscription-to-all
+
+		    var userCredentials = new UserCredentials("admin", "changeit");
+		    var filter = StreamFilter.Prefix("test");
+
+		    var settings = new PersistentSubscriptionSettings();
+		    await client.CreateToAllAsync(
+			    "subscription-group",
+			    filter,
+			    settings,
+			    userCredentials);
+
+		    #endregion
+	    }
+
+	    static async Task ConnectToPersistentSubscriptionToAll(EventStorePersistentSubscriptionsClient client) {
+		    #region subscribe-to-persistent-subscription-to-all
+
+		    await client.SubscribeToAllAsync(
+			    "subscription-group",
+			    async (subscription, evnt, retryCount, cancellationToken) => {
+				    await HandleEvent(evnt);
+			    }, (subscription, dropReason, exception) => {
+				    Console.WriteLine($"Subscription was dropped due to {dropReason}. {exception}");
+			    });
+
+		    #endregion
+	    }
+
+	    static async Task ConnectToPersistentSubscriptionWithManualAcks(EventStorePersistentSubscriptionsClient client) {
+		    #region subscribe-to-persistent-subscription-with-manual-acks
+
+		    var subscription = await client.SubscribeAsync(
+			    "test-stream",
+			    "subscription-group",
+			    async (subscription, evnt, retryCount, cancellationToken) => {
+				    try {
+					    await HandleEvent(evnt);
+					    await subscription.Ack(evnt);
+				    } catch (UnrecoverableException ex) {
+					    await subscription.Nack(PersistentSubscriptionNakEventAction.Park, ex.Message, evnt);
+				    }
+			    }, (subscription, dropReason, exception) => {
+				    Console.WriteLine($"Subscription was dropped due to {dropReason}. {exception}");
+			    }, autoAck: false);
+
+		    #endregion
+	    }
+
+	    static async Task UpdatePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
+		    #region update-persistent-subscription
+
+		    var userCredentials = new UserCredentials("admin", "changeit");
+		    var settings = new PersistentSubscriptionSettings(
+			    resolveLinkTos: true,
+			    minCheckPointCount: 20);
+
+		    await client.UpdateAsync(
+			    "test-stream",
+			    "subscription-group",
+			    settings,
+			    userCredentials);
+
+		    #endregion
+	    }
+
+	    static async Task DeletePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
+		    #region delete-persistent-subscription
+
+		    var userCredentials = new UserCredentials("admin", "changeit");
+		    await client.DeleteAsync(
+			    "test-stream",
+			    "subscription-group",
+			    userCredentials);
+
+		    #endregion
+	    }
+
+	    static Task HandleEvent(ResolvedEvent evnt) {
+		    return Task.CompletedTask;
+	    }
+
+	    class UnrecoverableException : Exception {
+	    }
+    }
+}

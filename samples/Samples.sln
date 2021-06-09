@@ -24,6 +24,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "reading-events", "reading-e
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "server-side-filtering", "server-side-filtering\server-side-filtering.csproj", "{9D555A19-A468-40AE-9453-EA9F64C25A21}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "persistent-subscriptions", "persistent-subscriptions\persistent-subscriptions.csproj", "{A5A5EF0D-1AE4-4647-823D-FA172E8858F2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -74,6 +76,10 @@ Global
 		{9D555A19-A468-40AE-9453-EA9F64C25A21}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9D555A19-A468-40AE-9453-EA9F64C25A21}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9D555A19-A468-40AE-9453-EA9F64C25A21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5A5EF0D-1AE4-4647-823D-FA172E8858F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5A5EF0D-1AE4-4647-823D-FA172E8858F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5A5EF0D-1AE4-4647-823D-FA172E8858F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5A5EF0D-1AE4-4647-823D-FA172E8858F2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A32CE3CB-AB71-45C6-A1B2-CD94BE2D2B28} = {EBB93BBC-42A7-48E4-B1EA-0EA3953D347C}
