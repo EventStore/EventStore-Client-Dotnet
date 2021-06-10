@@ -31,7 +31,7 @@ namespace persistent_subscriptions
 			    settings,
 			    userCredentials);
 
-		    #endregion
+		    #endregion create-persistent-subscription-to-stream
 	    }
 
 	    static async Task ConnectToPersistentSubscriptionToStream(EventStorePersistentSubscriptionsClient client) {
@@ -46,7 +46,7 @@ namespace persistent_subscriptions
 				    Console.WriteLine($"Subscription was dropped due to {dropReason}. {exception}");
 			    });
 
-		    #endregion
+		    #endregion subscribe-to-persistent-subscription-to-stream
 	    }
 
 	    static async Task CreatePersistentSubscriptionToAll(EventStorePersistentSubscriptionsClient client) {
@@ -62,7 +62,7 @@ namespace persistent_subscriptions
 			    settings,
 			    userCredentials);
 
-		    #endregion
+		    #endregion create-persistent-subscription-to-all
 	    }
 
 	    static async Task ConnectToPersistentSubscriptionToAll(EventStorePersistentSubscriptionsClient client) {
@@ -76,7 +76,7 @@ namespace persistent_subscriptions
 				    Console.WriteLine($"Subscription was dropped due to {dropReason}. {exception}");
 			    });
 
-		    #endregion
+		    #endregion subscribe-to-persistent-subscription-to-all
 	    }
 
 	    static async Task ConnectToPersistentSubscriptionWithManualAcks(EventStorePersistentSubscriptionsClient client) {
@@ -96,7 +96,7 @@ namespace persistent_subscriptions
 				    Console.WriteLine($"Subscription was dropped due to {dropReason}. {exception}");
 			    }, autoAck: false);
 
-		    #endregion
+		    #endregion subscribe-to-persistent-subscription-with-manual-acks
 	    }
 
 	    static async Task UpdatePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
@@ -113,7 +113,7 @@ namespace persistent_subscriptions
 			    settings,
 			    userCredentials);
 
-		    #endregion
+		    #endregion update-persistent-subscription
 	    }
 
 	    static async Task DeletePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
@@ -125,7 +125,7 @@ namespace persistent_subscriptions
 			    "subscription-group",
 			    userCredentials);
 
-		    #endregion
+		    #endregion delete-persistent-subscription
 	    }
 
 	    static Task HandleEvent(ResolvedEvent evnt) {
