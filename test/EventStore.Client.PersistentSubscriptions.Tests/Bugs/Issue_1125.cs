@@ -43,23 +43,30 @@ namespace EventStore.Client.Bugs {
 
 			await _fixture.Client.CreateAsync(streamName, subscriptionName,
 				new PersistentSubscriptionSettings(
-					resolveLinkTos: true, startFrom: StreamPosition.Start),
+					resolveLinkTos: true, startFrom: StreamPosition.Start, readBatchSize: 10, historyBufferSize: 20),
 				userCredentials: userCredentials);
 
 			using (await _fixture.Client.SubscribeAsync(streamName, subscriptionName,
-				async (subscription, @event, arg3, arg4) => {
-					var result = Interlocked.Increment(ref hitCount);
-					await subscription.Ack(@event);
+				async (subscription, @event, retryCount, arg4) => {
+					int result;
+					if (retryCount == 0 || retryCount is null) {
+						result = Interlocked.Increment(ref hitCount);
 
-					if (totalEvents == result) {
-						completed.TrySetResult(true);
+						await subscription.Ack(@event);
+
+						if (totalEvents == result) {
+							completed.TrySetResult(true);
+						}
+					} else {
+						// This is a retry
+						await subscription.Ack(@event);
 					}
 				}, (s, dr, e) => {
 					if (e != null)
 						completed.TrySetException(e);
 					else
 						completed.TrySetException(new Exception($"{dr}"));
-				}, userCredentials)) {
+				}, userCredentials, autoAck: false)) {
 				for (var i = 0; i < eventCount; i++) {
 					await _fixture.StreamsClient.AppendToStreamAsync(streamName, StreamState.Any,
 						_fixture.CreateTestEvents());

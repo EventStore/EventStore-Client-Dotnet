@@ -89,8 +89,8 @@ namespace EventStore.Client {
 		/// <param name="namedConsumerStrategy"></param>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public PersistentSubscriptionSettings(bool resolveLinkTos = false, IPosition? startFrom = null,
-			bool extraStatistics = false, TimeSpan? messageTimeout = null, int maxRetryCount = 500,
-			int liveBufferSize = 500, int readBatchSize = 10, int historyBufferSize = 20,
+			bool extraStatistics = false, TimeSpan? messageTimeout = null, int maxRetryCount = 10,
+			int liveBufferSize = 500, int readBatchSize = 20, int historyBufferSize = 500,
 			TimeSpan? checkPointAfter = null, int minCheckPointCount = 10, int maxCheckPointCount = 1000,
 			int maxSubscriberCount = 0, string namedConsumerStrategy = SystemConsumerStrategies.RoundRobin) {
 			messageTimeout ??= TimeSpan.FromSeconds(30);
