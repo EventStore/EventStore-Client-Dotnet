@@ -214,10 +214,12 @@ namespace EventStore.Client {
 		public async Task appending_with_wrong_expected_version_to_existing_stream_throws_wrong_expected_version() {
 			var stream = _fixture.GetStreamName();
 
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
+
 			var ex = await Assert.ThrowsAsync<WrongExpectedVersionException>(
-				() => _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(1), _fixture.CreateTestEvents()));
-			Assert.Equal(StreamRevision.None, ex.ActualStreamRevision);
-			Assert.Equal(new StreamRevision(1), ex.ExpectedStreamRevision);
+				() => _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(999), _fixture.CreateTestEvents()));
+			Assert.Equal(new StreamRevision(0), ex.ActualStreamRevision);
+			Assert.Equal(new StreamRevision(999), ex.ExpectedStreamRevision);
 		}
 
 		[Fact]
