@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <RootNamespace>persistent_subscriptions</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+			<!-- Use NuGet instead of ProjectReferences -->
+			<ProjectReference Include="..\..\src\EventStore.Client.PersistentSubscriptions\EventStore.Client.PersistentSubscriptions.csproj" />
+			<ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />
+    </ItemGroup>
+
+</Project>
