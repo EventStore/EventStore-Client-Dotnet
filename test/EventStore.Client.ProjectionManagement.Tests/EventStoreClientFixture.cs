@@ -23,7 +23,7 @@ namespace EventStore.Client {
 		protected virtual bool RunStandardProjections => true;
 
 		public override async Task InitializeAsync() {
-			await TestServer.Start();
+			await TestServer.StartAsync();
 			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser1.Username!,
 				TestCredentials.TestUser1.Username!, Array.Empty<string>(), TestCredentials.TestUser1.Password!,
 				TestCredentials.Root).WithTimeout();

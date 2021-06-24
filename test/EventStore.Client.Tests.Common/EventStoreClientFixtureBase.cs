@@ -4,20 +4,15 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Ductus.FluentDocker.Builders;
-using Ductus.FluentDocker.Model.Builders;
-using Ductus.FluentDocker.Services;
 #if GRPC_CORE
 using Grpc.Core;
 #endif
-using Polly;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
@@ -30,20 +25,17 @@ namespace EventStore.Client {
 	public abstract class EventStoreClientFixtureBase : IAsyncLifetime {
 		public const string TestEventType = "-";
 
-		private const string ConnectionString = "esdb://localhost:2113/?tlsVerifyCert=false";
+		private const string ConnectionStringSingle = "esdb://localhost:2113/?tlsVerifyCert=false";
+		private const string ConnectionStringCluster = "esdb://localhost:2113,localhost:2112,localhost:2111?tls=true&tlsVerifyCert=false";
 
 		private static readonly Subject<LogEvent> LogEventSubject = new Subject<LogEvent>();
 
-		private static readonly string HostCertificatePath =
-			Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "..", "..", "..", "..", "certs"));
 		private readonly IList<IDisposable> _disposables;
-		protected EventStoreTestServer TestServer { get; }
+		public IEventStoreTestServer TestServer { get; }
 		protected EventStoreClientSettings Settings { get; }
 
 		static EventStoreClientFixtureBase() {
 			ConfigureLogging();
-
-			VerifyCertificates();
 		}
 
 		private static void ConfigureLogging() {
@@ -59,55 +51,52 @@ namespace EventStore.Client {
 			AppDomain.CurrentDomain.DomainUnload += (_, e) => Log.CloseAndFlush();
 		}
 
-		private static void VerifyCertificates() {
-			var certificateFiles = new[] {
-				Path.Combine("ca", "ca.crt"),
-				Path.Combine("ca", "ca.key"),
-				Path.Combine("node", "node.crt"),
-				Path.Combine("node", "node.key")
-			}.Select(path => Path.Combine(HostCertificatePath, path));
-			if (certificateFiles.Any(file => !File.Exists(file))) {
-				throw new InvalidOperationException(
-					"Could not locate the certificates needed to run EventStoreDB. Please run the 'gencert' tool at the root of the repository.");
-			}
-		}
-
 		protected EventStoreClientFixtureBase(EventStoreClientSettings? clientSettings,
 			IDictionary<string, string>? env = null) {
 			_disposables = new List<IDisposable>();
 			ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
 
-			Settings = clientSettings ?? EventStoreClientSettings.Create(ConnectionString);
+			var connectionString = GlobalEnvironment.UseCluster ? ConnectionStringCluster : ConnectionStringSingle;
+			Settings = clientSettings ?? EventStoreClientSettings.Create(connectionString);
 
 			Settings.OperationOptions.TimeoutAfter = Debugger.IsAttached
 				? new TimeSpan?()
 				: TimeSpan.FromSeconds(30);
 
+			var hostCertificatePath = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory,
+				"..", "..", "..", "..", GlobalEnvironment.UseCluster ? "certs-cluster" : "certs"));
+
 #if GRPC_CORE
 			Settings.ChannelCredentials ??= GetServerCertificate();
 
-			static SslCredentials GetServerCertificate() => new SslCredentials(
-				File.ReadAllText(Path.Combine(HostCertificatePath, "ca", "ca.crt")), null, _ => true);
+			SslCredentials GetServerCertificate() => new SslCredentials(
+				File.ReadAllText(Path.Combine(hostCertificatePath, "ca", "ca.crt")), null, _ => true);
 #endif
 
 			Settings.LoggerFactory ??= new SerilogLoggerFactory();
 
-			TestServer = new EventStoreTestServer(Settings.ConnectivitySettings.Address, env);
+			TestServer = GlobalEnvironment.UseCluster
+				? (IEventStoreTestServer)new EventStoreTestServerCluster(hostCertificatePath, Settings.ConnectivitySettings.Address, env)
+				: new EventStoreTestServer(hostCertificatePath, Settings.ConnectivitySettings.Address, env);
 		}
 
 		protected abstract Task Given();
 		protected abstract Task When();
 
-		public IEnumerable<EventData> CreateTestEvents(int count = 1, string? type = null)
-			=> Enumerable.Range(0, count).Select(index => CreateTestEvent(index, type ?? TestEventType));
+		public IEnumerable<EventData> CreateTestEvents(int count = 1, string? type = null, int metadataSize = 1)
+			=> Enumerable.Range(0, count).Select(index => CreateTestEvent(index, type ?? TestEventType, metadataSize));
 
-		protected static EventData CreateTestEvent(int index) => CreateTestEvent(index, TestEventType);
+		protected static EventData CreateTestEvent(int index) => CreateTestEvent(index, TestEventType, 1);
 
-		protected static EventData CreateTestEvent(int index, string type)
-			=> new EventData(Uuid.NewUuid(), type, Encoding.UTF8.GetBytes($@"{{""x"":{index}}}"));
+		protected static EventData CreateTestEvent(int index, string type, int metadataSize)
+			=> new EventData(
+				eventId: Uuid.NewUuid(),
+				type: type,
+				data: Encoding.UTF8.GetBytes($@"{{""x"":{index}}}"),
+				metadata: Encoding.UTF8.GetBytes("\"" + new string('$', metadataSize) + "\""));
 
 		public virtual async Task InitializeAsync() {
-			await TestServer.Start().WithTimeout(TimeSpan.FromMinutes(5));
+			await TestServer.StartAsync().WithTimeout(TimeSpan.FromMinutes(5));
 			await Given().WithTimeout(TimeSpan.FromMinutes(5));
 			await When().WithTimeout(TimeSpan.FromMinutes(5));
 		}
@@ -157,7 +146,6 @@ namespace EventStore.Client {
 
 			_disposables.Add(subscription);
 		}
-
 		protected class EventStoreTestServer2 : IAsyncDisposable {
 			public EventStoreTestServer2(Uri connectivitySettingsAddress, IDictionary<string, string>? env) {
 			}
@@ -166,75 +154,7 @@ namespace EventStore.Client {
 			public ValueTask DisposeAsync() => new(Task.CompletedTask);
 		}
 
-		protected class EventStoreTestServer : IAsyncDisposable {
-			private readonly IContainerService _eventStore;
-			private readonly HttpClient _httpClient;
-			private static readonly string ContainerName = "es-client-dotnet-test";
-
-			public EventStoreTestServer(Uri address, IDictionary<string, string>? envOverrides) {
-				_httpClient = new HttpClient(
-#if NETFRAMEWORK
-					new HttpClientHandler {
-						ServerCertificateCustomValidationCallback = delegate { return true; }
-					}
-#else
-					new SocketsHttpHandler {
-						SslOptions = {
-							RemoteCertificateValidationCallback = delegate { return true; }
-						}
-					}
-#endif
-				) {
-					BaseAddress = address,
-				};
-				var tag = Environment.GetEnvironmentVariable("ES_DOCKER_TAG") ?? "ci";
-
-				var env = new Dictionary<string, string> {
-					["EVENTSTORE_MEM_DB"] = "true",
-					["EVENTSTORE_CERTIFICATE_FILE"] = "/etc/eventstore/certs/node/node.crt",
-					["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"] = "/etc/eventstore/certs/node/node.key",
-					["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"] = "/etc/eventstore/certs/ca",
-					["EVENTSTORE_LOG_LEVEL"] = "Verbose",
 					["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"] = "True",
 					["EVENTSTORE_LOG_FAILED_AUTHENTICATION_ATTEMPTS"] = "True"
-				};
-				foreach (var (key, value) in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
-					env[key] = value;
-				}
-
-				_eventStore = new Builder()
-					.UseContainer()
-					.UseImage($"docker.pkg.github.com/eventstore/eventstore/eventstore:{tag}")
-					.WithEnvironment(env.Select(pair => $"{pair.Key}={pair.Value}").ToArray())
-					.WithName(ContainerName)
-					.MountVolume(HostCertificatePath, "/etc/eventstore/certs", MountType.ReadOnly)
-					.ExposePort(2113, 2113)
-					.Build();
-			}
-
-			public async Task Start(CancellationToken cancellationToken = default) {
-				_eventStore.Start();
-				try {
-					await Policy.Handle<Exception>()
-						.WaitAndRetryAsync(5, retryCount => TimeSpan.FromSeconds(retryCount * retryCount))
-						.ExecuteAsync(async () => {
-							using var response = await _httpClient.GetAsync("/health/live", cancellationToken);
-							if (response.StatusCode >= HttpStatusCode.BadRequest) {
-								throw new Exception($"Health check failed with status code: {response.StatusCode}.");
-							}
-						});
-				} catch (Exception) {
-					_eventStore.Dispose();
-					throw;
-				}
-			}
-
-			public ValueTask DisposeAsync() {
-				_httpClient?.Dispose();
-				_eventStore?.Dispose();
-
-				return new ValueTask(Task.CompletedTask);
-			}
-		}
 	}
 }
