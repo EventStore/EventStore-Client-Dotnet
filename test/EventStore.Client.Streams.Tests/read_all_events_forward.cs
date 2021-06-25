@@ -37,6 +37,14 @@ namespace EventStore.Client {
 			Assert.True(EventDataComparer.Equal(_fixture.Events, events.AsResolvedTestEvents().ToArray()));
 		}
 
+		[Fact]
+		public async Task return_single_event() {
+			var events = await _fixture.Client.ReadAllAsync(Direction.Forwards, Position.Start, maxCount: 1)
+				.ToArrayAsync();
+
+			Assert.Single(events);
+		}
+
 		[Fact(Skip = "Not Implemented")]
 		public Task be_able_to_read_all_one_by_one_until_end_of_stream() {
 			throw new NotImplementedException();
@@ -69,13 +77,15 @@ namespace EventStore.Client {
 			Assert.True(count >= _fixture.Events.Length);
 		}
 
-
-
 		public class Fixture : EventStoreClientFixture {
 			public EventData[] Events { get; }
 
 			public Fixture() {
-				Events = CreateTestEvents(20).ToArray();
+				Events = Enumerable
+					.Concat(
+						CreateTestEvents(count: 20),
+						CreateTestEvents(count: 2, metadataSize: 1_000_000))
+					.ToArray();
 			}
 
 			protected override async Task Given() {
