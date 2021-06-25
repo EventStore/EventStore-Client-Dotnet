@@ -22,7 +22,6 @@ namespace EventStore.Client.SubscriptionToStream {
 		}
 		
 		public class Fixture : EventStoreClientFixture {
-			public Task<(SubscriptionDroppedReason, Exception)> Dropped => _droppedSource.Task;
 			public Task<ResolvedEvent> Resumed => _resumedSource.Task;
 			public StreamPosition CheckPoint { get; private set; }
 			
@@ -87,7 +86,6 @@ namespace EventStore.Client.SubscriptionToStream {
 				_secondSubscription = await Client.SubscribeAsync(Stream, Group,
 					eventAppeared: (s, e, r, ct) => {
 						_resumedSource.TrySetResult(e);
-						s.Dispose();
 						return Task.CompletedTask;
 					},
 					userCredentials: TestCredentials.Root);

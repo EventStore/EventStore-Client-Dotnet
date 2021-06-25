@@ -22,7 +22,6 @@ namespace EventStore.Client.SubscriptionToAll {
 		}
 
 		public class Fixture : EventStoreClientFixture {
-			public Task<(SubscriptionDroppedReason, Exception)> Dropped => _droppedSource.Task;
 			public Task<ResolvedEvent> Resumed => _resumedSource.Task;
 			public Position CheckPoint { get; private set; }
 			
@@ -90,7 +89,6 @@ namespace EventStore.Client.SubscriptionToAll {
 				_secondSubscription = await Client.SubscribeToAllAsync(Group,
 					eventAppeared: (s, e, r, ct) => {
 						_resumedSource.TrySetResult(e);
-						s.Dispose();
 						return Task.CompletedTask;
 					},
 					userCredentials: TestCredentials.Root);
