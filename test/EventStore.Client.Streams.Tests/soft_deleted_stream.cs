@@ -291,6 +291,13 @@ namespace EventStore.Client {
 				new StreamRevision(0),
 				streamMetadata);
 
+			if (GlobalEnvironment.UseCluster) {
+				// without this delay this test fails sometimes when run against a cluster because
+				// when setting metadata on the deleted stream, it creates two new metadata
+				// records but not transactionally
+				await Task.Delay(200);
+			}
+
 			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
 			await Assert.ThrowsAsync<StreamNotFoundException>(() => _fixture.Client
@@ -328,6 +335,15 @@ namespace EventStore.Client {
 				streamMetadata);
 
 			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
+
+			if (GlobalEnvironment.UseCluster) {
+				// without this delay this test fails sometimes when run against a cluster because
+				// when setting metadata on the deleted stream, it creates two new metadata
+				// records, the first one setting the metadata as requested, and the second
+				// one adding in the tb. in the window between the two the previously
+				// truncated events can be read
+				await Task.Delay(200);
+			}
 
 			var actual = await _fixture.Client
 				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
