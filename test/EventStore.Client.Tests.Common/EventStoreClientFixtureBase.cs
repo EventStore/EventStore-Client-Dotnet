@@ -153,8 +153,5 @@ namespace EventStore.Client {
 			public Task Start() => Task.CompletedTask;
 			public ValueTask DisposeAsync() => new(Task.CompletedTask);
 		}
-
-					["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"] = "True",
-					["EVENTSTORE_LOG_FAILED_AUTHENTICATION_ATTEMPTS"] = "True"
 	}
 }

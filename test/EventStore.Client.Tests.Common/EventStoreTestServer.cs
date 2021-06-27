@@ -51,7 +51,8 @@ namespace EventStore.Client {
 				["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"] = "/etc/eventstore/certs/node/node.key",
 				["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"] = "/etc/eventstore/certs/ca",
 				["EVENTSTORE_LOG_LEVEL"] = "Verbose",
-				["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"] = "True"
+				["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"] = "True",
+				["EVENTSTORE_LOG_FAILED_AUTHENTICATION_ATTEMPTS"] = "True",
 			};
 			foreach (var (key, value) in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
 				env[key] = value;
