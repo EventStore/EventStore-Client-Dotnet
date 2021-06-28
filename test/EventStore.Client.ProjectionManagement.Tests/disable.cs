@@ -11,11 +11,12 @@ namespace EventStore.Client {
 		}
 
 		[Fact]
-		public async Task status_is_stopped() {
+		public async Task status_is_aborted_stopped_abortedstopped() {
 			var name = StandardProjections.Names.First();
 			await _fixture.Client.DisableAsync(name, TestCredentials.Root);
 			var result = await _fixture.Client.GetStatusAsync(name, TestCredentials.Root);
-			Assert.Equal("Stopped", result.Status);
+			Assert.Contains(result.Status, new[] {"Aborted/Stopped", "Aborted", "Stopped"});
+
 		}
 
 		public class Fixture : EventStoreClientFixture {
