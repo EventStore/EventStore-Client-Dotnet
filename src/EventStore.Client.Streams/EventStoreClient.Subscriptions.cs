@@ -31,7 +31,7 @@ namespace EventStore.Client {
 		}
 
 		/// <summary>
-		/// Subscribes to all events. Use this when you have no checkpoint.
+		/// Subscribes to all events. Use this when you have no <see cref="Position">checkpoint</see>.
 		/// </summary>
 		/// <param name="eventAppeared">A Task invoked and awaited when a new event is received over the subscription.</param>
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
@@ -79,7 +79,7 @@ namespace EventStore.Client {
 		}
 
 		/// <summary>
-		/// Subscribes to all events from a checkpoint. This is exclusive of.
+		/// Subscribes to all events from a <see cref="Position">checkpoint</see>. This is exclusive of.
 		/// </summary>
 		/// <param name="start">A <see cref="Position"/> (exclusive of) to start the subscription from.</param>
 		/// <param name="eventAppeared">A Task invoked and awaited when a new event is received over the subscription.</param>
@@ -129,7 +129,7 @@ namespace EventStore.Client {
 		}
 
 		/// <summary>
-		/// Subscribes to a stream from a checkpoint. This is exclusive of.
+		/// Subscribes to all events in a stream. Use this when you have no <see cref="StreamPosition">checkpoint</see>.
 		/// </summary>
 		/// <param name="streamName">The name of the stream to read events from.</param>
 		/// <param name="eventAppeared">A Task invoked and awaited when a new event is received over the subscription.</param>
@@ -185,7 +185,7 @@ namespace EventStore.Client {
 		}
 
 		/// <summary>
-		/// Subscribes to a stream from a checkpoint. This is exclusive of.
+		/// Subscribes to a stream from a <see cref="StreamPosition">checkpoint</see>. This is exclusive of.
 		/// </summary>
 		/// <param name="start">A <see cref="Position"/> (exclusive of) to start the subscription from.</param>
 		/// <param name="streamName">The name of the stream to read events from.</param>
