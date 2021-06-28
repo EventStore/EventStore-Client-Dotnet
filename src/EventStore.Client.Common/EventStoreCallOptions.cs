@@ -10,7 +10,14 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken) => new(
 			cancellationToken: cancellationToken,
 			deadline: DeadlineAfter(operationOptions.TimeoutAfter),
-			headers: new Metadata(),
+			headers: new Metadata {
+				{
+					Constants.Headers.RequiresLeader,
+					settings.ConnectivitySettings.NodePreference == NodePreference.Leader
+						? bool.TrueString
+						: bool.FalseString
+				}
+			},
 			credentials: (settings.DefaultCredentials ?? userCredentials) == null
 				? null
 				: CallCredentials.FromInterceptor(async (_, metadata) => {
