@@ -25,6 +25,7 @@ namespace EventStore.Client {
 
 		private readonly ILogger<EventStoreClient> _log;
 		private StreamAppender _streamAppender;
+		private int _streamAppenderDelayMs;
 		private readonly CancellationTokenSource _disposedTokenSource;
 
 		private static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap =
@@ -66,16 +67,20 @@ namespace EventStore.Client {
 		public EventStoreClient(EventStoreClientSettings? settings = null) : base(settings, ExceptionMap) {
 			_log = Settings.LoggerFactory?.CreateLogger<EventStoreClient>() ?? new NullLogger<EventStoreClient>();
 			_disposedTokenSource = new CancellationTokenSource();
+			_streamAppenderDelayMs = 0;
 			_streamAppender = CreateStreamAppender();
 		}
 
-		private void SwapStreamAppender(Exception ex) =>
+		private void SwapStreamAppender(Exception ex) {
+			_streamAppenderDelayMs = Math.Min(200, Math.Max(_streamAppenderDelayMs * 2, 25));
 			Interlocked.Exchange(ref _streamAppender, CreateStreamAppender());
+		}
 
 		private StreamAppender CreateStreamAppender() {
 			return new StreamAppender(Settings, GetCall(), _disposedTokenSource.Token, SwapStreamAppender);
 
 			async Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>> GetCall() {
+				await Task.Delay(_streamAppenderDelayMs, _disposedTokenSource.Token).ConfigureAwait(false);
 				var callInvoker = await SelectCallInvoker(_disposedTokenSource.Token).ConfigureAwait(false);
 				var client = new Streams.Streams.StreamsClient(callInvoker);
 				var operationOptions = Settings.OperationOptions.Clone();
