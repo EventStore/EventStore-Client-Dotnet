@@ -21,6 +21,9 @@ namespace EventStore.Client {
 			ClusterMessages.VNodeState.PreLeader,
 			ClusterMessages.VNodeState.PreReplica,
 			ClusterMessages.VNodeState.PreReadOnlyReplica,
+			//qq this is not necessarily correct, we might want to be able to connect to
+			// a leaderless replica if this is our preference
+			ClusterMessages.VNodeState.ReadOnlyLeaderless,
 			ClusterMessages.VNodeState.Clone,
 			ClusterMessages.VNodeState.DiscoverLeader
 		};

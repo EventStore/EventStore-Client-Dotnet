@@ -75,11 +75,15 @@ namespace EventStore.Client {
 
 			Settings.LoggerFactory ??= new SerilogLoggerFactory();
 
+			Settings.ConnectivitySettings.MaxDiscoverAttempts = 20;
+			Settings.ConnectivitySettings.DiscoveryInterval = TimeSpan.FromSeconds(1);
+
 			TestServer = GlobalEnvironment.UseCluster
 				? (IEventStoreTestServer)new EventStoreTestServerCluster(hostCertificatePath, Settings.ConnectivitySettings.Address, env)
 				: new EventStoreTestServer(hostCertificatePath, Settings.ConnectivitySettings.Address, env);
 		}
 
+		protected virtual Task ConnectAsync() => Task.CompletedTask;
 		protected abstract Task Given();
 		protected abstract Task When();
 
@@ -97,6 +101,7 @@ namespace EventStore.Client {
 
 		public virtual async Task InitializeAsync() {
 			await TestServer.StartAsync().WithTimeout(TimeSpan.FromMinutes(5));
+			await ConnectAsync();
 			await Given().WithTimeout(TimeSpan.FromMinutes(5));
 			await When().WithTimeout(TimeSpan.FromMinutes(5));
 		}
