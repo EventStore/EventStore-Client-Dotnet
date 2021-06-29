@@ -17,16 +17,13 @@ namespace EventStore.Client.Interceptors {
 						ex.Trailers.GetIntValueOrDefault(Constants.Exceptions.LeaderEndpointPort), ex)
 			};
 
-		private readonly Action<Exception>? _exceptionOccurred;
 		private readonly IDictionary<string, Func<RpcException, Exception>> _exceptionMap;
 
-		public TypedExceptionInterceptor(IDictionary<string, Func<RpcException, Exception>> exceptionMap,
-			Action<Exception>? exceptionOccurred = null) {
+		public TypedExceptionInterceptor(IDictionary<string, Func<RpcException, Exception>> exceptionMap) {
 			_exceptionMap = new Dictionary<string, Func<RpcException, Exception>>(DefaultExceptionMap);
 			foreach (var pair in exceptionMap) {
 				_exceptionMap.Add(pair);
 			}
-			_exceptionOccurred = exceptionOccurred;
 		}
 
 		public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(
@@ -36,7 +33,7 @@ namespace EventStore.Client.Interceptors {
 			var response = continuation(request, context);
 
 			return new AsyncServerStreamingCall<TResponse>(
-				new AsyncStreamReader<TResponse>(_exceptionOccurred, _exceptionMap, response.ResponseStream),
+				new AsyncStreamReader<TResponse>(_exceptionMap, response.ResponseStream),
 				response.ResponseHeadersAsync, response.GetStatus, response.GetTrailers, response.Dispose);
 		}
 
@@ -47,15 +44,9 @@ namespace EventStore.Client.Interceptors {
 
 			return new AsyncClientStreamingCall<TRequest, TResponse>(
 				response.RequestStream,
-				response.ResponseAsync.ContinueWith(t => {
-					if (t.Exception?.InnerException is RpcException ex) {
-						var exception = ConvertRpcException(ex, _exceptionMap);
-						_exceptionOccurred?.Invoke(exception);
-						throw exception;
-					}
-
-					return t.Result;
-				}),
+				response.ResponseAsync.ContinueWith(t => t.Exception?.InnerException is RpcException ex
+					? throw ConvertRpcException(ex, _exceptionMap)
+					: t.Result),
 				response.ResponseHeadersAsync,
 				response.GetStatus,
 				response.GetTrailers,
@@ -68,15 +59,11 @@ namespace EventStore.Client.Interceptors {
 			AsyncUnaryCallContinuation<TRequest, TResponse> continuation) {
 			var response = continuation(request, context);
 
-			return new AsyncUnaryCall<TResponse>(response.ResponseAsync.ContinueWith(t => {
-				if (t.Exception?.InnerException is RpcException ex) {
-					var exception = ConvertRpcException(ex, _exceptionMap);
-					_exceptionOccurred?.Invoke(exception);
-					throw exception;
-				}
-
-				return t.Result;
-			}), response.ResponseHeadersAsync, response.GetStatus, response.GetTrailers, response.Dispose);
+			return new AsyncUnaryCall<TResponse>(response.ResponseAsync.ContinueWith(t =>
+					t.Exception?.InnerException is RpcException ex
+						? throw ConvertRpcException(ex, _exceptionMap)
+						: t.Result), response.ResponseHeadersAsync, response.GetStatus, response.GetTrailers,
+				response.Dispose);
 		}
 
 		public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(
@@ -86,7 +73,7 @@ namespace EventStore.Client.Interceptors {
 
 			return new AsyncDuplexStreamingCall<TRequest, TResponse>(
 				response.RequestStream,
-				new AsyncStreamReader<TResponse>(_exceptionOccurred, _exceptionMap, response.ResponseStream),
+				new AsyncStreamReader<TResponse>(_exceptionMap, response.ResponseStream),
 				response.ResponseHeadersAsync,
 				response.GetStatus,
 				response.GetTrailers,
@@ -110,13 +97,11 @@ namespace EventStore.Client.Interceptors {
 		}
 
 		private class AsyncStreamReader<TResponse> : IAsyncStreamReader<TResponse> {
-			private readonly Action<Exception>? _exceptionOccurred;
 			private readonly IDictionary<string, Func<RpcException, Exception>> _exceptionMap;
 			private readonly IAsyncStreamReader<TResponse> _inner;
 
-			public AsyncStreamReader(Action<Exception>? exceptionOccurred,
-				IDictionary<string, Func<RpcException, Exception>> exceptionMap, IAsyncStreamReader<TResponse> inner) {
-				_exceptionOccurred = exceptionOccurred;
+			public AsyncStreamReader(IDictionary<string, Func<RpcException, Exception>> exceptionMap,
+				IAsyncStreamReader<TResponse> inner) {
 				_exceptionMap = exceptionMap;
 				_inner = inner;
 			}
@@ -125,9 +110,7 @@ namespace EventStore.Client.Interceptors {
 				try {
 					return await _inner.MoveNext(cancellationToken).ConfigureAwait(false);
 				} catch (RpcException ex) {
-					var exception = ConvertRpcException(ex, _exceptionMap);
-					_exceptionOccurred?.Invoke(exception);
-					throw exception;
+					throw ConvertRpcException(ex, _exceptionMap);
 				}
 			}
 
