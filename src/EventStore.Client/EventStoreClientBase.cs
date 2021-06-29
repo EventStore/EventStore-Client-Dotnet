@@ -48,7 +48,7 @@ namespace EventStore.Client {
 		protected async Task<CallInvoker> SelectCallInvoker(CancellationToken cancellationToken) =>
 			(Settings.Interceptors ?? Array.Empty<Interceptor>()).Aggregate(
 				(await _channels.GetCurrentChannel(cancellationToken).ConfigureAwait(false)).CreateCallInvoker()
-				.Intercept(new TypedExceptionInterceptor(_exceptionMap, ex => { }))
+				.Intercept(new TypedExceptionInterceptor(_exceptionMap))
 				.Intercept(new ConnectionNameInterceptor(ConnectionName))
 				.Intercept(new ReportLeaderInterceptor(_channels.SetEndPoint)),
 				(invoker, interceptor) => invoker.Intercept(interceptor));
