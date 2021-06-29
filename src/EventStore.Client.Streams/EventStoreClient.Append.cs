@@ -34,10 +34,12 @@ namespace EventStore.Client {
 			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedRevision);
 
 			var task =
+#if NET5_0_OR_GREATER
 				userCredentials == null
 					? _streamAppender.Append(streamName, expectedRevision, eventData, options.TimeoutAfter,
 						cancellationToken)
 					:
+#endif
 					AppendToStreamInternal(new AppendReq {
 						Options = new AppendReq.Types.Options {
 							StreamIdentifier = streamName,
@@ -71,10 +73,12 @@ namespace EventStore.Client {
 			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedState);
 
 			var task =
+#if NET5_0_OR_GREATER
 				userCredentials == null
 					? _streamAppender.Append(streamName, expectedState, eventData, operationOptions.TimeoutAfter,
 						cancellationToken)
 					:
+#endif
 					AppendToStreamInternal(new AppendReq {
 							Options = new AppendReq.Types.Options {
 								StreamIdentifier = streamName
