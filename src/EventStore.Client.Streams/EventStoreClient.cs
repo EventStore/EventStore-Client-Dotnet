@@ -24,8 +24,11 @@ namespace EventStore.Client {
 		};
 
 		private readonly ILogger<EventStoreClient> _log;
+#if NET5_0_OR_GREATER
 		private StreamAppender _streamAppender;
 		private int _streamAppenderDelayMs;
+#endif
+
 		private readonly CancellationTokenSource _disposedTokenSource;
 
 		private static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap =
@@ -67,10 +70,13 @@ namespace EventStore.Client {
 		public EventStoreClient(EventStoreClientSettings? settings = null) : base(settings, ExceptionMap) {
 			_log = Settings.LoggerFactory?.CreateLogger<EventStoreClient>() ?? new NullLogger<EventStoreClient>();
 			_disposedTokenSource = new CancellationTokenSource();
+#if NET5_0_OR_GREATER
 			_streamAppenderDelayMs = 0;
 			_streamAppender = CreateStreamAppender();
+#endif
 		}
 
+#if NET5_0_OR_GREATER
 		private void SwapStreamAppender(Exception ex) {
 			_streamAppenderDelayMs = Math.Min(200, Math.Max(_streamAppenderDelayMs * 2, 25));
 			Interlocked.Exchange(ref _streamAppender, CreateStreamAppender());
@@ -90,6 +96,7 @@ namespace EventStore.Client {
 					operationOptions, Settings.DefaultCredentials, _disposedTokenSource.Token));
 			}
 		}
+#endif
 
 		private static FilterOptions? GetFilterOptions(
 			SubscriptionFilterOptions? filterOptions) {
@@ -151,13 +158,17 @@ namespace EventStore.Client {
 		}
 
 		void IDisposable.Dispose() {
+#if NET5_0_OR_GREATER
 			_streamAppender.Dispose();
+#endif
 			_disposedTokenSource.Dispose();
 			base.Dispose();
 		}
 
 		async ValueTask IAsyncDisposable.DisposeAsync() {
+#if NET5_0_OR_GREATER
 			_streamAppender.Dispose();
+#endif
 			_disposedTokenSource.Dispose();
 			await base.DisposeAsync().ConfigureAwait(false);
 		}
