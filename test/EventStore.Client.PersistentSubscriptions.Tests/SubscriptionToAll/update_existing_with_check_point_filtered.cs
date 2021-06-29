@@ -46,7 +46,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			
 			protected override async Task Given() {
 				foreach (var e in _events) {
-					await StreamsClient.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.Any, new[] {e});
+					await StreamsClient.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.NoStream, new[] {e});
 				}
 
 				await Client.CreateToAllAsync(Group,
@@ -96,7 +96,7 @@ namespace EventStore.Client.SubscriptionToAll {
 					userCredentials: TestCredentials.Root);
 				
 				foreach (var e in _events) {
-					await StreamsClient.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.Any, new[] {e});
+					await StreamsClient.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.NoStream, new[] {e});
 				}
 			}
 
