@@ -10,6 +10,10 @@ namespace EventStore.Client {
 			Client = new EventStoreClient(Settings);
 		}
 
+		protected override async Task OnServerUpAsync() {
+			await Client.WarmUpAsync();
+		}
+
 		public override async Task DisposeAsync() {
 			await Client.DisposeAsync();
 			await base.DisposeAsync();

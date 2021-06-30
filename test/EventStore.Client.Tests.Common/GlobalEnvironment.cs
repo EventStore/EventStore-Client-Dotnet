@@ -10,9 +10,15 @@ namespace EventStore.Client {
 			if (bool.TryParse(useClusterEnvVar, out var useCluster)) {
 				UseCluster = useCluster;
 			}
+
+			var useExternalServerEnvVar = Environment.GetEnvironmentVariable(UseExternalServerName);
+			if (bool.TryParse(useExternalServerEnvVar, out var useExternalServer)) {
+				UseExternalServer = useExternalServer;
+			}
 		}
 
 		public static bool UseCluster { get; } = false;
+		public static bool UseExternalServer { get; } = false;
 		public static string ImageTag => GetEnvironmentVariable(ImageTagName, ImageTagDefault);
 		public static string DbLogFormat => GetEnvironmentVariable(DbLogFormatName, DbLogFormatDefault);
 
@@ -41,6 +47,7 @@ namespace EventStore.Client {
 		};
 
 		static string UseClusterName => "ES_USE_CLUSTER";
+		static string UseExternalServerName => "ES_USE_EXTERNAL_SERVER";
 		static string ImageTagName => "ES_DOCKER_TAG";
 		static string ImageTagDefault => "ci"; // e.g. "21.6.0-focal"
 		static string DbLogFormatName => "EVENTSTORE_DB_LOG_FORMAT";

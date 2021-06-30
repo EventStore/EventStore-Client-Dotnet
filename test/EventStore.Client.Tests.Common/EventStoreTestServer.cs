@@ -64,6 +64,8 @@ namespace EventStore.Client {
 				.WithName(ContainerName)
 				.MountVolume(_hostCertificatePath, "/etc/eventstore/certs", MountType.ReadOnly)
 				.ExposePort(2113, 2113)
+				//.KeepContainer()
+				//.KeepRunning()
 				.Build();
 		}
 
@@ -88,7 +90,7 @@ namespace EventStore.Client {
 			_eventStore.Start();
 			try {
 				await Policy.Handle<Exception>()
-					.WaitAndRetryAsync(5, retryCount => TimeSpan.FromSeconds(retryCount * retryCount))
+					.WaitAndRetryAsync(10, retryCount => TimeSpan.FromSeconds(2))
 					.ExecuteAsync(async () => {
 						using var response = await _httpClient.GetAsync("/health/live", cancellationToken);
 						if (response.StatusCode >= HttpStatusCode.BadRequest) {

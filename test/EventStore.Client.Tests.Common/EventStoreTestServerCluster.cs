@@ -57,18 +57,22 @@ namespace EventStore.Client {
 
 		public async Task StartAsync(CancellationToken cancellationToken = default) {
 			try {
-				_eventStoreCluster.Start();
-			} catch (FluentDockerException ex) {
-				var asdf = ex;
 				// don't know why, sometimes the default network (e.g. net50_default) remains
 				// from previous cluster and prevents docker-compose up from executing successfully
-				BuildCluster().Dispose();
-				_eventStoreCluster.Start();
-			}
+				Policy.Handle<FluentDockerException>()
+					.WaitAndRetry(
+						retryCount: 10,
+						sleepDurationProvider: retryCount => TimeSpan.FromSeconds(2),
+						onRetry: (ex, _) => {
+							BuildCluster().Dispose();
+							_eventStoreCluster.Start();
+						})
+					.Execute(() => {
+						_eventStoreCluster.Start();
+					});
 
-			try {
 				await Policy.Handle<Exception>()
-					.WaitAndRetryAsync(5, retryCount => TimeSpan.FromSeconds(retryCount * retryCount))
+					.WaitAndRetryAsync(10, retryCount => TimeSpan.FromSeconds(2))
 					.ExecuteAsync(async () => {
 						using var response = await _httpClient.GetAsync("/health/live", cancellationToken);
 						if (response.StatusCode >= HttpStatusCode.BadRequest) {
