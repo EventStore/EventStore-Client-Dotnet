@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Polly.Retry;
 using Xunit;
 
 namespace EventStore.Client.SubscriptionToAll {
