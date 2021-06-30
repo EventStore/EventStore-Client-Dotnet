@@ -57,11 +57,13 @@ namespace EventStore.Client {
 			Assert.Equal(stream, ex.Stream);
 		}
 
-		[Fact]
-		public async Task returns_events_in_reversed_order() {
-			var stream = _fixture.GetStreamName();
+		[Theory]
+		[InlineData("small_events", 10, 1)]
+		[InlineData("large_events", 2, 1_000_000)]
+		public async Task returns_events_in_reversed_order(string suffix, int count, int metadataSize) {
+			var stream = $"{_fixture.GetStreamName()}_{suffix}";
 
-			var expected = _fixture.CreateTestEvents(10).ToArray();
+			var expected = _fixture.CreateTestEvents(count: count, metadataSize: metadataSize).ToArray();
 
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
