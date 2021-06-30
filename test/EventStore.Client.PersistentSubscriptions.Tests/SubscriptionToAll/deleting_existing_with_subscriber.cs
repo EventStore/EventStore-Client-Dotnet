@@ -28,6 +28,8 @@ namespace EventStore.Client.SubscriptionToAll {
 				_subscription = await Client.SubscribeToAllAsync("groupname123",
 					(s, e, i, ct) => Task.CompletedTask,
 					(s, r, e) => _dropped.TrySetResult((r, e)), TestCredentials.Root);
+				// todo: investigate why this test is flaky without this delay
+				await Task.Delay(500);
 			}
 
 			protected override Task When() =>
