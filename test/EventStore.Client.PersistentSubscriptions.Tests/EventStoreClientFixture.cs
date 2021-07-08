@@ -14,13 +14,11 @@ namespace EventStore.Client {
 			UserManagementClient = new EventStoreUserManagementClient(Settings);
 		}
 
-		public override async Task InitializeAsync() {
-			await TestServer.StartAsync().WithTimeout(TimeSpan.FromMinutes(5));
+		protected override async Task OnServerUpAsync() {
+			await StreamsClient.WarmUpAsync();
 			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser1.Username!,
 				TestCredentials.TestUser1.Username!, Array.Empty<string>(), TestCredentials.TestUser1.Password!,
 				TestCredentials.Root);
-			await Given().WithTimeout(TimeSpan.FromMinutes(5));
-			await When().WithTimeout(TimeSpan.FromMinutes(5));
 		}
 
 		public override async Task DisposeAsync() {

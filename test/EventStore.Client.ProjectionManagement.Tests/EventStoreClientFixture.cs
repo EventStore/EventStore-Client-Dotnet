@@ -22,8 +22,8 @@ namespace EventStore.Client {
 
 		protected virtual bool RunStandardProjections => true;
 
-		public override async Task InitializeAsync() {
-			await TestServer.StartAsync();
+		protected override async Task OnServerUpAsync() {
+			await StreamsClient.WarmUpAsync();
 			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser1.Username!,
 				TestCredentials.TestUser1.Username!, Array.Empty<string>(), TestCredentials.TestUser1.Password!,
 				TestCredentials.Root).WithTimeout();
@@ -33,9 +33,6 @@ namespace EventStore.Client {
 				await Task.WhenAll(StandardProjections.Names.Select(name =>
 					Client.EnableAsync(name, TestCredentials.Root)));
 			}
-
-			await Given().WithTimeout(TimeSpan.FromMinutes(5));
-			await When().WithTimeout(TimeSpan.FromMinutes(5));
 		}
 
 		public override async Task DisposeAsync() {

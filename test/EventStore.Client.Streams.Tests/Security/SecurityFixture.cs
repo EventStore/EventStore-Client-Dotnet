@@ -23,8 +23,8 @@ namespace EventStore.Client.Security {
 			UserManagementClient = new EventStoreUserManagementClient(Settings);
 		}
 
-		public override async Task InitializeAsync() {
-			await TestServer.StartAsync().WithTimeout(TimeSpan.FromMinutes(5));
+		protected override async Task OnServerUpAsync() {
+			await base.OnServerUpAsync();
 
 			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser1.Username,
 				nameof(TestCredentials.TestUser1), Array.Empty<string>(), TestCredentials.TestUser1.Password,
@@ -37,9 +37,6 @@ namespace EventStore.Client.Security {
 			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestAdmin.Username,
 				nameof(TestCredentials.TestAdmin), new[] {SystemRoles.Admins}, TestCredentials.TestAdmin.Password,
 				TestCredentials.Root).WithTimeout();
-
-			await Given().WithTimeout(TimeSpan.FromMinutes(10));
-			await When().WithTimeout(TimeSpan.FromMinutes(10));
 		}
 
 		protected override async Task Given() {

@@ -14,8 +14,8 @@ namespace EventStore.Client.SubscriptionToStream {
 		public class Fixture : EventStoreClientFixture {
 			protected override Task Given() => Task.CompletedTask;
 
-			protected override Task When() =>
-				StreamsClient.AppendToStreamAsync(Stream, StreamState.Any, CreateTestEvents());
+			protected override async Task When() =>
+				await StreamsClient.AppendToStreamAsync(Stream, StreamState.Any, CreateTestEvents());
 		}
 
 		[Fact]
