@@ -108,6 +108,7 @@ namespace EventStore.Client {
 
 			SubscriptionDropped(SubscriptionDroppedReason.Disposed);
 
+			_disposed.Cancel();
 			_disposed.Dispose();
 		}
 
@@ -172,6 +173,9 @@ namespace EventStore.Client {
 						return false;
 					}
 					if (!await _inner.MoveNextAsync().ConfigureAwait(false)) {
+						return false;
+					}
+					if (_cancellationToken.IsCancellationRequested) {
 						return false;
 					}
 
