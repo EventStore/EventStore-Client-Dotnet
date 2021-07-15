@@ -114,6 +114,79 @@ namespace EventStore.Client {
 		}
 
 		/// <summary>
+		/// folds a stream using provided aggregator and seed.
+		/// </summary>
+		/// <typeparam name="T">The type of the folded State.</typeparam>
+		/// <typeparam name="E">The type of deserialized events.</typeparam>
+		/// <param name="deserialize">A deserialization function returning zero, one, or multiple events for a the given <see cref="ResolvedEvent"/>.</param>
+		/// <param name="aggregator">An aggregation function returning a new state from last state and current deserialized event.</param>
+		/// <param name="streamName">The name of the stream to fold.</param>
+		/// <param name="revision">The <see cref="Position"/> of the first event to fold.</param>
+		/// <param name="seed">The seed state to start the aggregation.</param>
+		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
+		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
+		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns>A <see cref="FoldResult{T}"/> containing the aggregation result and the <see cref="StreamRevision"/> of the last event aggregated.</returns>
+		public async ValueTask<FoldResult<T>> FoldStreamAsync<T,E>(
+			Func<ResolvedEvent, IEnumerable<E>> deserialize,
+			Func<T,E,T> aggregator,
+			string streamName,
+			StreamPosition revision,
+			T seed,
+			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
+			bool resolveLinkTos = false,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
+			var operationOptions = Settings.OperationOptions.Clone();
+			configureOperationOptions?.Invoke(operationOptions);
+
+			var readReq =
+				new ReadReq {
+					Options = new ReadReq.Types.Options {
+						ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
+						ResolveLinks = resolveLinkTos,
+						Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(streamName, revision),
+						Count = long.MaxValue
+					}
+				};
+			if (readReq.Options.Filter == null) {
+				readReq.Options.NoFilter = new Empty();
+			}
+
+			readReq.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption { Structured = new Empty() };
+
+			var call =
+					_client.Read(readReq,
+						EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken))
+					.ResponseStream.ReadAllAsync().GetAsyncEnumerator();
+
+
+			var hasNext = await call.MoveNextAsync(cancellationToken).ConfigureAwait(false);
+
+			var rev =
+				hasNext && call.Current.ContentCase == ReadResp.ContentOneofCase.StreamNotFound
+					? StreamRevision.None
+					: hasNext
+						? StreamRevision.FromStreamPosition(revision)
+						: StreamRevision.FromStreamPosition(revision-1);
+				
+			while(hasNext) {
+				if (call.Current.ContentCase == ReadResp.ContentOneofCase.Event) {
+					var re = ConvertToResolvedEvent(call.Current.Event);
+					if (re.Event != null) {
+						rev = StreamRevision.FromStreamPosition(re.Event.EventNumber);
+						foreach (var e in deserialize(re))
+							seed = aggregator(seed, e);
+					}
+				}
+				hasNext = await call.MoveNextAsync(cancellationToken).ConfigureAwait(false);
+			}
+
+			return new FoldResult<T>(rev, seed);
+		}
+
+		/// <summary>
 		/// A class that represents the result of a read operation.
 		/// </summary>
 		public class ReadStreamResult : IAsyncEnumerable<ResolvedEvent>, IAsyncEnumerator<ResolvedEvent> {
