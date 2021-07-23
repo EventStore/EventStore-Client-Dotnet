@@ -1,5 +1,5 @@
 ARG DOCKER_TAG=ci
-FROM docker.pkg.github.com/eventstore/eventstore/eventstore:${DOCKER_TAG}
+FROM ghcr.io/eventstore/eventstore:${DOCKER_TAG}
 
 WORKDIR /etc/eventstore/certs
 
