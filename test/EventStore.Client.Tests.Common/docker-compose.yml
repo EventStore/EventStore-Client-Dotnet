@@ -27,7 +27,7 @@ services:
     depends_on:
       - volumes-provisioner
   esdb-node1:
-    image: docker.pkg.github.com/eventstore/eventstore/eventstore:${ES_DOCKER_TAG}
+    image: ghcr.io/eventstore/eventstore:${ES_DOCKER_TAG}
     env_file:
       - shared.env
     environment:
@@ -49,7 +49,7 @@ services:
       - cert-gen
 
   esdb-node2:
-    image: docker.pkg.github.com/eventstore/eventstore/eventstore:${ES_DOCKER_TAG}
+    image: ghcr.io/eventstore/eventstore:${ES_DOCKER_TAG}
     env_file:
       - shared.env
     environment:
@@ -71,7 +71,7 @@ services:
       - cert-gen
 
   esdb-node3:
-    image: docker.pkg.github.com/eventstore/eventstore/eventstore:${ES_DOCKER_TAG}
+    image: ghcr.io/eventstore/eventstore:${ES_DOCKER_TAG}
     env_file:
       - shared.env
     environment:
@@ -93,7 +93,7 @@ services:
       - cert-gen
 
   esdb-node4:
-    image: docker.pkg.github.com/eventstore/eventstore/eventstore:${ES_DOCKER_TAG}
+    image: ghcr.io/eventstore/eventstore:${ES_DOCKER_TAG}
     env_file:
       - shared.env
     environment:

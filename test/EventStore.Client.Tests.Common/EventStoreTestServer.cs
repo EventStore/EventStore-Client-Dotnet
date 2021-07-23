@@ -59,7 +59,7 @@ namespace EventStore.Client {
 
 			_eventStore = new Builder()
 				.UseContainer()
-				.UseImage($"docker.pkg.github.com/eventstore/eventstore/eventstore:{GlobalEnvironment.ImageTag}")
+				.UseImage($"ghcr.io/eventstore/eventstore:{GlobalEnvironment.ImageTag}")
 				.WithEnvironment(env.Select(pair => $"{pair.Key}={pair.Value}").ToArray())
 				.WithName(ContainerName)
 				.MountVolume(_hostCertificatePath, "/etc/eventstore/certs", MountType.ReadOnly)
