@@ -156,7 +156,7 @@ namespace EventStore.Client {
 					}.Uri
 				};
 				var tag = Environment.GetEnvironmentVariable("ES_DOCKER_TAG") ?? "ci";
-				_container = new DockerContainer("docker.pkg.github.com/eventstore/eventstore/eventstore", tag,
+				_container = new DockerContainer("ghcr.io/eventstore/eventstore", tag,
 					async ct => {
 						try {
 							using var response = await _httpClient.GetAsync("/health/live", ct);
