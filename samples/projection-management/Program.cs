@@ -76,69 +76,55 @@ namespace projection_management {
 		private static EventStoreProjectionManagementClient ManagementClient(string connection) {
 
 			#region createClient
-
 			var settings = EventStoreClientSettings.Create(connection);
 			settings.ConnectionName = "Projection management client";
 			settings.DefaultCredentials = new UserCredentials("admin", "changeit");
 			var managementClient = new EventStoreProjectionManagementClient(settings);
-
 			#endregion createClient
 
 			return managementClient;
 		}
 		private static async Task RestartSubSystem(EventStoreProjectionManagementClient managementClient) {
 			#region RestartSubSystem
-
 			await managementClient.RestartSubsystemAsync();
-
 			#endregion RestartSubSystem
 		}
 
 		private static async Task Disable(EventStoreProjectionManagementClient managementClient) {
 			#region Disable
-
 			await managementClient.DisableAsync("$by_category");
-
 			#endregion Disable
 		}
 
 		private static async Task DisableNotFound(EventStoreProjectionManagementClient managementClient) {
 			#region DisableNotFound
-
 			try {
 				await managementClient.DisableAsync("projection that does not exists");
 			} catch (InvalidOperationException e) when (e.Message.Contains("NotFound")) {
 				Console.WriteLine(e.Message);
 			}
-
 			#endregion DisableNotFound
 		}
 
 		private static async Task Enable(EventStoreProjectionManagementClient managementClient) {
 			#region Enable
-
 			await managementClient.EnableAsync("$by_category");
-
 			#endregion Enable
 		}
 
 		private static async Task EnableNotFound(EventStoreProjectionManagementClient managementClient) {
 			#region EnableNotFound
-
 			try {
 				await managementClient.EnableAsync("projection that does not exists");
 			} catch (InvalidOperationException e) when (e.Message.Contains("NotFound")) {
 				Console.WriteLine(e.Message);
 			}
-
 			#endregion EnableNotFound
 		}
 
 		private static Task Delete(EventStoreProjectionManagementClient managementClient) {
 			#region Delete
-
 			// this is not yet available in the .net grpc client
-
 			#endregion Delete
 
 			return Task.CompletedTask;
@@ -154,22 +140,18 @@ namespace projection_management {
 			}
 
 			#region Abort
-
 			// The .net clients prior to version 21.6 had an incorrect behavior: they will save the checkpoint.
 			await managementClient.AbortAsync("countEvents_Abort");
-			
 			#endregion Abort
 		}
 
 		private static async Task Abort_NotFound(EventStoreProjectionManagementClient managementClient) {
 			#region Abort_NotFound
-
 			try {
 				await managementClient.AbortAsync("projection that does not exists");
 			} catch (InvalidOperationException e) when (e.Message.Contains("NotFound")) {
 				Console.WriteLine(e.Message);
 			}
-
 			#endregion Abort_NotFound
 		}
 
@@ -183,23 +165,19 @@ namespace projection_management {
 			}
 
 			#region Reset
-
 			// Checkpoint will be written prior to resetting the projection
 			await managementClient.ResetAsync("countEvents_Reset");
-			
 			#endregion Reset
 
 		}
 
 		private static async Task Reset_NotFound(EventStoreProjectionManagementClient managementClient) {
 			#region Reset_NotFound
-
 			try {
 				await managementClient.ResetAsync("projection that does not exists");
 			} catch (InvalidOperationException e) when (e.Message.Contains("NotFound")) {
 				Console.WriteLine(e.Message);
 			}
-
 			#endregion Reset_NotFound
 		}
 
@@ -211,7 +189,6 @@ namespace projection_management {
 
 		private static async Task CreateContinuous(EventStoreProjectionManagementClient managementClient) {
 			#region CreateContinuous
-
 			const string js = @"fromAll()
 							    .when({
 							        $init: function() {
@@ -226,7 +203,6 @@ namespace projection_management {
 							    .outputState();";
 			var name = $"countEvents_Create_{Guid.NewGuid()}";
 			await managementClient.CreateContinuousAsync(name, js);
-
 			#endregion CreateContinuous
 		}
 
@@ -247,7 +223,6 @@ namespace projection_management {
 			var name = $"countEvents_Create_{Guid.NewGuid()}";
 
 			#region CreateContinuous_Conflict
-
 			await managementClient.CreateContinuousAsync(name, js);
 			try {
 
@@ -256,13 +231,11 @@ namespace projection_management {
 				var format = $"{name} already exists";
 				Console.WriteLine(format);
 			}
-
 			#endregion CreateContinuous_Conflict
 		}
 
 		private static async Task Update(EventStoreProjectionManagementClient managementClient) {
 			#region Update
-
 			const string js = @"fromAll()
 							    .when({
 							        $init: function() {
@@ -279,43 +252,36 @@ namespace projection_management {
 
 			await managementClient.CreateContinuousAsync(name, "fromAll().when()");
 			await managementClient.UpdateAsync(name, js);
-
 			#endregion Update
 		}
 
 		private static async Task Update_NotFound(EventStoreProjectionManagementClient managementClient) {
 			#region Update_NotFound
-
 			try {
 				await managementClient.UpdateAsync("Update Not existing projection", "fromAll().when()");
 			} catch (InvalidOperationException e) when (e.Message.Contains("NotFound")) {
 				Console.WriteLine("'Update Not existing projection' does not exists and can not be updated");
 			}
-
 			#endregion Update_NotFound
 		}
 
 		private static async Task ListAll(EventStoreProjectionManagementClient managementClient) {
 			#region ListAll
-
 			var details = managementClient.ListAllAsync();
 			await foreach (var detail in details) {
 				Console.WriteLine(
 					$@"{detail.Name}, {detail.Status}, {detail.CheckpointStatus}, {detail.Mode}, {detail.Progress}");
 			}
-
 			#endregion ListAll
 		}
 
 		private static async Task ListContinuous(EventStoreProjectionManagementClient managementClient) {
 			#region ListContinuous
-
 			var details = managementClient.ListContinuousAsync();
 			await foreach (var detail in details) {
 				Console.WriteLine(
 					$@"{detail.Name}, {detail.Status}, {detail.CheckpointStatus}, {detail.Mode}, {detail.Progress}");
 			}
-
 			#endregion ListContinuous
 			
 		}
@@ -326,12 +292,10 @@ namespace projection_management {
 			var name = $"countEvents_status_{Guid.NewGuid()}";
 
 			#region GetStatus
-
 			await managementClient.CreateContinuousAsync(name, js);
 			var status = await managementClient.GetStatusAsync(name);
 			Console.WriteLine(
 				$@"{status.Name}, {status.Status}, {status.CheckpointStatus}, {status.Mode}, {status.Progress}");
-
 			#endregion GetStatus
 		}
 
@@ -340,7 +304,6 @@ namespace projection_management {
 			// will have to wait for the client to be fixed before we import in the doc 
 
 			#region GetState
-
 			const string js =
 				"fromAll().when({$init:function(){return {count:0};},$any:function(s, e){s.count += 1;}}).outputState();";
 			var name = $"countEvents_State_{Guid.NewGuid()}";
@@ -362,14 +325,12 @@ namespace projection_management {
 				await writer.FlushAsync();
 				return Encoding.UTF8.GetString(stream.ToArray());
 			}
-
 			#endregion GetState
 		}
 
 		private static async Task GetResult(EventStoreProjectionManagementClient managementClient) {
 
 			#region GetResult
-
 			const string js = @"fromAll()
 							    .when({
 							        $init: function() {
@@ -401,7 +362,6 @@ namespace projection_management {
 				writer.Flush();
 				return Encoding.UTF8.GetString(stream.ToArray());
 			}
-
 			#endregion GetResult
 		}
 
