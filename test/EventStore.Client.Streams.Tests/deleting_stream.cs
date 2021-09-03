@@ -11,12 +11,12 @@ namespace EventStore.Client {
 			_fixture = fixture;
 		}
 
-		public static IEnumerable<object[]> ExpectedVersionCases() {
+		public static IEnumerable<object[]> ExpectedStreamStateCases() {
 			yield return new object[] {StreamState.Any, nameof(StreamState.Any)};
 			yield return new object[] {StreamState.NoStream, nameof(StreamState.NoStream)};
 		}
 
-		[Theory, MemberData(nameof(ExpectedVersionCases))]
+		[Theory, MemberData(nameof(ExpectedStreamStateCases))]
 		public async Task hard_deleting_a_stream_that_does_not_exist_with_expected_version_does_not_throw(
 			StreamState expectedVersion, string name) {
 			var stream = $"{_fixture.GetStreamName()}_{name}";
@@ -24,14 +24,14 @@ namespace EventStore.Client {
 			await _fixture.Client.TombstoneAsync(stream, expectedVersion);
 		}
 
-		[Theory, MemberData(nameof(ExpectedVersionCases))]
-		public async Task soft_deleting_a_stream_that_does_not_exist_with_expected_version_does_not_throw(
-			StreamState expectedVersion, string name) {
-			var stream = $"{_fixture.GetStreamName()}_{name}";
+		[Fact]
+		public async Task soft_deleting_a_stream_that_exists() {
+			var stream = _fixture.GetStreamName();
 
-			await _fixture.Client.SoftDeleteAsync(stream, expectedVersion);
+			await _fixture.Client.AppendToStreamAsync(stream, StreamRevision.None, _fixture.CreateTestEvents());
+
+			await _fixture.Client.SoftDeleteAsync(stream, StreamState.StreamExists);
 		}
-
 
 		[Fact]
 		public async Task hard_deleting_a_stream_that_does_not_exist_with_wrong_expected_version_throws() {
