@@ -26,48 +26,48 @@ namespace EventStore.Client.Security {
 		protected override async Task OnServerUpAsync() {
 			await base.OnServerUpAsync();
 
-			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser1.Username,
-				nameof(TestCredentials.TestUser1), Array.Empty<string>(), TestCredentials.TestUser1.Password,
-				TestCredentials.Root).WithTimeout();
+			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser1.Username!,
+				nameof(TestCredentials.TestUser1), Array.Empty<string>(), TestCredentials.TestUser1.Password!,
+				TestCredentials.Root).WithTimeout(TimeSpan.FromMilliseconds(500));
 
-			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser2.Username,
-				nameof(TestCredentials.TestUser2), Array.Empty<string>(), TestCredentials.TestUser2.Password,
-				TestCredentials.Root).WithTimeout();
+			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser2.Username!,
+				nameof(TestCredentials.TestUser2), Array.Empty<string>(), TestCredentials.TestUser2.Password!,
+				TestCredentials.Root).WithTimeout(TimeSpan.FromMilliseconds(500));
 
-			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestAdmin.Username,
-				nameof(TestCredentials.TestAdmin), new[] {SystemRoles.Admins}, TestCredentials.TestAdmin.Password,
-				TestCredentials.Root).WithTimeout();
+			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestAdmin.Username!,
+				nameof(TestCredentials.TestAdmin), new[] {SystemRoles.Admins}, TestCredentials.TestAdmin.Password!,
+				TestCredentials.Root).WithTimeout(TimeSpan.FromMilliseconds(500));
 		}
 
 		protected override async Task Given() {
 			await Client.SetStreamMetadataAsync(NoAclStream, StreamState.NoStream, new StreamMetadata(),
-				userCredentials: TestCredentials.TestAdmin).WithTimeout();
+				userCredentials: TestCredentials.TestAdmin).WithTimeout(TimeSpan.FromMilliseconds(500));
 			await Client.SetStreamMetadataAsync(
 				ReadStream,
 				StreamState.NoStream,
 				new StreamMetadata(acl: new StreamAcl(TestCredentials.TestUser1.Username)),
-				userCredentials: TestCredentials.TestAdmin).WithTimeout();
+				userCredentials: TestCredentials.TestAdmin).WithTimeout(TimeSpan.FromMilliseconds(500));
 			await Client.SetStreamMetadataAsync(
 				WriteStream,
 				StreamState.NoStream,
 				new StreamMetadata(acl: new StreamAcl(writeRole: TestCredentials.TestUser1.Username)),
-				userCredentials: TestCredentials.TestAdmin).WithTimeout();
+				userCredentials: TestCredentials.TestAdmin).WithTimeout(TimeSpan.FromMilliseconds(500));
 			await Client.SetStreamMetadataAsync(
 				MetaReadStream,
 				StreamState.NoStream,
 				new StreamMetadata(acl: new StreamAcl(metaReadRole: TestCredentials.TestUser1.Username)),
-				userCredentials: TestCredentials.TestAdmin).WithTimeout();
+				userCredentials: TestCredentials.TestAdmin).WithTimeout(TimeSpan.FromMilliseconds(500));
 			await Client.SetStreamMetadataAsync(
 				MetaWriteStream,
 				StreamState.NoStream,
 				new StreamMetadata(acl: new StreamAcl(metaWriteRole: TestCredentials.TestUser1.Username)),
-				userCredentials: TestCredentials.TestAdmin).WithTimeout();
+				userCredentials: TestCredentials.TestAdmin).WithTimeout(TimeSpan.FromMilliseconds(500));
 
 			await Client.SetStreamMetadataAsync(
 				AllStream,
 				StreamState.Any,
 				new StreamMetadata(acl: new StreamAcl(readRole: TestCredentials.TestUser1.Username)),
-				userCredentials: TestCredentials.TestAdmin).WithTimeout();
+				userCredentials: TestCredentials.TestAdmin).WithTimeout(TimeSpan.FromMilliseconds(500));
 
 			await Client.SetStreamMetadataAsync(
 				SystemAclStream,
@@ -77,7 +77,7 @@ namespace EventStore.Client.Security {
 					readRole: TestCredentials.TestUser1.Username,
 					metaWriteRole: TestCredentials.TestUser1.Username,
 					metaReadRole: TestCredentials.TestUser1.Username)),
-				userCredentials: TestCredentials.TestAdmin).WithTimeout();
+				userCredentials: TestCredentials.TestAdmin).WithTimeout(TimeSpan.FromMilliseconds(500));
 
 			await Client.SetStreamMetadataAsync(
 				SystemAdminStream,
@@ -87,7 +87,7 @@ namespace EventStore.Client.Security {
 					readRole: SystemRoles.Admins,
 					metaWriteRole: SystemRoles.Admins,
 					metaReadRole: SystemRoles.Admins)),
-				userCredentials: TestCredentials.TestAdmin).WithTimeout();
+				userCredentials: TestCredentials.TestAdmin).WithTimeout(TimeSpan.FromMilliseconds(500));
 
 			await Client.SetStreamMetadataAsync(
 				NormalAllStream,
@@ -97,7 +97,7 @@ namespace EventStore.Client.Security {
 					readRole: SystemRoles.All,
 					metaWriteRole: SystemRoles.All,
 					metaReadRole: SystemRoles.All)),
-				userCredentials: TestCredentials.TestAdmin).WithTimeout();
+				userCredentials: TestCredentials.TestAdmin).WithTimeout(TimeSpan.FromMilliseconds(500));
 
 			await Client.SetStreamMetadataAsync(
 				SystemAllStream,
@@ -107,45 +107,52 @@ namespace EventStore.Client.Security {
 					readRole: SystemRoles.All,
 					metaWriteRole: SystemRoles.All,
 					metaReadRole: SystemRoles.All)),
-				userCredentials: TestCredentials.TestAdmin).WithTimeout();
+				userCredentials: TestCredentials.TestAdmin).WithTimeout(TimeSpan.FromMilliseconds(500));
 		}
 
 		public Task ReadEvent(string streamId, UserCredentials userCredentials = default) =>
 			Client.ReadStreamAsync(Direction.Forwards, streamId, StreamPosition.Start, 1, resolveLinkTos: false,
 					userCredentials: userCredentials)
 				.ToArrayAsync()
-				.AsTask();
+				.AsTask()
+				.WithTimeout(TimeSpan.FromMilliseconds(500));
 
 		public Task ReadStreamForward(string streamId, UserCredentials userCredentials = default) =>
 			Client.ReadStreamAsync(Direction.Forwards, streamId, StreamPosition.Start, 1, resolveLinkTos: false,
 					userCredentials: userCredentials)
 				.ToArrayAsync()
-				.AsTask();
+				.AsTask()
+				.WithTimeout(TimeSpan.FromMilliseconds(500));
 
 		public Task ReadStreamBackward(string streamId, UserCredentials userCredentials = default) =>
 			Client.ReadStreamAsync(Direction.Backwards, streamId, StreamPosition.Start, 1, resolveLinkTos: false,
 					userCredentials: userCredentials)
 				.ToArrayAsync()
-				.AsTask();
+				.AsTask()
+				.WithTimeout(TimeSpan.FromMilliseconds(500));
 
 		public Task<IWriteResult> AppendStream(string streamId, UserCredentials userCredentials = default) =>
 			Client.AppendToStreamAsync(streamId, StreamState.Any, CreateTestEvents(3),
-				userCredentials: userCredentials);
+				userCredentials: userCredentials)
+				.WithTimeout(TimeSpan.FromMilliseconds(500));
 
 		public Task ReadAllForward(UserCredentials userCredentials = default) =>
 			Client.ReadAllAsync(Direction.Forwards, Position.Start, 1, resolveLinkTos: false,
 					userCredentials: userCredentials)
 				.ToArrayAsync()
-				.AsTask();
+				.AsTask()
+				.WithTimeout(TimeSpan.FromMilliseconds(500));
 
 		public Task ReadAllBackward(UserCredentials userCredentials = default) =>
 			Client.ReadAllAsync(Direction.Backwards, Position.End, 1, resolveLinkTos: false,
 					userCredentials: userCredentials)
 				.ToArrayAsync()
-				.AsTask();
+				.AsTask()
+				.WithTimeout(TimeSpan.FromMilliseconds(500));
 
 		public Task<StreamMetadataResult> ReadMeta(string streamId, UserCredentials userCredentials = default) =>
-			Client.GetStreamMetadataAsync(streamId, userCredentials: userCredentials);
+			Client.GetStreamMetadataAsync(streamId, userCredentials: userCredentials)
+				.WithTimeout(TimeSpan.FromMilliseconds(500));
 
 		public Task<IWriteResult> WriteMeta(string streamId, UserCredentials userCredentials = default,
 			string role = default) =>
@@ -155,45 +162,48 @@ namespace EventStore.Client.Security {
 					readRole: role,
 					metaWriteRole: role,
 					metaReadRole: role)),
-				userCredentials: userCredentials);
+				userCredentials: userCredentials)
+				.WithTimeout(TimeSpan.FromMilliseconds(500));
 
 		public async Task SubscribeToStream(string streamId, UserCredentials userCredentials = default) {
 			var source = new TaskCompletionSource<bool>();
-			using (await Client.SubscribeToStreamAsync(streamId, (x, y, ct) => {
+			using (await Client.SubscribeToStreamAsync(streamId, (_, _, _) => {
 					source.TrySetResult(true);
 					return Task.CompletedTask;
 				},
-				subscriptionDropped: (x, y, ex) => {
+				subscriptionDropped: (_, _, ex) => {
 					if (ex == null) source.TrySetResult(true);
 					else source.TrySetException(ex);
-				}, userCredentials: userCredentials).WithTimeout()) {
-				await source.Task.WithTimeout();
+				}, userCredentials: userCredentials).WithTimeout(TimeSpan.FromMilliseconds(500))) {
+				await source.Task.WithTimeout(TimeSpan.FromMilliseconds(500));
 			}
 		}
 
 		public async Task SubscribeToAll(UserCredentials userCredentials = default) {
 			var source = new TaskCompletionSource<bool>();
-			using (await Client.SubscribeToAllAsync((x, y, ct) => {
+			using (await Client.SubscribeToAllAsync((_, _, _) => {
 					source.TrySetResult(true);
 					return Task.CompletedTask;
 				},
-				subscriptionDropped: (x, y, ex) => {
+				subscriptionDropped: (_, _, ex) => {
 					if (ex == null) source.TrySetResult(true);
 					else source.TrySetException(ex);
-				}, userCredentials: userCredentials).WithTimeout()) {
-				await source.Task.WithTimeout();
+				}, userCredentials: userCredentials).WithTimeout(TimeSpan.FromMilliseconds(500))) {
+				await source.Task.WithTimeout(TimeSpan.FromMilliseconds(500));
 			}
 		}
 
 		public async Task<string> CreateStreamWithMeta(StreamMetadata metadata,
-			[CallerMemberName] string streamId = default) {
+			[CallerMemberName] string streamId = "<unknown>") {
 			await Client.SetStreamMetadataAsync(streamId, StreamState.NoStream,
-				metadata, userCredentials: TestCredentials.TestAdmin);
+				metadata, userCredentials: TestCredentials.TestAdmin)
+				.WithTimeout(TimeSpan.FromMilliseconds(500));
 			return streamId;
 		}
 
 		public Task<DeleteResult> DeleteStream(string streamId, UserCredentials userCredentials = default) =>
-			Client.TombstoneAsync(streamId, StreamState.Any, userCredentials: userCredentials);
+			Client.TombstoneAsync(streamId, StreamState.Any, userCredentials: userCredentials)
+				.WithTimeout(TimeSpan.FromMilliseconds(500));
 
 		public override Task DisposeAsync() {
 			UserManagementClient?.Dispose();
