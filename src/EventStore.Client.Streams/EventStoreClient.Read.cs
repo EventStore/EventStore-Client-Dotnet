@@ -3,40 +3,46 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
 using Grpc.Core;
+using static EventStore.Client.Streams.ReadResp;
+using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
+#if !NET5_0_OR_GREATER
+using Channel = System.Threading.Channels.Channel;
+#endif
 
 #nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreClient {
-		private async IAsyncEnumerable<ResolvedEvent> ReadAllAsync(
-			Direction direction,
-			Position position,
-			long maxCount,
-			EventStoreClientOperationOptions operationOptions,
-			bool resolveLinkTos = false,
-			UserCredentials? userCredentials = null,
-			[EnumeratorCancellation] CancellationToken cancellationToken = default) {
-			await foreach (var (confirmation, _, resolvedEvent) in ReadInternal(new ReadReq {
-					Options = new ReadReq.Types.Options {
-						ReadDirection = direction switch {
-							Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
-							Direction.Forwards => ReadReq.Types.Options.Types.ReadDirection.Forwards,
-							_ => throw InvalidOption(direction)
-						},
-						ResolveLinks = resolveLinkTos,
-						All = ReadReq.Types.Options.Types.AllOptions.FromPosition(position),
-						Count = (ulong)maxCount,
-					}
-				},
-				operationOptions, userCredentials, cancellationToken)) {
-				if (confirmation != SubscriptionConfirmation.None) {
-					continue;
-				}
-
-				yield return resolvedEvent;
+		private ReadAllStreamResult ReadAllAsync(Direction direction, Position position, long maxCount,
+			EventStoreClientOperationOptions operationOptions, bool resolveLinkTos = false,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+			if (maxCount <= 0) {
+				throw new ArgumentOutOfRangeException(nameof(maxCount));
 			}
+
+			return new ReadAllStreamResult(SelectCallInvoker, new ReadReq {
+				Options = new() {
+					ReadDirection = direction switch {
+						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
+						Direction.Forwards => ReadReq.Types.Options.Types.ReadDirection.Forwards,
+						_ => throw InvalidOption(direction)
+					},
+					ResolveLinks = resolveLinkTos,
+					All = new() {
+						Position = new() {
+							CommitPosition = position.CommitPosition,
+							PreparePosition = position.PreparePosition
+						}
+					},
+					Count = (ulong)maxCount,
+					UuidOption = new() {Structured = new()},
+					NoFilter = new(),
+					ControlOption = new() {Compatibility = 1}
+				}
+			}, Settings, operationOptions, userCredentials, cancellationToken);
 		}
 
 		/// <summary>
@@ -50,7 +56,7 @@ namespace EventStore.Client {
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public IAsyncEnumerable<ResolvedEvent> ReadAllAsync(
+		public ReadAllStreamResult ReadAllAsync(
 			Direction direction,
 			Position position,
 			long maxCount = long.MaxValue,
@@ -65,23 +71,119 @@ namespace EventStore.Client {
 				cancellationToken);
 		}
 
-		private ReadStreamResult ReadStreamAsync(Direction direction,
-			string streamName, StreamPosition revision, long maxCount,
-			EventStoreClientOperationOptions operationOptions, bool resolveLinkTos = false,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			return new ReadStreamResult(SelectCallInvoker, new ReadReq {
-					Options = new ReadReq.Types.Options {
-						ReadDirection = direction switch {
-							Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
-							Direction.Forwards => ReadReq.Types.Options.Types.ReadDirection.Forwards,
-							_ => throw InvalidOption(direction)
-						},
-						ResolveLinks = resolveLinkTos,
-						Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(streamName,
-							revision),
-						Count = (ulong)maxCount
+		/// <summary>
+		/// A class that represents the result of a read operation on the $all stream. You may either enumerate this instance directly or <see cref="Messages"/>. Do not enumerate more than once.
+		/// </summary>
+		public class ReadAllStreamResult : IAsyncEnumerable<ResolvedEvent> {
+			private readonly Channel<StreamMessage> _channel;
+
+			private int _messagesEnumerated;
+
+			/// <summary>
+			/// The last <see cref="Position"/> of the $all stream, if available.
+			/// </summary>
+			public Position? LastPosition { get; private set; }
+
+			/// <summary>
+			/// An <see cref="IAsyncEnumerable{StreamMessage}"/>. Do not enumerate more than once.
+			/// </summary>
+			public IAsyncEnumerable<StreamMessage> Messages {
+				get {
+					return GetMessages();
+
+					async IAsyncEnumerable<StreamMessage> GetMessages() {
+						if (Interlocked.Exchange(ref _messagesEnumerated, 1) == 1) {
+							throw new InvalidOperationException("Messages may only be enumerated once.");
+						}
+						await foreach (var message in _channel.Reader.ReadAllAsync().ConfigureAwait(false)) {
+							if (message is StreamMessage.LastAllStreamPosition(var position)) {
+								LastPosition = position;
+							}
+
+							yield return message;
+						}
 					}
-				}, Settings, operationOptions, userCredentials, cancellationToken);
+				}
+			}
+
+			internal ReadAllStreamResult(Func<CancellationToken, Task<CallInvoker>> selectCallInvoker, ReadReq request,
+				EventStoreClientSettings settings, EventStoreClientOperationOptions operationOptions,
+				UserCredentials? userCredentials, CancellationToken cancellationToken) {
+				var callOptions = EventStoreCallOptions.Create(settings, operationOptions, userCredentials,
+					cancellationToken);
+
+				_channel = Channel.CreateBounded<StreamMessage>(new BoundedChannelOptions(1) {
+					SingleReader = true,
+					SingleWriter = true,
+					AllowSynchronousContinuations = true
+				});
+
+				_ = PumpMessages();
+
+				async Task PumpMessages() {
+					try {
+						var callInvoker = await selectCallInvoker(cancellationToken).ConfigureAwait(false);
+						var client = new Streams.Streams.StreamsClient(callInvoker);
+						using var call = client.Read(request, callOptions);
+						await foreach (var response in call.ResponseStream.ReadAllAsync(cancellationToken)
+							               .ConfigureAwait(false)) {
+							await _channel.Writer.WriteAsync(response.ContentCase switch {
+								StreamNotFound => StreamMessage.NotFound.Instance,
+								Event => new StreamMessage.Event(ConvertToResolvedEvent(response.Event)),
+								FirstStreamPosition => new StreamMessage.FirstStreamPosition(
+									new StreamPosition(response.FirstStreamPosition)),
+								LastStreamPosition => new StreamMessage.LastStreamPosition(
+									new StreamPosition(response.LastStreamPosition)),
+								LastAllStreamPosition => new StreamMessage.LastAllStreamPosition(
+									new Position(response.LastAllStreamPosition.CommitPosition,
+										response.LastAllStreamPosition.PreparePosition)),
+								_ => StreamMessage.Unknown.Instance
+							}, cancellationToken).ConfigureAwait(false);
+						}
+
+						_channel.Writer.Complete();
+					} catch (Exception ex) {
+						_channel.Writer.TryComplete(ex);
+					}
+				}
+			}
+
+			/// <inheritdoc />
+			public async IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(
+				CancellationToken cancellationToken = default) {
+				await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
+					if (message is not StreamMessage.Event e) {
+						continue;
+					}
+
+					yield return e.ResolvedEvent;
+				}
+			}
+		}
+
+		private ReadStreamResult ReadStreamAsync(Direction direction, string streamName, StreamPosition revision,
+			long maxCount, EventStoreClientOperationOptions operationOptions, bool resolveLinkTos,
+			UserCredentials? userCredentials, CancellationToken cancellationToken) {
+			if (maxCount <= 0) {
+				throw new ArgumentOutOfRangeException(nameof(maxCount));
+			}
+
+			return new ReadStreamResult(SelectCallInvoker, new ReadReq {
+				Options = new() {
+					ReadDirection = direction switch {
+						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
+						Direction.Forwards => ReadReq.Types.Options.Types.ReadDirection.Forwards,
+						_ => throw InvalidOption(direction)
+					},
+					ResolveLinks = resolveLinkTos,
+					Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(streamName,
+						revision),
+					Count = (ulong)maxCount,
+					UuidOption = new() {Structured = new()},
+					NoFilter = new(),
+					ControlOption = new() {Compatibility = 1}
+				}
+			}, Settings, operationOptions, userCredentials, cancellationToken);
 		}
 
 		/// <summary>
@@ -110,61 +212,60 @@ namespace EventStore.Client {
 			var operationOptions = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(operationOptions);
 
-			return ReadStreamAsync(direction, streamName, revision, maxCount, operationOptions, resolveLinkTos, userCredentials, cancellationToken);
+			return ReadStreamAsync(direction, streamName, revision, maxCount, operationOptions, resolveLinkTos,
+				userCredentials, cancellationToken);
 		}
 
 		/// <summary>
-		/// A class that represents the result of a read operation.
+		/// A class that represents the result of a read operation on a stream. You may either enumerate this instance directly or <see cref="Messages"/>. Do not enumerate more than once.
 		/// </summary>
-		public class ReadStreamResult : IAsyncEnumerable<ResolvedEvent>, IAsyncEnumerator<ResolvedEvent> {
-			private readonly string _streamName;
-			private readonly TaskCompletionSource<IAsyncEnumerator<ReadResp>> _callSource;
+		public class ReadStreamResult : IAsyncEnumerable<ResolvedEvent> {
+			private readonly Channel<StreamMessage> _channel;
 
-			private bool _moved;
-			private CancellationToken _cancellationToken;
+			private int _messagesEnumerated;
 
-			internal ReadStreamResult(
-				Func<CancellationToken, Task<CallInvoker>> selectCallInvoker,
-				ReadReq request,
-				EventStoreClientSettings settings,
-				EventStoreClientOperationOptions operationOptions,
-				UserCredentials? userCredentials, CancellationToken cancellationToken) {
-				if (request.Options.CountOptionCase == ReadReq.Types.Options.CountOptionOneofCase.Count &&
-				    request.Options.Count <= 0) {
-					throw new ArgumentOutOfRangeException("count");
+			/// <summary>
+			/// The name of the stream.
+			/// </summary>
+			public string StreamName { get; }
+
+			/// <summary>
+			/// The <see cref="StreamPosition"/> of the first message in this stream. Will only be filled once <see cref="Messages"/> has been enumerated. 
+			/// </summary>
+			public StreamPosition? FirstStreamPosition { get; private set; }
+
+			/// <summary>
+			/// The <see cref="StreamPosition"/> of the last message in this stream. Will only be filled once <see cref="Messages"/> has been enumerated. 
+			/// </summary>
+			public StreamPosition? LastStreamPosition { get; private set; }
+
+			/// <summary>
+			/// An <see cref="IAsyncEnumerable{StreamMessage}"/>. Do not enumerate more than once.
+			/// </summary>
+			public IAsyncEnumerable<StreamMessage> Messages {
+				get {
+					return GetMessages();
+
+					async IAsyncEnumerable<StreamMessage> GetMessages() {
+						if (Interlocked.Exchange(ref _messagesEnumerated, 1) == 1) {
+							throw new InvalidOperationException("Messages may only be enumerated once.");
+						}
+						await foreach (var message in _channel.Reader.ReadAllAsync().ConfigureAwait(false)) {
+							switch (message) {
+								case StreamMessage.FirstStreamPosition(var streamPosition):
+									FirstStreamPosition = streamPosition;
+									break;
+								case StreamMessage.LastStreamPosition(var lastStreamPosition):
+									LastStreamPosition = lastStreamPosition;
+									break;
+								default:
+									break;
+							}
+
+							yield return message;
+						}
+					}
 				}
-
-				_streamName = request.Options.Stream.StreamIdentifier;
-
-				if (request.Options.Filter == null) {
-					request.Options.NoFilter = new Empty();
-				}
-
-				request.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()};
-				_callSource = new TaskCompletionSource<IAsyncEnumerator<ReadResp>>();
-				_ = Task.Run(async () => {
-					var client = new Streams.Streams.StreamsClient(await selectCallInvoker(cancellationToken)
-						.ConfigureAwait(false));
-					_callSource.SetResult(client
-						.Read(request,
-							EventStoreCallOptions.Create(settings, operationOptions, userCredentials,
-								cancellationToken)).ResponseStream.ReadAllAsync().GetAsyncEnumerator());
-				});
-				_moved = false;
-
-				ReadState = GetStateInternal();
-
-				async Task<ReadState> GetStateInternal() {
-					var call = await _callSource.Task.ConfigureAwait(false);
-
-					_moved = await call.MoveNextAsync(cancellationToken).ConfigureAwait(false);
-					return call.Current?.ContentCase switch {
-						ReadResp.ContentOneofCase.StreamNotFound => Client.ReadState.StreamNotFound,
-						_ => Client.ReadState.Ok
-					};
-				}
-
-				Current = default;
 			}
 
 			/// <summary>
@@ -172,67 +273,87 @@ namespace EventStore.Client {
 			/// </summary>
 			public Task<ReadState> ReadState { get; }
 
-			/// <inheritdoc />
-			public IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(
-				CancellationToken cancellationToken = new CancellationToken()) {
-				_cancellationToken = cancellationToken;
-				return this;
+			internal ReadStreamResult(Func<CancellationToken, Task<CallInvoker>> selectCallInvoker, ReadReq request,
+				EventStoreClientSettings settings, EventStoreClientOperationOptions operationOptions,
+				UserCredentials? userCredentials, CancellationToken cancellationToken) {
+				var callOptions = EventStoreCallOptions.Create(settings, operationOptions, userCredentials,
+					cancellationToken);
+
+				_channel = Channel.CreateBounded<StreamMessage>(new BoundedChannelOptions(1) {
+					SingleReader = true,
+					SingleWriter = true,
+					AllowSynchronousContinuations = true
+				});
+
+				StreamName = request.Options.Stream.StreamIdentifier;
+
+				var tcs = new TaskCompletionSource<ReadState>();
+#pragma warning disable CS0612
+				ReadState = tcs.Task;
+#pragma warning restore CS0612
+
+				_ = PumpMessages();
+
+				async Task PumpMessages() {
+					var firstMessageRead = false;
+
+					try {
+						var callInvoker = await selectCallInvoker(cancellationToken).ConfigureAwait(false);
+						var client = new Streams.Streams.StreamsClient(callInvoker);
+						using var call = client.Read(request, callOptions);
+
+						await foreach (var response in call.ResponseStream.ReadAllAsync(cancellationToken)
+							               .ConfigureAwait(false)) {
+							if (!firstMessageRead) {
+								firstMessageRead = true;
+
+								if (response.ContentCase != StreamNotFound || request.Options.Stream == null) {
+									await _channel.Writer.WriteAsync(StreamMessage.Ok.Instance, cancellationToken)
+										.ConfigureAwait(false);
+									tcs.SetResult(Client.ReadState.Ok);
+								} else {
+									tcs.SetResult(Client.ReadState.StreamNotFound);
+								}
+							}
+
+							await _channel.Writer.WriteAsync(response.ContentCase switch {
+								StreamNotFound => StreamMessage.NotFound.Instance,
+								Event => new StreamMessage.Event(ConvertToResolvedEvent(response.Event)),
+								ContentOneofCase.FirstStreamPosition => new StreamMessage.FirstStreamPosition(
+									new StreamPosition(response.FirstStreamPosition)),
+								ContentOneofCase.LastStreamPosition => new StreamMessage.LastStreamPosition(
+									new StreamPosition(response.LastStreamPosition)),
+								LastAllStreamPosition => new StreamMessage.LastAllStreamPosition(
+									new Position(response.LastAllStreamPosition.CommitPosition,
+										response.LastAllStreamPosition.PreparePosition)),
+								_ => StreamMessage.Unknown.Instance
+							}, cancellationToken).ConfigureAwait(false);
+						}
+
+						_channel.Writer.Complete();
+					} catch (Exception ex) {
+						tcs.TrySetException(ex);
+						_channel.Writer.TryComplete(ex);
+					}
+				}
 			}
 
 			/// <inheritdoc />
-			public async ValueTask DisposeAsync() =>
-				await (await _callSource.Task.ConfigureAwait(false)).DisposeAsync().ConfigureAwait(false);
-
-			/// <inheritdoc />
-			public async ValueTask<bool> MoveNextAsync() {
-				var state = await ReadState.ConfigureAwait(false);
-				if (state != Client.ReadState.Ok) {
-					throw ExceptionFromState(state, _streamName);
-				}
-
-				var call = await _callSource.Task.ConfigureAwait(false);
-
-				if (_moved) {
-					_moved = false;
-					if (IsCurrentItemEvent()) {
-						return true;
-					}
-				}
-
-				while (await call.MoveNextAsync(_cancellationToken).ConfigureAwait(false)) {
-					if (IsCurrentItemEvent()) {
-						return true;
-					}
-				}
-
-				Current = default;
-				return false;
-
-				bool IsCurrentItemEvent() {
-					var item = ConvertToItem(call.Current);
-					if (!item.HasValue) {
-						return false;
-					}
-					var (confirmation, position, @event) = item.Value;
-					if (confirmation == SubscriptionConfirmation.None && position == null) {
-						Current = @event;
-						return true;
+			public async IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(
+				CancellationToken cancellationToken = default) {
+				await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
+					if (message is StreamMessage.NotFound) {
+						throw new StreamNotFoundException(StreamName);
 					}
 
-					return false;
+					if (message is not StreamMessage.Event e) {
+						continue;
+					}
+
+					yield return e.ResolvedEvent;
 				}
 			}
-
-			private static Exception ExceptionFromState(ReadState state, string streamName) =>
-				state switch {
-					Client.ReadState.StreamNotFound => new StreamNotFoundException(streamName),
-					_ => throw new ArgumentOutOfRangeException(nameof(state), state, null)
-				};
-
-			/// <inheritdoc />
-			public ResolvedEvent Current { get; private set; }
 		}
-
 
 		private async IAsyncEnumerable<(SubscriptionConfirmation, Position?, ResolvedEvent)> ReadInternal(
 			ReadReq request,
@@ -267,12 +388,12 @@ namespace EventStore.Client {
 
 		private static (SubscriptionConfirmation, Position?, ResolvedEvent)? ConvertToItem(ReadResp response) =>
 			response.ContentCase switch {
-				ReadResp.ContentOneofCase.Confirmation => (
+				Confirmation => (
 					new SubscriptionConfirmation(response.Confirmation.SubscriptionId), null, default),
-				ReadResp.ContentOneofCase.Event => (SubscriptionConfirmation.None,
+				Event => (SubscriptionConfirmation.None,
 					null,
 					ConvertToResolvedEvent(response.Event)),
-				ReadResp.ContentOneofCase.Checkpoint => (SubscriptionConfirmation.None,
+				Checkpoint => (SubscriptionConfirmation.None,
 					new Position(response.Checkpoint.CommitPosition, response.Checkpoint.PreparePosition),
 					default),
 				_ => null

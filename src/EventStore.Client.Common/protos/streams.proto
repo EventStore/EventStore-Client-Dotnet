@@ -30,10 +30,11 @@ message ReadReq {
 			SubscriptionOptions subscription = 6;
 		}
 		oneof filter_option {
-			event_store.client.FilterOptions filter = 7;
+			FilterOptions filter = 7;
 			event_store.client.Empty no_filter = 8;
 		}
 		UUIDOption uuid_option = 9;
+		ControlOption control_option = 10;
 
 		enum ReadDirection {
 			Forwards = 0;
@@ -60,12 +61,30 @@ message ReadReq {
 			uint64 commit_position = 1;
 			uint64 prepare_position = 2;
 		}
+		message FilterOptions {
+			oneof filter {
+				Expression stream_identifier = 1;
+				Expression event_type = 2;
+			}
+			oneof window {
+				uint32 max = 3;
+				event_store.client.Empty count = 4;
+			}
+			uint32 checkpointIntervalMultiplier = 5;
 
+			message Expression {
+				string regex = 1;
+				repeated string prefix = 2;
+			}
+		}
 		message UUIDOption {
 			oneof content {
 				event_store.client.Empty structured = 1;
 				event_store.client.Empty string = 2;
 			}
+		}
+		message ControlOption {
+			uint32 compatibility = 1;
 		}
 	}
 }
@@ -76,6 +95,9 @@ message ReadResp {
 		SubscriptionConfirmation confirmation = 2;
 		Checkpoint checkpoint = 3;
 		StreamNotFound stream_not_found = 4;
+		uint64 first_stream_position = 5;
+		uint64 last_stream_position = 6;
+		AllStreamPosition last_all_stream_position = 7;
 	}
 
 	message ReadEvent {

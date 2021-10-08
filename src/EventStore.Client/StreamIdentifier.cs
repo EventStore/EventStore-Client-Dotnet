@@ -7,6 +7,9 @@ namespace EventStore.Client {
 		private string _cached;
 
 		public static implicit operator string(StreamIdentifier source) {
+			if (source == null) {
+				return null;
+			}
 			if (source._cached != null || source.StreamName.IsEmpty) return source._cached;
 
 			var tmp = Encoding.UTF8.GetString(
