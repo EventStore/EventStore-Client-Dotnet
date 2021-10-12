@@ -275,20 +275,17 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task recreated_on_empty_when_metadata_set() {
-			const int count = 2;
 			var stream = _fixture.GetStreamName();
 
 			var streamMetadata = new StreamMetadata(
 				acl: new StreamAcl(deleteRole: "some-role"),
 				maxCount: 100,
-				truncateBefore: StreamPosition.End,
+				truncateBefore: new StreamPosition(0),
 				customMetadata: _customMetadata);
-
-			await _fixture.Client.SoftDeleteAsync(stream, StreamState.NoStream);
 
 			var writeResult = await _fixture.Client.SetStreamMetadataAsync(
 				stream,
-				new StreamRevision(0),
+				StreamState.NoStream,
 				streamMetadata);
 
 			Assert.Equal(1, writeResult.NextExpectedVersion);
@@ -301,9 +298,10 @@ namespace EventStore.Client {
 				streamMetadata.CacheControl, streamMetadata.Acl, streamMetadata.CustomMetadata);
 
 			var metadataResult = await _fixture.Client.GetStreamMetadataAsync(stream);
-			Assert.Equal(new StreamPosition(count), metadataResult.MetastreamRevision);
+			Assert.Equal(new StreamPosition(0), metadataResult.MetastreamRevision);
 			Assert.Equal(expected, metadataResult.Metadata);
 		}
+
 
 		[Fact]
 		public async Task recreated_on_non_empty_when_metadata_set() {

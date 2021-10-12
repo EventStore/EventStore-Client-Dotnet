@@ -24,15 +24,6 @@ namespace EventStore.Client {
 			await _fixture.Client.TombstoneAsync(stream, expectedVersion);
 		}
 
-		[Theory, MemberData(nameof(ExpectedVersionCases))]
-		public async Task soft_deleting_a_stream_that_does_not_exist_with_expected_version_does_not_throw(
-			StreamState expectedVersion, string name) {
-			var stream = $"{_fixture.GetStreamName()}_{name}";
-
-			await _fixture.Client.SoftDeleteAsync(stream, expectedVersion);
-		}
-
-
 		[Fact]
 		public async Task hard_deleting_a_stream_that_does_not_exist_with_wrong_expected_version_throws() {
 			var stream = _fixture.GetStreamName();
