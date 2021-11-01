@@ -7,6 +7,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
 using Grpc.Core;
+using static EventStore.Client.Streams.ReadResp;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
 #if !NET5_0_OR_GREATER
 using Channel = System.Threading.Channels.Channel;
@@ -15,14 +16,14 @@ using Channel = System.Threading.Channels.Channel;
 #nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreClient {
-		private ReadStreamResult ReadAllAsync(Direction direction, Position position, long maxCount,
+		private ReadAllStreamResult ReadAllAsync(Direction direction, Position position, long maxCount,
 			EventStoreClientOperationOptions operationOptions, bool resolveLinkTos = false,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			if (maxCount <= 0) {
 				throw new ArgumentOutOfRangeException(nameof(maxCount));
 			}
 
-			return new ReadStreamResult(SelectCallInvoker, new ReadReq {
+			return new ReadAllStreamResult(SelectCallInvoker, new ReadReq {
 				Options = new() {
 					ReadDirection = direction switch {
 						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
@@ -37,9 +38,9 @@ namespace EventStore.Client {
 						}
 					},
 					Count = (ulong)maxCount,
-					UuidOption = new() { Structured = new() },
+					UuidOption = new() {Structured = new()},
 					NoFilter = new(),
-					ControlOption = new() { Compatibility = 1 }
+					ControlOption = new() {Compatibility = 1}
 				}
 			}, Settings, operationOptions, userCredentials, cancellationToken);
 		}
@@ -55,7 +56,7 @@ namespace EventStore.Client {
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public ReadStreamResult ReadAllAsync(
+		public ReadAllStreamResult ReadAllAsync(
 			Direction direction,
 			Position position,
 			long maxCount = long.MaxValue,
@@ -68,6 +69,91 @@ namespace EventStore.Client {
 
 			return ReadAllAsync(direction, position, maxCount, operationOptions, resolveLinkTos, userCredentials,
 				cancellationToken);
+		}
+
+		/// <summary>
+		/// A class that represents the result of a read operation on a stream.
+		/// </summary>
+		public class ReadAllStreamResult : IAsyncEnumerable<ResolvedEvent> {
+			private readonly Channel<StreamMessage> _channel;
+
+			/// <summary>
+			/// 
+			/// </summary>
+			public Position? LastPosition { get; private set; }
+
+			/// <summary>
+			/// An <see cref="IAsyncEnumerable{StreamMessage}"/>.
+			/// </summary>
+			public IAsyncEnumerable<StreamMessage> Messages {
+				get {
+					return GetMessages();
+
+					async IAsyncEnumerable<StreamMessage> GetMessages() {
+						await foreach (var message in _channel.Reader.ReadAllAsync()) {
+							if (message is StreamMessage.LastAllStreamPosition(var position)) {
+								LastPosition = position;
+							}
+
+							yield return message;
+						}
+					}
+				}
+			}
+
+			internal ReadAllStreamResult(Func<CancellationToken, Task<CallInvoker>> selectCallInvoker, ReadReq request,
+				EventStoreClientSettings settings, EventStoreClientOperationOptions operationOptions,
+				UserCredentials? userCredentials, CancellationToken cancellationToken) {
+				var callOptions = EventStoreCallOptions.Create(settings, operationOptions, userCredentials,
+					cancellationToken);
+
+				_channel = Channel.CreateBounded<StreamMessage>(new BoundedChannelOptions(64) {
+					SingleReader = true,
+					SingleWriter = true
+				});
+
+				PumpMessages();
+
+				async void PumpMessages() {
+					var callInvoker = await selectCallInvoker(cancellationToken).ConfigureAwait(false);
+					var client = new Streams.Streams.StreamsClient(callInvoker);
+					using var call = client.Read(request, callOptions);
+
+					try {
+						await foreach (var response in call.ResponseStream.ReadAllAsync(cancellationToken)
+							.ConfigureAwait(false)) {
+							await _channel.Writer.WriteAsync(response.ContentCase switch {
+								StreamNotFound => StreamMessage.NotFound.Instance,
+								Event => new StreamMessage.Event(ConvertToResolvedEvent(response.Event)),
+								FirstStreamPosition => new StreamMessage.FirstStreamPosition(
+									new StreamPosition(response.FirstStreamPosition)),
+								LastStreamPosition => new StreamMessage.LastStreamPosition(
+									new StreamPosition(response.LastStreamPosition)),
+								LastAllStreamPosition => new StreamMessage.LastAllStreamPosition(
+									new Position(response.LastAllStreamPosition.CommitPosition,
+										response.LastAllStreamPosition.PreparePosition)),
+								_ => StreamMessage.Unknown.Instance
+							}, cancellationToken).ConfigureAwait(false);
+						}
+
+						_channel.Writer.Complete();
+					} catch (Exception ex) {
+						_channel.Writer.TryComplete(ex);
+					}
+				}
+			}
+
+			/// <inheritdoc />
+			public async IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(
+				CancellationToken cancellationToken = default) {
+				await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken)) {
+					if (message is not StreamMessage.Event e) {
+						continue;
+					}
+
+					yield return e.ResolvedEvent;
+				}
+			}
 		}
 
 		private ReadStreamResult ReadStreamAsync(Direction direction, string streamName, StreamPosition revision,
@@ -88,9 +174,9 @@ namespace EventStore.Client {
 					Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(streamName,
 						revision),
 					Count = (ulong)maxCount,
-					UuidOption = new() { Structured = new() },
+					UuidOption = new() {Structured = new()},
 					NoFilter = new(),
-					ControlOption = new() { Compatibility = 1 }
+					ControlOption = new() {Compatibility = 1}
 				}
 			}, Settings, operationOptions, userCredentials, cancellationToken);
 		}
@@ -134,12 +220,43 @@ namespace EventStore.Client {
 			/// <summary>
 			/// The name of the stream.
 			/// </summary>
-			public string? StreamName { get; }
+			public string StreamName { get; }
+
+			/// <summary>
+			/// The <see cref="StreamPosition"/> of the first message in this stream. Will only be filled once <see cref="Messages"/> has been enumerated. 
+			/// </summary>
+			public StreamPosition? FirstStreamPosition { get; private set; }
+
+			/// <summary>
+			/// The <see cref="StreamPosition"/> of the last message in this stream. Will only be filled once <see cref="Messages"/> has been enumerated. 
+			/// </summary>
+			public StreamPosition? LastStreamPosition { get; private set; }
 
 			/// <summary>
 			/// An <see cref="IAsyncEnumerable{StreamMessage}"/>.
 			/// </summary>
-			public IAsyncEnumerable<StreamMessage> Messages => _channel.Reader.ReadAllAsync();
+			public IAsyncEnumerable<StreamMessage> Messages {
+				get {
+					return GetMessages();
+
+					async IAsyncEnumerable<StreamMessage> GetMessages() {
+						await foreach (var message in _channel.Reader.ReadAllAsync()) {
+							switch (message) {
+								case StreamMessage.FirstStreamPosition(var streamPosition):
+									FirstStreamPosition = streamPosition;
+									break;
+								case StreamMessage.LastStreamPosition(var lastStreamPosition):
+									LastStreamPosition = lastStreamPosition;
+									break;
+								default:
+									break;
+							}
+
+							yield return message;
+						}
+					}
+				}
+			}
 
 			/// <summary>
 			/// The <see cref="ReadState"/>.
@@ -157,7 +274,7 @@ namespace EventStore.Client {
 					SingleWriter = true
 				});
 
-				StreamName = request.Options.Stream?.StreamIdentifier;
+				StreamName = request.Options.Stream.StreamIdentifier;
 
 				var tcs = new TaskCompletionSource<ReadState>();
 #pragma warning disable CS0612
@@ -191,9 +308,9 @@ namespace EventStore.Client {
 							await _channel.Writer.WriteAsync(response.ContentCase switch {
 								StreamNotFound => StreamMessage.NotFound.Instance,
 								Event => new StreamMessage.Event(ConvertToResolvedEvent(response.Event)),
-								FirstStreamPosition => new StreamMessage.FirstStreamPosition(
+								ContentOneofCase.FirstStreamPosition => new StreamMessage.FirstStreamPosition(
 									new StreamPosition(response.FirstStreamPosition)),
-								LastStreamPosition => new StreamMessage.LastStreamPosition(
+								ContentOneofCase.LastStreamPosition => new StreamMessage.LastStreamPosition(
 									new StreamPosition(response.LastStreamPosition)),
 								LastAllStreamPosition => new StreamMessage.LastAllStreamPosition(
 									new Position(response.LastAllStreamPosition.CommitPosition,
@@ -217,6 +334,7 @@ namespace EventStore.Client {
 					if (message is StreamMessage.NotFound) {
 						throw new StreamNotFoundException(StreamName!);
 					}
+
 					if (message is not StreamMessage.Event e) {
 						continue;
 					}
@@ -240,7 +358,7 @@ namespace EventStore.Client {
 				request.Options.NoFilter = new Empty();
 			}
 
-			request.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption { Structured = new Empty() };
+			request.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()};
 
 			using var call = new Streams.Streams.StreamsClient(
 				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Read(request,
