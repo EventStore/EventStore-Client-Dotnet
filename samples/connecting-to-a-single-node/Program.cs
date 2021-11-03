@@ -42,6 +42,15 @@ namespace connecting_to_a_single_node {
 			);
 			#endregion overriding-timeout
 		}
+		
+		private static void CombiningSettings() {
+			#region overriding-timeout
+
+			using var client = new EventStoreClient(
+				EventStoreClientSettings.Create($"esdb://admin:changeit@localhost:2113?ConnectionName=SomeConnection&OperationTimeout=30000")
+			);
+			#endregion overriding-timeout
+		}
 
 		private static void CreatingAnInterceptor() {
 			#region adding-an-interceptor
