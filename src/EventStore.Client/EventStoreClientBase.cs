@@ -45,13 +45,27 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		protected async Task<CallInvoker> SelectCallInvoker(CancellationToken cancellationToken) =>
-			(Settings.Interceptors ?? Array.Empty<Interceptor>()).Aggregate(
-				(await _channels.GetCurrentChannel(cancellationToken).ConfigureAwait(false)).CreateCallInvoker()
-				.Intercept(new TypedExceptionInterceptor(_exceptionMap))
-				.Intercept(new ConnectionNameInterceptor(ConnectionName))
-				.Intercept(new ReportLeaderInterceptor(_channels.SetEndPoint)),
-				(invoker, interceptor) => invoker.Intercept(interceptor));
+		protected async Task<CallInvoker> SelectCallInvoker(CancellationToken cancellationToken) {
+			var (invoker, _) =  await SelectCallInvokerAndCapabilities(cancellationToken).ConfigureAwait(false);
+			return invoker;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		protected async Task<(CallInvoker, ServerCapabilities)> SelectCallInvokerAndCapabilities(CancellationToken cancellationToken) {
+			var (endpoint, channel, capabilities) = await _channels.GetCurrentChannel(cancellationToken).ConfigureAwait(false);
+
+			return ((Settings.Interceptors ?? Array.Empty<Interceptor>()).Aggregate(
+				channel.CreateCallInvoker()
+					.Intercept(new TypedExceptionInterceptor(_exceptionMap))
+					.Intercept(new ConnectionNameInterceptor(ConnectionName))
+					.Intercept(new ReportLeaderInterceptor(_channels.SetEndPoint))
+					.Intercept(new EvictChannelInterceptor(endpoint, _channels.EvictChannel)),
+				(invoker, interceptor) => invoker.Intercept(interceptor)), await capabilities.ConfigureAwait(false));
+		}
 
 		/// <inheritdoc />
 		public void Dispose() => _channels.Dispose();

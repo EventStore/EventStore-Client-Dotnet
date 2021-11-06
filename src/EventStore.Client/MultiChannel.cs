@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Net;
+using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -9,10 +10,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 #nullable enable
 namespace EventStore.Client {
+	internal record ChannelInfo(EndPoint EndPoint, ChannelBase Channel, Task<ServerCapabilities> Capabilities);
 	internal class MultiChannel : IDisposable, IAsyncDisposable {
 		private readonly EventStoreClientSettings _settings;
 		private readonly IEndpointDiscoverer _endpointDiscoverer;
-		private readonly ConcurrentDictionary<EndPoint, ChannelBase> _channels;
+		private readonly ConcurrentDictionary<EndPoint, ChannelInfo> _channels;
 		private readonly ILogger<MultiChannel> _log;
 
 		private EndPoint? _current;
@@ -23,7 +25,7 @@ namespace EventStore.Client {
 			_endpointDiscoverer = settings.ConnectivitySettings.IsSingleNode
 				? new SingleNodeEndpointDiscoverer(settings.ConnectivitySettings.Address)
 				: new GossipBasedEndpointDiscoverer(settings.ConnectivitySettings, new GrpcGossipClient(settings));
-			_channels = new ConcurrentDictionary<EndPoint, ChannelBase>();
+			_channels = new ConcurrentDictionary<EndPoint, ChannelInfo>();
 			_log = settings.LoggerFactory?.CreateLogger<MultiChannel>() ?? new NullLogger<MultiChannel>();
 
 			if (settings.ConnectivitySettings.KeepAliveInterval < TimeSpan.FromSeconds(10)) {
@@ -32,15 +34,68 @@ namespace EventStore.Client {
 			}
 		}
 
-		public void SetEndPoint(EndPoint value) => _current = value;
+		public void SetEndPoint(EndPoint value) {
+			ThrowIfDisposed();
+			_current = value;
+		}
 
-		public async Task<ChannelBase> GetCurrentChannel(CancellationToken cancellationToken = default) {
+		public void EvictChannel(EndPoint channelEndpoint) {
+			ThrowIfDisposed();
+			_channels.TryRemove(channelEndpoint, out _);
+		}
+
+		public async Task<ChannelInfo> GetCurrentChannel(CancellationToken cancellationToken = default) {
+			ThrowIfDisposed();
+
+			var current = _current ??= await _endpointDiscoverer.DiscoverAsync(cancellationToken).ConfigureAwait(false);
+			return _channels.GetOrAdd(current, GetChannelByEndPoint);
+		}
+
+		private void ThrowIfDisposed() {
 			if (Interlocked.CompareExchange(ref _disposed, 0, 0) != 0) {
 				throw new ObjectDisposedException(GetType().ToString());
 			}
+		}
 
-			var current = _current ??= await _endpointDiscoverer.DiscoverAsync(cancellationToken).ConfigureAwait(false);
-			return _channels.GetOrAdd(current, ChannelFactory.CreateChannel(_settings, current));
+		private ChannelInfo GetChannelByEndPoint(EndPoint key) {
+			var channel = ChannelFactory.CreateChannel(_settings, key);
+
+			var serverCapabilities = GetServerCapabilities(key);
+			serverCapabilities.ContinueWith(ShutdownChannel,
+				TaskContinuationOptions.NotOnRanToCompletion | TaskContinuationOptions.ExecuteSynchronously);
+			return new(key, channel, serverCapabilities);
+
+			void ShutdownChannel(Task<ServerCapabilities> _) {
+				_channels.TryRemove(key, out var info);
+				info?.Channel.ShutdownAsync();
+			}
+		}
+
+		private async Task<ServerCapabilities> GetServerCapabilities(EndPoint endPoint,
+			CancellationToken cancellationToken = default) {
+			var channel = ChannelFactory.CreateChannel(_settings, endPoint);
+
+			try {
+				var client = new ServerFeatures.ServerFeatures.ServerFeaturesClient(channel);
+
+				var response = await client.GetSupportedMethodsAsync(new Empty(),
+					EventStoreCallOptions.Create(_settings, _settings.OperationOptions, null, cancellationToken));
+
+				bool supportsBatchAppend = false;
+
+				foreach (var supportedMethod in response.Methods) {
+					if (supportedMethod.MethodName == "batchappend" &&
+					    supportedMethod.ServiceName == "event_store.client.streams.streams") {
+						supportsBatchAppend = true;
+					}
+				}
+
+				return new(supportsBatchAppend);
+			} catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound or StatusCode.Unimplemented) {
+				return new();
+			} finally {
+				await channel.ShutdownAsync().ConfigureAwait(false);
+			}
 		}
 
 		public void Dispose() => DisposeAsync().GetAwaiter().GetResult();
@@ -50,12 +105,8 @@ namespace EventStore.Client {
 				return;
 			}
 
-			foreach (var channel in _channels.Values) {
-				if (channel is IDisposable disposable) {
-					disposable.Dispose();
-				} else {
-					await channel.ShutdownAsync().ConfigureAwait(false);
-				}
+			foreach (var (_, channel, _) in _channels.Values) {
+				await channel.ShutdownAsync().ConfigureAwait(false);
 			}
 		}
 	}

@@ -27,7 +27,7 @@ namespace EventStore.Client {
 
 		private readonly ILogger<EventStoreClient> _log;
 #if NET5_0_OR_GREATER
-		private StreamAppender _streamAppender;
+		private Task<StreamAppender> _streamAppender;
 		private int _streamAppenderDelayMs;
 #endif
 
@@ -78,24 +78,21 @@ namespace EventStore.Client {
 		}
 
 #if NET5_0_OR_GREATER
-		private void SwapStreamAppender(Exception ex) {
+		private void SwapStreamAppender(Exception? ex) {
 			_streamAppenderDelayMs = Math.Min(200, Math.Max(_streamAppenderDelayMs * 2, 25));
 			Interlocked.Exchange(ref _streamAppender, CreateStreamAppender());
 		}
 
-		private StreamAppender CreateStreamAppender() {
-			return new StreamAppender(Settings, GetCall(), _disposedTokenSource.Token, SwapStreamAppender);
+		private async Task<StreamAppender> CreateStreamAppender() {
+			await Task.Delay(_streamAppenderDelayMs, _disposedTokenSource.Token).ConfigureAwait(false);
 
-			async Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>> GetCall() {
-				await Task.Delay(_streamAppenderDelayMs, _disposedTokenSource.Token).ConfigureAwait(false);
-				var callInvoker = await SelectCallInvoker(_disposedTokenSource.Token).ConfigureAwait(false);
-				var client = new Streams.Streams.StreamsClient(callInvoker);
-				var operationOptions = Settings.OperationOptions.Clone();
-				operationOptions.TimeoutAfter = new TimeSpan?();
+			var (callInvoker, capabilities) = await SelectCallInvokerAndCapabilities(_disposedTokenSource.Token).ConfigureAwait(false);
+			
+			var client = new Streams.Streams.StreamsClient(callInvoker);
+			var operationOptions = Settings.OperationOptions.Clone();
+			operationOptions.TimeoutAfter = new TimeSpan?();
 
-				return client.BatchAppend(EventStoreCallOptions.Create(Settings,
-					operationOptions, Settings.DefaultCredentials, _disposedTokenSource.Token));
-			}
+			return new StreamAppender(Settings, client, capabilities, SwapStreamAppender, _disposedTokenSource.Token);
 		}
 #endif
 
