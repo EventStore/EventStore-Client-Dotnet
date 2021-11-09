@@ -60,7 +60,6 @@ jobs:
         docker pull ghcr.io/eventstore/eventstore:${{ matrix.docker-tag }}
     - name: Install netcoreapp3.1
       uses: actions/setup-dotnet@v1
-      if: matrix.framework == 'netcoreapp3.1'
       with:
         dotnet-version: 3.1.x
     - name: Install net5.0

@@ -21,7 +21,7 @@ namespace EventStore.Client {
 		public MultiChannel(EventStoreClientSettings settings) {
 			_settings = settings;
 			_endpointDiscoverer = settings.ConnectivitySettings.IsSingleNode
-				? (IEndpointDiscoverer)new SingleNodeEndpointDiscoverer(settings.ConnectivitySettings.Address)
+				? new SingleNodeEndpointDiscoverer(settings.ConnectivitySettings.Address)
 				: new GossipBasedEndpointDiscoverer(settings.ConnectivitySettings, new GrpcGossipClient(settings));
 			_channels = new ConcurrentDictionary<EndPoint, ChannelBase>();
 			_log = settings.LoggerFactory?.CreateLogger<MultiChannel>() ?? new NullLogger<MultiChannel>();
