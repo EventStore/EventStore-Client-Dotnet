@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Projections;
-using Grpc.Core;
 
 #nullable enable
 namespace EventStore.Client {
@@ -40,17 +39,20 @@ namespace EventStore.Client {
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public Task<ProjectionDetails> GetStatusAsync(string name, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) =>
-			ListInternalAsync(new StatisticsReq.Types.Options {
+		public async Task<ProjectionDetails?> GetStatusAsync(string name, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
+			var result = await ListInternalAsync(new StatisticsReq.Types.Options {
 				Name = name
-			}, userCredentials, cancellationToken).FirstOrDefaultAsync(cancellationToken).AsTask()!;
+			}, userCredentials, cancellationToken).ToArrayAsync(cancellationToken).ConfigureAwait(false);
+			return result.FirstOrDefault();
+		}
 
 		private async IAsyncEnumerable<ProjectionDetails> ListInternalAsync(StatisticsReq.Types.Options options,
 			UserCredentials? userCredentials,
 			[EnumeratorCancellation] CancellationToken cancellationToken) {
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Statistics(new StatisticsReq {
+				channelInfo.CallInvoker).Statistics(new StatisticsReq {
 				Options = options
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 

@@ -3,18 +3,10 @@ using System.Net;
 
 #nullable enable
 namespace EventStore.Client {
-	internal class ClusterMessages {
-		public class ClusterInfo {
-			public MemberInfo[]? Members { get; set; }
-		}
+	internal static class ClusterMessages {
+		public record ClusterInfo(MemberInfo[] Members);
 
-		public class MemberInfo {
-			public Guid InstanceId { get; set; }
-
-			public VNodeState State { get; set; }
-			public bool IsAlive { get; set; }
-			public DnsEndPoint EndPoint { get; set; } = null!;
-		}
+		public record MemberInfo(Uuid InstanceId, VNodeState State, bool IsAlive, DnsEndPoint EndPoint);
 
 		public enum VNodeState {
 			Initializing = 0,

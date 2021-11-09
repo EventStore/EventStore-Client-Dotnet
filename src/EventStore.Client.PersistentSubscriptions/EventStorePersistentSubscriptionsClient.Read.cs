@@ -82,9 +82,12 @@ namespace EventStore.Client {
 			var operationOptions = Settings.OperationOptions.Clone();
 			operationOptions.TimeoutAfter = new TimeSpan?();
 
-			var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Read(EventStoreCallOptions.Create(
-				Settings, operationOptions, userCredentials, cancellationToken));
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+
+			if (streamName == SystemStreams.AllStream &&
+			    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
+				throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
+			}
 
 			var readOptions = new ReadReq.Types.Options {
 				BufferSize = bufferSize,
@@ -98,7 +101,8 @@ namespace EventStore.Client {
 				readOptions.StreamIdentifier = streamName;
 			}
 
-			return await PersistentSubscription.Confirm(call, readOptions, eventAppeared,
+			return await PersistentSubscription.Confirm(channelInfo.Channel, channelInfo.CallInvoker, Settings, 
+				operationOptions, userCredentials, readOptions, _log, eventAppeared,
 				subscriptionDropped ?? delegate { }, cancellationToken).ConfigureAwait(false);
 		}
 
@@ -118,13 +122,13 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null, int bufferSize = 10,
 			CancellationToken cancellationToken = default) =>
 			await SubscribeToStreamAsync(
-				streamName: SystemStreams.AllStream,
-				groupName: groupName,
-				eventAppeared: eventAppeared,
-				subscriptionDropped: subscriptionDropped,
-				userCredentials: userCredentials,
-				bufferSize: bufferSize,
-				cancellationToken: cancellationToken)
+					streamName: SystemStreams.AllStream,
+					groupName: groupName,
+					eventAppeared: eventAppeared,
+					subscriptionDropped: subscriptionDropped,
+					userCredentials: userCredentials,
+					bufferSize: bufferSize,
+					cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
 	}
 }

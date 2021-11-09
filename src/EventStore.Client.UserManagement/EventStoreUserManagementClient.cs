@@ -50,8 +50,9 @@ namespace EventStore.Client {
 			if (fullName == string.Empty) throw new ArgumentOutOfRangeException(nameof(fullName));
 			if (password == string.Empty) throw new ArgumentOutOfRangeException(nameof(password));
 
-			await new Users.Users.UsersClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).CreateAsync(new CreateReq {
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			using var call = new Users.Users.UsersClient(
+				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					LoginName = loginName,
 					FullName = fullName,
@@ -59,6 +60,7 @@ namespace EventStore.Client {
 					Groups = {groups}
 				}
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -80,8 +82,9 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(loginName));
 			}
 
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Users.Users.UsersClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Details(new DetailsReq {
+				channelInfo.CallInvoker).Details(new DetailsReq {
 				Options = new DetailsReq.Types.Options {
 					LoginName = loginName
 				}
@@ -115,12 +118,14 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(loginName));
 			}
 
-			await new Users.Users.UsersClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).DeleteAsync(new DeleteReq {
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var call = new Users.Users.UsersClient(
+				channelInfo.CallInvoker).DeleteAsync(new DeleteReq {
 				Options = new DeleteReq.Types.Options {
 					LoginName = loginName
 				}
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -142,12 +147,14 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(loginName));
 			}
 
-			await new Users.Users.UsersClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).EnableAsync(new EnableReq {
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			using var call = new Users.Users.UsersClient(
+				channelInfo.CallInvoker).EnableAsync(new EnableReq {
 				Options = new EnableReq.Types.Options {
 					LoginName = loginName
 				}
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -162,12 +169,14 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken = default) {
 			if (loginName == string.Empty) throw new ArgumentOutOfRangeException(nameof(loginName));
 
-			await new Users.Users.UsersClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).DisableAsync(new DisableReq {
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var call = new Users.Users.UsersClient(
+				channelInfo.CallInvoker).DisableAsync(new DisableReq {
 				Options = new DisableReq.Types.Options {
 					LoginName = loginName
 				}
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -178,8 +187,9 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async IAsyncEnumerable<UserDetails> ListAllAsync(UserCredentials? userCredentials = null,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default) {
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Users.Users.UsersClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Details(new DetailsReq(),
+				channelInfo.CallInvoker).Details(new DetailsReq(),
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 
 			await foreach (var userDetail in call.ResponseStream
@@ -211,8 +221,9 @@ namespace EventStore.Client {
 			if (currentPassword == string.Empty) throw new ArgumentOutOfRangeException(nameof(currentPassword));
 			if (newPassword == string.Empty) throw new ArgumentOutOfRangeException(nameof(newPassword));
 
-			await new Users.Users.UsersClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).ChangePasswordAsync(
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			using var call = new Users.Users.UsersClient(
+				channelInfo.CallInvoker).ChangePasswordAsync(
 				new ChangePasswordReq {
 					Options = new ChangePasswordReq.Types.Options {
 						CurrentPassword = currentPassword,
@@ -221,6 +232,7 @@ namespace EventStore.Client {
 					}
 				},
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -240,8 +252,9 @@ namespace EventStore.Client {
 			if (loginName == string.Empty) throw new ArgumentOutOfRangeException(nameof(loginName));
 			if (newPassword == string.Empty) throw new ArgumentOutOfRangeException(nameof(newPassword));
 
-			await new Users.Users.UsersClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).ResetPasswordAsync(
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var call = new Users.Users.UsersClient(
+				channelInfo.CallInvoker).ResetPasswordAsync(
 				new ResetPasswordReq {
 					Options = new ResetPasswordReq.Types.Options {
 						NewPassword = newPassword,
@@ -249,6 +262,7 @@ namespace EventStore.Client {
 					}
 				},
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
 		private static readonly IDictionary<string, Func<RpcException, Exception>> ExceptionMap =

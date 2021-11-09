@@ -27,7 +27,7 @@ namespace EventStore.Client.Interceptors {
 		[Theory, MemberData(nameof(TestCases))]
 		public async Task ReportsNewLeader(GrpcCall call) {
 			EndPoint actual = default;
-			var sut = new ReportLeaderInterceptor(ex => actual = ex);
+			var sut = new ReportLeaderInterceptor(ep => actual = ep);
 
 			var result = await Assert.ThrowsAsync<NotLeaderException>(() =>
 				call(sut, Task.FromException<object>(new NotLeaderException("a.host", 2112))));

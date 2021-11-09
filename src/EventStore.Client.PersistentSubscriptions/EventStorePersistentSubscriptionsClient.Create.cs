@@ -14,7 +14,8 @@ namespace EventStore.Client {
 				[SystemConsumerStrategies.Pinned] = CreateReq.Types.ConsumerStrategy.Pinned,
 			};
 
-		private static CreateReq.Types.StreamOptions StreamOptionsForCreateProto(string streamName, StreamPosition position) {
+		private static CreateReq.Types.StreamOptions StreamOptionsForCreateProto(string streamName,
+			StreamPosition position) {
 			if (position == StreamPosition.Start) {
 				return new CreateReq.Types.StreamOptions {
 					StreamIdentifier = streamName,
@@ -42,8 +43,7 @@ namespace EventStore.Client {
 				allOptions = new CreateReq.Types.AllOptions {
 					Start = new Empty(),
 				};
-			}
-			else if (position == Position.End) {
+			} else if (position == Position.End) {
 				allOptions = new CreateReq.Types.AllOptions {
 					End = new Empty()
 				};
@@ -153,33 +153,53 @@ namespace EventStore.Client {
 				throw new ArgumentNullException(nameof(settings));
 			}
 
-			if (streamName != SystemStreams.AllStream && settings.StartFrom != null && !(settings.StartFrom is StreamPosition)) {
-				throw new ArgumentException($"{nameof(settings.StartFrom)} must be of type '{nameof(StreamPosition)}' when subscribing to a stream");
+			if (streamName != SystemStreams.AllStream && settings.StartFrom != null &&
+			    !(settings.StartFrom is StreamPosition)) {
+				throw new ArgumentException(
+					$"{nameof(settings.StartFrom)} must be of type '{nameof(StreamPosition)}' when subscribing to a stream");
 			}
 
-			if (streamName == SystemStreams.AllStream && settings.StartFrom != null && !(settings.StartFrom is Position)) {
-				throw new ArgumentException($"{nameof(settings.StartFrom)} must be of type '{nameof(Position)}' when subscribing to {SystemStreams.AllStream}");
+			if (streamName == SystemStreams.AllStream && settings.StartFrom != null &&
+			    !(settings.StartFrom is Position)) {
+				throw new ArgumentException(
+					$"{nameof(settings.StartFrom)} must be of type '{nameof(Position)}' when subscribing to {SystemStreams.AllStream}");
 			}
 
 			if (eventFilter != null && streamName != SystemStreams.AllStream) {
-				throw new ArgumentException($"Filters are only supported when subscribing to {SystemStreams.AllStream}");
+				throw new ArgumentException(
+					$"Filters are only supported when subscribing to {SystemStreams.AllStream}");
 			}
 
-			await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).CreateAsync(new CreateReq {
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+
+			if (streamName == SystemStreams.AllStream &&
+			    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
+				throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
+			}
+
+			using var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
+				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
-					Stream = streamName != SystemStreams.AllStream ?
-						StreamOptionsForCreateProto(streamName, (StreamPosition)(settings.StartFrom ?? StreamPosition.End)) : null,
-					All = streamName == SystemStreams.AllStream ?
-						AllOptionsForCreateProto((Position)(settings.StartFrom ?? Position.End), eventFilter) : null,
-					#pragma warning disable 612
-					StreamIdentifier = streamName != SystemStreams.AllStream ? streamName : string.Empty, /*for backwards compatibility*/
-					#pragma warning restore 612
+					Stream = streamName != SystemStreams.AllStream
+						? StreamOptionsForCreateProto(streamName,
+							(StreamPosition)(settings.StartFrom ?? StreamPosition.End))
+						: null,
+					All = streamName == SystemStreams.AllStream
+						? AllOptionsForCreateProto((Position)(settings.StartFrom ?? Position.End), eventFilter)
+						: null,
+#pragma warning disable 612
+					StreamIdentifier =
+						streamName != SystemStreams.AllStream
+							? streamName
+							: string.Empty, /*for backwards compatibility*/
+#pragma warning restore 612
 					GroupName = groupName,
 					Settings = new CreateReq.Types.Settings {
-						#pragma warning disable 612
-						Revision = streamName != SystemStreams.AllStream ? ((StreamPosition)(settings.StartFrom ?? StreamPosition.End)).ToUInt64() : default, /*for backwards compatibility*/
-						#pragma warning restore 612
+#pragma warning disable 612
+						Revision = streamName != SystemStreams.AllStream
+							? ((StreamPosition)(settings.StartFrom ?? StreamPosition.End)).ToUInt64()
+							: default, /*for backwards compatibility*/
+#pragma warning restore 612
 						CheckpointAfterMs = (int)settings.CheckPointAfter.TotalMilliseconds,
 						ExtraStatistics = settings.ExtraStatistics,
 						MessageTimeoutMs = (int)settings.MessageTimeout.TotalMilliseconds,
@@ -195,6 +215,7 @@ namespace EventStore.Client {
 					}
 				}
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -210,12 +231,12 @@ namespace EventStore.Client {
 			PersistentSubscriptionSettings settings, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
 			await CreateInternalAsync(
-				streamName: SystemStreams.AllStream,
-				groupName: groupName,
-				eventFilter: eventFilter,
-				settings: settings,
-				userCredentials: userCredentials,
-				cancellationToken: cancellationToken)
+					streamName: SystemStreams.AllStream,
+					groupName: groupName,
+					eventFilter: eventFilter,
+					settings: settings,
+					userCredentials: userCredentials,
+					cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
 
 		/// <summary>
