@@ -1,9 +1,6 @@
-using System.Net;
-
+#nullable enable
 namespace EventStore.Client {
-	/// <summary>
-	/// 
-	/// </summary>
-	/// <param name="SupportsBatchAppend"></param>
-	public record ServerCapabilities(bool SupportsBatchAppend = false);
+	/// <summary />
+	public record ServerCapabilities(string? ServerVersion = null, bool SupportsBatchAppend = false,
+		bool SupportsPersistentSubscriptionsToAll = false);
 }

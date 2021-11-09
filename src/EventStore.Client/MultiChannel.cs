@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 #nullable enable
 namespace EventStore.Client {
 	internal record ChannelInfo(EndPoint EndPoint, ChannelBase Channel, Task<ServerCapabilities> Capabilities);
+
 	internal class MultiChannel : IDisposable, IAsyncDisposable {
 		private readonly EventStoreClientSettings _settings;
 		private readonly IEndpointDiscoverer _endpointDiscoverer;
@@ -81,16 +82,25 @@ namespace EventStore.Client {
 				var response = await client.GetSupportedMethodsAsync(new Empty(),
 					EventStoreCallOptions.Create(_settings, _settings.OperationOptions, null, cancellationToken));
 
-				bool supportsBatchAppend = false;
+				bool
+					supportsBatchAppend = false,
+					supportsPersistentSubscriptionsToAll = false;
 
 				foreach (var supportedMethod in response.Methods) {
-					if (supportedMethod.MethodName == "batchappend" &&
-					    supportedMethod.ServiceName == "event_store.client.streams.streams") {
-						supportsBatchAppend = true;
+					switch (supportedMethod.ServiceName, supportedMethod.MethodName) {
+						case ("event_store.client.streams.streams", "batchappend"):
+							supportsBatchAppend = true;
+							continue;
+						case ("event_store.client.persistent_subscriptions.persistentsubscriptions", "read"):
+							supportsPersistentSubscriptionsToAll = supportedMethod.Features.Contains("all");
+							continue;
 					}
 				}
 
-				return new(supportsBatchAppend);
+				return new(
+					response.EventStoreServerVersion,
+					supportsBatchAppend,
+					supportsPersistentSubscriptionsToAll);
 			} catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound or StatusCode.Unimplemented) {
 				return new();
 			} finally {

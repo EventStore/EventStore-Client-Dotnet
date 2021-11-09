@@ -50,12 +50,19 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(bufferSize));
 			}
 
+			var (callInvoker, capabilities) = await SelectCallInvokerAndCapabilities(cancellationToken)
+				.ConfigureAwait(false);
+
+			if (!capabilities.SupportsPersistentSubscriptionsToAll) {
+				throw new InvalidOperationException(
+					$"Persistent Subscriptions To All is not supported on server version {capabilities.ServerVersion ?? "<unknown>"}.");
+			}
+
 			var operationOptions = Settings.OperationOptions.Clone();
 			operationOptions.TimeoutAfter = new TimeSpan?();
 
-			var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Read(EventStoreCallOptions.Create(
-				Settings, operationOptions, userCredentials, cancellationToken));
+			var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
+				.Read(EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken));
 
 			var readOptions = new ReadReq.Types.Options {
 				BufferSize = bufferSize,

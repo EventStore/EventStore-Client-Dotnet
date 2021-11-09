@@ -153,11 +153,11 @@ namespace EventStore.Client {
 				throw new ArgumentNullException(nameof(settings));
 			}
 
-			if (streamName != SystemStreams.AllStream && settings.StartFrom != null && !(settings.StartFrom is StreamPosition)) {
+			if (streamName != SystemStreams.AllStream && settings.StartFrom != null && settings.StartFrom is not StreamPosition) {
 				throw new ArgumentException($"{nameof(settings.StartFrom)} must be of type '{nameof(StreamPosition)}' when subscribing to a stream");
 			}
 
-			if (streamName == SystemStreams.AllStream && settings.StartFrom != null && !(settings.StartFrom is Position)) {
+			if (streamName == SystemStreams.AllStream && settings.StartFrom != null && settings.StartFrom is not Position) {
 				throw new ArgumentException($"{nameof(settings.StartFrom)} must be of type '{nameof(Position)}' when subscribing to {SystemStreams.AllStream}");
 			}
 
@@ -165,21 +165,12 @@ namespace EventStore.Client {
 				throw new ArgumentException($"Filters are only supported when subscribing to {SystemStreams.AllStream}");
 			}
 
-			await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).CreateAsync(new CreateReq {
+			var callInvoker = await SelectCallInvoker(cancellationToken).ConfigureAwait(false);
+			var client = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker);
+			var request = new CreateReq {
 				Options = new CreateReq.Types.Options {
-					Stream = streamName != SystemStreams.AllStream ?
-						StreamOptionsForCreateProto(streamName, (StreamPosition)(settings.StartFrom ?? StreamPosition.End)) : null,
-					All = streamName == SystemStreams.AllStream ?
-						AllOptionsForCreateProto((Position)(settings.StartFrom ?? Position.End), eventFilter) : null,
-					#pragma warning disable 612
-					StreamIdentifier = streamName != SystemStreams.AllStream ? streamName : string.Empty, /*for backwards compatibility*/
-					#pragma warning restore 612
 					GroupName = groupName,
 					Settings = new CreateReq.Types.Settings {
-						#pragma warning disable 612
-						Revision = streamName != SystemStreams.AllStream ? ((StreamPosition)(settings.StartFrom ?? StreamPosition.End)).ToUInt64() : default, /*for backwards compatibility*/
-						#pragma warning restore 612
 						CheckpointAfterMs = (int)settings.CheckPointAfter.TotalMilliseconds,
 						ExtraStatistics = settings.ExtraStatistics,
 						MessageTimeoutMs = (int)settings.MessageTimeout.TotalMilliseconds,
@@ -194,7 +185,31 @@ namespace EventStore.Client {
 						ReadBatchSize = settings.ReadBatchSize
 					}
 				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			};
+
+			if (streamName == SystemStreams.AllStream) {
+				request.Options.All = AllOptionsForCreateProto(settings.StartFrom is Position startFrom
+						? startFrom
+						: Position.End,
+					eventFilter);
+#pragma warning disable 612
+				// backwards compatibility
+				request.Options.StreamIdentifier = string.Empty; 
+				request.Options.Settings.Revision = default;
+#pragma warning restore 612
+			} else {
+				var startFrom = settings.StartFrom is StreamPosition streamPosition
+					? streamPosition
+					: StreamPosition.End;
+				request.Options.Stream = StreamOptionsForCreateProto(streamName, startFrom);
+#pragma warning disable 612
+				// backwards compatibility
+				request.Options.StreamIdentifier = streamName;
+				request.Options.Settings.Revision = startFrom.ToUInt64();
+#pragma warning restore 612
+			}
+			await client.CreateAsync(request,
+				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
 		/// <summary>

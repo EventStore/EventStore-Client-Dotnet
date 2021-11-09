@@ -98,8 +98,7 @@ namespace EventStore.Client {
 		/// <param name="p1">A <see cref="Position" />.</param>
 		/// <param name="p2">A <see cref="Position" />.</param>
 		/// <returns>True if p1 is equal to p2.</returns>
-		public static bool operator ==(Position p1, Position p2) =>
-			Equals(p1, p2);
+		public static bool operator ==(Position p1, Position p2) => p1.Equals(p2);
 
 		/// <summary>
 		/// Compares p1 and p2 for equality.
