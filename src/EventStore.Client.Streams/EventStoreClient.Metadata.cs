@@ -12,23 +12,25 @@ namespace EventStore.Client {
 		private async Task<StreamMetadataResult> GetStreamMetadataAsync(string streamName,
 			EventStoreClientOperationOptions operationOptions, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			ResolvedEvent metadata;
-
-			_log.LogDebug("Read stream metadata for {streamName}.");
+			_log.LogDebug("Read stream metadata for {streamName}.", streamName);
 
 			try {
-				metadata = await ReadStreamAsync(Direction.Backwards, SystemStreams.MetastreamOf(streamName), StreamPosition.End, 1, operationOptions, false, userCredentials, cancellationToken)
-					.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
-			} catch (StreamNotFoundException) {
-				_log.LogWarning("Stream metadata for {streamName} not found.");
-				return StreamMetadataResult.None(streamName);
-			}
+				var result = ReadStreamAsync(Direction.Backwards, SystemStreams.MetastreamOf(streamName),
+					StreamPosition.End, 1, operationOptions, false, userCredentials, cancellationToken);
+				await foreach (var message in result.Messages.ConfigureAwait(false)) {
+					if (message is not StreamMessage.Event(var resolvedEvent)) {
+						continue;
+					}
 
-			return metadata.Event == null
-				? StreamMetadataResult.None(streamName)
-				: StreamMetadataResult.Create(streamName, metadata.OriginalEventNumber,
-					JsonSerializer.Deserialize<StreamMetadata>(metadata.Event.Data.Span,
-						StreamMetadataJsonSerializerOptions));
+					return StreamMetadataResult.Create(streamName, resolvedEvent.OriginalEventNumber,
+						JsonSerializer.Deserialize<StreamMetadata>(resolvedEvent.Event.Data.Span,
+							StreamMetadataJsonSerializerOptions));
+				}
+
+			} catch (StreamNotFoundException) {
+			}
+			_log.LogWarning("Stream metadata for {streamName} not found.", streamName);
+			return StreamMetadataResult.None(streamName);
 		}
 
 		/// <summary>

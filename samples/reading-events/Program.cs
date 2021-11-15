@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,6 +26,8 @@ namespace reading_events {
 				events);
 
 			await ReadFromStream(client);
+
+			return;
 		}
 
 		private static async Task ReadFromStream(EventStoreClient client) {
@@ -40,6 +43,50 @@ namespace reading_events {
 				Console.WriteLine(Encoding.UTF8.GetString(@event.Event.Data.ToArray()));
 			}
 			#endregion iterate-stream
+			
+			#region #read-from-stream-positions
+			Console.WriteLine(events.FirstStreamPosition);
+			Console.WriteLine(events.LastStreamPosition);
+			#endregion
+		}
+
+		private static async Task ReadFromStreamMessages(EventStoreClient client) {
+			#region read-from-stream-messages
+
+			var streamPosition = StreamPosition.Start;
+			var results = client.ReadStreamAsync(
+				Direction.Forwards,
+				"some-stream",
+				streamPosition);
+
+			#endregion read-from-stream-messages
+
+			#region iterate-stream-messages
+
+			await foreach (var message in results.Messages) {
+				switch (message) {
+					case StreamMessage.Ok ok:
+						Console.WriteLine("Stream found.");
+						break;
+					case StreamMessage.NotFound:
+						Console.WriteLine("Stream not found.");
+						return;
+					case StreamMessage.Event(var resolvedEvent):
+						Console.WriteLine(Encoding.UTF8.GetString(resolvedEvent.Event.Data.Span));
+						break;
+					case StreamMessage.FirstStreamPosition(var sp):
+						Console.WriteLine($"{sp} is after {streamPosition}; updating checkpoint.");
+						streamPosition = sp;
+						break;
+					case StreamMessage.LastStreamPosition(var sp):
+						Console.WriteLine($"The end of the stream is {sp}");
+						break;
+					default:
+						break;
+				}
+			}
+
+			#endregion iterate-stream-messages
 		}
 
 		private static async Task ReadFromStreamPosition(EventStoreClient client) {
@@ -89,6 +136,39 @@ namespace reading_events {
 			#endregion reading-backwards
 		}
 
+		private static async Task ReadFromStreamMessagesBackwards(EventStoreClient client) {
+			#region read-from-stream-messages-backwards
+
+			var results = client.ReadStreamAsync(
+				Direction.Forwards,
+				"some-stream",
+				StreamPosition.End);
+
+			#endregion read-from-stream-messages-backwards
+
+			#region iterate-stream-messages-backwards
+
+			await foreach (var message in results.Messages) {
+				switch (message) {
+					case StreamMessage.Ok ok:
+						Console.WriteLine("Stream found.");
+						break;
+					case StreamMessage.NotFound:
+						Console.WriteLine("Stream not found.");
+						return;
+					case StreamMessage.Event(var resolvedEvent):
+						Console.WriteLine(Encoding.UTF8.GetString(resolvedEvent.Event.Data.Span));
+						break;
+					case StreamMessage.LastStreamPosition(var sp):
+						Console.WriteLine($"The end of the stream is {sp}");
+						break;
+				}
+			}
+
+			#endregion iterate-stream-messages-backwards
+		}
+
+
 		private static async Task ReadFromAllStream(EventStoreClient client) {
 			#region read-from-all-stream
 			var events = client.ReadAllAsync(
@@ -100,6 +180,32 @@ namespace reading_events {
 				Console.WriteLine(Encoding.UTF8.GetString(e.Event.Data.ToArray()));
 			}
 			#endregion read-from-all-stream-iterate
+		}
+
+		private static async Task ReadFromAllStreamMessages(EventStoreClient client) {
+			#region read-from-all-stream-messages
+
+			var position = Position.Start;
+			var results = client.ReadAllAsync(
+				Direction.Forwards,
+				position: position);
+
+			#endregion read-from-all-stream-messages
+
+			#region iterate-all-stream-messages
+
+			await foreach (var message in results.Messages) {
+				switch (message) {
+					case StreamMessage.Event(var resolvedEvent):
+						Console.WriteLine(Encoding.UTF8.GetString(resolvedEvent.Event.Data.Span));
+						break;
+					case StreamMessage.LastAllStreamPosition(var p):
+						Console.WriteLine($"The end of the $all stream is {p}");
+						break;
+				}
+			}
+
+			#endregion iterate-all-stream-messages
 		}
 
 		private static async Task IgnoreSystemEvents(EventStoreClient client) {
@@ -128,6 +234,33 @@ namespace reading_events {
 				Console.WriteLine(Encoding.UTF8.GetString(e.Event.Data.ToArray()));
 			}
 			#endregion read-from-all-stream-iterate
+		}
+
+		private static async Task ReadFromAllStreamBackwardsMessages(EventStoreClient client) {
+			#region read-from-all-stream-messages-backwards
+
+			var position = Position.End;
+			var results = client.ReadAllAsync(
+				Direction.Backwards,
+				position: position);
+
+			#endregion read-from-all-stream-messages-backwards
+
+			#region iterate-all-stream-messages-backwards
+
+			await foreach (var message in results.Messages) {
+				switch (message) {
+					case StreamMessage.Event(var resolvedEvent):
+						Console.WriteLine(Encoding.UTF8.GetString(resolvedEvent.Event.Data.Span));
+						break;
+					case StreamMessage.LastAllStreamPosition(var p):
+						Console.WriteLine($"{p} is before {position}; updating checkpoint.");
+						position = p;
+						break;
+				}
+			}
+
+			#endregion iterate-all-stream-messages-backwards
 		}
 
 		private static async Task FilteringOutSystemEvents(EventStoreClient client) {

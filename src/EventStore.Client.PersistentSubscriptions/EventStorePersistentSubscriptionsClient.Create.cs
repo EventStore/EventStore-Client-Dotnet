@@ -65,39 +65,39 @@ namespace EventStore.Client {
 			return allOptions;
 		}
 
-		private static FilterOptions? GetFilterOptions(IEventFilter? filter) {
+		private static CreateReq.Types.AllOptions.Types.FilterOptions? GetFilterOptions(IEventFilter? filter) {
 			if (filter == null) {
 				return null;
 			}
 
 			var options = filter switch {
-				StreamFilter _ => new FilterOptions {
-					StreamName = (filter.Prefixes, filter.Regex) switch {
+				StreamFilter _ => new CreateReq.Types.AllOptions.Types.FilterOptions {
+					StreamIdentifier = (filter.Prefixes, filter.Regex) switch {
 						(PrefixFilterExpression[] _, RegularFilterExpression _)
 							when (filter.Prefixes?.Length ?? 0) == 0 &&
 							     filter.Regex != RegularFilterExpression.None =>
-							new FilterOptions.Types.Expression
+							new CreateReq.Types.AllOptions.Types.FilterOptions.Types.Expression
 								{Regex = filter.Regex},
 						(PrefixFilterExpression[] _, RegularFilterExpression _)
 							when (filter.Prefixes?.Length ?? 0) != 0 &&
 							     filter.Regex == RegularFilterExpression.None =>
-							new FilterOptions.Types.Expression {
+							new CreateReq.Types.AllOptions.Types.FilterOptions.Types.Expression {
 								Prefix = {Array.ConvertAll(filter.Prefixes!, e => e.ToString())}
 							},
 						_ => throw new InvalidOperationException()
 					}
 				},
-				EventTypeFilter _ => new FilterOptions {
+				EventTypeFilter _ => new CreateReq.Types.AllOptions.Types.FilterOptions {
 					EventType = (filter.Prefixes, filter.Regex) switch {
 						(PrefixFilterExpression[] _, RegularFilterExpression _)
 							when (filter.Prefixes?.Length ?? 0) == 0 &&
 							     filter.Regex != RegularFilterExpression.None =>
-							new FilterOptions.Types.Expression
+							new CreateReq.Types.AllOptions.Types.FilterOptions.Types.Expression
 								{Regex = filter.Regex},
 						(PrefixFilterExpression[] _, RegularFilterExpression _)
 							when (filter.Prefixes?.Length ?? 0) != 0 &&
 							     filter.Regex == RegularFilterExpression.None =>
-							new FilterOptions.Types.Expression {
+							new CreateReq.Types.AllOptions.Types.FilterOptions.Types.Expression {
 								Prefix = {Array.ConvertAll(filter.Prefixes!, e => e.ToString())}
 							},
 						_ => throw new InvalidOperationException()

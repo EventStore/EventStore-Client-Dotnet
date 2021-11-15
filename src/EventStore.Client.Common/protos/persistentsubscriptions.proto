@@ -1,6 +1,6 @@
 syntax = "proto3";
 package event_store.client.persistent_subscriptions;
-option java_package = "com.eventstore.client.persistentsubscriptions";
+option java_package = "com.eventstore.dbclient.proto.persistentsubscriptions";
 
 import "shared.proto";
 
@@ -118,8 +118,24 @@ message CreateReq {
 			event_store.client.Empty end = 3;
 		}
 		oneof filter_option {
-			event_store.client.FilterOptions filter = 4;
+			FilterOptions filter = 4;
 			event_store.client.Empty no_filter = 5;
+		}
+		message FilterOptions {
+			oneof filter {
+				Expression stream_identifier = 1;
+				Expression event_type = 2;
+			}
+			oneof window {
+				uint32 max = 3;
+				event_store.client.Empty count = 4;
+			}
+			uint32 checkpointIntervalMultiplier = 5;
+
+			message Expression {
+				string regex = 1;
+				repeated string prefix = 2;
+			}
 		}
 	}
 
@@ -235,6 +251,7 @@ message DeleteReq {
 			event_store.client.StreamIdentifier stream_identifier = 1;
 			event_store.client.Empty all = 3;
 		}
+
 		string group_name = 2;
 	}
 }

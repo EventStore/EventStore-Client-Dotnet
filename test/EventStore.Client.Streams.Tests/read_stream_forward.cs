@@ -13,14 +13,14 @@ namespace EventStore.Client {
 		}
 
 		[Theory, InlineData(0)]
-		public async Task count_le_equal_zero_throws(long count) {
+		public async Task count_le_equal_zero_throws(long maxCount) {
 			var stream = _fixture.GetStreamName();
 
 			var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
-				_fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, count)
+				_fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, maxCount)
 					.ToArrayAsync().AsTask());
 
-			Assert.Equal(nameof(count), ex.ParamName);
+			Assert.Equal(nameof(maxCount), ex.ParamName);
 		}
 
 		[Fact]
