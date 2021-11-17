@@ -107,7 +107,7 @@ namespace EventStore.Client {
 
 		public virtual async Task InitializeAsync() {
 			await TestServer.StartAsync().WithTimeout(TimeSpan.FromMinutes(5));
-			await OnServerUpAsync();
+			await OnServerUpAsync().WithTimeout(TimeSpan.FromMinutes(5));
 			await Given().WithTimeout(TimeSpan.FromMinutes(5));
 			await When().WithTimeout(TimeSpan.FromMinutes(5));
 		}
