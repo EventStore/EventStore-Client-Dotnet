@@ -11,7 +11,7 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
 			Policy.Handle<NotAuthenticatedException>()
-				.WaitAndRetryAsync(10, count => TimeSpan.FromMilliseconds(count * 20))
+				.WaitAndRetryAsync(10, count => TimeSpan.FromMilliseconds(count * count * 20))
 				.ExecuteAsync(ct => client.CreateUserAsync(loginName, fullName, groups, password, userCredentials, ct),
 					cancellationToken);
 	}

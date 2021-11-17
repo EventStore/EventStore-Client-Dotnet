@@ -18,7 +18,9 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 
 			// can definitely write without throwing
-			var nextExpected = (await WriteAnEventAsync(StreamRevision.None)).NextExpectedStreamRevision;
+			var nextExpected = (await _fixture.Client.AppendToStreamAsync(
+					stream, StreamState.NoStream, _fixture.CreateTestEvents(1))
+				.WithTimeout()).NextExpectedStreamRevision;
 			Assert.Equal(new StreamRevision(0), nextExpected);
 
 			_fixture.TestServer.Stop();
@@ -26,20 +28,22 @@ namespace EventStore.Client {
 			// writeTask cannot complete because ES is stopped
 			await Assert.ThrowsAnyAsync<InvalidOperationException>(() => WriteAnEventAsync(new StreamRevision(0)));
 
-			await _fixture.TestServer.StartAsync();
+			await _fixture.TestServer.StartAsync().WithTimeout();
 
 			// write can be retried
 			var writeResult = await Policy
 				.Handle<Exception>()
 				.WaitAndRetryAsync(5, _ => TimeSpan.FromSeconds(3))
-				.ExecuteAsync(() => WriteAnEventAsync(new StreamRevision(0)));
+				.ExecuteAsync(() => {
+					StreamRevision expectedRevision = new StreamRevision(0);
+					return _fixture.Client.AppendToStreamAsync(
+							streamName: stream,
+							expectedRevision: expectedRevision,
+							eventData: _fixture.CreateTestEvents(1))
+						.WithTimeout();
+				});
 
 			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
-
-			Task<IWriteResult> WriteAnEventAsync(StreamRevision expectedRevision) => _fixture.Client.AppendToStreamAsync(
-				streamName: stream,
-				expectedRevision: expectedRevision,
-				eventData: _fixture.CreateTestEvents(1));
 		}
 
 		public class Fixture : EventStoreClientFixture {

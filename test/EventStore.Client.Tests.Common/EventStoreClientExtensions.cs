@@ -23,7 +23,7 @@ namespace EventStore.Client {
 					if (users.Length == 0)
 						throw new Exception("no users yet");
 
-					// the read from leader above is not enough to garantee the next write goes to leader
+					// the read from leader above is not enough to guarantee the next write goes to leader
 					await self.AppendToStreamAsync($"warmup", StreamState.Any, Enumerable.Empty<EventData>());
 				});
 		}
