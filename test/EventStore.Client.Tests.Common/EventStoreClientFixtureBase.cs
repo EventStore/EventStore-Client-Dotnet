@@ -115,7 +115,7 @@ namespace EventStore.Client {
 				disposable.Dispose();
 			}
 
-			return TestServer.DisposeAsync().AsTask();
+			return TestServer.DisposeAsync().AsTask().WithTimeout(TimeSpan.FromMinutes(5));
 		}
 
 		public string GetStreamName([CallerMemberName] string? testMethod = null) {
@@ -129,11 +129,11 @@ namespace EventStore.Client {
 
 			var captureId = Guid.NewGuid();
 
-			var callContextData = new AsyncLocal<Tuple<string, Guid>> {
-				Value = new Tuple<string, Guid>(captureCorrelationId, captureId)
+			var callContextData = new AsyncLocal<(string, Guid)> {
+				Value = (captureCorrelationId, captureId)
 			};
 
-			bool Filter(LogEvent logEvent) => callContextData!.Value!.Item2.Equals(captureId);
+			bool Filter(LogEvent logEvent) => callContextData.Value.Item2.Equals(captureId);
 
 			MessageTemplateTextFormatter formatter = new MessageTemplateTextFormatter(
 				"{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message}");
@@ -142,16 +142,16 @@ namespace EventStore.Client {
 				new MessageTemplateTextFormatter(
 					"{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message}{NewLine}{Exception}");
 
-			var subscription = LogEventSubject.Where(Filter).Subscribe(logEvent => {
-				using var writer = new StringWriter();
-				if (logEvent.Exception != null) {
-					formatterWithException.Format(logEvent, writer);
-				} else {
-					formatter.Format(logEvent, writer);
-				}
-
-				testOutputHelper.WriteLine(writer.ToString());
-			});
+			 var subscription = LogEventSubject.Where(Filter).Subscribe(logEvent => {
+			 	using var writer = new StringWriter();
+			 	if (logEvent.Exception != null) {
+			 		formatterWithException.Format(logEvent, writer);
+			 	} else {
+			 		formatter.Format(logEvent, writer);
+			 	}
+			
+			 	testOutputHelper.WriteLine(writer.ToString());
+			 });
 
 			_disposables.Add(subscription);
 		}

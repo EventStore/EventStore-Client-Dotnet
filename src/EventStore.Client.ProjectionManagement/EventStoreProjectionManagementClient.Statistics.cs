@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Projections;
-using Grpc.Core;
 
 #nullable enable
 namespace EventStore.Client {
@@ -49,8 +48,9 @@ namespace EventStore.Client {
 		private async IAsyncEnumerable<ProjectionDetails> ListInternalAsync(StatisticsReq.Types.Options options,
 			UserCredentials? userCredentials,
 			[EnumeratorCancellation] CancellationToken cancellationToken) {
+			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Statistics(new StatisticsReq {
+				CreateCallInvoker(channel)).Statistics(new StatisticsReq {
 				Options = options
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 

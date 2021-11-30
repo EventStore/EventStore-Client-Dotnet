@@ -61,6 +61,12 @@ namespace EventStore.Client.SubscriptionToAll {
 					(s, e, ct) => {
 						_checkPointSource.TrySetResult(e);	
 						return Task.CompletedTask;
+					}, subscriptionDropped: (_, reason, ex) => {
+						if (ex is not null) {
+							_checkPointSource.TrySetException(ex);
+						} else {
+							_checkPointSource.TrySetResult(default);
+						}
 					},
 					userCredentials: TestCredentials.Root);
 				
@@ -87,11 +93,19 @@ namespace EventStore.Client.SubscriptionToAll {
 				await _droppedSource.Task.WithTimeout();
 				
 				_secondSubscription = await Client.SubscribeToAllAsync(Group,
-					eventAppeared: (s, e, r, ct) => {
+					(_, e, r, ct) => {
 						_resumedSource.TrySetResult(e);
 						return Task.CompletedTask;
 					},
-					userCredentials: TestCredentials.Root);
+					(_, reason, ex) => {
+						
+						if (ex is not null) {
+							_resumedSource.TrySetException(ex);
+						} else {
+							_resumedSource.TrySetResult(default);
+						}
+					},
+					TestCredentials.Root);
 				
 				foreach (var e in _events) {
 					await StreamsClient.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.Any, new[] {e});

@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
@@ -15,6 +16,14 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task DeleteAsync(string streamName, string groupName, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
+			var (channel, serverCapabilities) = await GetCurrentChannelInfo().ConfigureAwait(false);
+
+			if (streamName == SystemStreams.AllStream &&
+			    !serverCapabilities.SupportsPersistentSubscriptionsToAll) {
+				throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
+			}
+
+			var callInvoker = CreateCallInvoker(channel);
 			var deleteOptions = new DeleteReq.Types.Options {
 				GroupName = groupName
 			};
@@ -25,10 +34,10 @@ namespace EventStore.Client {
 				deleteOptions.StreamIdentifier = streamName;
 			}
 
-			await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).DeleteAsync(new DeleteReq {
-				Options = deleteOptions
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
+				.DeleteAsync(new DeleteReq {Options = deleteOptions},
+					EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials,
+						cancellationToken));
 		}
 
 		/// <summary>

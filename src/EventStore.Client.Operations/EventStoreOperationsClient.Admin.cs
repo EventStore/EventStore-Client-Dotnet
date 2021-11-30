@@ -16,8 +16,9 @@ namespace EventStore.Client {
 		public async Task ShutdownAsync(
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
+			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
 			await new Operations.Operations.OperationsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).ShutdownAsync(EmptyResult,
+				CreateCallInvoker(channel)).ShutdownAsync(EmptyResult,
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
@@ -30,8 +31,9 @@ namespace EventStore.Client {
 		public async Task MergeIndexesAsync(
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
+			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
 			await new Operations.Operations.OperationsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).MergeIndexesAsync(EmptyResult,
+				CreateCallInvoker(channel)).MergeIndexesAsync(EmptyResult,
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
@@ -44,8 +46,9 @@ namespace EventStore.Client {
 		public async Task ResignNodeAsync(
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
+			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
 			await new Operations.Operations.OperationsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).ResignNodeAsync(EmptyResult,
+				CreateCallInvoker(channel)).ResignNodeAsync(EmptyResult,
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
 
@@ -59,8 +62,9 @@ namespace EventStore.Client {
 		public async Task SetNodePriorityAsync(int nodePriority,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
+			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
 			await new Operations.Operations.OperationsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).SetNodePriorityAsync(
+				CreateCallInvoker(channel)).SetNodePriorityAsync(
 				new SetNodePriorityReq {Priority = nodePriority},
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}
@@ -73,8 +77,9 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task RestartPersistentSubscriptions(UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
+			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
 			await new Operations.Operations.OperationsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).RestartPersistentSubscriptionsAsync(
+				CreateCallInvoker(channel)).RestartPersistentSubscriptionsAsync(
 				EmptyResult,
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 		}

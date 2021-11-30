@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
+using Microsoft.Extensions.Logging;
 
 #nullable enable
 namespace EventStore.Client {
@@ -17,6 +18,8 @@ namespace EventStore.Client {
 		private readonly Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> _subscriptionDropped;
 		private readonly CancellationTokenSource _disposed;
 		private readonly AsyncDuplexStreamingCall<ReadReq, ReadResp> _call;
+		private readonly ILogger _log;
+
 		private int _subscriptionDroppedInvoked;
 
 		/// <summary>
@@ -25,7 +28,7 @@ namespace EventStore.Client {
 		public string SubscriptionId { get; }
 
 		internal static async Task<PersistentSubscription> Confirm(AsyncDuplexStreamingCall<ReadReq, ReadResp> call,
-			ReadReq.Types.Options options, bool autoAck,
+			ReadReq.Types.Options options, bool autoAck, ILogger log,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped,
 			CancellationToken cancellationToken = default) {
@@ -38,12 +41,12 @@ namespace EventStore.Client {
 				throw new InvalidOperationException();
 			}
 
-			return new PersistentSubscription(call, autoAck, eventAppeared, subscriptionDropped);
+			return new PersistentSubscription(call, autoAck, log, eventAppeared, subscriptionDropped);
 		}
 
 		private PersistentSubscription(
 			AsyncDuplexStreamingCall<ReadReq, ReadResp> call,
-			bool autoAck,
+			bool autoAck, ILogger log,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped) {
 			_call = call;
@@ -51,6 +54,7 @@ namespace EventStore.Client {
 			_eventAppeared = eventAppeared;
 			_subscriptionDropped = subscriptionDropped;
 			_disposed = new CancellationTokenSource();
+			_log = log;
 			SubscriptionId = call.ResponseStream.Current.SubscriptionConfirmation.SubscriptionId;
 			Task.Run(Subscribe);
 		}
@@ -73,7 +77,6 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
 		/// <param name="eventIds">The <see cref="Uuid"/> of the <see cref="ResolvedEvent" />s to acknowledge. There should not be more than 2000 to ack at a time.</param>
-
 		public Task Ack(IEnumerable<Uuid> eventIds) => Ack(eventIds.ToArray());
 
 		/// <summary>
@@ -123,59 +126,67 @@ namespace EventStore.Client {
 				Array.ConvertAll(resolvedEvents, resolvedEvent => resolvedEvent.OriginalEvent.EventId));
 
 		/// <inheritdoc />
-		public void Dispose() {
-			if (_disposed.IsCancellationRequested) {
-				return;
-			}
-
-			SubscriptionDropped(SubscriptionDroppedReason.Disposed);
-
-			_disposed.Dispose();
-		}
+		public void Dispose() => SubscriptionDropped(SubscriptionDroppedReason.Disposed);
 
 		private async Task Subscribe() {
+			_log.LogDebug("Persistent Subscription {subscriptionId} confirmed.", SubscriptionId);
+			using var _ = _disposed;
 			try {
-				while (await _call!.ResponseStream.MoveNext().ConfigureAwait(false) &&
-				       !_disposed.IsCancellationRequested) {
-					var current = _call!.ResponseStream.Current;
-					switch (current.ContentCase) {
-						case ReadResp.ContentOneofCase.Event:
-							try {
-								await _eventAppeared(this, ConvertToResolvedEvent(current),
-									current.Event.CountCase switch {
-										ReadResp.Types.ReadEvent.CountOneofCase.RetryCount => current.Event.RetryCount,
-										_ => default
-									}, _disposed.Token).ConfigureAwait(false);
-								if (_autoAck) {
-									await AckInternal(Uuid.FromDto(current.Event.Link?.Id ?? current.Event.Event.Id))
-										.ConfigureAwait(false);
-								}
-							} catch (Exception ex) when (ex is ObjectDisposedException ||
-							                             ex is OperationCanceledException) {
-								SubscriptionDropped(SubscriptionDroppedReason.Disposed);
-								return;
-							} catch (Exception ex) {
-								try {
-									SubscriptionDropped(SubscriptionDroppedReason.SubscriberError, ex);
-								} finally {
-									_disposed.Cancel();
-								}
+				await foreach (var response in _call.ResponseStream.ReadAllAsync(_disposed.Token).ConfigureAwait(false)) {
+					if (response.ContentCase != ReadResp.ContentOneofCase.Event) {
+						continue;
+					}
+					try {
+						var resolvedEvent = ConvertToResolvedEvent(response);
+						_log.LogTrace(
+							"Persistent Subscription {subscriptionId} received event {streamName}@{streamRevision} {position}",
+							SubscriptionId, resolvedEvent.OriginalEvent.EventStreamId,
+							resolvedEvent.OriginalEvent.EventNumber, resolvedEvent.OriginalEvent.Position);
+						await _eventAppeared(this, resolvedEvent,
+							response.Event.CountCase switch {
+								ReadResp.Types.ReadEvent.CountOneofCase.RetryCount => response.Event
+									.RetryCount,
+								_ => default
+							}, _disposed.Token).ConfigureAwait(false);
+						if (_autoAck) {
+							await AckInternal(
+									Uuid.FromDto(response.Event.Link?.Id ?? response.Event.Event.Id))
+								.ConfigureAwait(false);
+							_log.LogTrace(
+								"Persistent Subscription {subscriptionId} auto-acked event {streamName}@{streamRevision} {position}",
+								SubscriptionId, resolvedEvent.OriginalEvent.EventStreamId,
+								resolvedEvent.OriginalEvent.EventNumber, resolvedEvent.OriginalEvent.Position);
+						}
+					} catch (Exception ex) when (ex is ObjectDisposedException or OperationCanceledException) {
+						if (_subscriptionDroppedInvoked != 0) {
+							return;
+						}
+						_log.LogWarning(ex,
+							"Persistent Subscription {subscriptionId} was dropped because cancellation was requested by another caller.",
+							SubscriptionId);
 
-								return;
-							}
+						SubscriptionDropped(SubscriptionDroppedReason.Disposed);
 
-							break;
+						return;
+					} catch (Exception ex) {
+						_log.LogError(ex,
+							"Persistent Subscription {subscriptionId} was dropped because the subscriber made an error.",
+							SubscriptionId);
+						SubscriptionDropped(SubscriptionDroppedReason.SubscriberError, ex);
+
+						return;
 					}
 				}
 			} catch (Exception ex) {
-				try {
+				if (_subscriptionDroppedInvoked == 0) {
+					_log.LogError(ex,
+						"Persistent Subscription {subscriptionId} was dropped because an error occurred on the server.",
+						SubscriptionId);
 					SubscriptionDropped(SubscriptionDroppedReason.ServerError, ex);
-				} finally {
-					_disposed.Cancel();
 				}
 			}
 
-			ResolvedEvent ConvertToResolvedEvent(ReadResp response) => new ResolvedEvent(
+			ResolvedEvent ConvertToResolvedEvent(ReadResp response) => new(
 				ConvertToEventRecord(response.Event.Event)!,
 				ConvertToEventRecord(response.Event.Link),
 				response.Event.PositionCase switch {
@@ -183,7 +194,7 @@ namespace EventStore.Client {
 					_ => null
 				});
 
-			EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent e) =>
+			EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>
 				e == null
 					? null
 					: new EventRecord(
@@ -201,13 +212,13 @@ namespace EventStore.Client {
 				return;
 			}
 
-			_call?.Dispose();
-			_subscriptionDropped?.Invoke(this, reason, ex);
+			_subscriptionDropped.Invoke(this, reason, ex);
+			_call.Dispose();
 			_disposed.Dispose();
 		}
 
 		private Task AckInternal(params Uuid[] ids) =>
-			_call!.RequestStream.WriteAsync(new ReadReq {
+			_call.RequestStream.WriteAsync(new ReadReq {
 				Ack = new ReadReq.Types.Ack {
 					Ids = {
 						Array.ConvertAll(ids, id => id.ToDto())

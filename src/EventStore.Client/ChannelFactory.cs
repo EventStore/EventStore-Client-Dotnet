@@ -1,10 +1,8 @@
 using System;
-using System.Net;
 using Grpc.Core;
-
+using EndPoint = System.Net.EndPoint;
 #if !GRPC_CORE
 using System.Net.Http;
-using System.Threading;
 using Grpc.Net.Client;
 #else
 using System.Collections.Generic;

@@ -27,8 +27,8 @@ namespace EventStore.Client {
 
 		private readonly ILogger<EventStoreClient> _log;
 #if NET5_0_OR_GREATER
-		private StreamAppender _streamAppender;
-		private int _streamAppenderDelayMs;
+		private Lazy<StreamAppender> _streamAppenderLazy;
+		private StreamAppender _streamAppender => _streamAppenderLazy.Value;
 #endif
 
 		private readonly CancellationTokenSource _disposedTokenSource;
@@ -72,23 +72,22 @@ namespace EventStore.Client {
 			_log = Settings.LoggerFactory?.CreateLogger<EventStoreClient>() ?? new NullLogger<EventStoreClient>();
 			_disposedTokenSource = new CancellationTokenSource();
 #if NET5_0_OR_GREATER
-			_streamAppenderDelayMs = 0;
-			_streamAppender = CreateStreamAppender();
+			_streamAppenderLazy = new Lazy<StreamAppender>(CreateStreamAppender, LazyThreadSafetyMode.PublicationOnly);
 #endif
 		}
 
 #if NET5_0_OR_GREATER
-		private void SwapStreamAppender(Exception ex) {
-			_streamAppenderDelayMs = Math.Min(200, Math.Max(_streamAppenderDelayMs * 2, 25));
-			Interlocked.Exchange(ref _streamAppender, CreateStreamAppender());
-		}
+		private void SwapStreamAppender(Exception ex) =>
+			Interlocked.Exchange(ref _streamAppenderLazy,
+					new Lazy<StreamAppender>(CreateStreamAppender, LazyThreadSafetyMode.PublicationOnly))
+				.Value.Dispose();
 
 		private StreamAppender CreateStreamAppender() {
 			return new StreamAppender(Settings, GetCall(), _disposedTokenSource.Token, SwapStreamAppender);
 
 			async Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>> GetCall() {
-				await Task.Delay(_streamAppenderDelayMs, _disposedTokenSource.Token).ConfigureAwait(false);
-				var callInvoker = await SelectCallInvoker(_disposedTokenSource.Token).ConfigureAwait(false);
+				var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
+				var callInvoker = CreateCallInvoker(channel);
 				var client = new Streams.Streams.StreamsClient(callInvoker);
 				var operationOptions = Settings.OperationOptions.Clone();
 				operationOptions.TimeoutAfter = new TimeSpan?();

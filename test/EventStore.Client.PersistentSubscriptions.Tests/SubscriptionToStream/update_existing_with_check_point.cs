@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace EventStore.Client.SubscriptionToStream {
 	public class update_existing_with_check_point
@@ -10,9 +11,11 @@ namespace EventStore.Client.SubscriptionToStream {
 		private const string Stream = nameof(update_existing_with_check_point);
 		private const string Group = "existing-with-check-point";
 		private readonly Fixture _fixture;
+		private readonly ITestOutputHelper _testOutput;
 
-		public update_existing_with_check_point(Fixture fixture) {
+		public update_existing_with_check_point(Fixture fixture, ITestOutputHelper testOutput) {
 			_fixture = fixture;
+			_testOutput = testOutput;
 		}
 
 		[Fact]
@@ -55,9 +58,16 @@ namespace EventStore.Client.SubscriptionToStream {
 
 				var checkPointStream = $"$persistentsubscription-{Stream}::{Group}-checkpoint";
 				await StreamsClient.SubscribeToStreamAsync(checkPointStream,
-					(s, e, ct) => {
+					(_, e, ct) => {
 						_checkPointSource.TrySetResult(e);	
 						return Task.CompletedTask;
+					},
+					subscriptionDropped: (_, reason, ex) => {
+						if (ex != null) {
+							_checkPointSource.TrySetException(ex);
+						} else {
+							_checkPointSource.TrySetResult(default);
+						}
 					},
 					userCredentials: TestCredentials.Root);
 				
@@ -87,6 +97,13 @@ namespace EventStore.Client.SubscriptionToStream {
 					eventAppeared: (s, e, r, ct) => {
 						_resumedSource.TrySetResult(e);
 						return Task.CompletedTask;
+					},
+					(_, reason, ex) => {
+						if (ex is not null) {
+							_resumedSource.TrySetException(ex);
+						} else {
+							_resumedSource.TrySetResult(default);
+						}
 					},
 					userCredentials: TestCredentials.Root);
 				

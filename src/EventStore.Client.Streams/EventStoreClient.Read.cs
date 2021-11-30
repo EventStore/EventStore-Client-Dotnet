@@ -23,7 +23,11 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(maxCount));
 			}
 
-			return new ReadAllStreamResult(SelectCallInvoker, new ReadReq {
+
+			return new ReadAllStreamResult(async _ => {
+				var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
+				return CreateCallInvoker(channel);
+			}, new ReadReq {
 				Options = new() {
 					ReadDirection = direction switch {
 						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
@@ -95,6 +99,7 @@ namespace EventStore.Client {
 						if (Interlocked.Exchange(ref _messagesEnumerated, 1) == 1) {
 							throw new InvalidOperationException("Messages may only be enumerated once.");
 						}
+
 						await foreach (var message in _channel.Reader.ReadAllAsync().ConfigureAwait(false)) {
 							if (message is StreamMessage.LastAllStreamPosition(var position)) {
 								LastPosition = position;
@@ -126,7 +131,7 @@ namespace EventStore.Client {
 						var client = new Streams.Streams.StreamsClient(callInvoker);
 						using var call = client.Read(request, callOptions);
 						await foreach (var response in call.ResponseStream.ReadAllAsync(cancellationToken)
-							               .ConfigureAwait(false)) {
+							.ConfigureAwait(false)) {
 							await _channel.Writer.WriteAsync(response.ContentCase switch {
 								StreamNotFound => StreamMessage.NotFound.Instance,
 								Event => new StreamMessage.Event(ConvertToResolvedEvent(response.Event)),
@@ -168,7 +173,10 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(maxCount));
 			}
 
-			return new ReadStreamResult(SelectCallInvoker, new ReadReq {
+			return new ReadStreamResult(async _ => {
+				var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
+				return CreateCallInvoker(channel);
+			}, new ReadReq {
 				Options = new() {
 					ReadDirection = direction switch {
 						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
@@ -250,6 +258,7 @@ namespace EventStore.Client {
 						if (Interlocked.Exchange(ref _messagesEnumerated, 1) == 1) {
 							throw new InvalidOperationException("Messages may only be enumerated once.");
 						}
+
 						await foreach (var message in _channel.Reader.ReadAllAsync().ConfigureAwait(false)) {
 							switch (message) {
 								case StreamMessage.FirstStreamPosition(var streamPosition):
@@ -303,7 +312,7 @@ namespace EventStore.Client {
 						using var call = client.Read(request, callOptions);
 
 						await foreach (var response in call.ResponseStream.ReadAllAsync(cancellationToken)
-							               .ConfigureAwait(false)) {
+							.ConfigureAwait(false)) {
 							if (!firstMessageRead) {
 								firstMessageRead = true;
 
@@ -371,8 +380,9 @@ namespace EventStore.Client {
 
 			request.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()};
 
+			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
 			using var call = new Streams.Streams.StreamsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Read(request,
+				CreateCallInvoker(channel)).Read(request,
 				EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken));
 
 			await foreach (var e in call.ResponseStream

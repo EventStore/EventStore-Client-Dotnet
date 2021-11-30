@@ -53,9 +53,17 @@ namespace EventStore.Client {
 			var operationOptions = Settings.OperationOptions.Clone();
 			operationOptions.TimeoutAfter = new TimeSpan?();
 
-			var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Read(EventStoreCallOptions.Create(
-				Settings, operationOptions, userCredentials, cancellationToken));
+			var (channel, serverCapabilities) = await GetCurrentChannelInfo().ConfigureAwait(false);
+
+			if (streamName == SystemStreams.AllStream &&
+			    !serverCapabilities.SupportsPersistentSubscriptionsToAll) {
+				throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
+			}
+
+			var callInvoker = CreateCallInvoker(channel);
+
+			var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
+				.Read(EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken));
 
 			var readOptions = new ReadReq.Types.Options {
 				BufferSize = bufferSize,
@@ -69,7 +77,7 @@ namespace EventStore.Client {
 				readOptions.StreamIdentifier = streamName;
 			}
 
-			return await PersistentSubscription.Confirm(call, readOptions, autoAck, eventAppeared,
+			return await PersistentSubscription.Confirm(call, readOptions, autoAck, _log, eventAppeared,
 				subscriptionDropped ?? delegate { }, cancellationToken).ConfigureAwait(false);
 		}
 
@@ -90,14 +98,14 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null, int bufferSize = 10, bool autoAck = true,
 			CancellationToken cancellationToken = default) =>
 			await SubscribeAsync(
-				streamName: SystemStreams.AllStream,
-				groupName: groupName,
-				eventAppeared: eventAppeared,
-				subscriptionDropped: subscriptionDropped,
-				userCredentials: userCredentials,
-				bufferSize: bufferSize,
-				autoAck: autoAck,
-				cancellationToken: cancellationToken)
+					streamName: SystemStreams.AllStream,
+					groupName: groupName,
+					eventAppeared: eventAppeared,
+					subscriptionDropped: subscriptionDropped,
+					userCredentials: userCredentials,
+					bufferSize: bufferSize,
+					autoAck: autoAck,
+					cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
 	}
 }

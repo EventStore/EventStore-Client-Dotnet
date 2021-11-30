@@ -22,7 +22,6 @@ namespace EventStore.Client {
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-
 			var operationOptions = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(operationOptions);
 
@@ -44,7 +43,6 @@ namespace EventStore.Client {
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			
 			var options = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(options);
 
@@ -81,8 +79,9 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
 			_log.LogDebug("Deleting stream {streamName}.", request.Options.StreamIdentifier);
+			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
 			var result = await new Streams.Streams.StreamsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).DeleteAsync(request,
+				CreateCallInvoker(channel)).DeleteAsync(request,
 				EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken));
 
 			return new DeleteResult(new Position(result.Position.CommitPosition, result.Position.PreparePosition));

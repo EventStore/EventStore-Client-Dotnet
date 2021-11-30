@@ -40,7 +40,8 @@ namespace EventStore.Client {
 				checkpointReached, cancellationToken);
 		}
 
-		private StreamSubscription(IAsyncEnumerator<(SubscriptionConfirmation confirmation, Position?, ResolvedEvent)> events,
+		private StreamSubscription(
+			IAsyncEnumerator<(SubscriptionConfirmation confirmation, Position?, ResolvedEvent)> events,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped,
 			ILogger log,
@@ -61,56 +62,47 @@ namespace EventStore.Client {
 		private Task CheckpointReached(Position position) => _checkpointReached(this, position, _disposed.Token);
 
 		private async Task Subscribe() {
+			_log.LogDebug("Subscription {subscriptionId} confirmed.", SubscriptionId);
+			using var _ = _disposed;
 			try {
 				await foreach (var resolvedEvent in _events.ConfigureAwait(false)) {
 					try {
-						if (_disposed.IsCancellationRequested) {
-							_log.LogDebug("Subscription was dropped because cancellation was requested.");
-							SubscriptionDropped(SubscriptionDroppedReason.Disposed);
+						_log.LogTrace("Subscription {subscriptionId} received event {streamName}@{streamRevision} {position}",
+							SubscriptionId, resolvedEvent.OriginalEvent.EventStreamId,
+							resolvedEvent.OriginalEvent.EventNumber, resolvedEvent.OriginalEvent.Position);
+						await _eventAppeared(this, resolvedEvent, _disposed.Token).ConfigureAwait(false);
+					} catch (Exception ex) when (ex is ObjectDisposedException or OperationCanceledException) {
+						if (_subscriptionDroppedInvoked != 0) {
 							return;
 						}
-
-						_log.LogTrace("Subscription received event {streamName}@{streamRevision} {position}",
-							resolvedEvent.OriginalEvent.EventStreamId, resolvedEvent.OriginalEvent.EventNumber,
-							resolvedEvent.OriginalEvent.Position);
-						await _eventAppeared(this, resolvedEvent, _disposed.Token).ConfigureAwait(false);
-					} catch (Exception ex) when (ex is ObjectDisposedException || ex is OperationCanceledException) {
 						_log.LogWarning(ex,
-							"Subscription was dropped because cancellation was requested by another caller.");
+							"Subscription {subscriptionId} was dropped because cancellation was requested by another caller.",
+							SubscriptionId);
+
 						SubscriptionDropped(SubscriptionDroppedReason.Disposed);
+
 						return;
 					} catch (Exception ex) {
-						try {
-							_log.LogError(ex, "Subscription was dropped because the subscriber made an error.");
-							SubscriptionDropped(SubscriptionDroppedReason.SubscriberError, ex);
-						} finally {
-							_disposed.Cancel();
-						}
+						_log.LogError(ex,
+							"Subscription {subscriptionId} was dropped because the subscriber made an error.",
+							SubscriptionId);
+						SubscriptionDropped(SubscriptionDroppedReason.SubscriberError, ex);
 
 						return;
 					}
 				}
 			} catch (Exception ex) {
-				try {
-					_log.LogError(ex, "Subscription was dropped because an error occurred on the server.");
+				if (_subscriptionDroppedInvoked == 0) {
+					_log.LogError(ex,
+						"Subscription {subscriptionId} was dropped because an error occurred on the server.",
+						SubscriptionId);
 					SubscriptionDropped(SubscriptionDroppedReason.ServerError, ex);
-				} finally {
-					_disposed.Cancel();
 				}
 			}
 		}
 
 		/// <inheritdoc />
-		public void Dispose() {
-			if (_disposed.IsCancellationRequested) {
-				return;
-			}
-
-			SubscriptionDropped(SubscriptionDroppedReason.Disposed);
-
-			_disposed.Cancel();
-			_disposed.Dispose();
-		}
+		public void Dispose() => SubscriptionDropped(SubscriptionDroppedReason.Disposed);
 
 		private void SubscriptionDropped(SubscriptionDroppedReason reason, Exception? ex = null) {
 			if (Interlocked.CompareExchange(ref _subscriptionDroppedInvoked, 1, 0) == 1) {
@@ -118,6 +110,7 @@ namespace EventStore.Client {
 			}
 
 			_subscriptionDropped?.Invoke(this, reason, ex);
+			_disposed.Dispose();
 		}
 
 		private class Enumerable : IAsyncEnumerable<ResolvedEvent> {
@@ -172,9 +165,11 @@ namespace EventStore.Client {
 					if (_cancellationToken.IsCancellationRequested) {
 						return false;
 					}
+
 					if (!await _inner.MoveNextAsync().ConfigureAwait(false)) {
 						return false;
 					}
+
 					if (_cancellationToken.IsCancellationRequested) {
 						return false;
 					}

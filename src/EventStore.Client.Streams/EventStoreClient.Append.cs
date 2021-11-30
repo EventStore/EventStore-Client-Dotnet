@@ -33,9 +33,11 @@ namespace EventStore.Client {
 
 			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedRevision);
 
+			var channelInfo = await GetCurrentChannelInfo().ConfigureAwait(false);
+
 			var task =
 #if NET5_0_OR_GREATER
-				userCredentials == null
+				userCredentials == null && channelInfo.ServerCapabilities.SupportsBatchAppend
 					? _streamAppender.Append(streamName, expectedRevision, eventData, options.TimeoutAfter,
 						cancellationToken)
 					:
@@ -72,9 +74,11 @@ namespace EventStore.Client {
 
 			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedState);
 
+			var channelInfo = await GetCurrentChannelInfo().ConfigureAwait(false);
+
 			var task =
 #if NET5_0_OR_GREATER
-				userCredentials == null
+				userCredentials == null && channelInfo.ServerCapabilities.SupportsBatchAppend
 					? _streamAppender.Append(streamName, expectedState, eventData, operationOptions.TimeoutAfter,
 						cancellationToken)
 					:
@@ -94,8 +98,9 @@ namespace EventStore.Client {
 			EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
+			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
 			using var call = new Streams.Streams.StreamsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).Append(EventStoreCallOptions.Create(
+				CreateCallInvoker(channel)).Append(EventStoreCallOptions.Create(
 				Settings, operationOptions, userCredentials, cancellationToken));
 
 			IWriteResult writeResult;

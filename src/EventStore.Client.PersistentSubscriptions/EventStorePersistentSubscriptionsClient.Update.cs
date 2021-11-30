@@ -14,7 +14,8 @@ namespace EventStore.Client {
 				[SystemConsumerStrategies.Pinned] = UpdateReq.Types.ConsumerStrategy.Pinned,
 			};
 
-		private static UpdateReq.Types.StreamOptions StreamOptionsForUpdateProto(string streamName, StreamPosition position) {
+		private static UpdateReq.Types.StreamOptions StreamOptionsForUpdateProto(string streamName,
+			StreamPosition position) {
 			if (position == StreamPosition.Start) {
 				return new UpdateReq.Types.StreamOptions {
 					StreamIdentifier = streamName,
@@ -82,44 +83,67 @@ namespace EventStore.Client {
 				throw new ArgumentNullException(nameof(settings));
 			}
 
-			if (streamName != SystemStreams.AllStream && settings.StartFrom != null && !(settings.StartFrom is StreamPosition)) {
-				throw new ArgumentException($"{nameof(settings.StartFrom)} must be of type '{nameof(StreamPosition)}' when subscribing to a stream");
+			if (streamName != SystemStreams.AllStream && settings.StartFrom != null &&
+			    !(settings.StartFrom is StreamPosition)) {
+				throw new ArgumentException(
+					$"{nameof(settings.StartFrom)} must be of type '{nameof(StreamPosition)}' when subscribing to a stream");
 			}
 
-			if (streamName == SystemStreams.AllStream && settings.StartFrom != null && !(settings.StartFrom is Position)) {
-				throw new ArgumentException($"{nameof(settings.StartFrom)} must be of type '{nameof(Position)}' when subscribing to {SystemStreams.AllStream}");
+			if (streamName == SystemStreams.AllStream && settings.StartFrom != null &&
+			    !(settings.StartFrom is Position)) {
+				throw new ArgumentException(
+					$"{nameof(settings.StartFrom)} must be of type '{nameof(Position)}' when subscribing to {SystemStreams.AllStream}");
 			}
 
-			await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).UpdateAsync(new UpdateReq {
-				Options = new UpdateReq.Types.Options {
-					GroupName = groupName,
-					Stream = streamName != SystemStreams.AllStream ?
-						StreamOptionsForUpdateProto(streamName, (StreamPosition)(settings.StartFrom ?? StreamPosition.End)) : null,
-					All = streamName == SystemStreams.AllStream ?
-						AllOptionsForUpdateProto((Position)(settings.StartFrom ?? Position.End)) : null,
-					#pragma warning disable 612
-					StreamIdentifier = streamName != SystemStreams.AllStream ? streamName : string.Empty, /*for backwards compatibility*/
-					#pragma warning restore 612
-					Settings = new UpdateReq.Types.Settings {
-						#pragma warning disable 612
-						Revision = streamName != SystemStreams.AllStream ? ((StreamPosition)(settings.StartFrom ?? StreamPosition.End)).ToUInt64() : default, /*for backwards compatibility*/
-						#pragma warning restore 612
-						CheckpointAfterMs = (int)settings.CheckPointAfter.TotalMilliseconds,
-						ExtraStatistics = settings.ExtraStatistics,
-						MessageTimeoutMs = (int)settings.MessageTimeout.TotalMilliseconds,
-						ResolveLinks = settings.ResolveLinkTos,
-						HistoryBufferSize = settings.HistoryBufferSize,
-						LiveBufferSize = settings.LiveBufferSize,
-						MaxCheckpointCount = settings.MaxCheckPointCount,
-						MaxRetryCount = settings.MaxRetryCount,
-						MaxSubscriberCount = settings.MaxSubscriberCount,
-						MinCheckpointCount = settings.MinCheckPointCount,
-						NamedConsumerStrategy = NamedConsumerStrategyToUpdateProto[settings.NamedConsumerStrategy],
-						ReadBatchSize = settings.ReadBatchSize
-					}
-				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			var (channel, serverCapabilities) = await GetCurrentChannelInfo().ConfigureAwait(false);
+
+			if (streamName == SystemStreams.AllStream &&
+			    !serverCapabilities.SupportsPersistentSubscriptionsToAll) {
+				throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
+			}
+
+			var callInvoker = CreateCallInvoker(channel);
+			await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
+				.UpdateAsync(new UpdateReq {
+						Options = new UpdateReq.Types.Options {
+							GroupName = groupName,
+							Stream = streamName != SystemStreams.AllStream
+								? StreamOptionsForUpdateProto(streamName,
+									(StreamPosition)(settings.StartFrom ?? StreamPosition.End))
+								: null,
+							All = streamName == SystemStreams.AllStream
+								? AllOptionsForUpdateProto((Position)(settings.StartFrom ?? Position.End))
+								: null,
+#pragma warning disable 612
+							StreamIdentifier =
+								streamName != SystemStreams.AllStream
+									? streamName
+									: string.Empty, /*for backwards compatibility*/
+#pragma warning restore 612
+							Settings = new UpdateReq.Types.Settings {
+#pragma warning disable 612
+								Revision = streamName != SystemStreams.AllStream
+									? ((StreamPosition)(settings.StartFrom ?? StreamPosition.End)).ToUInt64()
+									: default, /*for backwards compatibility*/
+#pragma warning restore 612
+								CheckpointAfterMs = (int)settings.CheckPointAfter.TotalMilliseconds,
+								ExtraStatistics = settings.ExtraStatistics,
+								MessageTimeoutMs = (int)settings.MessageTimeout.TotalMilliseconds,
+								ResolveLinks = settings.ResolveLinkTos,
+								HistoryBufferSize = settings.HistoryBufferSize,
+								LiveBufferSize = settings.LiveBufferSize,
+								MaxCheckpointCount = settings.MaxCheckPointCount,
+								MaxRetryCount = settings.MaxRetryCount,
+								MaxSubscriberCount = settings.MaxSubscriberCount,
+								MinCheckpointCount = settings.MinCheckPointCount,
+								NamedConsumerStrategy =
+									NamedConsumerStrategyToUpdateProto[settings.NamedConsumerStrategy],
+								ReadBatchSize = settings.ReadBatchSize
+							}
+						}
+					},
+					EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials,
+						cancellationToken));
 		}
 
 		/// <summary>
