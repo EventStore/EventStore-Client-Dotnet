@@ -47,7 +47,9 @@ namespace EventStore.Client {
 				.WriteTo.Observers(observable => observable.Subscribe(LogEventSubject.OnNext))
 				.WriteTo.Seq("http://localhost:5341/", period: TimeSpan.FromMilliseconds(1));
 			Log.Logger = loggerConfiguration.CreateLogger();
-
+#if GRPC_CORE
+			GrpcEnvironment.SetLogger(new GrpcCoreSerilogLogger(Log.Logger.ForContext<GrpcCoreSerilogLogger>()));
+#endif
 			AppDomain.CurrentDomain.DomainUnload += (_, e) => Log.CloseAndFlush();
 		}
 
