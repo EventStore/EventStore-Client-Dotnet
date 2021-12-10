@@ -27,33 +27,46 @@ namespace EventStore.Client {
 		/// </summary>
 		public string SubscriptionId { get; }
 
-		internal static async Task<PersistentSubscription> Confirm(AsyncDuplexStreamingCall<ReadReq, ReadResp> call,
+		internal static async Task<PersistentSubscription> Confirm(
+			ChannelBase channel, CallInvoker callInvoker, EventStoreClientSettings settings,
+			EventStoreClientOperationOptions operationOptions, UserCredentials? userCredentials,
 			ReadReq.Types.Options options, bool autoAck, ILogger log,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped,
 			CancellationToken cancellationToken = default) {
+			var cts =
+#if GRPC_CORE
+					CancellationTokenSource.CreateLinkedTokenSource(((Channel) channel).ShutdownToken)
+#else
+					new CancellationTokenSource()
+#endif
+				;
+			var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
+				.Read(EventStoreCallOptions.Create(settings, operationOptions, userCredentials, cts.Token));
+
 			await call.RequestStream.WriteAsync(new ReadReq {
 				Options = options
 			}).ConfigureAwait(false);
 
-			if (!await call.ResponseStream.MoveNext(cancellationToken).ConfigureAwait(false) ||
-			    call.ResponseStream.Current.ContentCase != ReadResp.ContentOneofCase.SubscriptionConfirmation) {
-				throw new InvalidOperationException();
-			}
+			if (await call.ResponseStream.MoveNext(cancellationToken).ConfigureAwait(false) &&
+			    call.ResponseStream.Current.ContentCase == ReadResp.ContentOneofCase.SubscriptionConfirmation)
+				return new PersistentSubscription(call, autoAck, log, eventAppeared, subscriptionDropped, cts);
 
-			return new PersistentSubscription(call, autoAck, log, eventAppeared, subscriptionDropped);
+			cts.Dispose();
+			throw new InvalidOperationException("Subscription could not be confirmed.");
 		}
 
 		private PersistentSubscription(
 			AsyncDuplexStreamingCall<ReadReq, ReadResp> call,
 			bool autoAck, ILogger log,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped) {
+			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped,
+			CancellationTokenSource disposed) {
 			_call = call;
 			_autoAck = autoAck;
 			_eventAppeared = eventAppeared;
 			_subscriptionDropped = subscriptionDropped;
-			_disposed = new CancellationTokenSource();
+			_disposed = disposed;
 			_log = log;
 			SubscriptionId = call.ResponseStream.Current.SubscriptionConfirmation.SubscriptionId;
 			Task.Run(Subscribe);
@@ -132,10 +145,12 @@ namespace EventStore.Client {
 			_log.LogDebug("Persistent Subscription {subscriptionId} confirmed.", SubscriptionId);
 			using var _ = _disposed;
 			try {
-				await foreach (var response in _call.ResponseStream.ReadAllAsync(_disposed.Token).ConfigureAwait(false)) {
+				await foreach (var response in
+				               _call.ResponseStream.ReadAllAsync(_disposed.Token).ConfigureAwait(false)) {
 					if (response.ContentCase != ReadResp.ContentOneofCase.Event) {
 						continue;
 					}
+
 					try {
 						var resolvedEvent = ConvertToResolvedEvent(response);
 						_log.LogTrace(
@@ -161,6 +176,7 @@ namespace EventStore.Client {
 						if (_subscriptionDroppedInvoked != 0) {
 							return;
 						}
+
 						_log.LogWarning(ex,
 							"Persistent Subscription {subscriptionId} was dropped because cancellation was requested by another caller.",
 							SubscriptionId);
@@ -212,9 +228,12 @@ namespace EventStore.Client {
 				return;
 			}
 
-			_subscriptionDropped.Invoke(this, reason, ex);
-			_call.Dispose();
-			_disposed.Dispose();
+			try {
+				_subscriptionDropped.Invoke(this, reason, ex);
+			} finally {
+				_call.Dispose();
+				_disposed.Dispose();
+			}
 		}
 
 		private Task AckInternal(params Uuid[] ids) =>

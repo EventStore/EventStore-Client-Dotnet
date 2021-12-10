@@ -39,11 +39,13 @@ namespace EventStore.Client {
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public Task<ProjectionDetails> GetStatusAsync(string name, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) =>
-			ListInternalAsync(new StatisticsReq.Types.Options {
+		public async Task<ProjectionDetails?> GetStatusAsync(string name, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
+			var result = await ListInternalAsync(new StatisticsReq.Types.Options {
 				Name = name
-			}, userCredentials, cancellationToken).FirstOrDefaultAsync(cancellationToken).AsTask()!;
+			}, userCredentials, cancellationToken).ToArrayAsync(cancellationToken).ConfigureAwait(false);
+			return result.FirstOrDefault();
+		}
 
 		private async IAsyncEnumerable<ProjectionDetails> ListInternalAsync(StatisticsReq.Types.Options options,
 			UserCredentials? userCredentials,

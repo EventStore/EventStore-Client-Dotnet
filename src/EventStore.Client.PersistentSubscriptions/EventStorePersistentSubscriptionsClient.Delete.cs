@@ -34,10 +34,12 @@ namespace EventStore.Client {
 				deleteOptions.StreamIdentifier = streamName;
 			}
 
-			await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
+			using var call =
+				new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
 				.DeleteAsync(new DeleteReq {Options = deleteOptions},
 					EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials,
 						cancellationToken));
+			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
 		/// <summary>

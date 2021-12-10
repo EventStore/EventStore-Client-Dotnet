@@ -82,9 +82,10 @@ namespace EventStore.Client {
 			_log.LogDebug("Tombstoning stream {streamName}.", request.Options.StreamIdentifier);
 
 			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
-			var result = await new Streams.Streams.StreamsClient(
+			using var call = new Streams.Streams.StreamsClient(
 				CreateCallInvoker(channel)).TombstoneAsync(request,
 				EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken));
+			var result = await call.ResponseAsync.ConfigureAwait(false);
 
 			return new DeleteResult(new Position(result.Position.CommitPosition, result.Position.PreparePosition));
 		}

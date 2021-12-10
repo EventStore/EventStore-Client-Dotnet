@@ -59,11 +59,8 @@ namespace EventStore.Client {
 			    !serverCapabilities.SupportsPersistentSubscriptionsToAll) {
 				throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
 			}
-
 			var callInvoker = CreateCallInvoker(channel);
 
-			var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
-				.Read(EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken));
 
 			var readOptions = new ReadReq.Types.Options {
 				BufferSize = bufferSize,
@@ -77,7 +74,8 @@ namespace EventStore.Client {
 				readOptions.StreamIdentifier = streamName;
 			}
 
-			return await PersistentSubscription.Confirm(call, readOptions, autoAck, _log, eventAppeared,
+			return await PersistentSubscription.Confirm(channel, callInvoker, Settings, 
+				operationOptions, userCredentials, readOptions, autoAck, _log, eventAppeared,
 				subscriptionDropped ?? delegate { }, cancellationToken).ConfigureAwait(false);
 		}
 

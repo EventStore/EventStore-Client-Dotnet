@@ -29,7 +29,7 @@ namespace EventStore.Client {
 			}
 
 			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
-			var result = await new Operations.Operations.OperationsClient(
+			using var call = new Operations.Operations.OperationsClient(
 				CreateCallInvoker(channel)).StartScavengeAsync(
 				new StartScavengeReq {
 					Options = new StartScavengeReq.Types.Options {
@@ -39,6 +39,7 @@ namespace EventStore.Client {
 				},
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials,
 					cancellationToken));
+			var result = await call.ResponseAsync.ConfigureAwait(false);
 
 			return result.ScavengeResult switch {
 				ScavengeResp.Types.ScavengeResult.Started => DatabaseScavengeResult.Started(result.ScavengeId),

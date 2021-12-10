@@ -30,14 +30,13 @@ namespace EventStore.Client {
 			ILogger log,
 			Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached = null,
 			CancellationToken cancellationToken = default) {
-			var enumerator = read.GetAsyncEnumerator(cancellationToken);
-			if (!await enumerator.MoveNextAsync(cancellationToken).ConfigureAwait(false) ||
-			    enumerator.Current.confirmation == SubscriptionConfirmation.None) {
-				throw new InvalidOperationException();
-			}
 
-			return new StreamSubscription(enumerator, eventAppeared, subscriptionDropped, log,
-				checkpointReached, cancellationToken);
+			var enumerator = read.GetAsyncEnumerator(cancellationToken);
+			if (await enumerator.MoveNextAsync(cancellationToken).ConfigureAwait(false) &&
+			    enumerator.Current.confirmation != SubscriptionConfirmation.None)
+				return new StreamSubscription(enumerator, eventAppeared, subscriptionDropped, log,
+					checkpointReached, cancellationToken);
+			throw new InvalidOperationException($"Subscription to {enumerator} could not be confirmed.");
 		}
 
 		private StreamSubscription(
@@ -109,8 +108,11 @@ namespace EventStore.Client {
 				return;
 			}
 
-			_subscriptionDropped?.Invoke(this, reason, ex);
-			_disposed.Dispose();
+			try {
+				_subscriptionDropped?.Invoke(this, reason, ex);
+			} finally {
+				_disposed.Dispose();
+			}
 		}
 
 		private class Enumerable : IAsyncEnumerable<ResolvedEvent> {

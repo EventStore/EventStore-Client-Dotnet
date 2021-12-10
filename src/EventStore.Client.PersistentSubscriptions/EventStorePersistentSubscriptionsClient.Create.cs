@@ -179,7 +179,7 @@ namespace EventStore.Client {
 
 			var callInvoker = CreateCallInvoker(channel);
 
-			await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
+			using var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
 				callInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					Stream = streamName != SystemStreams.AllStream
@@ -217,6 +217,7 @@ namespace EventStore.Client {
 					}
 				}
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
 		/// <summary>

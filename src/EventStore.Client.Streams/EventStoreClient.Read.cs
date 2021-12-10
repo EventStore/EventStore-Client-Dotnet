@@ -381,14 +381,22 @@ namespace EventStore.Client {
 			request.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()};
 
 			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
+
+			var cts =
+#if GRPC_CORE
+					CancellationTokenSource.CreateLinkedTokenSource(((Grpc.Core.Channel)channel).ShutdownToken)
+#else
+					new CancellationTokenSource()
+#endif
+				;
 			using var call = new Streams.Streams.StreamsClient(
 				CreateCallInvoker(channel)).Read(request,
-				EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken));
+				EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cts.Token));
 
 			await foreach (var e in call.ResponseStream
-				.ReadAllAsync(cancellationToken)
+				.ReadAllAsync(cts.Token)
 				.Select(ConvertToItem)
-				.WithCancellation(cancellationToken)
+				.WithCancellation(cts.Token)
 				.ConfigureAwait(false)) {
 				if (e.HasValue) {
 					yield return e.Value;

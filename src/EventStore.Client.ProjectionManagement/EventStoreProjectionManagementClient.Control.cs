@@ -88,9 +88,10 @@ namespace EventStore.Client {
 		public async Task RestartSubsystemAsync(UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
-			await new Projections.Projections.ProjectionsClient(
+			using var call = new Projections.Projections.ProjectionsClient(
 				CreateCallInvoker(channel)).RestartSubsystemAsync(new Empty(),
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			await call.ResponseAsync.ConfigureAwait(false);
 		}
 	}
 }
