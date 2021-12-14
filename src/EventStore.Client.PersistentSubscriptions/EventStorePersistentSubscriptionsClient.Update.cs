@@ -95,14 +95,15 @@ namespace EventStore.Client {
 					$"{nameof(settings.StartFrom)} must be of type '{nameof(Position)}' when subscribing to {SystemStreams.AllStream}");
 			}
 
-			var (channel, serverCapabilities) = await GetCurrentChannelInfo().ConfigureAwait(false);
+			var channelInfo = await GetCurrentChannelInfo().ConfigureAwait(false);
+			var serverCapabilities = await GetServerCapabilities(channelInfo, cancellationToken).ConfigureAwait(false);
 
 			if (streamName == SystemStreams.AllStream &&
 			    !serverCapabilities.SupportsPersistentSubscriptionsToAll) {
 				throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
 			}
 
-			var callInvoker = CreateCallInvoker(channel);
+			var callInvoker = CreateCallInvoker(channelInfo.Channel);
 			using var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
 				.UpdateAsync(new UpdateReq {
 						Options = new UpdateReq.Types.Options {

@@ -4,10 +4,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 
+#nullable enable
 namespace EventStore.Client {
 	internal interface IChannelSelector : IAsyncDisposable {
-		Task<ChannelInfo> SelectChannel(CancellationToken cancellationToken);
-		void SetEndPoint(EndPoint leader);
-		void Rediscover();
+		ValueTask<ChannelInfo> SelectChannel(CancellationToken cancellationToken);
+		void Rediscover(DnsEndPoint? leader);
 	}
 }

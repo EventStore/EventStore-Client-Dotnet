@@ -4,30 +4,23 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 
+#nullable enable
 namespace EventStore.Client {
 	internal class SingleNodeChannelSelector : IChannelSelector {
 		private readonly ChannelBase _channel;
-		private readonly Lazy<Task<ServerCapabilities>> _serverCapabilitiesLazy;
-		private Task<ServerCapabilities> ServerCapabilities => _serverCapabilitiesLazy.Value;
+		private readonly ChannelInfo _channelInfo;
 
-		public SingleNodeChannelSelector(EventStoreClientSettings settings,
-			IServerCapabilitiesClient serverCapabilities,
-			CancellationToken cancellationToken) {
+		public SingleNodeChannelSelector(EventStoreClientSettings settings) {
 			_channel = ChannelFactory.CreateChannel(settings, settings.ConnectivitySettings.Address);
-			_serverCapabilitiesLazy =
-				new Lazy<Task<ServerCapabilities>>(async () => await serverCapabilities.GetAsync(_channel,
-					cancellationToken).ConfigureAwait(false), LazyThreadSafetyMode.PublicationOnly);
+			_channelInfo = new ChannelInfo(_channel, new DnsEndPoint(settings.ConnectivitySettings.Address.Host,
+					settings.ConnectivitySettings.Address.Port));
 		}
 
 		public ValueTask DisposeAsync() => _channel.DisposeAsync();
 
-		public async Task<ChannelInfo> SelectChannel(CancellationToken cancellationToken) =>
-			new(_channel, await ServerCapabilities.ConfigureAwait(false));
+		public ValueTask<ChannelInfo> SelectChannel(CancellationToken cancellationToken) => new(_channelInfo);
 
-		public void SetEndPoint(EndPoint leader) {
-		}
-
-		public void Rediscover() {
+		public void Rediscover(DnsEndPoint? leader) {
 		}
 	}
 }

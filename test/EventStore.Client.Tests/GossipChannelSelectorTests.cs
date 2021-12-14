@@ -50,8 +50,7 @@ namespace EventStore.Client {
 		[Theory, MemberData(nameof(InvalidStatesCases))]
 		internal async Task InvalidStatesAreNotConsidered(ClusterMessages.ClusterInfo clusterInfo,
 			EventStoreClientSettings settings, DnsEndPoint allowedNode) {
-			await using var sut = new GossipChannelSelector(settings, new FakeGossipClient(clusterInfo),
-				new FakeServerCapabilitiesClient());
+			await using var sut = new GossipChannelSelector(settings, new FakeGossipClient(clusterInfo));
 
 			var (channel, _) = await sut.SelectChannel();
 			Assert.Equal($"{allowedNode.Host}:{allowedNode.Port}", channel.Target);
@@ -77,8 +76,7 @@ namespace EventStore.Client {
 						new ClusterMessages.MemberInfo[] {
 							new(allowedNodeId, ClusterMessages.VNodeState.Follower, true, allowedNode),
 							new(notAllowedNodeId, ClusterMessages.VNodeState.Leader, false, notAllowedNode),
-						})),
-				new FakeServerCapabilitiesClient());
+						})));
 
 			var (channel, _) = await sut.SelectChannel();
 			Assert.Equal($"{allowedNode.Host}:{allowedNode.Port}", channel.Target);
@@ -104,13 +102,12 @@ namespace EventStore.Client {
 						new ClusterMessages.MemberInfo[] {
 							new(firstId, ClusterMessages.VNodeState.Leader, true, firstSelection),
 							new(secondId, ClusterMessages.VNodeState.Follower, true, secondSelection),
-						})),
-				new FakeServerCapabilitiesClient());
+						})));
 
 			var (channel, _) = await sut.SelectChannel();
 			Assert.Equal($"{firstSelection.Host}:{firstSelection.Port}", channel.Target);
 
-			sut.SetEndPoint(secondSelection);
+			sut.Rediscover(secondSelection);
 
 			(channel, _) = await sut.SelectChannel();
 			Assert.Equal($"{secondSelection.Host}:{secondSelection.Port}", channel.Target);
@@ -124,9 +121,10 @@ namespace EventStore.Client {
 					Insecure = true,
 					MaxDiscoverAttempts = 3
 				}
-			}, new BadGossipClient(), new FakeServerCapabilitiesClient());
+			}, new BadGossipClient());
 
-			var ex = await Assert.ThrowsAsync<DiscoveryException>(() => sut.SelectChannel());
+			var ex = await Assert.ThrowsAsync<DiscoveryException>(async () =>
+				await sut.SelectChannel().ConfigureAwait(false));
 
 			Assert.Equal(3, ex.MaxDiscoverAttempts);
 		}
@@ -150,8 +148,8 @@ namespace EventStore.Client {
 		}
 
 		private class FakeServerCapabilitiesClient : IServerCapabilitiesClient {
-			public ValueTask<ServerCapabilities> GetAsync(ChannelBase channel, CancellationToken cancellationToken) =>
-				new(new ServerCapabilities());
+			public ValueTask<ServerCapabilitiesInfo> GetAsync(ChannelBase channel, CancellationToken cancellationToken) =>
+				new(new ServerCapabilitiesInfo());
 		}
 	}
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Interceptors;
@@ -18,7 +19,9 @@ namespace EventStore.Client {
 	public abstract class EventStoreClientBase : IDisposable, IAsyncDisposable {
 		private readonly IDictionary<string, Func<RpcException, Exception>> _exceptionMap;
 		private readonly IChannelSelector _channelSelector;
+		private readonly IServerCapabilities _serverCapabilities;
 		private readonly CancellationTokenSource _cts;
+
 		private Lazy<Task<ChannelInfo>> _channelInfoLazy;
 
 		/// <summary>
@@ -42,17 +45,21 @@ namespace EventStore.Client {
 			_exceptionMap = exceptionMap;
 			_cts = new CancellationTokenSource();
 			_channelSelector = new ChannelSelector(Settings, _cts.Token);
-			_channelInfoLazy = new Lazy<Task<ChannelInfo>>(() => _channelSelector.SelectChannel(_cts.Token),
-				LazyThreadSafetyMode.PublicationOnly);
+			_serverCapabilities = new ServerCapabilities(new GrpcServerCapabilitiesClient(Settings));
+			_channelInfoLazy = new Lazy<Task<ChannelInfo>>(
+				async () => await _channelSelector.SelectChannel(_cts.Token).ConfigureAwait(false),
+				LazyThreadSafetyMode.ExecutionAndPublication);
 
 			ConnectionName = Settings.ConnectionName ?? $"ES-{Guid.NewGuid()}";
 		}
 
 #pragma warning disable 1591
 		protected Task<ChannelInfo> GetCurrentChannelInfo() => _channelInfoLazy.Value;
-#pragma warning restore 1591
 
-#pragma warning disable 1591
+		protected ValueTask<ServerCapabilitiesInfo> GetServerCapabilities(ChannelInfo channelInfo,
+			CancellationToken cancellationToken) =>
+			_serverCapabilities.GetServerCapabilities(channelInfo, cancellationToken); 
+
 		protected CallInvoker CreateCallInvoker(ChannelBase channel) =>
 			(Settings.Interceptors ?? Array.Empty<Interceptor>()).Aggregate(
 				channel.CreateCallInvoker()
@@ -60,9 +67,13 @@ namespace EventStore.Client {
 					.Intercept(new ConnectionNameInterceptor(ConnectionName))
 					.Intercept(new ReportLeaderInterceptor(endPoint => {
 						_channelInfoLazy = new Lazy<Task<ChannelInfo>>(
-							() => _channelSelector.SelectChannel(_cts.Token),
-							LazyThreadSafetyMode.PublicationOnly);
-						_channelSelector.SetEndPoint(endPoint);
+							async () => {
+								_channelSelector.Rediscover(endPoint);
+								var info = await _channelSelector.SelectChannel(_cts.Token).ConfigureAwait(false);
+								_serverCapabilities.Reset(info);
+								return info;
+							},
+							LazyThreadSafetyMode.ExecutionAndPublication);
 					})),
 				(invoker, interceptor) => invoker.Intercept(interceptor));
 #pragma warning restore 1591

@@ -34,10 +34,11 @@ namespace EventStore.Client {
 			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedRevision);
 
 			var channelInfo = await GetCurrentChannelInfo().ConfigureAwait(false);
+			var serverCapabilities = await GetServerCapabilities(channelInfo, cancellationToken).ConfigureAwait(false); 
 
 			var task =
 #if NET5_0_OR_GREATER
-				userCredentials == null && channelInfo.ServerCapabilities.SupportsBatchAppend
+				userCredentials == null && serverCapabilities.SupportsBatchAppend
 					? _streamAppender.Append(streamName, expectedRevision, eventData, options.TimeoutAfter,
 						cancellationToken)
 					:
@@ -75,10 +76,11 @@ namespace EventStore.Client {
 			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedState);
 
 			var channelInfo = await GetCurrentChannelInfo().ConfigureAwait(false);
+			var serverCapabilities = await GetServerCapabilities(channelInfo, cancellationToken).ConfigureAwait(false);
 
 			var task =
 #if NET5_0_OR_GREATER
-				userCredentials == null && channelInfo.ServerCapabilities.SupportsBatchAppend
+				userCredentials == null && serverCapabilities.SupportsBatchAppend
 					? _streamAppender.Append(streamName, expectedState, eventData, operationOptions.TimeoutAfter,
 						cancellationToken)
 					:

@@ -5,15 +5,16 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
+#nullable enable
 namespace EventStore.Client.Interceptors {
 	internal class ReportLeaderInterceptor : Interceptor {
-		private readonly Action<EndPoint> _reportNewLeader;
+		private readonly Action<DnsEndPoint?> _rediscover;
 
 		private const TaskContinuationOptions ContinuationOptions =
 			TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted;
 
-		public ReportLeaderInterceptor(Action<EndPoint> reportNewLeader) {
-			_reportNewLeader = reportNewLeader;
+		public ReportLeaderInterceptor(Action<DnsEndPoint?> rediscover) {
+			_rediscover = rediscover;
 		}
 
 		public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request,
@@ -59,8 +60,11 @@ namespace EventStore.Client.Interceptors {
 		}
 
 		private void ReportNewLeader<TResponse>(Task<TResponse> task) {
-			if (task.Exception!.InnerException is NotLeaderException ex) {
-				_reportNewLeader(ex.LeaderEndpoint);
+			if (task.Exception?.InnerException is NotLeaderException ex) {
+				_rediscover(ex.LeaderEndpoint);
+			} else if (task.Exception?.InnerException?.InnerException is RpcException rpcException &&
+			           rpcException.StatusCode == StatusCode.Unavailable) {
+				_rediscover(null);
 			}
 		}
 

@@ -13,7 +13,7 @@ using Xunit;
 namespace EventStore.Client {
 	public class GrpcServerCapabilitiesClientTests {
 		public static IEnumerable<object[]> ExpectedResultsCases() {
-			yield return new object[] {new SupportedMethods(), new ServerCapabilities()};
+			yield return new object[] {new SupportedMethods(), new ServerCapabilitiesInfo()};
 			yield return new object[] {
 				new SupportedMethods {
 					Methods = {
@@ -23,7 +23,7 @@ namespace EventStore.Client {
 						}
 					}
 				},
-				new ServerCapabilities(SupportsBatchAppend: true)
+				new ServerCapabilitiesInfo(SupportsBatchAppend: true)
 			};
 			yield return new object[] {
 				new SupportedMethods {
@@ -35,7 +35,7 @@ namespace EventStore.Client {
 						}
 					}
 				},
-				new ServerCapabilities(SupportsPersistentSubscriptionsToAll: true)
+				new ServerCapabilitiesInfo(SupportsPersistentSubscriptionsToAll: true)
 			};
 			yield return new object[] {
 				new SupportedMethods {
@@ -46,13 +46,13 @@ namespace EventStore.Client {
 						}
 					}
 				},
-				new ServerCapabilities()
+				new ServerCapabilitiesInfo()
 			};
 		}
 
 		[Theory, MemberData(nameof(ExpectedResultsCases))]
 		internal async Task GetAsyncReturnsExpectedResults(SupportedMethods supportedMethods,
-			ServerCapabilities expected) {
+			ServerCapabilitiesInfo expected) {
 			using var kestrel = new TestServer(new WebHostBuilder()
 				.ConfigureServices(services => services
 					.AddRouting()

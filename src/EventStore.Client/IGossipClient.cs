@@ -9,6 +9,6 @@ namespace EventStore.Client {
 	}
 
 	internal interface IServerCapabilitiesClient {
-		public ValueTask<ServerCapabilities> GetAsync(ChannelBase channel, CancellationToken cancellationToken);
+		public ValueTask<ServerCapabilitiesInfo> GetAsync(ChannelBase channel, CancellationToken cancellationToken);
 	}
 }

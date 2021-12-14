@@ -10,7 +10,7 @@ namespace EventStore.Client {
 			_settings = settings;
 		}
 
-		public async ValueTask<ServerCapabilities> GetAsync(ChannelBase channel,
+		public async ValueTask<ServerCapabilitiesInfo> GetAsync(ChannelBase channel,
 			CancellationToken cancellationToken = default) {
 			var client = new ServerFeatures.ServerFeatures.ServerFeaturesClient(channel);
 			using var call = client.GetSupportedMethodsAsync(new(), EventStoreCallOptions.Create(
