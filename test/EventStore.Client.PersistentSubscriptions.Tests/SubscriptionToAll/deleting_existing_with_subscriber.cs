@@ -26,7 +26,7 @@ namespace EventStore.Client.SubscriptionToAll {
 					new PersistentSubscriptionSettings(),
 					TestCredentials.Root);
 				_subscription = await Client.SubscribeToAllAsync("groupname123",
-					(s, e, i, ct) => Task.CompletedTask,
+					async (s, e, i, ct) => await s.Ack(e),
 					(s, r, e) => _dropped.TrySetResult((r, e)), TestCredentials.Root);
 				// todo: investigate why this test is flaky without this delay
 				await Task.Delay(500);

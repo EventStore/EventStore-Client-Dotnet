@@ -46,9 +46,9 @@ namespace EventStore.Client.SubscriptionToAll {
 
 			protected override async Task When() {
 				_subscription = await Client.SubscribeToAllAsync(Group,
-					(subscription, e, r, ct) => {
+					async (subscription, e, r, ct) => {
 						_firstEventSource.TrySetResult(e);
-						return Task.CompletedTask;
+						await subscription.Ack(e);
 					}, (subscription, reason, ex) => {
 						if (reason != SubscriptionDroppedReason.Disposed) {
 							_firstEventSource.TrySetException(ex!);

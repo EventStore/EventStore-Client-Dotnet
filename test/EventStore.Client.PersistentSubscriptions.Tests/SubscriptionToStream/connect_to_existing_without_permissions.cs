@@ -11,7 +11,7 @@ namespace EventStore.Client.SubscriptionToStream {
 		[Fact]
 		public Task throws_access_denied() =>
 			Assert.ThrowsAsync<AccessDeniedException>(async () => {
-				using var _ = await _fixture.Client.SubscribeAsync(Stream, "agroupname55",
+				using var _ = await _fixture.Client.SubscribeToStreamAsync(Stream, "agroupname55",
 					delegate { return Task.CompletedTask; });
 			}).WithTimeout();
 

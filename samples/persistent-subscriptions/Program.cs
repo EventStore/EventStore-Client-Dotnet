@@ -37,11 +37,12 @@ namespace persistent_subscriptions
 	    static async Task ConnectToPersistentSubscriptionToStream(EventStorePersistentSubscriptionsClient client) {
 		    #region subscribe-to-persistent-subscription-to-stream
 
-		    var subscription = await client.SubscribeAsync(
+		    var subscription = await client.SubscribeToStreamAsync(
 			    "test-stream",
 			    "subscription-group",
 			    async (subscription, evnt, retryCount, cancellationToken) => {
 				    await HandleEvent(evnt);
+				    await subscription.Ack(evnt);
 			    }, (subscription, dropReason, exception) => {
 				    Console.WriteLine($"Subscription was dropped due to {dropReason}. {exception}");
 			    });
@@ -82,7 +83,7 @@ namespace persistent_subscriptions
 	    static async Task ConnectToPersistentSubscriptionWithManualAcks(EventStorePersistentSubscriptionsClient client) {
 		    #region subscribe-to-persistent-subscription-with-manual-acks
 
-		    var subscription = await client.SubscribeAsync(
+		    var subscription = await client.SubscribeToStreamAsync(
 			    "test-stream",
 			    "subscription-group",
 			    async (subscription, evnt, retryCount, cancellationToken) => {
@@ -94,7 +95,7 @@ namespace persistent_subscriptions
 				    }
 			    }, (subscription, dropReason, exception) => {
 				    Console.WriteLine($"Subscription was dropped due to {dropReason}. {exception}");
-			    }, autoAck: false);
+			    });
 
 		    #endregion subscribe-to-persistent-subscription-with-manual-acks
 	    }

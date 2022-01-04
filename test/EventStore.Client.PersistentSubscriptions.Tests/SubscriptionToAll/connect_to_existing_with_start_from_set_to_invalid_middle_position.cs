@@ -42,7 +42,7 @@ namespace EventStore.Client.SubscriptionToAll {
 
 			protected override async Task When() {
 				_subscription = await Client.SubscribeToAllAsync(Group,
-					(subscription, e, r, ct) => Task.CompletedTask,
+					async (subscription, e, r, ct) => await subscription.Ack(e),
 					(subscription, reason, ex) => {
 						_dropped.TrySetResult((reason, ex));
 					}, TestCredentials.Root);

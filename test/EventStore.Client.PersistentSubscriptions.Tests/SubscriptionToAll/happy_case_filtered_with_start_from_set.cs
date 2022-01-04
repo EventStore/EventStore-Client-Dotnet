@@ -42,12 +42,12 @@ namespace EventStore.Client.SubscriptionToAll {
 				TestCredentials.Root);
 			
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(filterName,
-				eventAppeared: (s, e, r, ct) => {
+				eventAppeared: async (s, e, r, ct) => {
 					appearedEvents.Add(e.Event);
 					if (appearedEvents.Count >=  eventsToCapture.Length) {
 						appeared.TrySetResult(true);
 					}
-					return Task.CompletedTask;
+					await s.Ack(e);
 				},
 				userCredentials: TestCredentials.Root)
 				.WithTimeout();

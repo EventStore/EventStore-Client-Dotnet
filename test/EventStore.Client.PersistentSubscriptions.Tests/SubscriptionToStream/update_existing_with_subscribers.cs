@@ -35,7 +35,7 @@ namespace EventStore.Client.SubscriptionToStream {
 				await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, CreateTestEvents());
 				await Client.CreateAsync(Stream, Group, new PersistentSubscriptionSettings(),
 					TestCredentials.Root);
-				_subscription = await Client.SubscribeAsync(Stream, Group,
+				_subscription = await Client.SubscribeToStreamAsync(Stream, Group,
 					delegate { return Task.CompletedTask; },
 					(subscription, reason, ex) => _droppedSource.TrySetResult((reason, ex)), TestCredentials.Root);
 			}
