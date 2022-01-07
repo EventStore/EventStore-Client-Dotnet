@@ -16,7 +16,7 @@ namespace EventStore.Client.SubscriptionToStream {
 		[Fact]
 		public async Task throws_persistent_subscription_not_found() {
 			var ex = await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(async () => {
-				using var _ = await _fixture.Client.SubscribeAsync(
+				using var _ = await _fixture.Client.SubscribeToStreamAsync(
 					Stream,
 					Group,
 					delegate {

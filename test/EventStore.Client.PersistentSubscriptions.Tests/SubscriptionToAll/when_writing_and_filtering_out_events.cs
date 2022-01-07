@@ -73,12 +73,12 @@ namespace EventStore.Client.SubscriptionToAll {
 					userCredentials: TestCredentials.Root);
 				
 				_subscription = await Client.SubscribeToAllAsync(Group,
-					eventAppeared: (s, e, r, ct) => {
+					eventAppeared: async (s, e, r, ct) => {
 						_appearedEvents.Add(e);
 
 						if (_appearedEvents.Count == _events.Length)
 							_appeared.TrySetResult(true);
-						return Task.CompletedTask;
+						await s.Ack(e);
 					},
 					userCredentials: TestCredentials.Root);
 

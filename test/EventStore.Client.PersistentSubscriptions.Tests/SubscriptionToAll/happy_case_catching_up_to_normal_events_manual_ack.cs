@@ -57,7 +57,6 @@ namespace EventStore.Client.SubscriptionToAll {
 							_eventsReceived.TrySetException(e);
 						}
 					},
-					autoAck: false,
 					bufferSize: BufferCount,
 					userCredentials: TestCredentials.Root);
 			}

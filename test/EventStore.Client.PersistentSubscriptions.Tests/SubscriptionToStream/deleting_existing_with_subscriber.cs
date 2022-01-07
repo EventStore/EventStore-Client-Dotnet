@@ -25,7 +25,7 @@ namespace EventStore.Client.SubscriptionToStream {
 				await Client.CreateAsync(Stream, "groupname123",
 					new PersistentSubscriptionSettings(),
 					TestCredentials.Root);
-				_subscription = await Client.SubscribeAsync(Stream, "groupname123",
+				_subscription = await Client.SubscribeToStreamAsync(Stream, "groupname123",
 					(s, e, i, ct) => Task.CompletedTask,
 					(s, r, e) => _dropped.TrySetResult((r, e)), TestCredentials.Root);
 			}

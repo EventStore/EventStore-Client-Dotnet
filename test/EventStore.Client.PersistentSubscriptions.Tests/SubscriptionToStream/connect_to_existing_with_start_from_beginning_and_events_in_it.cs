@@ -43,10 +43,10 @@ namespace EventStore.Client.SubscriptionToStream {
 			}
 
 			protected override async Task When() {
-				_subscription = await Client.SubscribeAsync(Stream, Group,
-					(subscription, e, r, ct) => {
+				_subscription = await Client.SubscribeToStreamAsync(Stream, Group,
+					async (subscription, e, r, ct) => {
 						_firstEventSource.TrySetResult(e);
-						return Task.CompletedTask;
+						await subscription.Ack(e);
 					}, (subscription, reason, ex) => {
 						if (reason != SubscriptionDroppedReason.Disposed) {
 							_firstEventSource.TrySetException(ex!);

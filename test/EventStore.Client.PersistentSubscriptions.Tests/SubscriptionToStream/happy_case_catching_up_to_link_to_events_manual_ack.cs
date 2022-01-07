@@ -48,7 +48,7 @@ namespace EventStore.Client.SubscriptionToStream {
 				await Client.CreateAsync(Stream, Group,
 					new PersistentSubscriptionSettings(startFrom: StreamPosition.Start, resolveLinkTos: true),
 					TestCredentials.Root);
-				_subscription = await Client.SubscribeAsync(Stream, Group,
+				_subscription = await Client.SubscribeToStreamAsync(Stream, Group,
 					async (subscription, e, retryCount, ct) => {
 						await subscription.Ack(e);
 
@@ -60,7 +60,6 @@ namespace EventStore.Client.SubscriptionToStream {
 							_eventsReceived.TrySetException(e);
 						}
 					},
-					autoAck: false,
 					bufferSize: BufferCount,
 					userCredentials: TestCredentials.Root);
 			}

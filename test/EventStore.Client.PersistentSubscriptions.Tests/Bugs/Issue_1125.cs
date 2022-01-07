@@ -46,7 +46,7 @@ namespace EventStore.Client.Bugs {
 					resolveLinkTos: true, startFrom: StreamPosition.Start, readBatchSize: 10, historyBufferSize: 20),
 				userCredentials: userCredentials);
 
-			using (await _fixture.Client.SubscribeAsync(streamName, subscriptionName,
+			using (await _fixture.Client.SubscribeToStreamAsync(streamName, subscriptionName,
 				async (subscription, @event, retryCount, arg4) => {
 					int result;
 					if (retryCount == 0 || retryCount is null) {
@@ -66,7 +66,7 @@ namespace EventStore.Client.Bugs {
 						completed.TrySetException(e);
 					else
 						completed.TrySetException(new Exception($"{dr}"));
-				}, userCredentials, autoAck: false)) {
+				}, userCredentials)) {
 				for (var i = 0; i < eventCount; i++) {
 					await _fixture.StreamsClient.AppendToStreamAsync(streamName, StreamState.Any,
 						_fixture.CreateTestEvents());

@@ -14,12 +14,12 @@ namespace EventStore.Client.SubscriptionToStream {
 
 		[Fact]
 		public async Task the_second_subscription_fails_to_connect() {
-			using var first = await _fixture.Client.SubscribeAsync(Stream, Group,
+			using var first = await _fixture.Client.SubscribeToStreamAsync(Stream, Group,
 				delegate { return Task.CompletedTask; },
 				userCredentials: TestCredentials.Root).WithTimeout();
 
 			var ex = await Assert.ThrowsAsync<MaximumSubscribersReachedException>(async () => {
-				using var _ = await _fixture.Client.SubscribeAsync(Stream, Group,
+				using var _ = await _fixture.Client.SubscribeToStreamAsync(Stream, Group,
 					delegate { return Task.CompletedTask; },
 					userCredentials: TestCredentials.Root);
 			}).WithTimeout();

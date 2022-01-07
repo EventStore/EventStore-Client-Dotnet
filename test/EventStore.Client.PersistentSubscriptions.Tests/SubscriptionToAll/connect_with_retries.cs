@@ -39,7 +39,7 @@ namespace EventStore.Client.SubscriptionToAll {
 							await subscription.Nack(PersistentSubscriptionNakEventAction.Retry,
 								"Not yet tried enough times", e);
 						}
-					}, autoAck: false, subscriptionDropped: (subscription, reason, ex) => {
+					}, subscriptionDropped: (subscription, reason, ex) => {
 						if (reason != SubscriptionDroppedReason.Disposed) {
 							_retryCountSource.TrySetException(ex!);
 						}

@@ -48,12 +48,13 @@ namespace EventStore.Client.SubscriptionToAll {
 
 				await Client.CreateToAllAsync(Group, new PersistentSubscriptionSettings(startFrom: Position.End), TestCredentials.Root);
 				_subscription = await Client.SubscribeToAllAsync(Group,
-					(subscription, e, r, ct) => {
+					async (subscription, e, r, ct) => {
 						if (SystemStreams.IsSystemStream(e.OriginalStreamId)) {
-							return Task.CompletedTask;
+							await subscription.Ack(e);
+							return;
 						}
 						_firstNonSystemEventSource.TrySetResult(e);
-						return Task.CompletedTask;
+						await subscription.Ack(e);
 					}, (subscription, reason, ex) => {
 						if (reason != SubscriptionDroppedReason.Disposed) {
 							_firstNonSystemEventSource.TrySetException(ex!);

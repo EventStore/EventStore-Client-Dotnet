@@ -33,12 +33,12 @@ namespace EventStore.Client.SubscriptionToAll {
 				new PersistentSubscriptionSettings(startFrom: Position.Start), TestCredentials.Root);
 			
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(filterName,
-				eventAppeared: (s, e, r, ct) => {
+				eventAppeared: async (s, e, r, ct) => {
 					appearedEvents.Add(e.Event);
 					if (appearedEvents.Count >=  events.Length) {
 						appeared.TrySetResult(true);
 					}
-					return Task.CompletedTask;
+					await s.Ack(e);
 				},
 				userCredentials: TestCredentials.Root)
 				.WithTimeout();

@@ -12,7 +12,6 @@ namespace EventStore.Client {
 	/// Represents a persistent subscription connection.
 	/// </summary>
 	public class PersistentSubscription : IDisposable {
-		private readonly bool _autoAck;
 		private readonly Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> _eventAppeared;
 		private readonly Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> _subscriptionDropped;
 		private readonly CancellationTokenSource _disposed;
@@ -25,7 +24,7 @@ namespace EventStore.Client {
 		public string SubscriptionId { get; }
 
 		internal static async Task<PersistentSubscription> Confirm(AsyncDuplexStreamingCall<ReadReq, ReadResp> call,
-			ReadReq.Types.Options options, bool autoAck,
+			ReadReq.Types.Options options,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped,
 			CancellationToken cancellationToken = default) {
@@ -38,16 +37,14 @@ namespace EventStore.Client {
 				throw new InvalidOperationException();
 			}
 
-			return new PersistentSubscription(call, autoAck, eventAppeared, subscriptionDropped);
+			return new PersistentSubscription(call, eventAppeared, subscriptionDropped);
 		}
 
 		private PersistentSubscription(
 			AsyncDuplexStreamingCall<ReadReq, ReadResp> call,
-			bool autoAck,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped) {
 			_call = call;
-			_autoAck = autoAck;
 			_eventAppeared = eventAppeared;
 			_subscriptionDropped = subscriptionDropped;
 			_disposed = new CancellationTokenSource();
@@ -146,10 +143,6 @@ namespace EventStore.Client {
 										ReadResp.Types.ReadEvent.CountOneofCase.RetryCount => current.Event.RetryCount,
 										_ => default
 									}, _disposed.Token).ConfigureAwait(false);
-								if (_autoAck) {
-									await AckInternal(Uuid.FromDto(current.Event.Link?.Id ?? current.Event.Event.Id))
-										.ConfigureAwait(false);
-								}
 							} catch (Exception ex) when (ex is ObjectDisposedException ||
 							                             ex is OperationCanceledException) {
 								SubscriptionDropped(SubscriptionDroppedReason.Disposed);

@@ -56,18 +56,18 @@ namespace EventStore.Client.SubscriptionToStream {
 				var checkPointStream = $"$persistentsubscription-{Stream}::{Group}-checkpoint";
 				await StreamsClient.SubscribeToStreamAsync(checkPointStream,
 					(s, e, ct) => {
-						_checkPointSource.TrySetResult(e);	
+						_checkPointSource.TrySetResult(e);
 						return Task.CompletedTask;
 					},
 					userCredentials: TestCredentials.Root);
 				
-				_firstSubscription = await Client.SubscribeAsync(Stream, Group,
-					eventAppeared: (s, e, r, ct) => {
+				_firstSubscription = await Client.SubscribeToStreamAsync(Stream, Group,
+					eventAppeared: async (s, e, r, ct) => {
 						_appearedEvents.Add(e);
+						await s.Ack(e);
 
 						if (_appearedEvents.Count == _events.Length)
 							_appeared.TrySetResult(true);
-						return Task.CompletedTask;
 					},
 					(subscription, reason, ex) => _droppedSource.TrySetResult((reason, ex)),
 					TestCredentials.Root);
@@ -83,10 +83,10 @@ namespace EventStore.Client.SubscriptionToStream {
 				
 				await _droppedSource.Task.WithTimeout();
 				
-				_secondSubscription = await Client.SubscribeAsync(Stream, Group,
-					eventAppeared: (s, e, r, ct) => {
+				_secondSubscription = await Client.SubscribeToStreamAsync(Stream, Group,
+					eventAppeared: async (s, e, r, ct) => {
 						_resumedSource.TrySetResult(e);
-						return Task.CompletedTask;
+						await s.Ack(e);
 					},
 					userCredentials: TestCredentials.Root);
 				
