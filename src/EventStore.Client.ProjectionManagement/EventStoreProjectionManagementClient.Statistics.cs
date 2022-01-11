@@ -50,9 +50,9 @@ namespace EventStore.Client {
 		private async IAsyncEnumerable<ProjectionDetails> ListInternalAsync(StatisticsReq.Types.Options options,
 			UserCredentials? userCredentials,
 			[EnumeratorCancellation] CancellationToken cancellationToken) {
-			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
-				CreateCallInvoker(channel)).Statistics(new StatisticsReq {
+				channelInfo.CallInvoker).Statistics(new StatisticsReq {
 				Options = options
 			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
 

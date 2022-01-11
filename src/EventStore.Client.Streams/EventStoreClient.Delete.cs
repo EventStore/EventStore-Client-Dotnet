@@ -79,9 +79,9 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
 			_log.LogDebug("Deleting stream {streamName}.", request.Options.StreamIdentifier);
-			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Streams.Streams.StreamsClient(
-				CreateCallInvoker(channel)).DeleteAsync(request,
+				channelInfo.CallInvoker).DeleteAsync(request,
 				EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken));
 			var result = await call.ResponseAsync.ConfigureAwait(false);
 

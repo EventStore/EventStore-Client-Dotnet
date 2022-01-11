@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using EventStore.Client.Gossip;
 
 namespace EventStore.Client {
 	internal static class NodePreferenceComparers {
@@ -34,7 +33,7 @@ namespace EventStore.Client {
 				_ => int.MaxValue
 			});
 
-		public static readonly IComparer<ClusterMessages.VNodeState> Random = new Comparer(_ => 0);
+		public static readonly IComparer<ClusterMessages.VNodeState> None = new Comparer(_ => 0);
 
 		private class Comparer : IComparer<ClusterMessages.VNodeState> {
 			private readonly Func<ClusterMessages.VNodeState, int> _getPriority;

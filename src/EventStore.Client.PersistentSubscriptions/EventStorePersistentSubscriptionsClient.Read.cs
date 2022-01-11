@@ -53,14 +53,12 @@ namespace EventStore.Client {
 			var operationOptions = Settings.OperationOptions.Clone();
 			operationOptions.TimeoutAfter = new TimeSpan?();
 
-			var channelInfo = await GetCurrentChannelInfo().ConfigureAwait(false);
-			var serverCapabilities = await GetServerCapabilities(channelInfo, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 
 			if (streamName == SystemStreams.AllStream &&
-			    !serverCapabilities.SupportsPersistentSubscriptionsToAll) {
+			    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
 				throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
 			}
-			var callInvoker = CreateCallInvoker(channelInfo.Channel);
 
 			var readOptions = new ReadReq.Types.Options {
 				BufferSize = bufferSize,
@@ -74,7 +72,7 @@ namespace EventStore.Client {
 				readOptions.StreamIdentifier = streamName;
 			}
 
-			return await PersistentSubscription.Confirm(channelInfo.Channel, callInvoker, Settings, 
+			return await PersistentSubscription.Confirm(channelInfo.Channel, channelInfo.CallInvoker, Settings, 
 				operationOptions, userCredentials, readOptions, autoAck, _log, eventAppeared,
 				subscriptionDropped ?? delegate { }, cancellationToken).ConfigureAwait(false);
 		}

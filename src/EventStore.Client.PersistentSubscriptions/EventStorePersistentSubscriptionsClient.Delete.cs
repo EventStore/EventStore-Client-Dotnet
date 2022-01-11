@@ -16,15 +16,13 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task DeleteAsync(string streamName, string groupName, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetCurrentChannelInfo().ConfigureAwait(false);
-			var serverCapabilities = await GetServerCapabilities(channelInfo, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 
 			if (streamName == SystemStreams.AllStream &&
-			    !serverCapabilities.SupportsPersistentSubscriptionsToAll) {
+			    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
 				throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
 			}
 
-			var callInvoker = CreateCallInvoker(channelInfo.Channel);
 			var deleteOptions = new DeleteReq.Types.Options {
 				GroupName = groupName
 			};
@@ -36,7 +34,7 @@ namespace EventStore.Client {
 			}
 
 			using var call =
-				new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
+				new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(channelInfo.CallInvoker)
 				.DeleteAsync(new DeleteReq {Options = deleteOptions},
 					EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials,
 						cancellationToken));

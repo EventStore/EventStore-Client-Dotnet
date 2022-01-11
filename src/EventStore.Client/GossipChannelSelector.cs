@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -10,227 +9,92 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 #nullable enable
 namespace EventStore.Client {
-	/// <summary>
-	/// 
-	/// </summary>
+	// Thread safe
 	internal class GossipChannelSelector : IChannelSelector {
-		private static readonly ClusterMessages.VNodeState[] NotAllowedStates = {
-			ClusterMessages.VNodeState.Manager,
-			ClusterMessages.VNodeState.ShuttingDown,
-			ClusterMessages.VNodeState.Shutdown,
-			ClusterMessages.VNodeState.Unknown,
-			ClusterMessages.VNodeState.Initializing,
-			ClusterMessages.VNodeState.CatchingUp,
-			ClusterMessages.VNodeState.ResigningLeader,
-			ClusterMessages.VNodeState.PreLeader,
-			ClusterMessages.VNodeState.PreReplica,
-			ClusterMessages.VNodeState.Clone,
-			ClusterMessages.VNodeState.DiscoverLeader
-		};
-
 		private readonly EventStoreClientSettings _settings;
+		private readonly ChannelCache _channels;
 		private readonly IGossipClient _gossipClient;
-		private readonly CancellationToken _cancellationToken;
-		private readonly Dictionary<DnsEndPoint, ChannelBase> _grpcChannelsCache;
-		private readonly System.Threading.Channels.Channel<ChannelInfo> _channelInfoChannel;
-		private readonly System.Threading.Channels.Channel<ControlMessage> _controlChannel;
 		private readonly ILogger<GossipChannelSelector> _log;
-		private readonly IComparer<ClusterMessages.VNodeState>? _comparer;
+		private readonly NodeSelector _nodeSelector;
 
-		private int _disposed;
+		public GossipChannelSelector(
+			EventStoreClientSettings settings,
+			ChannelCache channelCache,
+			IGossipClient gossipClient) {
 
-		public GossipChannelSelector(EventStoreClientSettings settings, IGossipClient gossipClient,
-			CancellationToken cancellationToken = default) {
 			_settings = settings;
+			_channels = channelCache;
 			_gossipClient = gossipClient;
-			_cancellationToken = cancellationToken;
-			_grpcChannelsCache = new Dictionary<DnsEndPoint, ChannelBase>();
-			_channelInfoChannel = System.Threading.Channels.Channel.CreateUnbounded<ChannelInfo>();
-			_controlChannel = System.Threading.Channels.Channel.CreateUnbounded<ControlMessage>();
 			_log = settings.LoggerFactory?.CreateLogger<GossipChannelSelector>() ??
 			       new NullLogger<GossipChannelSelector>();
-			_comparer = settings.ConnectivitySettings.NodePreference switch {
-				NodePreference.Leader => NodePreferenceComparers.Leader,
-				NodePreference.Follower => NodePreferenceComparers.Follower,
-				NodePreference.ReadOnlyReplica => NodePreferenceComparers.ReadOnlyReplica,
-				_ => NodePreferenceComparers.Random
-			};
-
-			foreach (var endPoint in settings.ConnectivitySettings.GossipSeeds) {
-				_grpcChannelsCache.Add(endPoint switch {
-					DnsEndPoint dnsEndPoint => dnsEndPoint,
-					_ => new DnsEndPoint(endPoint.GetHost(), endPoint.GetPort())
-				}, ChannelFactory.CreateChannel(settings, endPoint));
-			}
-
-			_controlChannel.Writer.TryWrite(ControlMessage.Discover.Instance);
-
-			_ = Task.Run(async () => {
-				while (await _controlChannel.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false)) {
-					var message = await _controlChannel.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
-
-					if (message is ControlMessage.SetEndPoint sep) {
-						await UseEndPoint(sep.EndPoint).ConfigureAwait(false);
-					} else {
-						var (success, endPoint) = await Discover(cancellationToken).ConfigureAwait(false);
-						if (!success) {
-							_log.LogError("Failed to discover candidate in {maxDiscoverAttempts} attempts.",
-								settings.ConnectivitySettings.MaxDiscoverAttempts);
-
-							_channelInfoChannel.Writer.TryComplete(
-								new DiscoveryException(settings.ConnectivitySettings.MaxDiscoverAttempts));
-							_controlChannel.Writer.TryComplete();
-							return;
-						}
-
-						_log.LogInformation("Successfully discovered candidate at {endPoint}.", endPoint);
-
-						await UseEndPoint(endPoint!).ConfigureAwait(false);
-					}
-				}
-			}, cancellationToken);
+			_nodeSelector = new(_settings);
 		}
 
-		private async ValueTask<(bool success, DnsEndPoint? endPoint)> Discover(CancellationToken cancellationToken) {
+		public ChannelBase SelectChannel(DnsEndPoint endPoint) {
+			return _channels.GetChannelInfo(endPoint);
+		}
+
+		public async Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken) {
+			var endPoint = await DiscoverAsync(cancellationToken).ConfigureAwait(false);
+
+			_log.LogInformation("Successfully discovered candidate at {endPoint}.", endPoint);
+
+			return _channels.GetChannelInfo(endPoint);
+		}
+
+		private async Task<DnsEndPoint> DiscoverAsync(CancellationToken cancellationToken) {
 			for (var attempt = 1; attempt <= _settings.ConnectivitySettings.MaxDiscoverAttempts; attempt++) {
-				var (success, endPoint, nodes) = await TryDiscover(attempt).ConfigureAwait(false);
+				foreach (var kvp in _channels.GetRandomOrderSnapshot()) {
+					var endPointToGetGossip = kvp.Key;
+					var channelToGetGossip = kvp.Value;
 
-				if (success) {
-					await RemoveDeadNodes().ConfigureAwait(false);
-
-					return (true, endPoint);
-				}
-
-				async ValueTask RemoveDeadNodes() {
-					foreach (var dead in _grpcChannelsCache.Keys.Except(nodes!.Select(node => node.EndPoint),
-						         DnsEndPointEqualityComparer.Instance).ToArray()) {
-						if (!_grpcChannelsCache.TryGetValue(dead, out var channel)) {
-							continue;
-						}
-
-						_grpcChannelsCache.Remove(dead);
-						await channel.DisposeAsync().ConfigureAwait(false);
-					}
-				}
-			}
-
-			return (false, default);
-
-			async ValueTask<(bool, DnsEndPoint?, ClusterMessages.MemberInfo[]?)> TryDiscover(int attempt) {
-				foreach (var channel in _grpcChannelsCache.Values.ToArray().OrderBy(_ => Guid.NewGuid())) {
 					try {
-						var clusterInfo = await _gossipClient.GetAsync(channel, cancellationToken)
+						var clusterInfo = await _gossipClient
+							.GetAsync(channelToGetGossip, cancellationToken)
 							.ConfigureAwait(false);
 
-						if (clusterInfo.Members.Length == 0) {
-							continue;
-						}
+						var selectedEndpoint = _nodeSelector.SelectNode(clusterInfo);
 
-						var nodes = clusterInfo.Members.Where(IsCandidate).ToArray();
+						// Successfully selected an endpoint using this gossip!
+						// We want _channels to contain exactly the nodes in ClusterInfo.
+						// nodes no longer in the cluster can be forgotten.
+						// new nodes are added so we can use them to get gossip.
+						_channels.UpdateCache(clusterInfo.Members.Select(x => x.EndPoint));
 
-						var node = nodes.OrderBy(node => node.State, _comparer)
-							.ThenBy(_ => Guid.NewGuid())
-							.FirstOrDefault();
+						return selectedEndpoint;
 
-						if (node is null) {
-							continue;
-						}
-
-						return (true, node.EndPoint, nodes);
 					} catch (Exception ex) {
-						_log.Log(attempt switch {
-								1 => LogLevel.Warning,
-								_ when attempt == _settings.ConnectivitySettings.MaxDiscoverAttempts => LogLevel
-									.Error,
-								_ => LogLevel.Debug
-							}, ex,
-							"Could not discover candidate. Attempts remaining: {discoverAttempts}",
+						_log.Log(
+							GetLogLevelForDiscoveryAttempt(attempt),
+							ex,
+							"Could not discover candidate from {endPoint}. Attempts remaining: {remainingAttempts}",
+							endPointToGetGossip,
 							_settings.ConnectivitySettings.MaxDiscoverAttempts - attempt);
 					}
 				}
 
-				await Task.Delay(_settings.ConnectivitySettings.DiscoveryInterval, cancellationToken)
+				// couldn't select a node from any _channel. reseed the channels.
+				_channels.UpdateCache(_settings.ConnectivitySettings.GossipSeeds.Select(endPoint =>
+					endPoint as DnsEndPoint ?? new DnsEndPoint(endPoint.GetHost(), endPoint.GetPort())));
+
+				await Task
+					.Delay(_settings.ConnectivitySettings.DiscoveryInterval, cancellationToken)
 					.ConfigureAwait(false);
-
-				return (false, default, default);
 			}
+
+			_log.LogError("Failed to discover candidate in {maxDiscoverAttempts} attempts.",
+				_settings.ConnectivitySettings.MaxDiscoverAttempts);
+
+			throw new DiscoveryException(_settings.ConnectivitySettings.MaxDiscoverAttempts);
 		}
 
-		private static bool IsCandidate(ClusterMessages.MemberInfo node) => node.IsAlive &&
-		                                                                    !NotAllowedStates.Contains(node.State);
-
-		public async ValueTask<ChannelInfo> SelectChannel(CancellationToken cancellationToken = default) {
-			ThrowIfDisposed();
-
-			try {
-				return await _channelInfoChannel.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
-			} catch (Exception ex) when (ex.InnerException is DiscoveryException dex) {
-				throw dex;
-			}
-		}
-
-		public void Rediscover(DnsEndPoint? leader) {
-			ThrowIfDisposed();
-
-			var message = leader is null
-				? (ControlMessage)ControlMessage.Discover.Instance
-				: new ControlMessage.SetEndPoint(leader);
-
-			_controlChannel.Writer.TryWrite(message);
-		}
-
-		private void ThrowIfDisposed() {
-			if (Interlocked.CompareExchange(ref _disposed, 0, 0) != 0) {
-				throw new ObjectDisposedException(GetType().ToString());
-			}
-		}
-
-		public async ValueTask DisposeAsync() {
-			if (Interlocked.Exchange(ref _disposed, 1) == 1) {
-				return;
-			}
-
-			_channelInfoChannel.Writer.TryComplete();
-			foreach (var channel in _grpcChannelsCache.Values) {
-				await channel.DisposeAsync().ConfigureAwait(false);
-			}
-		}
-
-		private async Task UseEndPoint(DnsEndPoint endPoint) {
-			if (!_grpcChannelsCache.TryGetValue(endPoint, out var grpcChannel)) {
-				grpcChannel = ChannelFactory.CreateChannel(_settings, endPoint);
-				_grpcChannelsCache.Add(endPoint, grpcChannel);
-			}
-
-			await _channelInfoChannel.Writer.WriteAsync(new(grpcChannel, endPoint), _cancellationToken)
-				.ConfigureAwait(false);
-		}
-
-		private record ControlMessage {
-			public record SetEndPoint(DnsEndPoint EndPoint) : ControlMessage;
-
-			public record Discover : ControlMessage {
-				public static readonly Discover Instance = new();
-			}
-		}
-
-		private class DnsEndPointEqualityComparer : IEqualityComparer<DnsEndPoint> {
-			public static readonly DnsEndPointEqualityComparer Instance = new();
-
-			public bool Equals(DnsEndPoint? x, DnsEndPoint? y) {
-				if (ReferenceEquals(x, y)) return true;
-				if (ReferenceEquals(x, null)) return false;
-				if (ReferenceEquals(y, null)) return false;
-				if (x.GetType() != y.GetType()) return false;
-				return string.Equals(x.Host, y.Host, StringComparison.OrdinalIgnoreCase) && x.Port == y.Port;
-			}
-
-			public int GetHashCode(DnsEndPoint obj) {
-				unchecked {
-					return (StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Host) * 397) ^
-					       obj.Port;
-				}
-			}
-		}
+		private LogLevel GetLogLevelForDiscoveryAttempt(int attempt) => attempt switch {
+			_ when attempt == _settings.ConnectivitySettings.MaxDiscoverAttempts =>
+				LogLevel.Error,
+			1 =>
+				LogLevel.Warning,
+			_ =>
+				LogLevel.Debug
+		};
 	}
 }

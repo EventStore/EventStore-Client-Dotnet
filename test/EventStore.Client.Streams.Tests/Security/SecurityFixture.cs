@@ -206,9 +206,9 @@ namespace EventStore.Client.Security {
 			Client.TombstoneAsync(streamId, StreamState.Any, userCredentials: userCredentials)
 				.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		public override Task DisposeAsync() {
-			UserManagementClient?.Dispose();
-			return base.DisposeAsync();
+		public async override Task DisposeAsync() {
+			await UserManagementClient.DisposeAsync();
+			await base.DisposeAsync();
 		}
 	}
 }

@@ -13,7 +13,7 @@ using Xunit;
 namespace EventStore.Client {
 	public class GrpcServerCapabilitiesClientTests {
 		public static IEnumerable<object[]> ExpectedResultsCases() {
-			yield return new object[] {new SupportedMethods(), new ServerCapabilitiesInfo()};
+			yield return new object[] {new SupportedMethods(), new ServerCapabilities()};
 			yield return new object[] {
 				new SupportedMethods {
 					Methods = {
@@ -23,7 +23,7 @@ namespace EventStore.Client {
 						}
 					}
 				},
-				new ServerCapabilitiesInfo(SupportsBatchAppend: true)
+				new ServerCapabilities(SupportsBatchAppend: true)
 			};
 			yield return new object[] {
 				new SupportedMethods {
@@ -35,7 +35,7 @@ namespace EventStore.Client {
 						}
 					}
 				},
-				new ServerCapabilitiesInfo(SupportsPersistentSubscriptionsToAll: true)
+				new ServerCapabilities(SupportsPersistentSubscriptionsToAll: true)
 			};
 			yield return new object[] {
 				new SupportedMethods {
@@ -46,13 +46,13 @@ namespace EventStore.Client {
 						}
 					}
 				},
-				new ServerCapabilitiesInfo()
+				new ServerCapabilities()
 			};
 		}
 
 		[Theory, MemberData(nameof(ExpectedResultsCases))]
 		internal async Task GetAsyncReturnsExpectedResults(SupportedMethods supportedMethods,
-			ServerCapabilitiesInfo expected) {
+			ServerCapabilities expected) {
 			using var kestrel = new TestServer(new WebHostBuilder()
 				.ConfigureServices(services => services
 					.AddRouting()
@@ -64,9 +64,15 @@ namespace EventStore.Client {
 			var sut = new GrpcServerCapabilitiesClient(new EventStoreClientSettings());
 
 			var actual =
-				await sut.GetAsync(ChannelFactory.CreateChannel(new EventStoreClientSettings {
-					CreateHttpMessageHandler = kestrel.CreateHandler
-				}, new UriBuilder().Uri));
+				await sut.GetAsync(
+					ChannelFactory
+						.CreateChannel(
+							new EventStoreClientSettings {
+								CreateHttpMessageHandler = kestrel.CreateHandler
+							},
+							new UriBuilder().Uri)
+						.CreateCallInvoker(),
+					cancellationToken: default);
 
 			Assert.Equal(expected, actual);
 		}

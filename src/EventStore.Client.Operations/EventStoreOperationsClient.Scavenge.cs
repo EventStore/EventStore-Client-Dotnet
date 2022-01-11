@@ -28,9 +28,9 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(startFromChunk));
 			}
 
-			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Operations.Operations.OperationsClient(
-				CreateCallInvoker(channel)).StartScavengeAsync(
+				channelInfo.CallInvoker).StartScavengeAsync(
 				new StartScavengeReq {
 					Options = new StartScavengeReq.Types.Options {
 						ThreadCount = threadCount,
@@ -60,9 +60,9 @@ namespace EventStore.Client {
 			string scavengeId,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			var result = await new Operations.Operations.OperationsClient(
-				CreateCallInvoker(channel)).StopScavengeAsync(new StopScavengeReq {
+				channelInfo.CallInvoker).StopScavengeAsync(new StopScavengeReq {
 				Options = new StopScavengeReq.Types.Options {
 					ScavengeId = scavengeId
 				}

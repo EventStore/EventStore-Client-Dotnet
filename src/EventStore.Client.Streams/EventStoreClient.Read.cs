@@ -23,10 +23,9 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(maxCount));
 			}
 
-
 			return new ReadAllStreamResult(async _ => {
-				var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
-				return CreateCallInvoker(channel);
+				var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+				return channelInfo.CallInvoker;
 			}, new ReadReq {
 				Options = new() {
 					ReadDirection = direction switch {
@@ -174,8 +173,8 @@ namespace EventStore.Client {
 			}
 
 			return new ReadStreamResult(async _ => {
-				var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
-				return CreateCallInvoker(channel);
+				var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+				return channelInfo.CallInvoker;
 			}, new ReadReq {
 				Options = new() {
 					ReadDirection = direction switch {
@@ -380,17 +379,17 @@ namespace EventStore.Client {
 
 			request.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()};
 
-			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 
 			var cts =
 #if GRPC_CORE
-					CancellationTokenSource.CreateLinkedTokenSource(((Grpc.Core.Channel)channel).ShutdownToken)
+					CancellationTokenSource.CreateLinkedTokenSource(((Grpc.Core.Channel)channelInfo.Channel).ShutdownToken)
 #else
 					new CancellationTokenSource()
 #endif
 				;
 			using var call = new Streams.Streams.StreamsClient(
-				CreateCallInvoker(channel)).Read(request,
+				channelInfo.CallInvoker).Read(request,
 				EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cts.Token));
 
 			await foreach (var e in call.ResponseStream

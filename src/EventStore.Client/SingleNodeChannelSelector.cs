@@ -7,20 +7,24 @@ using Grpc.Core;
 #nullable enable
 namespace EventStore.Client {
 	internal class SingleNodeChannelSelector : IChannelSelector {
-		private readonly ChannelBase _channel;
-		private readonly ChannelInfo _channelInfo;
+		private readonly ChannelCache _channelCache;
+		private readonly DnsEndPoint _endPoint;
+		private readonly bool _https;
 
-		public SingleNodeChannelSelector(EventStoreClientSettings settings) {
-			_channel = ChannelFactory.CreateChannel(settings, settings.ConnectivitySettings.Address);
-			_channelInfo = new ChannelInfo(_channel, new DnsEndPoint(settings.ConnectivitySettings.Address.Host,
-					settings.ConnectivitySettings.Address.Port));
+		public SingleNodeChannelSelector(
+			EventStoreClientSettings settings,
+			ChannelCache channelCache) {
+
+			_channelCache = channelCache;
+			var uri = settings.ConnectivitySettings.Address;
+			_endPoint = new DnsEndPoint(host: uri.Host, port: uri.Port);
+			_https = string.Compare(uri.Scheme, Uri.UriSchemeHttps, ignoreCase: true) == 0;
 		}
 
-		public ValueTask DisposeAsync() => _channel.DisposeAsync();
+		public Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken) =>
+			Task.FromResult(SelectChannel(_endPoint));
 
-		public ValueTask<ChannelInfo> SelectChannel(CancellationToken cancellationToken) => new(_channelInfo);
-
-		public void Rediscover(DnsEndPoint? leader) {
-		}
+		public ChannelBase SelectChannel(DnsEndPoint endPoint) =>
+			_channelCache.GetChannelInfo(endPoint, _https);
 	}
 }

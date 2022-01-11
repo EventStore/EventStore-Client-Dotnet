@@ -66,9 +66,9 @@ namespace EventStore.Client {
 		private async ValueTask<Value> GetResultInternalAsync(string name, string? partition,
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
-			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
-				CreateCallInvoker(channel)).ResultAsync(new ResultReq {
+				channelInfo.CallInvoker).ResultAsync(new ResultReq {
 				Options = new ResultReq.Types.Options {
 					Name = name,
 					Partition = partition ?? string.Empty
@@ -137,9 +137,9 @@ namespace EventStore.Client {
 		private async ValueTask<Value> GetStateInternalAsync(string name, string? partition,
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
-			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
-				CreateCallInvoker(channel)).StateAsync(new StateReq {
+				channelInfo.CallInvoker).StateAsync(new StateReq {
 				Options = new StateReq.Types.Options {
 					Name = name,
 					Partition = partition ?? string.Empty

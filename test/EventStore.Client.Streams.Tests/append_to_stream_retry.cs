@@ -18,15 +18,14 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 
 			// can definitely write without throwing
-			var nextExpected = (await _fixture.Client.AppendToStreamAsync(
-					stream, StreamState.NoStream, _fixture.CreateTestEvents(1))
-				.WithTimeout()).NextExpectedStreamRevision;
+			var nextExpected = (await WriteAnEventAsync(StreamRevision.None)).NextExpectedStreamRevision;
 			Assert.Equal(new StreamRevision(0), nextExpected);
 
 			_fixture.TestServer.Stop();
 
 			// writeTask cannot complete because ES is stopped
-			//await Assert.ThrowsAnyAsync<InvalidOperationException>(() => WriteAnEventAsync(new StreamRevision(0)));
+			var ex = await Assert.ThrowsAnyAsync<Exception>(() => WriteAnEventAsync(new StreamRevision(0)));
+			Assert.True(ex is InvalidOperationException or DiscoveryException);
 
 			await _fixture.TestServer.StartAsync().WithTimeout();
 
@@ -34,22 +33,21 @@ namespace EventStore.Client {
 			var writeResult = await Policy
 				.Handle<Exception>()
 				.WaitAndRetryAsync(5, _ => TimeSpan.FromSeconds(3))
-				.ExecuteAsync(() => {
-					StreamRevision expectedRevision = new StreamRevision(0);
-					return _fixture.Client.AppendToStreamAsync(
-							streamName: stream,
-							expectedRevision: expectedRevision,
-							eventData: _fixture.CreateTestEvents(1))
-						.WithTimeout();
-				});
+				.ExecuteAsync(async () => await WriteAnEventAsync(new StreamRevision(0)));
 
 			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
+
+			Task<IWriteResult> WriteAnEventAsync(StreamRevision expectedRevision) => _fixture.Client.AppendToStreamAsync(
+				streamName: stream,
+				expectedRevision: expectedRevision,
+				eventData: _fixture.CreateTestEvents(1));
 		}
 
 		public class Fixture : EventStoreClientFixture {
 			public Fixture() : base(env: new Dictionary<string, string> {
 				["EVENTSTORE_MEM_DB"] = "false",
 			}) {
+				Settings.ConnectivitySettings.MaxDiscoverAttempts = 2;
 			}
 
 			protected override Task Given() => Task.CompletedTask;

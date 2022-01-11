@@ -1,28 +1,27 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Interceptors;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
-#if !GRPC_CORE
-using Grpc.Net.Client;
-#endif
 
 #nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// The base class used by clients used to communicate with the EventStoreDB.
 	/// </summary>
-	public abstract class EventStoreClientBase : IDisposable, IAsyncDisposable {
-		private readonly IDictionary<string, Func<RpcException, Exception>> _exceptionMap;
-		private readonly IChannelSelector _channelSelector;
-		private readonly IServerCapabilities _serverCapabilities;
-		private readonly CancellationTokenSource _cts;
+	public abstract class EventStoreClientBase :
+#if !GRPC_CORE
+		IDisposable, // for grpc.net we can dispose synchronously, but not for grpc.core
+#endif
+		IAsyncDisposable {
 
-		private Lazy<Task<ChannelInfo>> _channelInfoLazy;
+		private readonly IDictionary<string, Func<RpcException, Exception>> _exceptionMap;
+		private readonly CancellationTokenSource _cts;
+		private readonly ChannelCache _channelCache;
+		private readonly SharingProvider<DnsEndPoint?, ChannelInfo> _channelInfoProvider;
 
 		/// <summary>
 		/// The name of the connection.
@@ -44,48 +43,73 @@ namespace EventStore.Client {
 			Settings = settings ?? new EventStoreClientSettings();
 			_exceptionMap = exceptionMap;
 			_cts = new CancellationTokenSource();
-			_channelSelector = new ChannelSelector(Settings, _cts.Token);
-			_serverCapabilities = new ServerCapabilities(new GrpcServerCapabilitiesClient(Settings));
-			_channelInfoLazy = new Lazy<Task<ChannelInfo>>(
-				async () => await _channelSelector.SelectChannel(_cts.Token).ConfigureAwait(false),
-				LazyThreadSafetyMode.ExecutionAndPublication);
+			_channelCache = new(Settings);
 
 			ConnectionName = Settings.ConnectionName ?? $"ES-{Guid.NewGuid()}";
+
+			var channelSelector = new ChannelSelector(Settings, _channelCache);
+			_channelInfoProvider = new SharingProvider<DnsEndPoint?, ChannelInfo>(
+				factory: (endPoint, onBroken) => GetChannelInfo(endPoint, onBroken, channelSelector, _cts.Token),
+				initialInput: null);
+		}
+
+		// Select a channel and query its capabilities. This is an expensive call that
+		// we don't want to do often.
+		private async Task<ChannelInfo> GetChannelInfo(
+			DnsEndPoint? endPoint,
+			Action<DnsEndPoint?> onBroken,
+			IChannelSelector channelSelector,
+			CancellationToken cancellationToken) {
+
+			var channel = endPoint is null
+				? await channelSelector.SelectChannelAsync(cancellationToken).ConfigureAwait(false)
+				: channelSelector.SelectChannel(endPoint);
+
+			var invoker = channel.CreateCallInvoker()
+				.Intercept(new TypedExceptionInterceptor(_exceptionMap))
+				.Intercept(new ConnectionNameInterceptor(ConnectionName))
+				.Intercept(new ReportLeaderInterceptor(onBroken));
+
+			if (Settings.Interceptors is not null) {
+				foreach (var interceptor in Settings.Interceptors) {
+					invoker = invoker.Intercept(interceptor);
+				}
+			}
+
+			var caps = await new GrpcServerCapabilitiesClient(Settings)
+				.GetAsync(invoker, cancellationToken)
+				.ConfigureAwait(false);
+
+			return new(channel, caps, invoker);
 		}
 
 #pragma warning disable 1591
-		protected Task<ChannelInfo> GetCurrentChannelInfo() => _channelInfoLazy.Value;
-
-		protected ValueTask<ServerCapabilitiesInfo> GetServerCapabilities(ChannelInfo channelInfo,
-			CancellationToken cancellationToken) =>
-			_serverCapabilities.GetServerCapabilities(channelInfo, cancellationToken); 
-
-		protected CallInvoker CreateCallInvoker(ChannelBase channel) =>
-			(Settings.Interceptors ?? Array.Empty<Interceptor>()).Aggregate(
-				channel.CreateCallInvoker()
-					.Intercept(new TypedExceptionInterceptor(_exceptionMap))
-					.Intercept(new ConnectionNameInterceptor(ConnectionName))
-					.Intercept(new ReportLeaderInterceptor(endPoint => {
-						_channelInfoLazy = new Lazy<Task<ChannelInfo>>(
-							async () => {
-								_channelSelector.Rediscover(endPoint);
-								var info = await _channelSelector.SelectChannel(_cts.Token).ConfigureAwait(false);
-								_serverCapabilities.Reset(info);
-								return info;
-							},
-							LazyThreadSafetyMode.ExecutionAndPublication);
-					})),
-				(invoker, interceptor) => invoker.Intercept(interceptor));
+		protected async ValueTask<ChannelInfo> GetChannelInfo(CancellationToken cancellationToken) =>
+			await _channelInfoProvider.CurrentAsync.WithCancellation(cancellationToken).ConfigureAwait(false);
 #pragma warning restore 1591
 
-		/// <inheritdoc />
-		public void Dispose() => DisposeAsync().GetAwaiter().GetResult();
+		// only exists so that we can manually trigger rediscovery in the tests (by reflection)
+		// in cases where the server doesn't yet let the client know that it needs to.
+		// see EventStoreClientExtensions.WarmUpWith.
+		// note if rediscovery is already in progress it will continue, not restart.
+		private void Rediscover() {
+			_channelInfoProvider.Reset();
+		}
 
+#if !GRPC_CORE
 		/// <inheritdoc />
-		public ValueTask DisposeAsync() {
+		public void Dispose() {
 			_cts.Cancel();
 			_cts.Dispose();
-			return _channelSelector.DisposeAsync();
+			_channelCache.Dispose();
+		}
+#endif
+
+		/// <inheritdoc />
+		public async ValueTask DisposeAsync() {
+			_cts.Cancel();
+			_cts.Dispose();
+			await _channelCache.DisposeAsync().ConfigureAwait(false);
 		}
 
 		/// <summary>

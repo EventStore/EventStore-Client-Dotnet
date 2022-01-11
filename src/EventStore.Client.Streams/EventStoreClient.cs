@@ -18,7 +18,13 @@ namespace EventStore.Client {
 	/// <summary>
 	/// The client used for operations on streams.
 	/// </summary>
-	public partial class EventStoreClient : EventStoreClientBase, IDisposable, IAsyncDisposable {
+	public partial class EventStoreClient : EventStoreClientBase,
+// todo: remove these long with the explicit implementations
+#if !GRPC_CORE
+		IDisposable,
+#endif
+		IAsyncDisposable {
+
 		private static readonly JsonSerializerOptions StreamMetadataJsonSerializerOptions = new() {
 			Converters = {
 				StreamMetadataJsonConverter.Instance
@@ -82,13 +88,16 @@ namespace EventStore.Client {
 					new Lazy<StreamAppender>(CreateStreamAppender, LazyThreadSafetyMode.PublicationOnly))
 				.Value.Dispose();
 
+		// todo: might be nice to have two different kinds of appenders and we decide which to instantiate according to the server caps.
 		private StreamAppender CreateStreamAppender() {
 			return new StreamAppender(Settings, GetCall(), _disposedTokenSource.Token, SwapStreamAppender);
 
-			async Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>> GetCall() {
-				var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
-				var callInvoker = CreateCallInvoker(channel);
-				var client = new Streams.Streams.StreamsClient(callInvoker);
+			async Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>?> GetCall() {
+				var channelInfo = await GetChannelInfo(cancellationToken: default).ConfigureAwait(false);
+				if (!channelInfo.ServerCapabilities.SupportsBatchAppend)
+					return null;
+
+				var client = new Streams.Streams.StreamsClient(channelInfo.CallInvoker);
 				var operationOptions = Settings.OperationOptions.Clone();
 				operationOptions.TimeoutAfter = new TimeSpan?();
 
@@ -157,6 +166,7 @@ namespace EventStore.Client {
 			return options;
 		}
 
+#if !GRPC_CORE
 		void IDisposable.Dispose() {
 #if NET5_0_OR_GREATER
 			_streamAppender.Dispose();
@@ -164,6 +174,7 @@ namespace EventStore.Client {
 			_disposedTokenSource.Dispose();
 			base.Dispose();
 		}
+#endif
 
 		async ValueTask IAsyncDisposable.DisposeAsync() {
 #if NET5_0_OR_GREATER

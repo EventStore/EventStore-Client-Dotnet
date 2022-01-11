@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -10,28 +11,45 @@ namespace EventStore.Client {
 			_settings = settings;
 		}
 
-		public async ValueTask<ServerCapabilitiesInfo> GetAsync(ChannelBase channel,
-			CancellationToken cancellationToken = default) {
-			var client = new ServerFeatures.ServerFeatures.ServerFeaturesClient(channel);
-			using var call = client.GetSupportedMethodsAsync(new(), EventStoreCallOptions.Create(
-				_settings, _settings.OperationOptions, null, cancellationToken));
-			var response = await call.ResponseAsync.ConfigureAwait(false);
-			bool
-				supportsBatchAppend = false,
-				supportsPersistentSubscriptionsToAll = false;
+		public async Task<ServerCapabilities> GetAsync(
+			CallInvoker callInvoker,
+			CancellationToken cancellationToken) {
 
-			foreach (var supportedMethod in response.Methods) {
-				switch (supportedMethod.ServiceName, supportedMethod.MethodName) {
-					case ("event_store.client.streams.streams", "batchappend"):
-						supportsBatchAppend = true;
-						continue;
-					case ("event_store.client.persistent_subscriptions.persistentsubscriptions", "read"):
-						supportsPersistentSubscriptionsToAll = supportedMethod.Features.Contains("all");
-						continue;
+			var client = new ServerFeatures.ServerFeatures.ServerFeaturesClient(callInvoker);
+			using var call = client.GetSupportedMethodsAsync(
+				new(),
+				EventStoreCallOptions.Create(
+					_settings,
+					_settings.OperationOptions,
+					userCredentials: null,
+					cancellationToken));
+
+			try {
+				var supportsBatchAppend = false;
+				var supportsPersistentSubscriptionsToAll = false;
+
+				var response = await call.ResponseAsync.ConfigureAwait(false);
+
+				foreach (var supportedMethod in response.Methods) {
+					switch (supportedMethod.ServiceName, supportedMethod.MethodName) {
+						case ("event_store.client.streams.streams", "batchappend"):
+							supportsBatchAppend = true;
+							continue;
+						case ("event_store.client.persistent_subscriptions.persistentsubscriptions", "read"):
+							supportsPersistentSubscriptionsToAll = supportedMethod.Features.Contains("all");
+							continue;
+					}
 				}
-			}
 
-			return new(supportsBatchAppend, supportsPersistentSubscriptionsToAll);
+				return new(
+					SupportsBatchAppend: supportsBatchAppend,
+					SupportsPersistentSubscriptionsToAll: supportsPersistentSubscriptionsToAll);
+
+			} catch (Exception ex) when (ex.GetBaseException() is RpcException rpcException &&
+				rpcException.StatusCode == StatusCode.Unimplemented) {
+
+				return new();
+			}
 		}
 	}
 }

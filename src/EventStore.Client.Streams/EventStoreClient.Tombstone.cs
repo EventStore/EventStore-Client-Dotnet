@@ -81,9 +81,9 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken) {
 			_log.LogDebug("Tombstoning stream {streamName}.", request.Options.StreamIdentifier);
 
-			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Streams.Streams.StreamsClient(
-				CreateCallInvoker(channel)).TombstoneAsync(request,
+				channelInfo.CallInvoker).TombstoneAsync(request,
 				EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cancellationToken));
 			var result = await call.ResponseAsync.ConfigureAwait(false);
 

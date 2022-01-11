@@ -7,14 +7,16 @@ using Grpc.Core.Interceptors;
 
 #nullable enable
 namespace EventStore.Client.Interceptors {
+	// this has become more general than just detecting leader changes.
+	// triggers the action on any rpc exception with StatusCode.Unavailable
 	internal class ReportLeaderInterceptor : Interceptor {
-		private readonly Action<DnsEndPoint?> _rediscover;
+		private readonly Action<DnsEndPoint?> _onError;
 
 		private const TaskContinuationOptions ContinuationOptions =
 			TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted;
 
-		public ReportLeaderInterceptor(Action<DnsEndPoint?> rediscover) {
-			_rediscover = rediscover;
+		internal ReportLeaderInterceptor(Action<DnsEndPoint?> onError) {
+			_onError = onError;
 		}
 
 		public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request,
@@ -61,10 +63,10 @@ namespace EventStore.Client.Interceptors {
 
 		private void ReportNewLeader<TResponse>(Task<TResponse> task) {
 			if (task.Exception?.InnerException is NotLeaderException ex) {
-				_rediscover(ex.LeaderEndpoint);
+				_onError(ex.LeaderEndpoint);
 			} else if (task.Exception?.InnerException?.InnerException is RpcException rpcException &&
 			           rpcException.StatusCode == StatusCode.Unavailable) {
-				_rediscover(null);
+				_onError(null);
 			}
 		}
 

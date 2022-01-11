@@ -170,18 +170,15 @@ namespace EventStore.Client {
 					$"Filters are only supported when subscribing to {SystemStreams.AllStream}");
 			}
 
-			var channelInfo = await GetCurrentChannelInfo().ConfigureAwait(false);
-			var serverCapabilities = await GetServerCapabilities(channelInfo, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 
 			if (streamName == SystemStreams.AllStream &&
-			    !serverCapabilities.SupportsPersistentSubscriptionsToAll) {
+			    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
 				throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
 			}
 
-			var callInvoker = CreateCallInvoker(channelInfo.Channel);
-
 			using var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
-				callInvoker).CreateAsync(new CreateReq {
+				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					Stream = streamName != SystemStreams.AllStream
 						? StreamOptionsForCreateProto(streamName,

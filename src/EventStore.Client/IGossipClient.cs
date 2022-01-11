@@ -7,8 +7,4 @@ namespace EventStore.Client {
 		public ValueTask<ClusterMessages.ClusterInfo> GetAsync(ChannelBase channel,
 			CancellationToken cancellationToken);
 	}
-
-	internal interface IServerCapabilitiesClient {
-		public ValueTask<ServerCapabilitiesInfo> GetAsync(ChannelBase channel, CancellationToken cancellationToken);
-	}
 }

@@ -33,22 +33,23 @@ namespace EventStore.Client {
 
 			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedRevision);
 
-			var channelInfo = await GetCurrentChannelInfo().ConfigureAwait(false);
-			var serverCapabilities = await GetServerCapabilities(channelInfo, cancellationToken).ConfigureAwait(false); 
-
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			
 			var task =
 #if NET5_0_OR_GREATER
-				userCredentials == null && serverCapabilities.SupportsBatchAppend
+				userCredentials == null && await _streamAppender.IsUsable().ConfigureAwait(false)
 					? _streamAppender.Append(streamName, expectedRevision, eventData, options.TimeoutAfter,
 						cancellationToken)
 					:
 #endif
-					AppendToStreamInternal(new AppendReq {
-						Options = new AppendReq.Types.Options {
-							StreamIdentifier = streamName,
-							Revision = expectedRevision
-						}
-					}, eventData, options, userCredentials, cancellationToken);
+					AppendToStreamInternal(
+						channelInfo.CallInvoker,
+						new AppendReq {
+							Options = new AppendReq.Types.Options {
+								StreamIdentifier = streamName,
+								Revision = expectedRevision
+							}
+						}, eventData, options, userCredentials, cancellationToken);
 
 			return (await task.ConfigureAwait(false)).OptionallyThrowWrongExpectedVersionException(options);
 		}
@@ -75,17 +76,18 @@ namespace EventStore.Client {
 
 			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedState);
 
-			var channelInfo = await GetCurrentChannelInfo().ConfigureAwait(false);
-			var serverCapabilities = await GetServerCapabilities(channelInfo, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 
 			var task =
 #if NET5_0_OR_GREATER
-				userCredentials == null && serverCapabilities.SupportsBatchAppend
+				userCredentials == null && await _streamAppender.IsUsable().ConfigureAwait(false)
 					? _streamAppender.Append(streamName, expectedState, eventData, operationOptions.TimeoutAfter,
 						cancellationToken)
 					:
 #endif
-					AppendToStreamInternal(new AppendReq {
+					AppendToStreamInternal(
+						channelInfo.CallInvoker,
+						new AppendReq {
 							Options = new AppendReq.Types.Options {
 								StreamIdentifier = streamName
 							}
@@ -95,14 +97,15 @@ namespace EventStore.Client {
 		}
 
 		private async ValueTask<IWriteResult> AppendToStreamInternal(
+			CallInvoker callInvoker,
 			AppendReq header,
 			IEnumerable<EventData> eventData,
 			EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
-			var (channel, _) = await GetCurrentChannelInfo().ConfigureAwait(false);
+
 			using var call = new Streams.Streams.StreamsClient(
-				CreateCallInvoker(channel)).Append(EventStoreCallOptions.Create(
+				callInvoker).Append(EventStoreCallOptions.Create(
 				Settings, operationOptions, userCredentials, cancellationToken));
 
 			IWriteResult writeResult;
@@ -203,10 +206,10 @@ namespace EventStore.Client {
 			private readonly Channel<BatchAppendReq> _channel;
 			private readonly ConcurrentDictionary<Uuid, TaskCompletionSource<IWriteResult>> _pendingRequests;
 
-			private readonly Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>> _callTask;
+			private readonly Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>?> _callTask;
 
 			public StreamAppender(EventStoreClientSettings settings,
-				Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>> callTask, CancellationToken cancellationToken,
+				Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>?> callTask, CancellationToken cancellationToken,
 				Action<Exception> onException) {
 				_settings = settings;
 				_callTask = callTask;
@@ -228,8 +231,16 @@ namespace EventStore.Client {
 				AppendInternal(BatchAppendReq.Types.Options.Create(streamName, expectedStreamState, timeoutAfter),
 					events, cancellationToken);
 
+			public async ValueTask<bool> IsUsable() {
+				var call = await _callTask.ConfigureAwait(false);
+				return call != null;
+			}
+
 			private async Task Receive() {
 				var call = await _callTask.ConfigureAwait(false);
+				if (call is null)
+					throw new NotSupportedException("Server does not support batch append");
+
 				try {
 					await foreach (var response in call.ResponseStream.ReadAllAsync(_cancellationToken)
 						.ConfigureAwait(false)) {
@@ -253,6 +264,8 @@ namespace EventStore.Client {
 
 			private async Task Send() {
 				var call = await _callTask.ConfigureAwait(false);
+				if (call is null)
+					throw new NotSupportedException("Server does not support batch append");
 
 				await foreach (var appendRequest in _channel.Reader.ReadAllAsync(_cancellationToken)
 					.ConfigureAwait(false)) {

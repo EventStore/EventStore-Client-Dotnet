@@ -4,17 +4,19 @@ using EndPoint = System.Net.EndPoint;
 #if !GRPC_CORE
 using System.Net.Http;
 using Grpc.Net.Client;
+using TChannel = Grpc.Net.Client.GrpcChannel;
 #else
 using System.Collections.Generic;
+using TChannel = Grpc.Core.ChannelBase;
 #endif
 
 #nullable enable
 namespace EventStore.Client {
 	internal static class ChannelFactory {
-		public static ChannelBase CreateChannel(EventStoreClientSettings settings, EndPoint endPoint) =>
-			CreateChannel(settings, endPoint.ToUri(!settings.ConnectivitySettings.Insecure));
+		public static TChannel CreateChannel(EventStoreClientSettings settings, EndPoint endPoint, bool https) =>
+			CreateChannel(settings, endPoint.ToUri(https));
 
-		public static ChannelBase CreateChannel(EventStoreClientSettings settings, Uri? address) {
+		public static TChannel CreateChannel(EventStoreClientSettings settings, Uri? address) {
 			address ??= settings.ConnectivitySettings.Address;
 
 #if !GRPC_CORE
@@ -23,7 +25,7 @@ namespace EventStore.Client {
 				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 			}
 
-			return GrpcChannel.ForAddress(address, new GrpcChannelOptions {
+			return TChannel.ForAddress(address, new GrpcChannelOptions {
 				HttpClient = new HttpClient(CreateHandler(), true) {
 					Timeout = System.Threading.Timeout.InfiniteTimeSpan,
 					DefaultRequestVersion = new Version(2, 0),
