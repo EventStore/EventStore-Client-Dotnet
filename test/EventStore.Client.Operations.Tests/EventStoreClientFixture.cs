@@ -13,6 +13,7 @@ namespace EventStore.Client {
 
 		protected override async Task OnServerUpAsync() {
 			await StreamsClient.WarmUpAsync();
+			await Client.WarmUpAsync();
 		}
 
 		public override async Task DisposeAsync() {

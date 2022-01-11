@@ -30,7 +30,7 @@ namespace EventStore.Client {
 
 			foreach (var (key, value) in overrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
 				if (key.StartsWith("EVENTSTORE") && !_sharedEnv.Contains(key))
-					throw new Exception($"Add {key} to shared.env to pass it to the cluster containers");
+					throw new Exception($"Add {key} to shared.env and _sharedEnv to pass it to the cluster containers");
 				env[key] = value;
 			}
 			return env;
@@ -49,7 +49,7 @@ namespace EventStore.Client {
 		static string UseClusterName => "ES_USE_CLUSTER";
 		static string UseExternalServerName => "ES_USE_EXTERNAL_SERVER";
 		static string ImageTagName => "ES_DOCKER_TAG";
-		static string ImageTagDefault => "ci"; // e.g. "21.6.0-focal"
+		static string ImageTagDefault => "ci"; // e.g. "21.10.1-focal";
 		static string DbLogFormatName => "EVENTSTORE_DB_LOG_FORMAT";
 		static string DbLogFormatDefault => "V2";
 
