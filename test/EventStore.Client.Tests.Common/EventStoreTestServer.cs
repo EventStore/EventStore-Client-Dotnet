@@ -88,7 +88,7 @@ namespace EventStore.Client {
 			_eventStore.Start();
 			try {
 				await Policy.Handle<Exception>()
-					.WaitAndRetryAsync(10, retryCount => TimeSpan.FromSeconds(2))
+					.WaitAndRetryAsync(200, retryCount => TimeSpan.FromMilliseconds(100))
 					.ExecuteAsync(async () => {
 						using var response = await _httpClient.GetAsync("/health/live", cancellationToken);
 						if (response.StatusCode >= HttpStatusCode.BadRequest) {

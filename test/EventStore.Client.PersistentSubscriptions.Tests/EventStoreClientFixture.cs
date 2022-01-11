@@ -16,6 +16,9 @@ namespace EventStore.Client {
 
 		protected override async Task OnServerUpAsync() {
 			await StreamsClient.WarmUpAsync();
+			await UserManagementClient.WarmUpAsync();
+			await Client.WarmUpAsync();
+
 			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser1.Username!,
 				TestCredentials.TestUser1.Username!, Array.Empty<string>(), TestCredentials.TestUser1.Password!,
 				TestCredentials.Root);

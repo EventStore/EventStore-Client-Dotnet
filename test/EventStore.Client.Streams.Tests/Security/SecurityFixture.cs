@@ -27,6 +27,8 @@ namespace EventStore.Client.Security {
 		protected override async Task OnServerUpAsync() {
 			await base.OnServerUpAsync();
 
+			await UserManagementClient.WarmUpAsync();
+
 			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser1.Username!,
 				nameof(TestCredentials.TestUser1), Array.Empty<string>(), TestCredentials.TestUser1.Password!,
 				TestCredentials.Root).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
