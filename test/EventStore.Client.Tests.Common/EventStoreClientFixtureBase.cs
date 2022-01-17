@@ -63,8 +63,8 @@ namespace EventStore.Client {
 				? new TimeSpan?()
 				: TimeSpan.FromSeconds(30);
 
-			var hostCertificatePath = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory,
-				"..", "..", "..", "..", GlobalEnvironment.UseCluster ? "certs-cluster" : "certs"));
+			var hostCertificatePath = Path.Combine(ProjectDir.Current, "..", "..",
+				GlobalEnvironment.UseCluster ? "certs-cluster" : "certs");
 
 #if GRPC_CORE
 			Settings.ChannelCredentials ??= GetServerCertificate();
