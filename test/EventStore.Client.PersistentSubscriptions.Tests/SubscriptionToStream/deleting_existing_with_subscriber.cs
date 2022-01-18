@@ -22,7 +22,7 @@ namespace EventStore.Client.SubscriptionToStream {
 			}
 
 			protected override async Task Given() {
-				await Client.CreateAsync(Stream, "groupname123",
+				await Client.CreateToStreamAsync(Stream, "groupname123",
 					new PersistentSubscriptionSettings(),
 					userCredentials: TestCredentials.Root);
 				_subscription = await Client.SubscribeToStreamAsync(Stream, "groupname123",
@@ -31,7 +31,7 @@ namespace EventStore.Client.SubscriptionToStream {
 			}
 
 			protected override Task When() =>
-				Client.DeleteAsync(Stream, "groupname123",
+				Client.DeleteToStreamAsync(Stream, "groupname123",
 					userCredentials: TestCredentials.Root);
 
 			public override Task DisposeAsync() {

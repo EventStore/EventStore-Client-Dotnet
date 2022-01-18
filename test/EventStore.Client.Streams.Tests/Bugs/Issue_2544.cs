@@ -30,11 +30,16 @@ namespace EventStore.Client.Bugs {
 		[Theory, MemberData(nameof(TestCases))]
 		public async Task subscribe_to_stream(int iteration) {
 			var streamName = $"{_fixture.GetStreamName()}_{iteration}";
+			var startFrom = FromStream.Start;
+			
+			async Task<StreamSubscription> Subscribe() => await _fixture.Client
+				.SubscribeToStreamAsync(streamName, startFrom,
+					(_,e,_) => EventAppeared(e, streamName, out startFrom),
+					resolveLinkTos: false,
+					(s,r,e) => SubscriptionDropped(s, r, e, Subscribe));
 
-			using var _ = await _fixture.Client.SubscribeToStreamAsync(streamName,
-				FromStream.Start,
-				(_, e, _) => EventAppeared(e, streamName), subscriptionDropped: SubscriptionDropped);
-
+			using var _ = await Subscribe();
+			
 			await AppendEvents(streamName);
 
 			await _completed.Task.WithTimeout();
@@ -43,10 +48,16 @@ namespace EventStore.Client.Bugs {
 		[Theory, MemberData(nameof(TestCases))]
 		public async Task subscribe_to_all(int iteration) {
 			var streamName = $"{_fixture.GetStreamName()}_{iteration}";
+			var startFrom = FromAll.Start;
+			
+			async Task<StreamSubscription> Subscribe() => await _fixture.Client
+				.SubscribeToAllAsync(startFrom,
+					(_, e, _) => EventAppeared(e, streamName, out startFrom),
+					resolveLinkTos: false,
+					(s, r, e) => SubscriptionDropped(s, r, e, Subscribe));
 
-			using var _ = await _fixture.Client.SubscribeToAllAsync(FromAll.Start,
-				(_, e, _) => EventAppeared(e, streamName), false, SubscriptionDropped);
-
+			using var _ = await Subscribe();
+			
 			await AppendEvents(streamName);
 
 			await _completed.Task.WithTimeout();
@@ -55,11 +66,17 @@ namespace EventStore.Client.Bugs {
 		[Theory, MemberData(nameof(TestCases))]
 		public async Task subscribe_to_all_filtered(int iteration) {
 			var streamName = $"{_fixture.GetStreamName()}_{iteration}";
+			var startFrom = FromAll.Start;
 
-			using var _ = await _fixture.Client.SubscribeToAllAsync(FromAll.Start,
-				(_, e, _) => EventAppeared(e, streamName), false, SubscriptionDropped,
-				new SubscriptionFilterOptions(EventTypeFilter.ExcludeSystemEvents()));
+			async Task<StreamSubscription> Subscribe() => await _fixture.Client
+				.SubscribeToAllAsync(startFrom,
+					(_, e, _) => EventAppeared(e, streamName, out startFrom),
+					resolveLinkTos: false,
+					(s, r, e) => SubscriptionDropped(s, r, e, Subscribe),
+					new SubscriptionFilterOptions(EventTypeFilter.ExcludeSystemEvents()));
 
+			await Subscribe();
+			
 			await AppendEvents(streamName);
 
 			await _completed.Task.WithTimeout();
@@ -89,11 +106,31 @@ namespace EventStore.Client.Bugs {
 			});
 		}
 
-		private void SubscriptionDropped(StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex) {
-			if (ex == null) return;
+		private void SubscriptionDropped(StreamSubscription _, SubscriptionDroppedReason __, Exception? ex,
+			Func<Task<StreamSubscription>> resubscribe) {
+
+			if (ex == null) {
+				return;
+			}
+
+			if (ex.Message.Contains("too slow") && ex.Message.Contains("resubscription required")) {
+				resubscribe();
+				return;
+			}
+			
 			_completed.TrySetException(ex);
 		}
 
+		private Task EventAppeared(ResolvedEvent e, string streamName, out FromStream startFrom) {
+			startFrom = FromStream.After(e.OriginalEventNumber);
+			return EventAppeared(e, streamName);
+		}
+
+		private Task EventAppeared(ResolvedEvent e, string streamName, out FromAll startFrom) {
+			startFrom = FromAll.After(e.OriginalPosition!.Value);
+			return EventAppeared(e, streamName);
+		}
+		
 		private Task EventAppeared(ResolvedEvent e, string streamName) {
 			if (e.OriginalStreamId != streamName) {
 				return Task.CompletedTask;

@@ -8,13 +8,15 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Deletes a persistent subscription.
 		/// </summary>
-		/// <param name="streamName"></param>
-		/// <param name="groupName"></param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public async Task DeleteAsync(string streamName, string groupName, TimeSpan? deadline = null,
+		[Obsolete("DeleteAsync is no longer supported. Use DeleteToStreamAsync instead.", false)]
+		public Task DeleteAsync(string streamName, string groupName, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) =>
+			DeleteToStreamAsync(streamName, groupName, deadline, userCredentials, cancellationToken);
+
+		/// <summary>
+		/// Deletes a persistent subscription.
+		/// </summary>
+		public async Task DeleteToStreamAsync(string streamName, string groupName, TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 
@@ -45,14 +47,9 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Deletes a persistent subscription to $all.
 		/// </summary>
-		/// <param name="groupName"></param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
 		public async Task DeleteToAllAsync(string groupName, TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) =>
-			await DeleteAsync(SystemStreams.AllStream, groupName, deadline, userCredentials, cancellationToken)
+			await DeleteToStreamAsync(SystemStreams.AllStream, groupName, deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 	}
 }

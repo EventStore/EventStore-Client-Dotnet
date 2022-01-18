@@ -12,9 +12,8 @@ namespace EventStore.Client {
 				[SystemConsumerStrategies.RoundRobin] = CreateReq.Types.ConsumerStrategy.RoundRobin,
 				[SystemConsumerStrategies.Pinned] = CreateReq.Types.ConsumerStrategy.Pinned,
 			};
-
-		private static CreateReq.Types.StreamOptions StreamOptionsForCreateProto(string streamName,
-			StreamPosition position) {
+			
+		private static CreateReq.Types.StreamOptions StreamOptionsForCreateProto(string streamName, StreamPosition position) {
 			if (position == StreamPosition.Start) {
 				return new CreateReq.Types.StreamOptions {
 					StreamIdentifier = streamName,
@@ -118,31 +117,29 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Creates a persistent subscription.
 		/// </summary>
-		/// <param name="streamName"></param>
-		/// <param name="groupName"></param>
-		/// <param name="settings"></param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
+		public async Task CreateToStreamAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) =>
+			await CreateInternalAsync(streamName, groupName, null, settings, deadline, userCredentials,
+					cancellationToken)
+				.ConfigureAwait(false);
+		
+		/// <summary>
+		/// Creates a persistent subscription.
+		/// </summary>
+		/// <exception cref="ArgumentNullException"></exception>
+		[Obsolete("CreateAsync is no longer supported. Use CreateToStreamAsync instead.", false)]
 		public async Task CreateAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
 			await CreateInternalAsync(streamName, groupName, null, settings, deadline, userCredentials,
 					cancellationToken)
 				.ConfigureAwait(false);
-
+		
 		/// <summary>
 		/// Creates a filtered persistent subscription to $all.
 		/// </summary>
-		/// <param name="groupName"></param>
-		/// <param name="eventFilter"></param>
-		/// <param name="settings"></param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
 		public async Task CreateToAllAsync(string groupName, IEventFilter eventFilter,
 			PersistentSubscriptionSettings settings, TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
@@ -153,12 +150,6 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Creates a persistent subscription to $all.
 		/// </summary>
-		/// <param name="groupName"></param>
-		/// <param name="settings"></param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
 		public async Task CreateToAllAsync(string groupName, PersistentSubscriptionSettings settings,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
@@ -196,6 +187,11 @@ namespace EventStore.Client {
 			if (eventFilter != null && streamName != SystemStreams.AllStream) {
 				throw new ArgumentException(
 					$"Filters are only supported when subscribing to {SystemStreams.AllStream}");
+			}
+
+			if (!NamedConsumerStrategyToCreateProto.Keys.Contains(settings.ConsumerStrategyName)) {
+				throw new NotSupportedException(
+					"The specified consumer strategy is not supported, specify one of the SystemConsumerStrategies");
 			}
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
@@ -238,7 +234,10 @@ namespace EventStore.Client {
 						MaxRetryCount = settings.MaxRetryCount,
 						MaxSubscriberCount = settings.MaxSubscriberCount,
 						MinCheckpointCount = settings.CheckPointLowerBound,
+#pragma warning disable 612
+						/*for backwards compatibility*/
 						NamedConsumerStrategy = NamedConsumerStrategyToCreateProto[settings.ConsumerStrategyName],
+#pragma warning restore 612
 						ReadBatchSize = settings.ReadBatchSize
 					}
 				}

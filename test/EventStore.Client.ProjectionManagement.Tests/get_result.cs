@@ -11,8 +11,17 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task returns_expected_result() {
-			var result = await _fixture.Client.GetResultAsync<Result>(nameof(get_result), userCredentials: TestCredentials.TestUser1);
-			Assert.Equal(1, result.Count);
+			Result? result = null;
+
+			await AssertEx.IsOrBecomesTrue(async () => {
+				result = await _fixture.Client
+					.GetResultAsync<Result>(nameof(get_result), userCredentials: TestCredentials.TestUser1);
+
+				return result.Count > 0;
+			});
+
+			Assert.NotNull(result);
+			Assert.Equal(1, result!.Count);
 		}
 
 		private class Result {

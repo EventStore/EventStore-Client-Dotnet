@@ -22,6 +22,8 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
+		<!-- https://github.com/advisories/GHSA-5crp-9r3c-p9vr -->
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
 	</ItemGroup>
 	<ItemGroup>
 		<CompilerVisibleProperty Include="RootNamespace"/>

@@ -15,7 +15,7 @@ namespace EventStore.Client.SubscriptionToStream {
 		[Fact]
 		public async Task the_delete_fails_with_access_denied() {
 			await Assert.ThrowsAsync<AccessDeniedException>(
-				() => _fixture.Client.DeleteAsync(Stream,
+				() => _fixture.Client.DeleteToStreamAsync(Stream,
 					Guid.NewGuid().ToString()));
 		}
 

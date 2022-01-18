@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Encodings.Web;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -15,13 +16,12 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Constructs a new <see cref="EventStorePersistentSubscriptionsClient"/>.
 		/// </summary>
-		/// <param name="settings"></param>
 		public EventStorePersistentSubscriptionsClient(EventStoreClientSettings? settings) : base(settings,
 			new Dictionary<string, Func<RpcException, Exception>> {
 				[Constants.Exceptions.PersistentSubscriptionDoesNotExist] = ex => new
 					PersistentSubscriptionNotFoundException(
 						ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
-						ex.Trailers.First(x => x.Key == Constants.Exceptions.GroupName).Value, ex),
+						ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.GroupName)?.Value ?? "", ex),
 				[Constants.Exceptions.MaximumSubscribersReached] = ex => new
 					MaximumSubscribersReachedException(
 						ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
@@ -33,6 +33,10 @@ namespace EventStore.Client {
 			}) {
 			_log = Settings.LoggerFactory?.CreateLogger<EventStorePersistentSubscriptionsClient>()
 			       ?? new NullLogger<EventStorePersistentSubscriptionsClient>();
+		}
+		
+		private static string UrlEncode(string s) {
+			return UrlEncoder.Default.Encode(s);
 		}
 	}
 }

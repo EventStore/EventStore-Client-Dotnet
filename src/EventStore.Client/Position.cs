@@ -153,5 +153,48 @@ namespace EventStore.Client {
 		/// </returns>
 		/// <filterpriority>2</filterpriority>
 		public override string ToString() => $"C:{CommitPosition}/P:{PreparePosition}";
+
+		/// <summary>
+		/// Tries to convert the string representation of a <see cref="Position" /> to its <see cref="Position" /> equivalent.
+		/// A return value indicates whether the conversion succeeded or failed.
+		/// </summary>
+		/// <param name="value">A string that represents the <see cref="Position" /> to convert.</param>
+		/// <param name="position">Contains the <see cref="Position" /> that is equivalent to the string
+		/// representation, if the conversion succeeded, or null if the conversion failed.</param>
+		/// <returns>true if the value was converted successfully; otherwise, false.</returns>
+		public static bool TryParse(string value, out Position? position) {
+			position = null;
+			var parts = value.Split("/");
+
+			if (parts.Length != 2) {
+				return false;
+			}
+
+			if (!TryParsePosition("C", parts[0], out var commitPosition)) {
+				return false;
+			}
+
+			if (!TryParsePosition("P", parts[1], out var preparePosition)) {
+				return false;
+			}
+
+			position = new Position(commitPosition, preparePosition);
+			return true;
+
+			static bool TryParsePosition(string expectedPrefix, string v, out ulong p) {
+				p = 0;
+				
+				var prts = v.Split(":");
+				if (prts.Length != 2) {
+					return false;
+				}
+				
+				if (prts[0] != expectedPrefix) {
+					return false;
+				}
+
+				return ulong.TryParse(prts[1], out p);
+			}
+		}
 	}
 }

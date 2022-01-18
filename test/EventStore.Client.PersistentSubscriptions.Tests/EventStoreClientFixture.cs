@@ -3,11 +3,14 @@ using System.Threading.Tasks;
 
 namespace EventStore.Client {
 	public abstract class EventStoreClientFixture : EventStoreClientFixtureBase {
+		private readonly bool _skipPsWarmUp;
 		public EventStorePersistentSubscriptionsClient Client { get; }
 		public EventStoreClient StreamsClient { get; }
 		public EventStoreUserManagementClient UserManagementClient { get; }
 
-		protected EventStoreClientFixture(EventStoreClientSettings? settings = null) : base(settings) {
+		protected EventStoreClientFixture(EventStoreClientSettings? settings = null, bool skipPSWarmUp=false) : base(settings) {
+			_skipPsWarmUp = skipPSWarmUp;
+			
 			Client = new EventStorePersistentSubscriptionsClient(Settings);
 			StreamsClient = new EventStoreClient(Settings);
 			UserManagementClient = new EventStoreUserManagementClient(Settings);
@@ -16,7 +19,10 @@ namespace EventStore.Client {
 		protected override async Task OnServerUpAsync() {
 			await StreamsClient.WarmUpAsync();
 			await UserManagementClient.WarmUpAsync();
-			await Client.WarmUpAsync();
+			
+			if (!_skipPsWarmUp) {
+				await Client.WarmUpAsync();
+			}
 
 			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser1.Username!,
 				TestCredentials.TestUser1.Username!, Array.Empty<string>(), TestCredentials.TestUser1.Password!,

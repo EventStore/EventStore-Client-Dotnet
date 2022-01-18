@@ -17,7 +17,7 @@ namespace EventStore.Client.SubscriptionToStream {
 
 		public class Fixture : EventStoreClientFixture {
 			protected override Task Given() =>
-				Client.CreateAsync(
+				Client.CreateToStreamAsync(
 					Stream,
 					"agroupname55",
 					new PersistentSubscriptionSettings(),

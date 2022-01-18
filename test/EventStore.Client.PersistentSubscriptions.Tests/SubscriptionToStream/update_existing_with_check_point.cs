@@ -11,11 +11,9 @@ namespace EventStore.Client.SubscriptionToStream {
 		private const string Stream = nameof(update_existing_with_check_point);
 		private const string Group = "existing-with-check-point";
 		private readonly Fixture _fixture;
-		private readonly ITestOutputHelper _testOutput;
 
-		public update_existing_with_check_point(Fixture fixture, ITestOutputHelper testOutput) {
+		public update_existing_with_check_point(Fixture fixture) {
 			_fixture = fixture;
-			_testOutput = testOutput;
 		}
 
 		[Fact]
@@ -49,7 +47,7 @@ namespace EventStore.Client.SubscriptionToStream {
 			protected override async Task Given() {
 				await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, _events);
 
-				await Client.CreateAsync(Stream, Group,
+				await Client.CreateToStreamAsync(Stream, Group,
 					new PersistentSubscriptionSettings(
 						checkPointLowerBound: 5,
 						checkPointAfter: TimeSpan.FromSeconds(1),
@@ -90,7 +88,7 @@ namespace EventStore.Client.SubscriptionToStream {
 
 			protected override async Task When() {
 				// Force restart of the subscription
-				await Client.UpdateAsync(Stream, Group, new PersistentSubscriptionSettings(),
+				await Client.UpdateToStreamAsync(Stream, Group, new PersistentSubscriptionSettings(),
 					userCredentials: TestCredentials.Root);
 
 				await _droppedSource.Task.WithTimeout();

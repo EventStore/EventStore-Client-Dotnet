@@ -73,19 +73,6 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Constructs a new <see cref="PersistentSubscriptionSettings"/>.
 		/// </summary>
-		/// <param name="resolveLinkTos"></param>
-		/// <param name="startFrom"></param>
-		/// <param name="extraStatistics"></param>
-		/// <param name="messageTimeout"></param>
-		/// <param name="maxRetryCount"></param>
-		/// <param name="liveBufferSize"></param>
-		/// <param name="readBatchSize"></param>
-		/// <param name="historyBufferSize"></param>
-		/// <param name="checkPointAfter"></param>
-		/// <param name="checkPointLowerBound"></param>
-		/// <param name="checkPointUpperBound"></param>
-		/// <param name="maxSubscriberCount"></param>
-		/// <param name="consumerStrategyName"></param>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public PersistentSubscriptionSettings(bool resolveLinkTos = false, IPosition? startFrom = null,
 			bool extraStatistics = false, TimeSpan? messageTimeout = null, int maxRetryCount = 10,

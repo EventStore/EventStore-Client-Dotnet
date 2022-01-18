@@ -15,10 +15,6 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <summary>
 		/// Adds an <see cref="EventStorePersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
-		/// <param name="services"></param>
-		/// <param name="address"></param>
-		/// <param name="createHttpMessageHandler"></param>
-		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddEventStorePersistentSubscriptionsClient(this IServiceCollection services,
 			Uri address, Func<HttpMessageHandler>? createHttpMessageHandler = null)
@@ -30,9 +26,6 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <summary>
 		/// Adds an <see cref="EventStorePersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
-		/// <param name="services"></param>
-		/// <param name="configureSettings"></param>
-		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddEventStorePersistentSubscriptionsClient(this IServiceCollection services,
 			Action<EventStoreClientSettings>? configureSettings = null) =>
@@ -42,10 +35,6 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <summary>
 		/// Adds an <see cref="EventStorePersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
-		/// <param name="services"></param>
-		/// <param name="connectionString"></param>
-		/// <param name="configureSettings"></param>
-		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddEventStorePersistentSubscriptionsClient(this IServiceCollection services,
 			string connectionString, Action<EventStoreClientSettings>? configureSettings = null) =>

@@ -195,6 +195,10 @@ namespace EventStore.Client {
 						connSettings.IpGossipSeeds = Array.ConvertAll(hosts, x => (IPEndPoint)x);
 				}
 
+				if (typedOptions.TryGetValue(TlsVerifyCert, out var tlsVerifyCert)) {
+					settings.ConnectivitySettings.TlsVerifyCert = (bool)tlsVerifyCert;
+				}
+				
 				settings.CreateHttpMessageHandler = () => {
 					var handler = new SocketsHttpHandler {
 						KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,
@@ -202,7 +206,7 @@ namespace EventStore.Client {
 						EnableMultipleHttp2Connections = true,
 					};
 
-					if (typedOptions.TryGetValue(TlsVerifyCert, out var tlsVerifyCert) && !(bool)tlsVerifyCert) {
+					if (!settings.ConnectivitySettings.TlsVerifyCert) {
 						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
 					}
 

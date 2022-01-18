@@ -45,5 +45,22 @@ namespace EventStore.Client {
 				Customize<Position>(composer => composer.FromFactory<ulong>(value => new Position(value, value)));
 			}
 		}
+		
+		[Theory, MemberData(nameof(ParseTestCases))]
+		public void TryParse(string s, bool success, Position? expected) {
+			Position? p;
+			Assert.Equal(success, Position.TryParse(s, out p));
+			Assert.Equal(expected, p);
+		}
+		
+		public static IEnumerable<object?[]> ParseTestCases() {
+			yield return new object?[] {"", false, null};
+			yield return new object?[] {"CP", false, null};
+			yield return new object?[] {"C:6\\P:5", false, null};
+			yield return new object[] {Position.Start.ToString(), true, Position.Start};
+			yield return new object[] {Position.End.ToString(), true, Position.End};
+			yield return new object[] {"C:6/P:5", true, new Position(6, 5)};
+			yield return new object[] {"C: 6/P:5", true, new Position(6, 5)};
+		}
 	}
 }

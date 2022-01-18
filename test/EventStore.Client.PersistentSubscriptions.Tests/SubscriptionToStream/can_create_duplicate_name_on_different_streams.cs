@@ -17,13 +17,13 @@ namespace EventStore.Client.SubscriptionToStream {
 			protected override Task Given() => Task.CompletedTask;
 
 			protected override Task When() =>
-				Client.CreateAsync(Stream, "group3211",
+				Client.CreateToStreamAsync(Stream, "group3211",
 					new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 		}
 
 		[Fact]
 		public Task the_completion_succeeds() =>
-			_fixture.Client.CreateAsync("someother" + Stream,
+			_fixture.Client.CreateToStreamAsync("someother" + Stream,
 				"group3211", new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 	}
 }

@@ -18,6 +18,7 @@ namespace EventStore.Client {
 
 		public static bool UseCluster { get; } = false;
 		public static bool UseExternalServer { get; } = false;
+		public static string DockerImage => $"{ContainerRegistry}:{ImageTag}";
 		public static string ImageTag => GetEnvironmentVariable(ImageTagName, ImageTagDefault);
 		public static string DbLogFormat => GetEnvironmentVariable(DbLogFormatName, DbLogFormatDefault);
 
@@ -47,6 +48,7 @@ namespace EventStore.Client {
 
 		static string UseClusterName => "ES_USE_CLUSTER";
 		static string UseExternalServerName => "ES_USE_EXTERNAL_SERVER";
+		private static string ContainerRegistry => "ghcr.io/eventstore/eventstore";
 		static string ImageTagName => "ES_DOCKER_TAG";
 		static string ImageTagDefault => "ci"; // e.g. "21.10.1-focal";
 		static string DbLogFormatName => "EVENTSTORE_DB_LOG_FORMAT";

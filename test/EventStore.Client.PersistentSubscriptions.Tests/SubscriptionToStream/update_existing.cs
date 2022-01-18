@@ -14,14 +14,14 @@ namespace EventStore.Client.SubscriptionToStream {
 
 		[Fact]
 		public async Task the_completion_succeeds() {
-			await _fixture.Client.UpdateAsync(Stream, Group,
+			await _fixture.Client.UpdateToStreamAsync(Stream, Group,
 				new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 		}
 
 		public class Fixture : EventStoreClientFixture {
 			protected override async Task Given() {
 				await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, CreateTestEvents());
-				await Client.CreateAsync(Stream, Group, new PersistentSubscriptionSettings(),
+				await Client.CreateToStreamAsync(Stream, Group, new PersistentSubscriptionSettings(),
 					userCredentials: TestCredentials.Root);
 			}
 

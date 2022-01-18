@@ -15,14 +15,14 @@ namespace EventStore.Client.SubscriptionToStream {
 			protected override Task Given() => Task.CompletedTask;
 
 			protected override Task When() =>
-				Client.CreateAsync(Stream, "groupname123",
+				Client.CreateToStreamAsync(Stream, "groupname123",
 					new PersistentSubscriptionSettings(),
 					userCredentials: TestCredentials.Root);
 		}
 
 		[Fact]
 		public Task the_delete_of_group_succeeds() =>
-			_fixture.Client.DeleteAsync(Stream, "groupname123",
+			_fixture.Client.DeleteToStreamAsync(Stream, "groupname123",
 				userCredentials: TestCredentials.Root);
 	}
 }

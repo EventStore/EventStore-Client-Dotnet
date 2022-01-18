@@ -15,7 +15,7 @@ namespace EventStore.Client.SubscriptionToStream {
 		[Regression.Fact(21, "20.x returns the wrong exception")]
 		public async Task the_completion_fails_with_not_found() {
 			await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
-				() => _fixture.Client.UpdateAsync(Stream, Group,
+				() => _fixture.Client.UpdateToStreamAsync(Stream, Group,
 					new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root));
 		}
 

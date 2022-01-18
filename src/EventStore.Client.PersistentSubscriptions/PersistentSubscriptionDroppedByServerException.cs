@@ -18,9 +18,6 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Constructs a new <see cref="PersistentSubscriptionDroppedByServerException"/>.
 		/// </summary>
-		/// <param name="streamName"></param>
-		/// <param name="groupName"></param>
-		/// <param name="exception"></param>
 		/// <exception cref="ArgumentNullException"></exception>
 		public PersistentSubscriptionDroppedByServerException(string streamName, string groupName,
 			Exception? exception = null)
