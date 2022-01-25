@@ -22,10 +22,7 @@ namespace EventStore.Client {
 			var value = await GetResultInternalAsync(name, partition, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 
-#if !NETFRAMEWORK
-			await
-#endif
-			using var stream = new MemoryStream();
+			await using var stream = new MemoryStream();
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
 			serializer.Write(writer, value, new JsonSerializerOptions());
@@ -50,10 +47,7 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken = default) {
 			var value = await GetResultInternalAsync(name, partition, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
-#if !NETFRAMEWORK
-			await
-#endif
-				using var stream = new MemoryStream();
+			await using var stream = new MemoryStream();
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
 			serializer.Write(writer, value, new JsonSerializerOptions());
@@ -92,10 +86,7 @@ namespace EventStore.Client {
 			var value = await GetStateInternalAsync(name, partition, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 
-#if !NETFRAMEWORK
-			await
-#endif
-			using var stream = new MemoryStream();
+			await using var stream = new MemoryStream();
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
 			serializer.Write(writer, value, new JsonSerializerOptions());
@@ -121,10 +112,7 @@ namespace EventStore.Client {
 			var value = await GetStateInternalAsync(name, partition, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 
-#if !NETFRAMEWORK
-			await
-#endif
-			using var stream = new MemoryStream();
+			await using var stream = new MemoryStream();
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
 			serializer.Write(writer, value, new JsonSerializerOptions());

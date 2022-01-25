@@ -11,14 +11,11 @@
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
 		<PackageReference Include="System.Linq.Async" Version="5.0.0" />
 	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-		<PackageReference Include="System.Threading.Channels" Version="5.0.0" />
-	</ItemGroup>
-	<ItemGroup Condition="$(TargetFramework) != 'net5.0'">
+	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
 		<PackageReference Include="Grpc.Core" Version="$(GrpcCorePackageVersion)" />
 		<PackageReference Include="System.Text.Json" Version="5.0.0" />
 	</ItemGroup>
-	<ItemGroup Condition="$(TargetFramework) == 'net5.0'">
+	<ItemGroup Condition="'$(TargetFramework)' != 'netcoreapp3.1'">
 		<PackageReference Include="Grpc.Net.Client" Version="$(GrpcPackageVersion)" />
 	</ItemGroup>
 	<ItemGroup>

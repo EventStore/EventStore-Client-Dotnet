@@ -28,19 +28,9 @@ namespace EventStore.Client {
 			_hostCertificatePath = hostCertificatePath;
 			VerifyCertificatesExist();
 
-			_httpClient = new HttpClient(
-#if NETFRAMEWORK
-					new HttpClientHandler {
-						ServerCertificateCustomValidationCallback = delegate { return true; }
-					}
-#else
-					new SocketsHttpHandler {
-						SslOptions = {
-							RemoteCertificateValidationCallback = delegate { return true; }
-						}
-					}
-#endif
-				) {
+			_httpClient = new HttpClient(new SocketsHttpHandler {
+				SslOptions = {RemoteCertificateValidationCallback = delegate { return true; }}
+			}) {
 				BaseAddress = address,
 			};
 

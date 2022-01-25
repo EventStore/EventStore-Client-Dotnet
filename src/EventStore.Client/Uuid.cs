@@ -65,18 +65,6 @@ namespace EventStore.Client {
 				throw new NotSupportedException();
 			}
 
-#if NETFRAMEWORK
-			var data = value.ToByteArray();
-
-			Array.Reverse(data, 0, 8);
-			Array.Reverse(data, 0, 2);
-			Array.Reverse(data, 2, 2);
-			Array.Reverse(data, 4, 4);
-			Array.Reverse(data, 8, 8);
-
-			_msb = BitConverter.ToInt64(data, 0);
-			_lsb = BitConverter.ToInt64(data, 8);
-#else
 			Span<byte> data = stackalloc byte[16];
 
 			if (!value.TryWriteBytes(data)) {
@@ -91,7 +79,6 @@ namespace EventStore.Client {
 
 			_msb = BitConverter.ToInt64(data);
 			_lsb = BitConverter.ToInt64(data.Slice(8));
-#endif
 		}
 
 		private Uuid(string value) : this(value == null
@@ -160,21 +147,7 @@ namespace EventStore.Client {
 			if (!BitConverter.IsLittleEndian) {
 				throw new NotSupportedException();
 			}
-#if NETFRAMEWORK
-			var msb = BitConverter.GetBytes(_msb);
-			Array.Reverse(msb, 0, 8);
-			Array.Reverse(msb, 0, 4);
-			Array.Reverse(msb, 4, 2);
-			Array.Reverse(msb, 6, 2);
 
-			var lsb = BitConverter.GetBytes(_lsb);
-			Array.Reverse(lsb);
-
-			var data = new byte[16];
-			Array.Copy(msb, data, 8);
-			Array.Copy(lsb, 0, data, 8, 8);
-			return new Guid(data);
-#else
 			Span<byte> data = stackalloc byte[16];
 			if (!BitConverter.TryWriteBytes(data, _msb) ||
 			    !BitConverter.TryWriteBytes(data.Slice(8), _lsb)) {
@@ -188,8 +161,6 @@ namespace EventStore.Client {
 			data.Slice(8).Reverse();
 
 			return new Guid(data);
-
-#endif
 		}
 	}
 }
