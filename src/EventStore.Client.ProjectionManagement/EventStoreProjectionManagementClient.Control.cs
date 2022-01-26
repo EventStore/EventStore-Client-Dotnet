@@ -14,8 +14,9 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task EnableAsync(string name, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).EnableAsync(new EnableReq {
+				channelInfo.CallInvoker).EnableAsync(new EnableReq {
 				Options = new EnableReq.Types.Options {
 					Name = name
 				}
@@ -32,8 +33,9 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task ResetAsync(string name, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).ResetAsync(new ResetReq {
+				channelInfo.CallInvoker).ResetAsync(new ResetReq {
 				Options = new ResetReq.Types.Options {
 					Name = name,
 					WriteCheckpoint = true
@@ -66,8 +68,9 @@ namespace EventStore.Client {
 
 		private async Task DisableInternalAsync(string name, bool writeCheckpoint, UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).DisableAsync(new DisableReq {
+				channelInfo.CallInvoker).DisableAsync(new DisableReq {
 				Options = new DisableReq.Types.Options {
 					Name = name,
 					WriteCheckpoint = writeCheckpoint
@@ -84,9 +87,11 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task RestartSubsystemAsync(UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			await new Projections.Projections.ProjectionsClient(
-				await SelectCallInvoker(cancellationToken).ConfigureAwait(false)).RestartSubsystemAsync(new Empty(),
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			using var call = new Projections.Projections.ProjectionsClient(
+				channelInfo.CallInvoker).RestartSubsystemAsync(new Empty(),
 				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			await call.ResponseAsync.ConfigureAwait(false);
 		}
 	}
 }

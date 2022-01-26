@@ -11,21 +11,17 @@
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
 		<PackageReference Include="System.Linq.Async" Version="5.0.0" />
 	</ItemGroup>
-	<ItemGroup Condition="$(TargetFramework) != 'net5.0'">
-		<PackageReference Include="Grpc.Core" Version="$(GrpcPackageVersion)" />
+	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+		<PackageReference Include="Grpc.Core" Version="$(GrpcCorePackageVersion)" />
 		<PackageReference Include="System.Text.Json" Version="5.0.0" />
 	</ItemGroup>
-	<ItemGroup Condition="$(TargetFramework) == 'net5.0'">
+	<ItemGroup Condition="'$(TargetFramework)' != 'netcoreapp3.1'">
 		<PackageReference Include="Grpc.Net.Client" Version="$(GrpcPackageVersion)" />
-	</ItemGroup>
-	<ItemGroup>
-		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-			<_Parameter1>EventStore.Grpc.Operations</_Parameter1>
-		</AssemblyAttribute>
 	</ItemGroup>
 	<ItemGroup>
 		<Protobuf Include="..\EventStore.Client.Common\protos\shared.proto;..\EventStore.Client.Common\protos\status.proto;..\EventStore.Client.Common\protos\code.proto;" GrpcServices="Client" ProtoRoot="..\EventStore.Client.Common\protos" />
 		<Protobuf Include="..\EventStore.Client.Common\protos\gossip.proto" ProtoRoot="..\EventStore.Client.Common\protos" />
+		<Protobuf Include="..\EventStore.Client.Common\protos\serverfeatures.proto" ProtoRoot="..\EventStore.Client.Common\protos" />
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Remove="..\EventStore.Client.Common\TypedExceptionInterceptor.cs" />

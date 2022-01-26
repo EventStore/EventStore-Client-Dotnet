@@ -28,19 +28,9 @@ namespace EventStore.Client {
 			_hostCertificatePath = hostCertificatePath;
 			VerifyCertificatesExist();
 
-			_httpClient = new HttpClient(
-#if NETFRAMEWORK
-					new HttpClientHandler {
-						ServerCertificateCustomValidationCallback = delegate { return true; }
-					}
-#else
-					new SocketsHttpHandler {
-						SslOptions = {
-							RemoteCertificateValidationCallback = delegate { return true; }
-						}
-					}
-#endif
-				) {
+			_httpClient = new HttpClient(new SocketsHttpHandler {
+				SslOptions = {RemoteCertificateValidationCallback = delegate { return true; }}
+			}) {
 				BaseAddress = address,
 			};
 
@@ -51,6 +41,7 @@ namespace EventStore.Client {
 				["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"] = "/etc/eventstore/certs/node/node.key",
 				["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"] = "/etc/eventstore/certs/ca",
 				["EVENTSTORE_LOG_LEVEL"] = "Verbose",
+				["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"] = "10000",
 				["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"] = "True"
 			};
 			foreach (var (key, value) in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
@@ -90,7 +81,7 @@ namespace EventStore.Client {
 			_eventStore.Start();
 			try {
 				await Policy.Handle<Exception>()
-					.WaitAndRetryAsync(10, retryCount => TimeSpan.FromSeconds(2))
+					.WaitAndRetryAsync(200, retryCount => TimeSpan.FromMilliseconds(100))
 					.ExecuteAsync(async () => {
 						using var response = await _httpClient.GetAsync("/health/live", cancellationToken);
 						if (response.StatusCode >= HttpStatusCode.BadRequest) {

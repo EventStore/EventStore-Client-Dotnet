@@ -26,19 +26,9 @@ namespace EventStore.Client {
 
 			_eventStoreCluster = BuildCluster(envOverrides);
 
-			_httpClient = new HttpClient(
-#if NETFRAMEWORK
-					new HttpClientHandler {
-						ServerCertificateCustomValidationCallback = delegate { return true; }
-					}
-#else
-					new SocketsHttpHandler {
-						SslOptions = {
-							RemoteCertificateValidationCallback = delegate { return true; }
-						}
-					}
-#endif
-				) {
+			_httpClient = new HttpClient(new SocketsHttpHandler {
+				SslOptions = {RemoteCertificateValidationCallback = delegate { return true; }}
+			}) {
 				BaseAddress = address,
 			};
 		}
@@ -72,7 +62,7 @@ namespace EventStore.Client {
 					});
 
 				await Policy.Handle<Exception>()
-					.WaitAndRetryAsync(10, retryCount => TimeSpan.FromSeconds(2))
+					.WaitAndRetryAsync(200, retryCount => TimeSpan.FromMilliseconds(100))
 					.ExecuteAsync(async () => {
 						using var response = await _httpClient.GetAsync("/health/live", cancellationToken);
 						if (response.StatusCode >= HttpStatusCode.BadRequest) {

@@ -59,9 +59,16 @@ namespace EventStore.Client.SubscriptionToAll {
 
 				var checkPointStream = $"$persistentsubscription-$all::{Group}-checkpoint";
 				_checkPointSubscription = await StreamsClient.SubscribeToStreamAsync(checkPointStream,
-					(s, e, ct) => {
+					(_, e, ct) => {
 						_checkPointSource.TrySetResult(e);
 						return Task.CompletedTask;
+					},
+					subscriptionDropped: (_, reason, ex) => {
+						if (ex is not null) {
+							_checkPointSource.TrySetException(ex);
+						} else {
+							_checkPointSource.TrySetResult(default);
+						}
 					},
 					userCredentials: TestCredentials.Root);
 				
@@ -92,6 +99,13 @@ namespace EventStore.Client.SubscriptionToAll {
 						_resumedSource.TrySetResult(e);
 						await s.Ack(e);
 						s.Dispose();
+					},
+					(_, reason, ex) => {
+						if (ex is not null) {
+							_resumedSource.TrySetException(ex);
+						} else {
+							_resumedSource.TrySetResult(default);
+						}
 					},
 					userCredentials: TestCredentials.Root);
 				

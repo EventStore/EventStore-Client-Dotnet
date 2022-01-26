@@ -45,14 +45,11 @@ namespace EventStore.Client {
 		/// </summary>
 		public TimeSpan GossipTimeout { get; set; }
 
-#if !NETFRAMEWORK
-
 		/// <summary>
 		/// Whether or not to use HTTPS when communicating via gossip.
 		/// </summary>
 		[Obsolete]
 		public bool GossipOverHttps { get; set; } = true;
-#endif
 
 		/// <summary>
 		/// The polling interval used to discover the <see cref="EndPoint"/>.

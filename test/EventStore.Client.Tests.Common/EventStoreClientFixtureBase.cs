@@ -47,7 +47,9 @@ namespace EventStore.Client {
 				.WriteTo.Observers(observable => observable.Subscribe(LogEventSubject.OnNext))
 				.WriteTo.Seq("http://localhost:5341/", period: TimeSpan.FromMilliseconds(1));
 			Log.Logger = loggerConfiguration.CreateLogger();
-
+#if GRPC_CORE
+			GrpcEnvironment.SetLogger(new GrpcCoreSerilogLogger(Log.Logger.ForContext<GrpcCoreSerilogLogger>()));
+#endif
 			AppDomain.CurrentDomain.DomainUnload += (_, e) => Log.CloseAndFlush();
 		}
 
@@ -105,7 +107,7 @@ namespace EventStore.Client {
 
 		public virtual async Task InitializeAsync() {
 			await TestServer.StartAsync().WithTimeout(TimeSpan.FromMinutes(5));
-			await OnServerUpAsync();
+			await OnServerUpAsync().WithTimeout(TimeSpan.FromMinutes(5));
 			await Given().WithTimeout(TimeSpan.FromMinutes(5));
 			await When().WithTimeout(TimeSpan.FromMinutes(5));
 		}
@@ -115,7 +117,7 @@ namespace EventStore.Client {
 				disposable.Dispose();
 			}
 
-			return TestServer.DisposeAsync().AsTask();
+			return TestServer.DisposeAsync().AsTask().WithTimeout(TimeSpan.FromMinutes(5));
 		}
 
 		public string GetStreamName([CallerMemberName] string? testMethod = null) {
@@ -129,11 +131,11 @@ namespace EventStore.Client {
 
 			var captureId = Guid.NewGuid();
 
-			var callContextData = new AsyncLocal<Tuple<string, Guid>> {
-				Value = new Tuple<string, Guid>(captureCorrelationId, captureId)
+			var callContextData = new AsyncLocal<(string, Guid)> {
+				Value = (captureCorrelationId, captureId)
 			};
 
-			bool Filter(LogEvent logEvent) => callContextData!.Value!.Item2.Equals(captureId);
+			bool Filter(LogEvent logEvent) => callContextData.Value.Item2.Equals(captureId);
 
 			MessageTemplateTextFormatter formatter = new MessageTemplateTextFormatter(
 				"{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message}");

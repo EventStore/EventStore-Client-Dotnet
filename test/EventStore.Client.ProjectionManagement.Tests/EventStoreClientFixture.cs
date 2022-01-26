@@ -24,14 +24,18 @@ namespace EventStore.Client {
 
 		protected override async Task OnServerUpAsync() {
 			await StreamsClient.WarmUpAsync();
+			await UserManagementClient.WarmUpAsync();
+			await Client.WarmUpAsync();
 			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser1.Username!,
 				TestCredentials.TestUser1.Username!, Array.Empty<string>(), TestCredentials.TestUser1.Password!,
 				TestCredentials.Root).WithTimeout();
-			await StandardProjections.Created(Client).WithTimeout(TimeSpan.FromMinutes(5));
+			await StandardProjections.Created(Client).WithTimeout(TimeSpan.FromMinutes(2));
 
 			if (RunStandardProjections) {
-				await Task.WhenAll(StandardProjections.Names.Select(name =>
-					Client.EnableAsync(name, TestCredentials.Root)));
+				await Task
+					.WhenAll(StandardProjections.Names.Select(name =>
+						Client.EnableAsync(name, TestCredentials.Root)))
+					.WithTimeout(TimeSpan.FromMinutes(2));
 			}
 		}
 

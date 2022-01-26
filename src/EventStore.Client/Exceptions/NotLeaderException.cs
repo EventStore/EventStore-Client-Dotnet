@@ -11,7 +11,7 @@ namespace EventStore.Client {
 		/// <summary>
 		/// The <see cref="EndPoint"/> of the current leader node.
 		/// </summary>
-		public EndPoint LeaderEndpoint { get; }
+		public DnsEndPoint LeaderEndpoint { get; }
 
 		/// <summary>
 		/// Constructs a new <see cref="NotLeaderException"/>

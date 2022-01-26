@@ -108,14 +108,17 @@ namespace EventStore.Client {
 				userCredentials, cancellationToken).AsTask();
 		}
 
-		private ValueTask<IWriteResult> SetStreamMetadataInternal(StreamMetadata metadata,
+		private async ValueTask<IWriteResult> SetStreamMetadataInternal(StreamMetadata metadata,
 			AppendReq appendReq,
 			EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials,
-			CancellationToken cancellationToken) =>
-			AppendToStreamInternal(appendReq, new[] {
+			CancellationToken cancellationToken) {
+
+			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			return await AppendToStreamInternal(channelInfo.CallInvoker, appendReq, new[] {
 				new EventData(Uuid.NewUuid(), SystemEventTypes.StreamMetadata,
 					JsonSerializer.SerializeToUtf8Bytes(metadata, StreamMetadataJsonSerializerOptions)),
-			}, operationOptions, userCredentials, cancellationToken);
+			}, operationOptions, userCredentials, cancellationToken).ConfigureAwait(false);
+		}
 	}
 }

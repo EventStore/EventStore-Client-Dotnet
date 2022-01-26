@@ -16,11 +16,7 @@ namespace EventStore.Client.Bugs {
 		public static IEnumerable<object[]> TestCases() => Enumerable.Range(0, 50)
 			.Select(i => new object[] {i});
 
-		[Theory(
-#if NETFRAMEWORK
-			 Skip = "Really flaky on .net frameork"
-#endif
-			 ), MemberData(nameof(TestCases))]
+		[Theory, MemberData(nameof(TestCases))]
 		public async Task persistent_subscription_delivers_all_events(int iteration) {
 			if (Environment.OSVersion.IsWindows()) {
 

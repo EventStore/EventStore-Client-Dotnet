@@ -24,15 +24,16 @@ namespace EventStore.Client {
 			_fixture.TestServer.Stop();
 
 			// writeTask cannot complete because ES is stopped
-			await Assert.ThrowsAnyAsync<InvalidOperationException>(() => WriteAnEventAsync(new StreamRevision(0)));
+			var ex = await Assert.ThrowsAnyAsync<Exception>(() => WriteAnEventAsync(new StreamRevision(0)));
+			Assert.True(ex is InvalidOperationException or DiscoveryException);
 
-			await _fixture.TestServer.StartAsync();
+			await _fixture.TestServer.StartAsync().WithTimeout();
 
 			// write can be retried
 			var writeResult = await Policy
 				.Handle<Exception>()
 				.WaitAndRetryAsync(5, _ => TimeSpan.FromSeconds(3))
-				.ExecuteAsync(() => WriteAnEventAsync(new StreamRevision(0)));
+				.ExecuteAsync(async () => await WriteAnEventAsync(new StreamRevision(0)));
 
 			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
@@ -46,6 +47,7 @@ namespace EventStore.Client {
 			public Fixture() : base(env: new Dictionary<string, string> {
 				["EVENTSTORE_MEM_DB"] = "false",
 			}) {
+				Settings.ConnectivitySettings.MaxDiscoverAttempts = 2;
 			}
 
 			protected override Task Given() => Task.CompletedTask;
