@@ -26,7 +26,8 @@ namespace EventStore.Client {
 				.FirstOrDefaultAsync();
 
 			using var subscription = await _fixture.Client
-				.SubscribeToAllAsync(firstEvent.OriginalEvent.Position, EventAppeared, false, SubscriptionDropped)
+				.SubscribeToAllAsync(FromAll.After(firstEvent.OriginalEvent.Position), EventAppeared,
+					false, SubscriptionDropped)
 				.WithTimeout();
 
 			if (dropped.Task.IsCompleted) {
@@ -56,7 +57,8 @@ namespace EventStore.Client {
 				.FirstOrDefaultAsync();
 
 			using var subscription = await _fixture.Client
-				.SubscribeToAllAsync(firstEvent.OriginalEvent.Position, EventAppeared, false, SubscriptionDropped)
+				.SubscribeToAllAsync(FromAll.After(firstEvent.OriginalEvent.Position), EventAppeared,
+					false, SubscriptionDropped)
 				.WithTimeout();
 
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents(2));
@@ -82,7 +84,8 @@ namespace EventStore.Client {
 				.FirstOrDefaultAsync();
 
 			using var subscription = await _fixture.Client
-				.SubscribeToAllAsync(firstEvent.OriginalEvent.Position, EventAppeared, false, SubscriptionDropped)
+				.SubscribeToAllAsync(FromAll.After(firstEvent.OriginalEvent.Position), EventAppeared,
+					false, SubscriptionDropped)
 				.WithTimeout();
 
 			Assert.False(appeared.Task.IsCompleted);
@@ -138,8 +141,8 @@ namespace EventStore.Client {
 					new[] {@event});
 			}
 
-			using var subscription = await _fixture.Client
-				.SubscribeToAllAsync(position, EventAppeared, false, SubscriptionDropped)
+			using var subscription = await _fixture.Client.SubscribeToAllAsync(FromAll.After(position),
+					EventAppeared, false, SubscriptionDropped)
 				.WithTimeout();
 
 			foreach (var @event in afterEvents) {

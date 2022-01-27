@@ -23,11 +23,11 @@ namespace EventStore.Client.SubscriptionToStream {
 			var resumedEvent = await _fixture.Resumed.WithTimeout(TimeSpan.FromSeconds(10));
 			Assert.Equal(_fixture.CheckPoint.Next(), resumedEvent.Event.EventNumber);
 		}
-		
+
 		public class Fixture : EventStoreClientFixture {
 			public Task<ResolvedEvent> Resumed => _resumedSource.Task;
 			public StreamPosition CheckPoint { get; private set; }
-			
+
 			private readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception)> _droppedSource;
 			private readonly TaskCompletionSource<ResolvedEvent> _resumedSource;
 			private readonly TaskCompletionSource<ResolvedEvent> _checkPointSource;
@@ -48,7 +48,7 @@ namespace EventStore.Client.SubscriptionToStream {
 
 			protected override async Task Given() {
 				await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, _events);
-				
+
 				await Client.CreateAsync(Stream, Group,
 					new PersistentSubscriptionSettings(
 						minCheckPointCount: 5,
@@ -58,7 +58,8 @@ namespace EventStore.Client.SubscriptionToStream {
 
 				var checkPointStream = $"$persistentsubscription-{Stream}::{Group}-checkpoint";
 				await StreamsClient.SubscribeToStreamAsync(checkPointStream,
-					(_, e, ct) => {
+					FromStream.Start,
+					(_, e, _) => {
 						_checkPointSource.TrySetResult(e);
 						return Task.CompletedTask;
 					},
@@ -70,7 +71,7 @@ namespace EventStore.Client.SubscriptionToStream {
 						}
 					},
 					userCredentials: TestCredentials.Root);
-				
+
 				_firstSubscription = await Client.SubscribeToStreamAsync(Stream, Group,
 					eventAppeared: async (s, e, r, ct) => {
 						_appearedEvents.Add(e);
@@ -86,13 +87,13 @@ namespace EventStore.Client.SubscriptionToStream {
 
 				CheckPoint = _checkPointSource.Task.Result.Event.Data.ParseStreamPosition();
 			}
-			
+
 			protected override async Task When() {
 				// Force restart of the subscription
 				await Client.UpdateAsync(Stream, Group, new PersistentSubscriptionSettings(), TestCredentials.Root);
-				
+
 				await _droppedSource.Task.WithTimeout();
-				
+
 				_secondSubscription = await Client.SubscribeToStreamAsync(Stream, Group,
 					eventAppeared: async (s, e, r, ct) => {
 						_resumedSource.TrySetResult(e);
@@ -106,7 +107,7 @@ namespace EventStore.Client.SubscriptionToStream {
 						}
 					},
 					userCredentials: TestCredentials.Root);
-				
+
 				await StreamsClient.AppendToStreamAsync(Stream, StreamState.Any, CreateTestEvents(1));
 			}
 

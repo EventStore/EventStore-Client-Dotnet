@@ -7,7 +7,6 @@ using Xunit;
 namespace EventStore.Client.SubscriptionToAll {
 	public class when_writing_and_filtering_out_events
 		: IClassFixture<when_writing_and_filtering_out_events.Fixture> {
-
 		private const string Group = "filtering-out-events";
 		private readonly Fixture _fixture;
 
@@ -29,7 +28,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			public Position FirstCheckPoint { get; private set; }
 			public EventData[] Events => _events.ToArray();
 			public ResolvedEvent[] AppearedEvents => _appearedEvents.ToArray();
-			
+
 			private readonly TaskCompletionSource<ResolvedEvent> _firstCheckPointSource, _secondCheckPointSource;
 			private PersistentSubscription _subscription;
 			private StreamSubscription _checkPointSubscription;
@@ -46,12 +45,12 @@ namespace EventStore.Client.SubscriptionToAll {
 				_checkPoints = new List<ResolvedEvent>();
 				_events = CreateTestEvents(5).ToArray();
 			}
-			
+
 			protected override async Task Given() {
 				foreach (var e in _events) {
 					await StreamsClient.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.Any, new[] {e});
 				}
-				
+
 				await Client.CreateToAllAsync(Group,
 					StreamFilter.Prefix("test"),
 					new PersistentSubscriptionSettings(
@@ -59,19 +58,21 @@ namespace EventStore.Client.SubscriptionToAll {
 						checkPointAfter: TimeSpan.FromSeconds(1),
 						startFrom: Position.Start),
 					TestCredentials.Root);
-				
+
 				_checkPointSubscription = await StreamsClient.SubscribeToStreamAsync(_checkPointStream,
-					(s, e, ct) => {
+					FromStream.Start,
+					(_, e, _) => {
 						if (_checkPoints.Count == 0) {
-							_firstCheckPointSource.TrySetResult(e);	
+							_firstCheckPointSource.TrySetResult(e);
 						} else {
 							_secondCheckPointSource.TrySetResult(e);
 						}
+
 						_checkPoints.Add(e);
 						return Task.CompletedTask;
 					},
 					userCredentials: TestCredentials.Root);
-				
+
 				_subscription = await Client.SubscribeToAllAsync(Group,
 					eventAppeared: async (s, e, r, ct) => {
 						_appearedEvents.Add(e);
@@ -83,13 +84,13 @@ namespace EventStore.Client.SubscriptionToAll {
 					userCredentials: TestCredentials.Root);
 
 				await Task.WhenAll(_appeared.Task, _firstCheckPointSource.Task).WithTimeout();
-				
+
 				FirstCheckPoint = _firstCheckPointSource.Task.Result.Event.Data.ParsePosition();
 			}
 
 			protected override async Task When() {
 				foreach (var e in _events) {
-					await StreamsClient.AppendToStreamAsync("filtered-out-stream-" + Guid.NewGuid(), 
+					await StreamsClient.AppendToStreamAsync("filtered-out-stream-" + Guid.NewGuid(),
 						StreamState.Any, new[] {e});
 				}
 			}

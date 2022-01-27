@@ -40,9 +40,9 @@ namespace EventStore.Client {
 					StreamState.NoStream, new[] {e});
 			}
 
-			using var subscription = await _fixture.Client.SubscribeToAllAsync(EventAppeared, false,
-				filterOptions: new SubscriptionFilterOptions(filter, 5, CheckpointReached),
-				subscriptionDropped: SubscriptionDropped)
+			using var subscription = await _fixture.Client.SubscribeToAllAsync(FromAll.Start,
+					EventAppeared, false, SubscriptionDropped,
+					new SubscriptionFilterOptions(filter, 5, CheckpointReached))
 				.WithTimeout();
 
 			await Task.WhenAll(appeared.Task, checkpointSeen.Task).WithTimeout();
@@ -111,9 +111,9 @@ namespace EventStore.Client {
 					StreamState.NoStream, new[] {e});
 			}
 
-			using var subscription = await _fixture.Client.SubscribeToAllAsync(EventAppeared, false,
-				filterOptions: new SubscriptionFilterOptions(filter, 5, CheckpointReached),
-				subscriptionDropped: SubscriptionDropped)
+			using var subscription = await _fixture.Client.SubscribeToAllAsync(FromAll.Start,
+					EventAppeared, false, SubscriptionDropped,
+					new SubscriptionFilterOptions(filter, 5, CheckpointReached))
 				.WithTimeout();
 
 			foreach (var e in afterEvents) {

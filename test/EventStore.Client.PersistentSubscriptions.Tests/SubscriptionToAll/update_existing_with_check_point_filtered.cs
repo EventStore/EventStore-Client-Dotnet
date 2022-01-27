@@ -7,7 +7,6 @@ using Xunit;
 namespace EventStore.Client.SubscriptionToAll {
 	public class update_existing_with_check_point_filtered
 		: IClassFixture<update_existing_with_check_point_filtered.Fixture> {
-
 		private const string Group = "existing-with-check-point-filtered";
 		private readonly Fixture _fixture;
 
@@ -24,7 +23,7 @@ namespace EventStore.Client.SubscriptionToAll {
 		public class Fixture : EventStoreClientFixture {
 			public Task<ResolvedEvent> Resumed => _resumedSource.Task;
 			public Position CheckPoint { get; private set; }
-			
+
 			private readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception)> _droppedSource;
 			private readonly TaskCompletionSource<ResolvedEvent> _resumedSource;
 			private readonly TaskCompletionSource<ResolvedEvent> _checkPointSource;
@@ -43,7 +42,7 @@ namespace EventStore.Client.SubscriptionToAll {
 				_appearedEvents = new List<ResolvedEvent>();
 				_events = CreateTestEvents(5).ToArray();
 			}
-			
+
 			protected override async Task Given() {
 				foreach (var e in _events) {
 					await StreamsClient.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.NoStream, new[] {e});
@@ -59,6 +58,7 @@ namespace EventStore.Client.SubscriptionToAll {
 
 				var checkPointStream = $"$persistentsubscription-$all::{Group}-checkpoint";
 				_checkPointSubscription = await StreamsClient.SubscribeToStreamAsync(checkPointStream,
+					FromStream.Start,
 					(_, e, ct) => {
 						_checkPointSource.TrySetResult(e);
 						return Task.CompletedTask;
@@ -71,7 +71,7 @@ namespace EventStore.Client.SubscriptionToAll {
 						}
 					},
 					userCredentials: TestCredentials.Root);
-				
+
 				_firstSubscription = await Client.SubscribeToAllAsync(Group,
 					eventAppeared: async (s, e, r, ct) => {
 						_appearedEvents.Add(e);
@@ -93,7 +93,7 @@ namespace EventStore.Client.SubscriptionToAll {
 				await Client.UpdateToAllAsync(Group, new PersistentSubscriptionSettings(), TestCredentials.Root);
 
 				await _droppedSource.Task.WithTimeout();
-				
+
 				_secondSubscription = await Client.SubscribeToAllAsync(Group,
 					eventAppeared: async (s, e, r, ct) => {
 						_resumedSource.TrySetResult(e);
@@ -108,7 +108,7 @@ namespace EventStore.Client.SubscriptionToAll {
 						}
 					},
 					userCredentials: TestCredentials.Root);
-				
+
 				foreach (var e in _events) {
 					await StreamsClient.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.NoStream, new[] {e});
 				}

@@ -16,7 +16,7 @@ namespace server_side_filtering {
 				EventStoreClientSettings.Create("esdb://localhost:2113?tls=false")
 			);
 
-			await client.SubscribeToAllAsync(SubscriptionPosition.Start, 
+			await client.SubscribeToAllAsync(FromAll.Start, 
 				(s, e, c) => {
 					Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
 					semaphore.Release();
@@ -52,7 +52,7 @@ namespace server_side_filtering {
 
 		private static async Task ExcludeSystemEvents(EventStoreClient client) {
 			#region exclude-system
-			await client.SubscribeToAllAsync(SubscriptionPosition.Start,
+			await client.SubscribeToAllAsync(FromAll.Start,
 				(s, e, c) => {
 					Console.WriteLine(
 						$"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
@@ -70,7 +70,7 @@ namespace server_side_filtering {
 				EventTypeFilter.Prefix("customer-"));
 			#endregion event-type-prefix
 
-			await client.SubscribeToAllAsync(SubscriptionPosition.Start,
+			await client.SubscribeToAllAsync(FromAll.Start,
 				(s, e, c) => {
 					Console.WriteLine(
 						$"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
@@ -86,7 +86,7 @@ namespace server_side_filtering {
 				EventTypeFilter.RegularExpression("^user|^company"));
 			#endregion event-type-regex
 
-			await client.SubscribeToAllAsync(SubscriptionPosition.Start,
+			await client.SubscribeToAllAsync(FromAll.Start,
 				(s, e, c) => {
 					Console.WriteLine(
 						$"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
@@ -102,7 +102,7 @@ namespace server_side_filtering {
 				StreamFilter.Prefix("user-"));
 			#endregion stream-prefix
 
-			await client.SubscribeToAllAsync(SubscriptionPosition.Start,
+			await client.SubscribeToAllAsync(FromAll.Start,
 				(s, e, c) => {
 					Console.WriteLine(
 						$"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
@@ -118,7 +118,7 @@ namespace server_side_filtering {
 				StreamFilter.RegularExpression("^account|^savings"));
 			#endregion stream-regex
 
-			await client.SubscribeToAllAsync(SubscriptionPosition.Start,
+			await client.SubscribeToAllAsync(FromAll.Start,
 				(s, e, c) => {
 					Console.WriteLine(
 						$"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
@@ -139,7 +139,7 @@ namespace server_side_filtering {
 				});
 			#endregion checkpoint
 
-			await client.SubscribeToAllAsync(SubscriptionPosition.Start,
+			await client.SubscribeToAllAsync(FromAll.Start,
 				(s, e, c) => {
 					Console.WriteLine(
 						$"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
@@ -161,7 +161,7 @@ namespace server_side_filtering {
 				});
 			#endregion checkpoint-with-interval
 
-			await client.SubscribeToAllAsync(SubscriptionPosition.Start,
+			await client.SubscribeToAllAsync(FromAll.Start,
 				(s, e, c) => {
 					Console.WriteLine(
 						$"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");

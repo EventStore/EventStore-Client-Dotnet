@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Client.Streams;
-using Serilog;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -40,9 +38,8 @@ namespace EventStore.Client {
 					StreamState.NoStream, new[] {e});
 			}
 
-			using var subscription = await _fixture.Client.SubscribeToAllAsync(Position.End, EventAppeared, false,
-				filterOptions: new SubscriptionFilterOptions(filter),
-				subscriptionDropped: SubscriptionDropped)
+			using var subscription = await _fixture.Client.SubscribeToAllAsync(FromAll.End, EventAppeared,
+					false, SubscriptionDropped, new SubscriptionFilterOptions(filter))
 				.WithTimeout();
 
 			foreach (var e in afterEvents) {

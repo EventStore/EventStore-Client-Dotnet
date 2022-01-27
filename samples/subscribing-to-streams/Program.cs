@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Reflection.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
@@ -20,6 +21,7 @@ namespace subscribing_to_streams {
 		private static async Task SubscribeToStream(EventStoreClient client) {
 			#region subscribe-to-stream
 			await client.SubscribeToStreamAsync("some-stream",
+				FromStream.Start,
 				async (subscription, evnt, cancellationToken) => {
 					Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
 					await HandleEvent(evnt);
@@ -29,30 +31,31 @@ namespace subscribing_to_streams {
 			#region subscribe-to-stream-from-position
 			await client.SubscribeToStreamAsync(
 				"some-stream",
-				StreamPosition.FromInt64(20),
+				FromStream.After(StreamPosition.FromInt64(20)),
 				EventAppeared);
 			#endregion subscribe-to-stream-from-position
 		
 			#region subscribe-to-stream-live
 			await client.SubscribeToStreamAsync(
 				"some-stream",
-				StreamPosition.End,
+				FromStream.End,
 				EventAppeared);
 			#endregion subscribe-to-stream-live
 			
 			#region subscribe-to-stream-resolving-linktos
 			await client.SubscribeToStreamAsync(
 				"$et-myEventType",
-				StreamPosition.Start,
+				FromStream.Start,
 				EventAppeared,
 				resolveLinkTos: true);
 			#endregion subscribe-to-stream-resolving-linktos
 
 			#region subscribe-to-stream-subscription-dropped
-			var checkpoint = StreamPosition.Start;
+
+			var checkpoint = await ReadStreamCheckpointAsync();
 			await client.SubscribeToStreamAsync(
 				"some-stream",
-				checkpoint,
+				checkpoint is null ? FromStream.Start : FromStream.After(checkpoint.Value),
 				eventAppeared: async (subscription, evnt, cancellationToken) => {
 					await HandleEvent(evnt);
 					checkpoint = evnt.OriginalEventNumber;
@@ -70,7 +73,7 @@ namespace subscribing_to_streams {
 		private static async Task SubscribeToAll(EventStoreClient client) {
 			#region subscribe-to-all
 			await client.SubscribeToAllAsync(
-				SubscriptionPosition.Start, 
+				FromAll.Start, 
 				async (subscription, evnt, cancellationToken) => {
 					Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
 					await HandleEvent(evnt);
@@ -84,23 +87,23 @@ namespace subscribing_to_streams {
 			});
 
 			await client.SubscribeToAllAsync(
-				SubscriptionPosition.After(result.LogPosition),
+				FromAll.After(result.LogPosition),
 				EventAppeared);
 			#endregion subscribe-to-all-from-position
 
 			#region subscribe-to-all-live
 			await client.SubscribeToAllAsync(
-				SubscriptionPosition.Live, 
+				FromAll.End, 
 				EventAppeared);
 			#endregion subscribe-to-all-live
 			
 			#region subscribe-to-all-subscription-dropped
-			var checkpoint = SubscriptionPosition.Start;
+			var checkpoint = await ReadCheckpointAsync();
 			await client.SubscribeToAllAsync(
-				checkpoint,
+				checkpoint is null ? FromAll.Start : FromAll.After(checkpoint.Value),
 				eventAppeared: async (subscription, evnt, cancellationToken) => {
 					await HandleEvent(evnt);
-					checkpoint = SubscriptionPosition.After(evnt.OriginalPosition!.Value);
+					checkpoint = evnt.OriginalPosition!.Value;
 				},
 				subscriptionDropped: ((subscription, reason, exception) => {
 					Console.WriteLine($"Subscription was dropped due to {reason}. {exception}");
@@ -116,7 +119,7 @@ namespace subscribing_to_streams {
 			#region stream-prefix-filtered-subscription
 			var prefixStreamFilter = new SubscriptionFilterOptions(StreamFilter.Prefix("test-", "other-"));
 			await client.SubscribeToAllAsync(
-				SubscriptionPosition.Start, 
+				FromAll.Start, 
 				EventAppeared,
 				filterOptions: prefixStreamFilter);
 			#endregion stream-prefix-filtered-subscription
@@ -129,7 +132,7 @@ namespace subscribing_to_streams {
 		private static async Task OverridingUserCredentials(EventStoreClient client) {
 			#region overriding-user-credentials
 			await client.SubscribeToAllAsync(
-				SubscriptionPosition.Start, 
+				FromAll.Start, 
 				EventAppeared,
 				userCredentials: new UserCredentials("admin", "changeit"));
 			#endregion overriding-user-credentials
@@ -147,7 +150,13 @@ namespace subscribing_to_streams {
 			return Task.CompletedTask;
 		}
 
-		private static void Resubscribe(StreamPosition checkpoint) { }
-		private static void Resubscribe(SubscriptionPosition checkpoint) { }
+		private static void Resubscribe(StreamPosition? checkpoint) { }
+		private static void Resubscribe(Position? checkpoint) { }
+
+		private static Task<StreamPosition?> ReadStreamCheckpointAsync() =>
+			Task.FromResult(new StreamPosition?());
+
+		private static Task<Position?> ReadCheckpointAsync() =>
+			Task.FromResult(new Position?());
 	}
 }
