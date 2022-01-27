@@ -1,32 +1,16 @@
 using System;
 using System.Collections.Generic;
+using AutoFixture;
 using Xunit;
 
 namespace EventStore.Client {
-	public class StreamPositionTests {
-		[Fact]
-		public void Equality() {
-			var sut = new StreamPosition(1);
-			Assert.Equal(new StreamPosition(1), sut);
+	public class StreamPositionTests : ValueObjectTests<StreamPosition> {
+		public StreamPositionTests() : base(new ScenarioFixture()) {
 		}
 
 		[Fact]
-		public void Inequality() {
-			var sut = new StreamPosition(1);
-			Assert.NotEqual(new StreamPosition(2), sut);
-		}
-
-		[Fact]
-		public void EqualityOperator() {
-			var sut = new StreamPosition(1);
-			Assert.True(new StreamPosition(1) == sut);
-		}
-
-		[Fact]
-		public void InequalityOperator() {
-			var sut = new StreamPosition(1);
-			Assert.True(new StreamPosition(2) != sut);
-		}
+		public void IsComparable() =>
+			Assert.IsAssignableFrom<IComparable<StreamPosition>>(_fixture.Create<StreamPosition>());
 
 		[Fact]
 		public void AdditionOperator() {
@@ -93,25 +77,15 @@ namespace EventStore.Client {
 			Assert.Equal(new StreamPosition(0), result);
 		}
 
-		public static IEnumerable<object[]> ComparableTestCases() {
-			yield return new object[] {StreamPosition.Start, StreamPosition.Start, 0};
-			yield return new object[] {StreamPosition.Start, StreamPosition.End, -1};
-			yield return new object[] {StreamPosition.End, StreamPosition.Start, 1};
-		}
-
-		[Theory, MemberData(nameof(ComparableTestCases))]
-		public void Comparability(StreamPosition left, StreamPosition right, int expected)
-			=> Assert.Equal(expected, left.CompareTo(right));
-
 		[Fact]
-		public void ExplicitConversionFromStreamPositionReturnsExpectedResult() {
+		public void ExplicitConversionToUInt64ReturnsExpectedResult() {
 			const ulong value = 0UL;
 			var actual = (ulong)new StreamPosition(value);
 			Assert.Equal(value, actual);
 		}
 
 		[Fact]
-		public void ImplicitConversionFromStreamPositionReturnsExpectedResult() {
+		public void ImplicitConversionToUInt64ReturnsExpectedResult() {
 			const ulong value = 0UL;
 			ulong actual = new StreamPosition(value);
 			Assert.Equal(value, actual);
@@ -146,5 +120,12 @@ namespace EventStore.Client {
 
 			Assert.Equal(expected, new StreamPosition(expected).ToUInt64());
 		}
+
+		private class ScenarioFixture : Fixture {
+			public ScenarioFixture() {
+				Customize<StreamPosition>(composer => composer.FromFactory<ulong>(value => new StreamPosition(value)));
+			}
+		}
+
 	}
 }

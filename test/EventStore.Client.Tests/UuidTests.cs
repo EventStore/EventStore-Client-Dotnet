@@ -1,36 +1,10 @@
 using System;
+using AutoFixture;
 using Xunit;
 
 namespace EventStore.Client {
-	public class UuidTests {
-		[Fact]
-		public void Equality() {
-			var sut = Uuid.NewUuid();
-			Assert.Equal(Uuid.FromGuid(sut.ToGuid()), sut);
-		}
-
-		[Fact]
-		public void Inequality() {
-			var sut = Uuid.NewUuid();
-			Assert.NotEqual(Uuid.NewUuid(), sut);
-		}
-
-		[Fact]
-		public void EqualityOperator() {
-			var sut = Uuid.NewUuid();
-			Assert.True(Uuid.FromGuid(sut.ToGuid()) == sut);
-		}
-
-		[Fact]
-		public void InequalityOperator() {
-			var sut = Uuid.NewUuid();
-			Assert.True(Uuid.NewUuid() != sut);
-		}
-
-		[Fact]
-		public void ArgumentNullException() {
-			var ex = Assert.Throws<ArgumentNullException>(() => Uuid.Parse(null!));
-			Assert.Equal("value", ex.ParamName);
+	public class UuidTests : ValueObjectTests<Uuid> {
+		public UuidTests() : base(new ScenarioFixture()) {
 		}
 
 		[Fact]
@@ -45,16 +19,15 @@ namespace EventStore.Client {
 		public void ToStringProducesExpectedResult() {
 			var sut = Uuid.NewUuid();
 
-			Assert.Equal(sut.ToGuid().ToString(),sut.ToString());
+			Assert.Equal(sut.ToGuid().ToString(), sut.ToString());
 		}
 
 		[Fact]
 		public void ToFormattedStringProducesExpectedResult() {
 			var sut = Uuid.NewUuid();
 
-			Assert.Equal(sut.ToGuid().ToString("n"),sut.ToString("n"));
+			Assert.Equal(sut.ToGuid().ToString("n"), sut.ToString("n"));
 		}
-
 
 		[Fact]
 		public void ToDtoReturnsExpectedResult() {
@@ -94,6 +67,10 @@ namespace EventStore.Client {
 			new Random().NextBytes(buffer);
 
 			return BitConverter.ToInt64(buffer, 0);
+		}
+
+		private class ScenarioFixture : Fixture {
+			public ScenarioFixture() => Customize<Uuid>(composer => composer.FromFactory<Guid>(Uuid.FromGuid));
 		}
 	}
 }
