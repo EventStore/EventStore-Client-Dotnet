@@ -10,10 +10,18 @@ using EventStore.Client;
 
 namespace appending_events {
 	class Program {
-		static void Main(string[] args) {
-			using var client = new EventStoreClient(
-				EventStoreClientSettings.Create("esdb://admin:changeit@localhost:2113?TlsVerifyCert=false")
+		static async Task<int> Main(string[] args) {
+			var settings = EventStoreClientSettings.Create("esdb://localhost:2113?tls=false");
+			settings.OperationOptions.ThrowOnAppendFailure = false;
+			await using var client = new EventStoreClient(
+				settings
 			);
+			await AppendToStream(client);
+			await AppendWithConcurrencyCheck(client);
+			await AppendWithNoStream(client);
+			await AppendWithSameId(client);
+
+			return 0;
 		}
 
 		private static async Task AppendToStream(EventStoreClient client) {
@@ -90,6 +98,8 @@ namespace appending_events {
 		}
 
 		private static async Task AppendWithConcurrencyCheck(EventStoreClient client) {
+			await client.AppendToStreamAsync("concurrency-stream", StreamRevision.None,
+				new[] {new EventData(Uuid.NewUuid(), "-", ReadOnlyMemory<byte>.Empty)});
 			#region append-with-concurrency-check
 			var clientOneRead = client.ReadStreamAsync(
 				Direction.Forwards,
