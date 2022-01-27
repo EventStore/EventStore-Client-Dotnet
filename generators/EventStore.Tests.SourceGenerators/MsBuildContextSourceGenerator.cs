@@ -17,9 +17,10 @@ namespace EventStore.Client {
 			var sourceText = SourceText.From(@$"
 namespace {rootNamespace} {{
     public static class ProjectDir {{
-		public static readonly string Current = ""{projectDir}"";
+		public static readonly string Current = @""{projectDir}"";
 	}}
-}}", Encoding.UTF8);
+}}
+", Encoding.UTF8);
 
 			context.AddSource("ProjectDir.cs", sourceText); ;
 		}
