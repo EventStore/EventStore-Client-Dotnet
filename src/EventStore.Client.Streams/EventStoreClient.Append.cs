@@ -34,13 +34,16 @@ namespace EventStore.Client {
 			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedRevision);
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			
-			var task =
+
 #if NET5_0_OR_GREATER
-				userCredentials == null && await _streamAppender.IsUsable().ConfigureAwait(false)
-					? _streamAppender.Append(streamName, expectedRevision, eventData, options.TimeoutAfter,
+			var batchAppender = _streamAppender;
+			var task =
+				userCredentials == null && await batchAppender.IsUsable().ConfigureAwait(false)
+					? batchAppender.Append(streamName, expectedRevision, eventData, options.TimeoutAfter,
 						cancellationToken)
 					:
+#else
+			var task =
 #endif
 					AppendToStreamInternal(
 						channelInfo.CallInvoker,
@@ -78,12 +81,15 @@ namespace EventStore.Client {
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 
-			var task =
 #if NET5_0_OR_GREATER
-				userCredentials == null && await _streamAppender.IsUsable().ConfigureAwait(false)
-					? _streamAppender.Append(streamName, expectedState, eventData, operationOptions.TimeoutAfter,
+			var batchAppender = _streamAppender;
+			var task =
+				userCredentials == null && await batchAppender.IsUsable().ConfigureAwait(false)
+					? batchAppender.Append(streamName, expectedState, eventData, operationOptions.TimeoutAfter,
 						cancellationToken)
 					:
+#else
+			var task =
 #endif
 					AppendToStreamInternal(
 						channelInfo.CallInvoker,
@@ -217,8 +223,8 @@ namespace EventStore.Client {
 				_onException = onException;
 				_channel = System.Threading.Channels.Channel.CreateBounded<BatchAppendReq>(10000);
 				_pendingRequests = new ConcurrentDictionary<Uuid, TaskCompletionSource<IWriteResult>>();
-				_ = Task.Factory.StartNew(Send, TaskCreationOptions.LongRunning);
-				_ = Task.Factory.StartNew(Receive, TaskCreationOptions.LongRunning);
+				_ = Task.Factory.StartNew(Send);
+				_ = Task.Factory.StartNew(Receive);
 			}
 
 			public ValueTask<IWriteResult> Append(string streamName, StreamRevision expectedStreamPosition,
@@ -271,6 +277,8 @@ namespace EventStore.Client {
 					.ConfigureAwait(false)) {
 					await call.RequestStream.WriteAsync(appendRequest).ConfigureAwait(false);
 				}
+
+				await call.RequestStream.CompleteAsync().ConfigureAwait(false);
 			}
 
 			private async ValueTask<IWriteResult> AppendInternal(BatchAppendReq.Types.Options options,
