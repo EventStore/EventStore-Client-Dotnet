@@ -261,6 +261,10 @@ namespace EventStore.Client {
 						}
 					}
 				} catch (Exception ex) {
+					// signal that no tcs added to _pendingRequests after this point will necessarily complete
+					_channel.Writer.TryComplete(ex);
+
+					// complete whatever tcs's we have
 					_onException(ex);
 					foreach (var (_, source) in _pendingRequests) {
 						source.TrySetException(ex);
@@ -289,8 +293,13 @@ namespace EventStore.Client {
 
 				var complete = _pendingRequests.GetOrAdd(correlationId, new TaskCompletionSource<IWriteResult>());
 
-				foreach (var appendRequest in GetRequests()) {
-					await _channel.Writer.WriteAsync(appendRequest, cancellationToken).ConfigureAwait(false);
+				try {
+					foreach (var appendRequest in GetRequests()) {
+						await _channel.Writer.WriteAsync(appendRequest, cancellationToken).ConfigureAwait(false);
+					}
+				} catch (ChannelClosedException ex) {
+					// channel is closed, our tcs won't necessarily get completed, don't wait for it.
+					throw ex.InnerException ?? ex;
 				}
 
 				return await complete.Task.ConfigureAwait(false);
