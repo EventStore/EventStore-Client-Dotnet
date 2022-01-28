@@ -14,7 +14,7 @@ namespace EventStore.Client {
 	/// <summary>
 	/// The client used for operations on internal users.
 	/// </summary>
-	public class EventStoreUserManagementClient : EventStoreClientBase {
+	public sealed class EventStoreUserManagementClient : EventStoreClientBase {
 		private readonly ILogger _log;
 
 		/// <summary>

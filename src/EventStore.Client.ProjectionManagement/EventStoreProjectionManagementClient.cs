@@ -10,7 +10,7 @@ namespace EventStore.Client {
 	/// <summary>
 	///The client used to manage projections on the EventStoreDB.
 	/// </summary>
-	public partial class EventStoreProjectionManagementClient : EventStoreClientBase {
+	public sealed partial class EventStoreProjectionManagementClient : EventStoreClientBase {
 		private readonly ILogger _log;
 
 		/// <summary>
