@@ -33,8 +33,6 @@ namespace EventStore.Client {
 
 			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedRevision);
 
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-
 #if NET5_0_OR_GREATER
 			var batchAppender = _streamAppender;
 			var task =
@@ -46,7 +44,7 @@ namespace EventStore.Client {
 			var task =
 #endif
 					AppendToStreamInternal(
-						channelInfo.CallInvoker,
+						(await GetChannelInfo(cancellationToken).ConfigureAwait(false)).CallInvoker,
 						new AppendReq {
 							Options = new AppendReq.Types.Options {
 								StreamIdentifier = streamName,
@@ -79,8 +77,6 @@ namespace EventStore.Client {
 
 			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedState);
 
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-
 #if NET5_0_OR_GREATER
 			var batchAppender = _streamAppender;
 			var task =
@@ -92,7 +88,7 @@ namespace EventStore.Client {
 			var task =
 #endif
 					AppendToStreamInternal(
-						channelInfo.CallInvoker,
+						(await GetChannelInfo(cancellationToken).ConfigureAwait(false)).CallInvoker,
 						new AppendReq {
 							Options = new AppendReq.Types.Options {
 								StreamIdentifier = streamName
@@ -243,11 +239,14 @@ namespace EventStore.Client {
 			}
 
 			private async Task Receive() {
-				var call = await _callTask.ConfigureAwait(false);
-				if (call is null)
-					throw new NotSupportedException("Server does not support batch append");
-
 				try {
+					var call = await _callTask.ConfigureAwait(false);
+					if (call is null) {
+						_channel.Writer.TryComplete(
+							new NotSupportedException("Server does not support batch append"));
+						return;
+					}
+
 					await foreach (var response in call.ResponseStream.ReadAllAsync(_cancellationToken)
 						.ConfigureAwait(false)) {
 						if (!_pendingRequests.TryRemove(Uuid.FromDto(response.CorrelationId), out var writeResult)) {
