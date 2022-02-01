@@ -52,17 +52,14 @@ namespace reading_events {
 
 		private static async Task ReadFromStreamMessages(EventStoreClient client) {
 			#region read-from-stream-messages
-
 			var streamPosition = StreamPosition.Start;
 			var results = client.ReadStreamAsync(
 				Direction.Forwards,
 				"some-stream",
 				streamPosition);
-
 			#endregion read-from-stream-messages
 
 			#region iterate-stream-messages
-
 			await foreach (var message in results.Messages) {
 				switch (message) {
 					case StreamMessage.Ok ok:
@@ -85,7 +82,6 @@ namespace reading_events {
 						break;
 				}
 			}
-
 			#endregion iterate-stream-messages
 		}
 
@@ -138,16 +134,13 @@ namespace reading_events {
 
 		private static async Task ReadFromStreamMessagesBackwards(EventStoreClient client) {
 			#region read-from-stream-messages-backwards
-
 			var results = client.ReadStreamAsync(
 				Direction.Forwards,
 				"some-stream",
 				StreamPosition.End);
-
 			#endregion read-from-stream-messages-backwards
 
 			#region iterate-stream-messages-backwards
-
 			await foreach (var message in results.Messages) {
 				switch (message) {
 					case StreamMessage.Ok ok:
@@ -164,7 +157,6 @@ namespace reading_events {
 						break;
 				}
 			}
-
 			#endregion iterate-stream-messages-backwards
 		}
 
@@ -184,16 +176,13 @@ namespace reading_events {
 
 		private static async Task ReadFromAllStreamMessages(EventStoreClient client) {
 			#region read-from-all-stream-messages
-
 			var position = Position.Start;
 			var results = client.ReadAllAsync(
 				Direction.Forwards,
 				position: position);
-
 			#endregion read-from-all-stream-messages
 
 			#region iterate-all-stream-messages
-
 			await foreach (var message in results.Messages) {
 				switch (message) {
 					case StreamMessage.Event(var resolvedEvent):
@@ -204,7 +193,6 @@ namespace reading_events {
 						break;
 				}
 			}
-
 			#endregion iterate-all-stream-messages
 		}
 
@@ -238,16 +226,13 @@ namespace reading_events {
 
 		private static async Task ReadFromAllStreamBackwardsMessages(EventStoreClient client) {
 			#region read-from-all-stream-messages-backwards
-
 			var position = Position.End;
 			var results = client.ReadAllAsync(
 				Direction.Backwards,
 				position: position);
-
 			#endregion read-from-all-stream-messages-backwards
 
 			#region iterate-all-stream-messages-backwards
-
 			await foreach (var message in results.Messages) {
 				switch (message) {
 					case StreamMessage.Event(var resolvedEvent):
@@ -259,7 +244,6 @@ namespace reading_events {
 						break;
 				}
 			}
-
 			#endregion iterate-all-stream-messages-backwards
 		}
 
