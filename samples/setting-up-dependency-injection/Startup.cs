@@ -19,7 +19,6 @@ namespace setting_up_dependency_injection {
 			services.AddControllers();
 
 			#region setting-up-dependency
-			
 			services.AddEventStoreClient("esdb://admin:changeit@localhost:2113?TlsVerifyCert=false");
 			#endregion setting-up-dependency
 		}

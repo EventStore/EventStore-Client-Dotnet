@@ -7,7 +7,7 @@ namespace persistent_subscriptions
     class Program
     {
 	    static async Task Main(string[] args) {
-		    using var client = new EventStorePersistentSubscriptionsClient(
+		    await using var client = new EventStorePersistentSubscriptionsClient(
 			    EventStoreClientSettings.Create("esdb://admin:changeit@localhost:2113?TlsVerifyCert=false")
 		    );
 		    await CreatePersistentSubscription(client);
@@ -21,7 +21,6 @@ namespace persistent_subscriptions
 
 	    static async Task CreatePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
 		    #region create-persistent-subscription-to-stream
-
 		    var userCredentials = new UserCredentials("admin", "changeit");
 
 		    var settings = new PersistentSubscriptionSettings();
@@ -30,13 +29,11 @@ namespace persistent_subscriptions
 			    "subscription-group",
 			    settings,
 			    userCredentials);
-
 		    #endregion create-persistent-subscription-to-stream
 	    }
 
 	    static async Task ConnectToPersistentSubscriptionToStream(EventStorePersistentSubscriptionsClient client) {
 		    #region subscribe-to-persistent-subscription-to-stream
-
 		    var subscription = await client.SubscribeToStreamAsync(
 			    "test-stream",
 			    "subscription-group",
@@ -46,13 +43,11 @@ namespace persistent_subscriptions
 			    }, (subscription, dropReason, exception) => {
 				    Console.WriteLine($"Subscription was dropped due to {dropReason}. {exception}");
 			    });
-
 		    #endregion subscribe-to-persistent-subscription-to-stream
 	    }
 
 	    static async Task CreatePersistentSubscriptionToAll(EventStorePersistentSubscriptionsClient client) {
 		    #region create-persistent-subscription-to-all
-
 		    var userCredentials = new UserCredentials("admin", "changeit");
 		    var filter = StreamFilter.Prefix("test");
 
@@ -62,13 +57,11 @@ namespace persistent_subscriptions
 			    filter,
 			    settings,
 			    userCredentials);
-
 		    #endregion create-persistent-subscription-to-all
 	    }
 
 	    static async Task ConnectToPersistentSubscriptionToAll(EventStorePersistentSubscriptionsClient client) {
 		    #region subscribe-to-persistent-subscription-to-all
-
 		    await client.SubscribeToAllAsync(
 			    "subscription-group",
 			    async (subscription, evnt, retryCount, cancellationToken) => {
@@ -76,13 +69,11 @@ namespace persistent_subscriptions
 			    }, (subscription, dropReason, exception) => {
 				    Console.WriteLine($"Subscription was dropped due to {dropReason}. {exception}");
 			    });
-
 		    #endregion subscribe-to-persistent-subscription-to-all
 	    }
 
 	    static async Task ConnectToPersistentSubscriptionWithManualAcks(EventStorePersistentSubscriptionsClient client) {
 		    #region subscribe-to-persistent-subscription-with-manual-acks
-
 		    var subscription = await client.SubscribeToStreamAsync(
 			    "test-stream",
 			    "subscription-group",
@@ -96,13 +87,11 @@ namespace persistent_subscriptions
 			    }, (subscription, dropReason, exception) => {
 				    Console.WriteLine($"Subscription was dropped due to {dropReason}. {exception}");
 			    });
-
 		    #endregion subscribe-to-persistent-subscription-with-manual-acks
 	    }
 
 	    static async Task UpdatePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
 		    #region update-persistent-subscription
-
 		    var userCredentials = new UserCredentials("admin", "changeit");
 		    var settings = new PersistentSubscriptionSettings(
 			    resolveLinkTos: true,
@@ -113,19 +102,16 @@ namespace persistent_subscriptions
 			    "subscription-group",
 			    settings,
 			    userCredentials);
-
 		    #endregion update-persistent-subscription
 	    }
 
 	    static async Task DeletePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
 		    #region delete-persistent-subscription
-
 		    var userCredentials = new UserCredentials("admin", "changeit");
 		    await client.DeleteAsync(
 			    "test-stream",
 			    "subscription-group",
 			    userCredentials);
-
 		    #endregion delete-persistent-subscription
 	    }
 

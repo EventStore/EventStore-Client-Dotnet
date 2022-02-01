@@ -89,7 +89,6 @@ namespace subscribing_to_streams {
 			#endregion subscribe-to-all-live
 			
 			#region subscribe-to-all-subscription-dropped
-
 			var checkpoint = Position.Start;
 			await client.SubscribeToAllAsync(
 				checkpoint,

@@ -9,7 +9,6 @@ namespace connecting_to_a_single_node {
 
 		private static void SimpleConnection() {
 			#region creating-simple-connection
-			
 			using var client = new EventStoreClient(
 				EventStoreClientSettings.Create("esdb://localhost:2113")
 			);
@@ -18,7 +17,6 @@ namespace connecting_to_a_single_node {
 
 		private static void ProvidingDefaultCredentials() {
 			#region providing-default-credentials
-
 			using var client = new EventStoreClient(
 				EventStoreClientSettings.Create("esdb://admin:changeit@localhost:2113")
 			);
@@ -27,7 +25,6 @@ namespace connecting_to_a_single_node {
 
 		private static void SpecifyingAConnectionName() {
 			#region setting-the-connection-name
-
 			using var client = new EventStoreClient(
 				EventStoreClientSettings.Create("esdb://admin:changeit@localhost:2113?ConnectionName=SomeConnection")
 			);
@@ -36,7 +33,6 @@ namespace connecting_to_a_single_node {
 
 		private static void OverridingTheTimeout() {
 			#region overriding-timeout
-
 			using var client = new EventStoreClient(
 				EventStoreClientSettings.Create($"esdb://admin:changeit@localhost:2113?OperationTimeout=30000")
 			);
@@ -45,7 +41,6 @@ namespace connecting_to_a_single_node {
 		
 		private static void CombiningSettings() {
 			#region overriding-timeout
-
 			using var client = new EventStoreClient(
 				EventStoreClientSettings.Create($"esdb://admin:changeit@localhost:2113?ConnectionName=SomeConnection&OperationTimeout=30000")
 			);
