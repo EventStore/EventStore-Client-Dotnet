@@ -98,7 +98,7 @@ namespace EventStore.Client {
 
 #if !GRPC_CORE
 		/// <inheritdoc />
-		public void Dispose() {
+		public virtual void Dispose() {
 			_cts.Cancel();
 			_cts.Dispose();
 			_channelCache.Dispose();
@@ -106,7 +106,7 @@ namespace EventStore.Client {
 #endif
 
 		/// <inheritdoc />
-		public async ValueTask DisposeAsync() {
+		public virtual async ValueTask DisposeAsync() {
 			_cts.Cancel();
 			_cts.Dispose();
 			await _channelCache.DisposeAsync().ConfigureAwait(false);

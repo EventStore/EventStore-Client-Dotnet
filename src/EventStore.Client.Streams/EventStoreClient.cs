@@ -18,12 +18,7 @@ namespace EventStore.Client {
 	/// <summary>
 	/// The client used for operations on streams.
 	/// </summary>
-	public partial class EventStoreClient : EventStoreClientBase,
-// todo: remove these long with the explicit implementations
-#if !GRPC_CORE
-		IDisposable,
-#endif
-		IAsyncDisposable {
+	public sealed partial class EventStoreClient : EventStoreClientBase {
 
 		private static readonly JsonSerializerOptions StreamMetadataJsonSerializerOptions = new() {
 			Converters = {
@@ -35,9 +30,9 @@ namespace EventStore.Client {
 #if NET5_0_OR_GREATER
 		private Lazy<StreamAppender> _streamAppenderLazy;
 		private StreamAppender _streamAppender => _streamAppenderLazy.Value;
+		private readonly CancellationTokenSource _disposedTokenSource;
 #endif
 
-		private readonly CancellationTokenSource _disposedTokenSource;
 
 		private static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
 			[Constants.Exceptions.InvalidTransaction] =
@@ -76,8 +71,8 @@ namespace EventStore.Client {
 		/// <param name="settings"></param>
 		public EventStoreClient(EventStoreClientSettings? settings = null) : base(settings, ExceptionMap) {
 			_log = Settings.LoggerFactory?.CreateLogger<EventStoreClient>() ?? new NullLogger<EventStoreClient>();
-			_disposedTokenSource = new CancellationTokenSource();
 #if NET5_0_OR_GREATER
+			_disposedTokenSource = new CancellationTokenSource();
 			_streamAppenderLazy = new Lazy<StreamAppender>(CreateStreamAppender);
 #endif
 		}
@@ -166,22 +161,24 @@ namespace EventStore.Client {
 			return options;
 		}
 
-#if !GRPC_CORE
-		void IDisposable.Dispose() {
-#if NET5_0_OR_GREATER
-			_streamAppender.Dispose();
-#endif
+#if !GRPC_CORE && NET5_0_OR_GREATER
+		/// <inheritdoc />
+		public override void Dispose() {
+			if (_streamAppenderLazy.IsValueCreated)
+				_streamAppenderLazy.Value.Dispose();
 			_disposedTokenSource.Dispose();
 			base.Dispose();
 		}
 #endif
 
-		async ValueTask IAsyncDisposable.DisposeAsync() {
 #if NET5_0_OR_GREATER
-			_streamAppender.Dispose();
-#endif
+		/// <inheritdoc />
+		public override async ValueTask DisposeAsync() {
+			if (_streamAppenderLazy.IsValueCreated)
+				_streamAppenderLazy.Value.Dispose();
 			_disposedTokenSource.Dispose();
 			await base.DisposeAsync().ConfigureAwait(false);
 		}
+#endif
 	}
 }

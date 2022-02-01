@@ -10,7 +10,7 @@ namespace EventStore.Client {
 	/// <summary>
 	/// The client used to manage persistent subscriptions in the EventStoreDB.
 	/// </summary>
-	public partial class EventStorePersistentSubscriptionsClient : EventStoreClientBase {
+	public sealed partial class EventStorePersistentSubscriptionsClient : EventStoreClientBase {
 		private readonly ILogger _log;
 
 		/// <summary>
