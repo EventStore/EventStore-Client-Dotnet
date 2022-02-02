@@ -88,7 +88,7 @@ namespace EventStore.Client {
 			return new StreamAppender(Settings, GetCall(), _disposedTokenSource.Token, SwapStreamAppender);
 
 			async Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>?> GetCall() {
-				var channelInfo = await GetChannelInfo(cancellationToken: default).ConfigureAwait(false);
+				var channelInfo = await GetChannelInfo(_disposedTokenSource.Token).ConfigureAwait(false);
 				if (!channelInfo.ServerCapabilities.SupportsBatchAppend)
 					return null;
 
