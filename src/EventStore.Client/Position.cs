@@ -6,7 +6,7 @@ namespace EventStore.Client {
 	/// A structure referring to a potential logical record position
 	/// in the Event Store transaction file.
 	/// </summary>
-	public readonly struct Position : IEquatable<Position>, IComparable<Position>, IPosition {
+	public readonly struct Position : IEquatable<Position>, IComparable<Position>, IComparable, IPosition {
 		/// <summary>
 		/// Position representing the start of the transaction file
 		/// </summary>
@@ -111,6 +111,13 @@ namespace EventStore.Client {
 
 		///<inheritdoc cref="IComparable{T}.CompareTo"/>
 		public int CompareTo(Position other) => this == other ? 0 : this > other ? 1 : -1;
+		
+		/// <inheritdoc />
+		public int CompareTo(object? obj) => obj switch {
+			null => 1,
+			Position other => CompareTo(other),
+			_ => throw new ArgumentException("Object is not a Position"),
+		};
 
 		/// <summary>
 		/// Indicates whether this instance and a specified object are equal.

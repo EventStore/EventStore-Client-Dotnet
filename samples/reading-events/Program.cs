@@ -11,7 +11,7 @@ namespace reading_events {
 	class Program {
 		static async Task Main(string[] args) {
 			using var client = new EventStoreClient(
-				EventStoreClientSettings.Create("esdb://admin:changeit@localhost:2113?TlsVerifyCert=false")
+				EventStoreClientSettings.Create("esdb://localhost:2113?tls=false")
 			);
 
 			var events = Enumerable.Range(0, 20)

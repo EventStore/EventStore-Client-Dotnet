@@ -8,7 +8,7 @@ namespace persistent_subscriptions
     {
 	    static async Task Main(string[] args) {
 		    await using var client = new EventStorePersistentSubscriptionsClient(
-			    EventStoreClientSettings.Create("esdb://admin:changeit@localhost:2113?TlsVerifyCert=false")
+			    EventStoreClientSettings.Create("esdb://localhost:2113?tls=false")
 		    );
 		    await CreatePersistentSubscription(client);
 		    await ConnectToPersistentSubscriptionToStream(client);

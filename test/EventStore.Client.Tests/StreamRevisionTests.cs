@@ -1,32 +1,15 @@
 using System;
 using System.Collections.Generic;
+using AutoFixture;
 using Xunit;
 
 namespace EventStore.Client {
-	public class StreamRevisionTests {
-		[Fact]
-		public void Equality() {
-			var sut = new StreamRevision(1);
-			Assert.Equal(new StreamRevision(1), sut);
-		}
+	public class StreamRevisionTests : ValueObjectTests<StreamRevision> {
+		public StreamRevisionTests() : base(new ScenarioFixture()) { }
 
 		[Fact]
-		public void Inequality() {
-			var sut = new StreamRevision(1);
-			Assert.NotEqual(new StreamRevision(2), sut);
-		}
-
-		[Fact]
-		public void EqualityOperator() {
-			var sut = new StreamRevision(1);
-			Assert.True(new StreamRevision(1) == sut);
-		}
-
-		[Fact]
-		public void InequalityOperator() {
-			var sut = new StreamRevision(1);
-			Assert.True(new StreamRevision(2) != sut);
-		}
+		public void IsComparable() =>
+			Assert.IsAssignableFrom<IComparable<StreamRevision>>(_fixture.Create<StreamRevision>());
 
 		[Fact]
 		public void AdditionOperator() {
@@ -92,26 +75,15 @@ namespace EventStore.Client {
 			Assert.Equal(new StreamRevision(0), result);
 		}
 
-		public static IEnumerable<object[]> ComparableTestCases() {
-			var start = new StreamRevision(0);
-			yield return new object[] {start, start, 0};
-			yield return new object[] {start, StreamRevision.None, -1};
-			yield return new object[] {StreamRevision.None, start, 1};
-		}
-
-		[Theory, MemberData(nameof(ComparableTestCases))]
-		public void Comparability(StreamRevision left, StreamRevision right, int expected)
-			=> Assert.Equal(expected, left.CompareTo(right));
-
 		[Fact]
-		public void ExplicitConversionFromStreamRevisionReturnsExpectedResult() {
+		public void ExplicitConversionToUInt64ReturnsExpectedResult() {
 			const ulong value = 0UL;
 			var actual = (ulong)new StreamRevision(value);
 			Assert.Equal(value, actual);
 		}
 
 		[Fact]
-		public void ImplicitConversionFromStreamRevisionReturnsExpectedResult() {
+		public void ImplicitConversionToUInt64ReturnsExpectedResult() {
 			const ulong value = 0UL;
 			ulong actual = new StreamRevision(value);
 			Assert.Equal(value, actual);
@@ -145,6 +117,12 @@ namespace EventStore.Client {
 			var expected = 0UL;
 
 			Assert.Equal(expected, new StreamRevision(expected).ToUInt64());
+		}
+
+		private class ScenarioFixture : Fixture {
+			public ScenarioFixture() {
+				Customize<StreamRevision>(composer => composer.FromFactory<ulong>(value => new StreamRevision(value)));
+			}
 		}
 	}
 }

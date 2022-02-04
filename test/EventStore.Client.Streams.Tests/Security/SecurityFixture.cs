@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -136,7 +135,7 @@ namespace EventStore.Client.Security {
 
 		public Task<IWriteResult> AppendStream(string streamId, UserCredentials userCredentials = default) =>
 			Client.AppendToStreamAsync(streamId, StreamState.Any, CreateTestEvents(3),
-				userCredentials: userCredentials)
+					userCredentials: userCredentials)
 				.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		public Task ReadAllForward(UserCredentials userCredentials = default) =>
@@ -160,38 +159,39 @@ namespace EventStore.Client.Security {
 		public Task<IWriteResult> WriteMeta(string streamId, UserCredentials userCredentials = default,
 			string role = default) =>
 			Client.SetStreamMetadataAsync(streamId, StreamState.Any,
-				new StreamMetadata(acl: new StreamAcl(
-					writeRole: role,
-					readRole: role,
-					metaWriteRole: role,
-					metaReadRole: role)),
-				userCredentials: userCredentials)
+					new StreamMetadata(acl: new StreamAcl(
+						writeRole: role,
+						readRole: role,
+						metaWriteRole: role,
+						metaReadRole: role)),
+					userCredentials: userCredentials)
 				.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		public async Task SubscribeToStream(string streamId, UserCredentials userCredentials = default) {
 			var source = new TaskCompletionSource<bool>();
-			using (await Client.SubscribeToStreamAsync(streamId, (_, _, _) => {
-					source.TrySetResult(true);
-					return Task.CompletedTask;
-				},
-				subscriptionDropped: (_, _, ex) => {
-					if (ex == null) source.TrySetResult(true);
-					else source.TrySetException(ex);
-				}, userCredentials: userCredentials).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs))) {
+			using (await Client.SubscribeToStreamAsync(streamId, FromStream.Start, (_, _, _) => {
+					       source.TrySetResult(true);
+					       return Task.CompletedTask;
+				       },
+				       subscriptionDropped: (_, _, ex) => {
+					       if (ex == null) source.TrySetResult(true);
+					       else source.TrySetException(ex);
+				       }, userCredentials: userCredentials).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs))) {
 				await source.Task.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 			}
 		}
 
 		public async Task SubscribeToAll(UserCredentials userCredentials = default) {
 			var source = new TaskCompletionSource<bool>();
-			using (await Client.SubscribeToAllAsync((_, _, _) => {
-					source.TrySetResult(true);
-					return Task.CompletedTask;
-				},
-				subscriptionDropped: (_, _, ex) => {
-					if (ex == null) source.TrySetResult(true);
-					else source.TrySetException(ex);
-				}, userCredentials: userCredentials).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs))) {
+			using (await Client.SubscribeToAllAsync(FromAll.Start,
+				       (_, _, _) => {
+					       source.TrySetResult(true);
+					       return Task.CompletedTask;
+				       }, false, (_, _, ex) => {
+					       if (ex == null) source.TrySetResult(true);
+					       else source.TrySetException(ex);
+				       }, null, null,
+				       userCredentials, default).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs))) {
 				await source.Task.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 			}
 		}
@@ -199,7 +199,7 @@ namespace EventStore.Client.Security {
 		public async Task<string> CreateStreamWithMeta(StreamMetadata metadata,
 			[CallerMemberName] string streamId = "<unknown>") {
 			await Client.SetStreamMetadataAsync(streamId, StreamState.NoStream,
-				metadata, userCredentials: TestCredentials.TestAdmin)
+					metadata, userCredentials: TestCredentials.TestAdmin)
 				.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 			return streamId;
 		}

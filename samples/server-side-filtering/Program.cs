@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,13 +9,17 @@ using EventTypeFilter = EventStore.Client.EventTypeFilter;
 namespace server_side_filtering {
 	class Program {
 		static async Task Main() {
-			using var client = new EventStoreClient(
-				EventStoreClientSettings.Create("esdb://localhost:2113?Tls=false")
+			const int eventCount = 100;
+			var semaphore = new SemaphoreSlim(eventCount);
+
+			await using var client = new EventStoreClient(
+				EventStoreClientSettings.Create("esdb://localhost:2113?tls=false")
 			);
 
-			await client.SubscribeToAllAsync(Position.Start,
+			await client.SubscribeToAllAsync(FromAll.Start, 
 				(s, e, c) => {
 					Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+					semaphore.Release();
 					return Task.CompletedTask;
 				},
 				filterOptions: new SubscriptionFilterOptions(
@@ -29,9 +31,9 @@ namespace server_side_filtering {
 					})
 			);
 
-			Thread.Sleep(2000);
+			await Task.Delay(2000);
 
-			for (var i = 0; i < 100; i++) {
+			for (var i = 0; i < eventCount; i++) {
 				var eventData = new EventData(
 					Uuid.NewUuid(),
 					i % 2 == 0 ? "some-event" : "other-event",
@@ -45,12 +47,12 @@ namespace server_side_filtering {
 				);
 			}
 
-			Console.ReadLine();
+			await semaphore.WaitAsync();
 		}
 
 		private static async Task ExcludeSystemEvents(EventStoreClient client) {
 			#region exclude-system
-			await client.SubscribeToAllAsync(Position.Start,
+			await client.SubscribeToAllAsync(FromAll.Start,
 				(s, e, c) => {
 					Console.WriteLine(
 						$"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
@@ -68,7 +70,7 @@ namespace server_side_filtering {
 				EventTypeFilter.Prefix("customer-"));
 			#endregion event-type-prefix
 
-			await client.SubscribeToAllAsync(Position.Start,
+			await client.SubscribeToAllAsync(FromAll.Start,
 				(s, e, c) => {
 					Console.WriteLine(
 						$"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
@@ -84,7 +86,7 @@ namespace server_side_filtering {
 				EventTypeFilter.RegularExpression("^user|^company"));
 			#endregion event-type-regex
 
-			await client.SubscribeToAllAsync(Position.Start,
+			await client.SubscribeToAllAsync(FromAll.Start,
 				(s, e, c) => {
 					Console.WriteLine(
 						$"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
@@ -100,7 +102,7 @@ namespace server_side_filtering {
 				StreamFilter.Prefix("user-"));
 			#endregion stream-prefix
 
-			await client.SubscribeToAllAsync(Position.Start,
+			await client.SubscribeToAllAsync(FromAll.Start,
 				(s, e, c) => {
 					Console.WriteLine(
 						$"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
@@ -116,7 +118,7 @@ namespace server_side_filtering {
 				StreamFilter.RegularExpression("^account|^savings"));
 			#endregion stream-regex
 
-			await client.SubscribeToAllAsync(Position.Start,
+			await client.SubscribeToAllAsync(FromAll.Start,
 				(s, e, c) => {
 					Console.WriteLine(
 						$"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
@@ -137,7 +139,7 @@ namespace server_side_filtering {
 				});
 			#endregion checkpoint
 
-			await client.SubscribeToAllAsync(Position.Start,
+			await client.SubscribeToAllAsync(FromAll.Start,
 				(s, e, c) => {
 					Console.WriteLine(
 						$"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
@@ -159,7 +161,7 @@ namespace server_side_filtering {
 				});
 			#endregion checkpoint-with-interval
 
-			await client.SubscribeToAllAsync(Position.Start,
+			await client.SubscribeToAllAsync(FromAll.Start,
 				(s, e, c) => {
 					Console.WriteLine(
 						$"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");

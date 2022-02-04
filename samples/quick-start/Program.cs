@@ -17,7 +17,10 @@ namespace quick_start {
 	}
 	
 	class Program {
-		static async Task Main(string[] args) {
+		static void Main(string[] args) {
+		}
+
+		static async Task Samples() {
 			CancellationTokenSource tokenSource = new CancellationTokenSource();
 			CancellationToken cancellationToken = tokenSource.Token;
 			
@@ -61,14 +64,14 @@ namespace quick_start {
 			#endregion overriding-user-credentials
 
 			#region readStream
-            var result = client.ReadStreamAsync(
-                Direction.Forwards,
-                "some-stream",
-                StreamPosition.Start,
-                cancellationToken: cancellationToken);
+			var result = client.ReadStreamAsync(
+				Direction.Forwards,
+				"some-stream",
+				StreamPosition.Start,
+				cancellationToken: cancellationToken);
 
-            var events = await result.ToListAsync(cancellationToken);
-            #endregion readStream
-		}
+			var events = await result.ToListAsync(cancellationToken);
+			#endregion readStream
+		} 
 	}
 }

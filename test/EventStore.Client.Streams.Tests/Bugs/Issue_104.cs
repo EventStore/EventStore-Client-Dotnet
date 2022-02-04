@@ -19,19 +19,20 @@ namespace EventStore.Client.Bugs {
 
 			await _fixture.Client.AppendToStreamAsync(streamName, StreamRevision.None, _fixture.CreateTestEvents());
 
-			var subscription = await _fixture.Client.SubscribeToAllAsync((_, __, ___) => {
+			var subscription = await _fixture.Client.SubscribeToAllAsync(
+				FromAll.Start,
+				(_, _, _) => {
 					eventAppeared.TrySetResult(true);
 					return Task.CompletedTask;
-				}, false,
-				(_, __, ____) => subscriptionDisposed.TrySetResult(true),
-				new SubscriptionFilterOptions(StreamFilter.Prefix(streamName), 1, (_, __, ____) => {
-					if (!subscriptionDisposed.Task.IsCompleted) {
-						return Task.CompletedTask;
-					}
+				}, false, (_, _, _) => subscriptionDisposed.TrySetResult(true), new SubscriptionFilterOptions(
+					StreamFilter.Prefix(streamName), 1, (_, _, _) => {
+						if (!subscriptionDisposed.Task.IsCompleted) {
+							return Task.CompletedTask;
+						}
 
-					checkpointReachAfterDisposed.TrySetResult(true);
-					return Task.CompletedTask;
-				}), userCredentials: new UserCredentials("admin", "changeit"));
+						checkpointReachAfterDisposed.TrySetResult(true);
+						return Task.CompletedTask;
+					}), userCredentials: new UserCredentials("admin", "changeit"));
 
 			await eventAppeared.Task;
 

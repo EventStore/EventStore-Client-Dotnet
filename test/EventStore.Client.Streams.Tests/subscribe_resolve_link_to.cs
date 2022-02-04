@@ -35,8 +35,9 @@ namespace EventStore.Client {
 				.WithTimeout();
 
 			using var subscription = await _fixture.Client
-				.SubscribeToStreamAsync($"$et-{EventStoreClientFixtureBase.TestEventType}", EventAppeared, true,
-					SubscriptionDropped, userCredentials: TestCredentials.Root)
+				.SubscribeToStreamAsync($"$et-{EventStoreClientFixtureBase.TestEventType}",
+					FromStream.Start, EventAppeared, true, SubscriptionDropped,
+					userCredentials: TestCredentials.Root)
 				.WithTimeout();
 
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents)
@@ -88,12 +89,11 @@ namespace EventStore.Client {
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, beforeEvents)
 				.WithTimeout();
 
-			using var subscription = await _fixture.Client
-				.SubscribeToAllAsync(EventAppeared, true, SubscriptionDropped, userCredentials: TestCredentials.Root)
+			using var subscription = await _fixture.Client.SubscribeToAllAsync(FromAll.Start,
+					EventAppeared, true, SubscriptionDropped, userCredentials: TestCredentials.Root)
 				.WithTimeout();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents)
-				.WithTimeout();
+			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents).WithTimeout();
 
 			await appeared.Task.WithTimeout();
 
@@ -108,6 +108,7 @@ namespace EventStore.Client {
 				if (e.OriginalEvent.EventStreamId != $"$et-{EventStoreClientFixtureBase.TestEventType}") {
 					return Task.CompletedTask;
 				}
+
 				try {
 					Assert.Equal(enumerator.Current.EventId, e.Event.EventId);
 					if (!enumerator.MoveNext()) {
@@ -144,8 +145,10 @@ namespace EventStore.Client {
 			var result = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, beforeEvents)
 				.WithTimeout();
 
-			using var subscription = await _fixture.Client.SubscribeToAllAsync(EventAppeared, true, SubscriptionDropped,
-					new SubscriptionFilterOptions(StreamFilter.Prefix($"$et-{EventStoreClientFixtureBase.TestEventType}")),
+			using var subscription = await _fixture.Client.SubscribeToAllAsync(FromAll.Start,
+					EventAppeared, true, SubscriptionDropped,
+					new SubscriptionFilterOptions(
+						StreamFilter.Prefix($"$et-{EventStoreClientFixtureBase.TestEventType}")),
 					userCredentials: TestCredentials.Root)
 				.WithTimeout();
 
@@ -165,6 +168,7 @@ namespace EventStore.Client {
 				if (e.OriginalEvent.EventStreamId != $"$et-{EventStoreClientFixtureBase.TestEventType}") {
 					return Task.CompletedTask;
 				}
+
 				try {
 					Assert.Equal(enumerator.Current.EventId, e.Event.EventId);
 					if (!enumerator.MoveNext()) {
@@ -187,8 +191,8 @@ namespace EventStore.Client {
 				["EVENTSTORE_RUN_PROJECTIONS"] = "All",
 				["EVENTSTORE_START_STANDARD_PROJECTIONS"] = "True"
 			}) {
-
 			}
+
 			protected override Task Given() => Task.CompletedTask;
 			protected override Task When() => Task.CompletedTask;
 		}

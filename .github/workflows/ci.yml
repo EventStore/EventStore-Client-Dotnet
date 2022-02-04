@@ -36,6 +36,39 @@ jobs:
         dotnet restore
         dotnet list package --vulnerable --include-transitive --framework ${{ matrix.framework }} | tee vulnerabilities.txt
         ! cat vulnerabilities.txt | grep -q "has the following vulnerable packages"
+  build-samples:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    services: 
+      esdb:
+        image: ghcr.io/eventstore/eventstore:21.10.1-focal # TODO replace with LTS
+        env: 
+          EVENTSTORE_INSECURE: true
+          EVENTSTORE_MEMDB: true
+          EVENTSTORE_RUN_PROJECTIONS: all
+          EVENTSTORE_START_STANDARD_PROJECTIONS: true
+        ports:
+          - 2113:2113
+        options: --health-cmd "exit 0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install netcoreapp3.1
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.x
+      - name: Install net5.0
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+      - name: Compile
+        shell: bash
+        run: |
+          dotnet build samples
+      - name: Run
+        shell: bash
+        run: |
+          find samples/ -type f -iname "*.csproj" -print0 | xargs -0L1 dotnet run --project
   build-dotnet:
     timeout-minutes: 20
     strategy:

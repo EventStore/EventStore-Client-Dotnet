@@ -1,31 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+using AutoFixture;
 using Xunit;
 
 namespace EventStore.Client {
-	public class StreamStateTests {
-		[Fact]
-		public void Equality() {
-			var sut = StreamState.NoStream;
-			Assert.Equal(StreamState.NoStream, sut);
-		}
-
-		[Fact]
-		public void Inequality() {
-			var sut = StreamState.NoStream;
-			Assert.NotEqual(StreamState.Any, sut);
-		}
-
-		[Fact]
-		public void EqualityOperator() {
-			var sut = StreamState.NoStream;
-			Assert.True(StreamState.NoStream == sut);
-		}
-
-		[Fact]
-		public void InequalityOperator() {
-			var sut = StreamState.NoStream;
-			Assert.True(StreamState.Any != sut);
+	public class StreamStateTests : ValueObjectTests<StreamState> {
+		public StreamStateTests() : base(new ScenarioFixture()) {
 		}
 
 		public static IEnumerable<object[]> ArgumentOutOfRangeTestCases() {
@@ -62,6 +45,16 @@ namespace EventStore.Client {
 		[Theory, MemberData(nameof(ToStringTestCases))]
 		public void ToStringExpectedResult(StreamState sut, string expected) {
 			Assert.Equal(expected, sut.ToString());
+		}
+
+		private class ScenarioFixture : Fixture {
+			private static int RefCount;
+
+			private static readonly StreamState[] Instances = Array.ConvertAll(typeof(StreamState)
+				.GetFields(BindingFlags.Public | BindingFlags.Static), fi => (StreamState)fi.GetValue(null)!);
+
+			public ScenarioFixture() => Customize<StreamState>(composer =>
+				composer.FromFactory(() => Instances[Interlocked.Increment(ref RefCount) % Instances.Length]));
 		}
 	}
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -33,7 +32,8 @@ namespace EventStore.Client.Bugs {
 			var streamName = $"{_fixture.GetStreamName()}_{iteration}";
 
 			using var _ = await _fixture.Client.SubscribeToStreamAsync(streamName,
-				(_, e, ct) => EventAppeared(e, streamName), subscriptionDropped: SubscriptionDropped);
+				FromStream.Start,
+				(_, e, _) => EventAppeared(e, streamName), subscriptionDropped: SubscriptionDropped);
 
 			await AppendEvents(streamName);
 
@@ -44,8 +44,8 @@ namespace EventStore.Client.Bugs {
 		public async Task subscribe_to_all(int iteration) {
 			var streamName = $"{_fixture.GetStreamName()}_{iteration}";
 
-			using var _ = await _fixture.Client.SubscribeToAllAsync((_, e, ct) => EventAppeared(e, streamName),
-				subscriptionDropped: SubscriptionDropped);
+			using var _ = await _fixture.Client.SubscribeToAllAsync(FromAll.Start,
+				(_, e, _) => EventAppeared(e, streamName), false, SubscriptionDropped);
 
 			await AppendEvents(streamName);
 
@@ -56,9 +56,9 @@ namespace EventStore.Client.Bugs {
 		public async Task subscribe_to_all_filtered(int iteration) {
 			var streamName = $"{_fixture.GetStreamName()}_{iteration}";
 
-			using var _ = await _fixture.Client.SubscribeToAllAsync((_, e, ct) => EventAppeared(e, streamName),
-				subscriptionDropped: SubscriptionDropped,
-				filterOptions: new SubscriptionFilterOptions(EventTypeFilter.ExcludeSystemEvents()));
+			using var _ = await _fixture.Client.SubscribeToAllAsync(FromAll.Start,
+				(_, e, _) => EventAppeared(e, streamName), false, SubscriptionDropped,
+				new SubscriptionFilterOptions(EventTypeFilter.ExcludeSystemEvents()));
 
 			await AppendEvents(streamName);
 

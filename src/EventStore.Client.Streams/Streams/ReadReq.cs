@@ -6,6 +6,27 @@ namespace EventStore.Client.Streams {
 			partial class Options {
 				partial class Types {
 					partial class StreamOptions {
+						public static StreamOptions FromSubscriptionPosition(string streamName,
+							FromStream fromStream) {
+							if (fromStream == FromStream.End) {
+								return new StreamOptions {
+									StreamIdentifier = streamName,
+									End = new Empty()
+								};
+							}
+
+							if (fromStream == FromStream.Start) {
+								return new StreamOptions {
+									StreamIdentifier = streamName,
+									Start = new Empty()
+								};
+							}
+
+							return new StreamOptions {
+								StreamIdentifier = streamName,
+								Revision = fromStream.ToUInt64()
+							};
+						}
 						public static StreamOptions FromStreamNameAndRevision(
 							string streamName,
 							StreamPosition streamRevision) {
@@ -35,23 +56,25 @@ namespace EventStore.Client.Streams {
 					}
 
 					partial class AllOptions {
-						public static AllOptions FromPosition(Client.Position position) {
-							if (position == Client.Position.End) {
+						public static AllOptions FromSubscriptionPosition(FromAll position) {
+							if (position == FromAll.End) {
 								return new AllOptions {
 									End = new Empty()
 								};
 							}
 
-							if (position == Client.Position.Start) {
+							if (position == FromAll.Start) {
 								return new AllOptions {
 									Start = new Empty()
 								};
 							}
 
+							var (c, p) = position.ToUInt64();
+
 							return new AllOptions {
 								Position = new Position {
-									CommitPosition = position.CommitPosition,
-									PreparePosition = position.PreparePosition
+									CommitPosition = c,
+									PreparePosition = p
 								}
 							};
 						}
