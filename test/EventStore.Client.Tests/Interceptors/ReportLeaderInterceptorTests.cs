@@ -15,7 +15,6 @@ namespace EventStore.Client.Interceptors {
 		private static readonly Marshaller<object> _marshaller = new(_ => Array.Empty<byte>(), _ => new object());
 
 		private static readonly StatusCode[] ForcesRediscoveryStatusCodes = {
-			StatusCode.Aborted, 
 			//StatusCode.Unknown, TODO: use RPC exceptions on server
 			StatusCode.Unavailable
 		};
@@ -32,12 +31,12 @@ namespace EventStore.Client.Interceptors {
 
 		[Theory, MemberData(nameof(ReportsNewLeaderCases))]
 		public async Task ReportsNewLeader(GrpcCall call) {
-			EndPoint actual = default;
-			var sut = new ReportLeaderInterceptor(ep => actual = ep);
+			ReconnectionRequired actual = default;
+			var sut = new ReportLeaderInterceptor(result => actual = result);
 
 			var result = await Assert.ThrowsAsync<NotLeaderException>(() =>
 				call(sut, Task.FromException<object>(new NotLeaderException("a.host", 2112))));
-			Assert.Equal(result.LeaderEndpoint, actual);
+			Assert.Equal(new ReconnectionRequired.NewLeader(result.LeaderEndpoint), actual);
 		}
 
 		public static IEnumerable<object[]> ForcesRediscoveryCases() => from call in GrpcCalls()
@@ -46,18 +45,12 @@ namespace EventStore.Client.Interceptors {
 
 		[Theory, MemberData(nameof(ForcesRediscoveryCases))]
 		public async Task ForcesRediscovery(GrpcCall call, StatusCode statusCode) {
-			EndPoint actual = default;
-			bool invoked = false;
+			ReconnectionRequired actual = default;
+			var sut = new ReportLeaderInterceptor(result => actual = result);
 
-			var sut = new ReportLeaderInterceptor(ep => {
-				invoked = true;
-				actual = ep;
-			});
-
-			var result = await Assert.ThrowsAsync<RpcException>(() => call(sut,
+			await Assert.ThrowsAsync<RpcException>(() => call(sut,
 				Task.FromException<object>(new RpcException(new Status(statusCode, "oops")))));
-			Assert.Null(actual);
-			Assert.True(invoked);
+			Assert.Equal(ReconnectionRequired.Rediscover.Instance, actual);
 		}
 		
 		public static IEnumerable<object[]> DoesNotForceRediscoveryCases() => from call in GrpcCalls()
@@ -68,12 +61,12 @@ namespace EventStore.Client.Interceptors {
 
 		[Theory, MemberData(nameof(DoesNotForceRediscoveryCases))]
 		public async Task DoesNotForceRediscovery(GrpcCall call, StatusCode statusCode) {
-			bool invoked = false;
-			var sut = new ReportLeaderInterceptor(ep => invoked = true);
+			ReconnectionRequired actual = ReconnectionRequired.None.Instance;
+			var sut = new ReportLeaderInterceptor(result => actual = result);
 
-			var result = await Assert.ThrowsAsync<RpcException>(() => call(sut,
+			await Assert.ThrowsAsync<RpcException>(() => call(sut,
 				Task.FromException<object>(new RpcException(new Status(statusCode, "oops")))));
-			Assert.False(invoked);
+			Assert.Equal(ReconnectionRequired.None.Instance, actual);
 		}
 		
 
