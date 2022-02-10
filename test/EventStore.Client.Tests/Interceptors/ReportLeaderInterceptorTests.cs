@@ -10,10 +10,16 @@ using Xunit;
 
 namespace EventStore.Client.Interceptors {
 	public class ReportLeaderInterceptorTests {
-		private static readonly Marshaller<object> _marshaller =
-			new Marshaller<object>(_ => Array.Empty<byte>(), _ => new object());
-
 		public delegate Task GrpcCall(Interceptor interceptor, Task<object> response = null);
+
+		private static readonly Marshaller<object> _marshaller = new(_ => Array.Empty<byte>(), _ => new object());
+
+		private static readonly StatusCode[] ForcesRediscoveryStatusCodes = {
+			StatusCode.Aborted, 
+			//StatusCode.Unknown, TODO: use RPC exceptions on server
+			StatusCode.Unavailable
+		};
+
 
 		private static IEnumerable<GrpcCall> GrpcCalls() {
 			yield return MakeUnaryCall;
@@ -22,9 +28,9 @@ namespace EventStore.Client.Interceptors {
 			yield return MakeServerStreamingCall;
 		}
 
-		public static IEnumerable<object[]> TestCases() => GrpcCalls().Select(call => new object[] {call});
+		public static IEnumerable<object[]> ReportsNewLeaderCases() => GrpcCalls().Select(call => new object[] {call});
 
-		[Theory, MemberData(nameof(TestCases))]
+		[Theory, MemberData(nameof(ReportsNewLeaderCases))]
 		public async Task ReportsNewLeader(GrpcCall call) {
 			EndPoint actual = default;
 			var sut = new ReportLeaderInterceptor(ep => actual = ep);
@@ -33,6 +39,43 @@ namespace EventStore.Client.Interceptors {
 				call(sut, Task.FromException<object>(new NotLeaderException("a.host", 2112))));
 			Assert.Equal(result.LeaderEndpoint, actual);
 		}
+
+		public static IEnumerable<object[]> ForcesRediscoveryCases() => from call in GrpcCalls()
+			from statusCode in ForcesRediscoveryStatusCodes
+			select new object[] {call, statusCode};
+
+		[Theory, MemberData(nameof(ForcesRediscoveryCases))]
+		public async Task ForcesRediscovery(GrpcCall call, StatusCode statusCode) {
+			EndPoint actual = default;
+			bool invoked = false;
+
+			var sut = new ReportLeaderInterceptor(ep => {
+				invoked = true;
+				actual = ep;
+			});
+
+			var result = await Assert.ThrowsAsync<RpcException>(() => call(sut,
+				Task.FromException<object>(new RpcException(new Status(statusCode, "oops")))));
+			Assert.Null(actual);
+			Assert.True(invoked);
+		}
+		
+		public static IEnumerable<object[]> DoesNotForceRediscoveryCases() => from call in GrpcCalls()
+			from statusCode in Enum.GetValues(typeof(StatusCode))
+				.OfType<StatusCode>()
+				.Except(ForcesRediscoveryStatusCodes)
+			select new object[] {call, statusCode};
+
+		[Theory, MemberData(nameof(DoesNotForceRediscoveryCases))]
+		public async Task DoesNotForceRediscovery(GrpcCall call, StatusCode statusCode) {
+			bool invoked = false;
+			var sut = new ReportLeaderInterceptor(ep => invoked = true);
+
+			var result = await Assert.ThrowsAsync<RpcException>(() => call(sut,
+				Task.FromException<object>(new RpcException(new Status(statusCode, "oops")))));
+			Assert.False(invoked);
+		}
+		
 
 		private static async Task MakeUnaryCall(Interceptor interceptor, Task<object> response = null) {
 			using var call = interceptor.AsyncUnaryCall(new object(),
@@ -73,8 +116,7 @@ namespace EventStore.Client.Interceptors {
 		private static void OnDispose() { }
 
 		private static ClientInterceptorContext<object, object> CreateClientInterceptorContext(MethodType methodType) =>
-			new ClientInterceptorContext<object, object>(
-				new Method<object, object>(methodType, string.Empty, string.Empty, _marshaller, _marshaller),
+			new(new Method<object, object>(methodType, string.Empty, string.Empty, _marshaller, _marshaller),
 				null, new CallOptions(new Metadata()));
 
 		private class TestAsyncStreamReader : IAsyncStreamReader<object> {

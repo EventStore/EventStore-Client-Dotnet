@@ -64,8 +64,11 @@ namespace EventStore.Client.Interceptors {
 		private void ReportNewLeader<TResponse>(Task<TResponse> task) {
 			if (task.Exception?.InnerException is NotLeaderException ex) {
 				_onError(ex.LeaderEndpoint);
-			} else if (task.Exception?.InnerException?.InnerException is RpcException rpcException &&
-			           rpcException.StatusCode == StatusCode.Unavailable) {
+			} else if (task.Exception?.InnerException is RpcException {
+				           StatusCode: StatusCode.Unavailable or
+				           // StatusCode.Unknown or TODO: use RPC exceptions on server
+				           StatusCode.Aborted
+			           }) {
 				_onError(null);
 			}
 		}

@@ -13,6 +13,8 @@ using TChannel = Grpc.Core.ChannelBase;
 #nullable enable
 namespace EventStore.Client {
 	internal static class ChannelFactory {
+		private const int MaxReceiveMessageLength = 17 * 1024 * 1024;
+
 		public static TChannel CreateChannel(EventStoreClientSettings settings, EndPoint endPoint, bool https) =>
 			CreateChannel(settings, endPoint.ToUri(https));
 
@@ -32,7 +34,8 @@ namespace EventStore.Client {
 				},
 				LoggerFactory = settings.LoggerFactory,
 				Credentials = settings.ChannelCredentials,
-				DisposeHttpClient = true
+				DisposeHttpClient = true,
+				MaxReceiveMessageSize = MaxReceiveMessageLength
 			});
 
 			HttpMessageHandler CreateHandler() {
@@ -56,6 +59,8 @@ namespace EventStore.Client {
 
 				yield return new ChannelOption("grpc.keepalive_timeout_ms",
 					GetValue((int)settings.ConnectivitySettings.KeepAliveTimeout.TotalMilliseconds));
+
+				yield return new ChannelOption("grpc.max_receive_message_length", MaxReceiveMessageLength);
 			}
 
 			static int GetValue(int value) => value switch {

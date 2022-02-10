@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Polly;
 using Xunit;
 
@@ -25,7 +26,11 @@ namespace EventStore.Client {
 
 			// writeTask cannot complete because ES is stopped
 			var ex = await Assert.ThrowsAnyAsync<Exception>(() => WriteAnEventAsync(new StreamRevision(0)));
-			Assert.True(ex is InvalidOperationException or DiscoveryException);
+			Assert.True(ex is RpcException {
+				Status: {
+					StatusCode: StatusCode.Unavailable
+				}
+			} or DiscoveryException);
 
 			await _fixture.TestServer.StartAsync().WithTimeout();
 

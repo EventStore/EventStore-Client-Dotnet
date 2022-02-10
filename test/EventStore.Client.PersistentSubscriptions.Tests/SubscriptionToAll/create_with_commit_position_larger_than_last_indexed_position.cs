@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Xunit;
 
 namespace EventStore.Client.SubscriptionToAll {
@@ -24,11 +26,13 @@ namespace EventStore.Client.SubscriptionToAll {
 		}
 
 		[Fact]
-		public Task fails_with_invalid_operation_exception() =>
-			Assert.ThrowsAsync<InvalidOperationException>(() =>
+		public async Task fails() {
+			var ex = await Assert.ThrowsAsync<RpcException>(() =>
 				_fixture.Client.CreateToAllAsync("group57",
 					new PersistentSubscriptionSettings(
-						startFrom: new Position(_fixture.LastCommitPosition+1, _fixture.LastCommitPosition)),
-						TestCredentials.Root));
+						startFrom: new Position(_fixture.LastCommitPosition + 1, _fixture.LastCommitPosition)),
+					TestCredentials.Root));
+			Assert.Equal(StatusCode.Internal, ex.StatusCode);
+		}
 	}
 }

@@ -91,7 +91,7 @@ namespace EventStore.Client.Interceptors {
 						StatusCode.DeadlineExceeded, ex.Status.Detail, ex.Status.DebugException)),
 					(StatusCode.DeadlineExceeded, _) => ex,
 					(StatusCode.Unauthenticated, _) => new NotAuthenticatedException(ex.Message, ex),
-					_ => new InvalidOperationException(ex.Message, ex)
+					_ => ex
 				}
 			};
 		}
