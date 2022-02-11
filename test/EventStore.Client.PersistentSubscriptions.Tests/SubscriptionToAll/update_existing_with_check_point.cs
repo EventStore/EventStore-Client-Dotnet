@@ -50,7 +50,7 @@ namespace EventStore.Client.SubscriptionToAll {
 
 				await Client.CreateToAllAsync(Group,
 					new PersistentSubscriptionSettings(
-						minCheckPointCount: 5,
+						checkPointLowerBound: 5,
 						checkPointAfter: TimeSpan.FromSeconds(1),
 						startFrom: Position.Start),
 					TestCredentials.Root);

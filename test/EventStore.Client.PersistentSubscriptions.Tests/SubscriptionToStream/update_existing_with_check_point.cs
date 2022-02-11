@@ -51,7 +51,7 @@ namespace EventStore.Client.SubscriptionToStream {
 
 				await Client.CreateAsync(Stream, Group,
 					new PersistentSubscriptionSettings(
-						minCheckPointCount: 5,
+						checkPointLowerBound: 5,
 						checkPointAfter: TimeSpan.FromSeconds(1),
 						startFrom: StreamPosition.Start),
 					TestCredentials.Root);
