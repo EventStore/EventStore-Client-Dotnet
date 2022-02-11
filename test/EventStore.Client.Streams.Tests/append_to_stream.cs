@@ -313,12 +313,12 @@ namespace EventStore.Client {
 		}
 
 		[Fact]
-		public async Task appending_with_stream_exists_expected_version_to_soft_deleted_stream_throws_stream_deleted() {
+		public async Task appending_with_stream_exists_expected_version_to_deleted_stream_throws_stream_deleted() {
 			var stream = _fixture.GetStreamName();
 
 			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
 
-			await _fixture.Client.SoftDeleteAsync(stream, StreamState.Any);
+			await _fixture.Client.DeleteAsync(stream, StreamState.Any);
 
 			await Assert.ThrowsAsync<StreamDeletedException>(() => _fixture.Client.AppendToStreamAsync(
 				stream,

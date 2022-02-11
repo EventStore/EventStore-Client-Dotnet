@@ -30,7 +30,7 @@ namespace EventStore.Client {
 
 			await _fixture.Client.AppendToStreamAsync(stream, StreamRevision.None, _fixture.CreateTestEvents());
 
-			await _fixture.Client.SoftDeleteAsync(stream, StreamState.StreamExists);
+			await _fixture.Client.DeleteAsync(stream, StreamState.StreamExists);
 		}
 
 		[Fact]
@@ -46,7 +46,7 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 
 			await Assert.ThrowsAsync<WrongExpectedVersionException>(
-				() => _fixture.Client.SoftDeleteAsync(stream, new StreamRevision(0)));
+				() => _fixture.Client.DeleteAsync(stream, new StreamRevision(0)));
 		}
 
 		[Fact]
@@ -72,7 +72,7 @@ namespace EventStore.Client {
 				StreamState.NoStream,
 				_fixture.CreateTestEvents());
 
-			var deleteResult = await _fixture.Client.SoftDeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+			var deleteResult = await _fixture.Client.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
 			Assert.True(deleteResult.LogPosition > writeResult.LogPosition);
 		}
