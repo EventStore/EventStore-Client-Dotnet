@@ -95,7 +95,7 @@ namespace persistent_subscriptions
 		    var userCredentials = new UserCredentials("admin", "changeit");
 		    var settings = new PersistentSubscriptionSettings(
 			    resolveLinkTos: true,
-			    minCheckPointCount: 20);
+			    checkPointLowerBound: 20);
 
 		    await client.UpdateAsync(
 			    "test-stream",

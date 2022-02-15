@@ -206,11 +206,11 @@ namespace EventStore.Client {
 						ResolveLinks = settings.ResolveLinkTos,
 						HistoryBufferSize = settings.HistoryBufferSize,
 						LiveBufferSize = settings.LiveBufferSize,
-						MaxCheckpointCount = settings.MaxCheckPointCount,
+						MaxCheckpointCount = settings.CheckPointUpperBound,
 						MaxRetryCount = settings.MaxRetryCount,
 						MaxSubscriberCount = settings.MaxSubscriberCount,
-						MinCheckpointCount = settings.MinCheckPointCount,
-						NamedConsumerStrategy = NamedConsumerStrategyToCreateProto[settings.NamedConsumerStrategy],
+						MinCheckpointCount = settings.CheckPointLowerBound,
+						NamedConsumerStrategy = NamedConsumerStrategyToCreateProto[settings.ConsumerStrategyName],
 						ReadBatchSize = settings.ReadBatchSize
 					}
 				}

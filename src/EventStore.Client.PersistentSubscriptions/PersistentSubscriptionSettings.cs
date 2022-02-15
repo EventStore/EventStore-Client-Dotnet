@@ -52,14 +52,14 @@ namespace EventStore.Client {
 		public readonly TimeSpan CheckPointAfter;
 
 		/// <summary>
-		/// The minimum number of messages to write to a checkpoint.
+		/// The minimum number of messages to process before a checkpoint may be written.
 		/// </summary>
-		public readonly int MinCheckPointCount;
+		public readonly int CheckPointLowerBound;
 
 		/// <summary>
 		/// The maximum number of messages not checkpointed before forcing a checkpoint.
 		/// </summary>
-		public readonly int MaxCheckPointCount;
+		public readonly int CheckPointUpperBound;
 
 		/// <summary>
 		/// The maximum number of subscribers allowed.
@@ -69,7 +69,7 @@ namespace EventStore.Client {
 		/// <summary>
 		/// The strategy to use for distributing events to client consumers. See <see cref="SystemConsumerStrategies"/> for system supported strategies.
 		/// </summary>
-		public readonly string NamedConsumerStrategy;
+		public readonly string ConsumerStrategyName;
 
 		/// <summary>
 		/// Constructs a new <see cref="PersistentSubscriptionSettings"/>.
@@ -83,16 +83,16 @@ namespace EventStore.Client {
 		/// <param name="readBatchSize"></param>
 		/// <param name="historyBufferSize"></param>
 		/// <param name="checkPointAfter"></param>
-		/// <param name="minCheckPointCount"></param>
-		/// <param name="maxCheckPointCount"></param>
+		/// <param name="checkPointLowerBound"></param>
+		/// <param name="checkPointUpperBound"></param>
 		/// <param name="maxSubscriberCount"></param>
-		/// <param name="namedConsumerStrategy"></param>
+		/// <param name="consumerStrategyName"></param>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public PersistentSubscriptionSettings(bool resolveLinkTos = false, IPosition? startFrom = null,
 			bool extraStatistics = false, TimeSpan? messageTimeout = null, int maxRetryCount = 10,
 			int liveBufferSize = 500, int readBatchSize = 20, int historyBufferSize = 500,
-			TimeSpan? checkPointAfter = null, int minCheckPointCount = 10, int maxCheckPointCount = 1000,
-			int maxSubscriberCount = 0, string namedConsumerStrategy = SystemConsumerStrategies.RoundRobin) {
+			TimeSpan? checkPointAfter = null, int checkPointLowerBound = 10, int checkPointUpperBound = 1000,
+			int maxSubscriberCount = 0, string consumerStrategyName = SystemConsumerStrategies.RoundRobin) {
 			messageTimeout ??= TimeSpan.FromSeconds(30);
 			checkPointAfter ??= TimeSpan.FromSeconds(2);
 
@@ -117,10 +117,10 @@ namespace EventStore.Client {
 			ReadBatchSize = readBatchSize;
 			HistoryBufferSize = historyBufferSize;
 			CheckPointAfter = checkPointAfter.Value;
-			MinCheckPointCount = minCheckPointCount;
-			MaxCheckPointCount = maxCheckPointCount;
+			CheckPointLowerBound = checkPointLowerBound;
+			CheckPointUpperBound = checkPointUpperBound;
 			MaxSubscriberCount = maxSubscriberCount;
-			NamedConsumerStrategy = namedConsumerStrategy;
+			ConsumerStrategyName = consumerStrategyName;
 		}
 	}
 }
