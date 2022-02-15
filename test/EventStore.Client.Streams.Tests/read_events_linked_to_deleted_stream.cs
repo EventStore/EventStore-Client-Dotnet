@@ -46,7 +46,7 @@ namespace EventStore.Client {
 						Array.Empty<byte>(), Constants.Metadata.ContentTypes.ApplicationOctetStream)
 				});
 
-				await Client.SoftDeleteAsync(DeletedStream, StreamState.Any);
+				await Client.DeleteAsync(DeletedStream, StreamState.Any);
 			}
 
 			protected override async Task When() {

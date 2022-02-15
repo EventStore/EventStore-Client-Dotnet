@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace EventStore.Client {
 	public partial class EventStoreClient {
 		/// <summary>
-		/// Soft Deletes a stream asynchronously.
+		/// Deletes a stream asynchronously.
 		/// </summary>
 		/// <param name="streamName">The name of the stream to delete.</param>
 		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream being deleted.</param>
@@ -16,7 +16,7 @@ namespace EventStore.Client {
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public Task<DeleteResult> SoftDeleteAsync(
+		public Task<DeleteResult> DeleteAsync(
 			string streamName,
 			StreamRevision expectedRevision,
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
@@ -25,11 +25,11 @@ namespace EventStore.Client {
 			var operationOptions = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(operationOptions);
 
-			return SoftDeleteAsync(streamName, expectedRevision, operationOptions, userCredentials, cancellationToken);
+			return DeleteAsync(streamName, expectedRevision, operationOptions, userCredentials, cancellationToken);
 		}
 
 		/// <summary>
-		/// Soft Deletes a stream asynchronously.
+		/// Deletes a stream asynchronously.
 		/// </summary>
 		/// <param name="streamName">The name of the stream to delete.</param>
 		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream being deleted.</param>
@@ -37,7 +37,7 @@ namespace EventStore.Client {
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public Task<DeleteResult> SoftDeleteAsync(
+		public Task<DeleteResult> DeleteAsync(
 			string streamName,
 			StreamState expectedState,
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
@@ -46,10 +46,10 @@ namespace EventStore.Client {
 			var options = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(options);
 
-			return SoftDeleteAsync(streamName, expectedState, options, userCredentials, cancellationToken);
+			return DeleteAsync(streamName, expectedState, options, userCredentials, cancellationToken);
 		}
 
-		private Task<DeleteResult> SoftDeleteAsync(
+		private Task<DeleteResult> DeleteAsync(
 			string streamName,
 			StreamState expectedState,
 			EventStoreClientOperationOptions operationOptions,
@@ -61,7 +61,7 @@ namespace EventStore.Client {
 				}
 			}.WithAnyStreamRevision(expectedState), operationOptions, userCredentials, cancellationToken);
 
-		private Task<DeleteResult> SoftDeleteAsync(
+		private Task<DeleteResult> DeleteAsync(
 			string streamName,
 			StreamRevision expectedRevision,
 			EventStoreClientOperationOptions operationOptions,

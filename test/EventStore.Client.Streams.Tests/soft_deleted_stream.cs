@@ -6,11 +6,11 @@ using Xunit;
 
 namespace EventStore.Client {
 	[Trait("Category", "LongRunning")]
-	public class soft_deleted_stream : IClassFixture<soft_deleted_stream.Fixture> {
+	public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 		private readonly Fixture _fixture;
 		private readonly JsonDocument _customMetadata;
 
-		public soft_deleted_stream(Fixture fixture) {
+		public deleted_stream(Fixture fixture) {
 			_fixture = fixture;
 
 			var customMetadata = new Dictionary<string, object> {
@@ -33,7 +33,7 @@ namespace EventStore.Client {
 
 			Assert.Equal(new StreamRevision(0), writeResult.NextExpectedStreamRevision);
 
-			await _fixture.Client.SoftDeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+			await _fixture.Client.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
 			await Assert.ThrowsAsync<StreamNotFoundException>(
 				() => _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
@@ -57,7 +57,7 @@ namespace EventStore.Client {
 
 			Assert.Equal(new StreamRevision(0), writeResult.NextExpectedStreamRevision);
 
-			await _fixture.Client.SoftDeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+			await _fixture.Client.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
 			var events = _fixture.CreateTestEvents(3).ToArray();
 
@@ -93,7 +93,7 @@ namespace EventStore.Client {
 
 			Assert.Equal(new StreamRevision(0), writeResult.NextExpectedStreamRevision);
 
-			await _fixture.Client.SoftDeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+			await _fixture.Client.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
 			var events = _fixture.CreateTestEvents(3).ToArray();
 
@@ -173,7 +173,7 @@ namespace EventStore.Client {
 
 			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
-			await _fixture.Client.SoftDeleteAsync(stream, new StreamRevision(1));
+			await _fixture.Client.DeleteAsync(stream, new StreamRevision(1));
 
 			await _fixture.Client.TombstoneAsync(stream, StreamState.Any);
 
@@ -202,7 +202,7 @@ namespace EventStore.Client {
 
 			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
-			await _fixture.Client.SoftDeleteAsync(stream, new StreamRevision(1));
+			await _fixture.Client.DeleteAsync(stream, new StreamRevision(1));
 
 			writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 				_fixture.CreateTestEvents(3));
@@ -223,7 +223,7 @@ namespace EventStore.Client {
 
 			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
-			await _fixture.Client.SoftDeleteAsync(stream, new StreamRevision(1));
+			await _fixture.Client.DeleteAsync(stream, new StreamRevision(1));
 
 			writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream,
 				_fixture.CreateTestEvents(3));
@@ -246,7 +246,7 @@ namespace EventStore.Client {
 
 			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
-			await _fixture.Client.SoftDeleteAsync(stream, new StreamRevision(1));
+			await _fixture.Client.DeleteAsync(stream, new StreamRevision(1));
 
 			var firstEvents = _fixture.CreateTestEvents(3).ToArray();
 			var secondEvents = _fixture.CreateTestEvents(2).ToArray();
@@ -325,7 +325,7 @@ namespace EventStore.Client {
 
 			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
 
-			await _fixture.Client.SoftDeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+			await _fixture.Client.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
 			writeResult = await _fixture.Client.SetStreamMetadataAsync(
 				stream,

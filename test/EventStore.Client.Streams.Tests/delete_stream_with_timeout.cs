@@ -14,21 +14,21 @@ namespace EventStore.Client {
 		}
 
 		[Fact]
-		public async Task any_stream_revision_soft_delete_fails_when_operation_expired() {
+		public async Task any_stream_revision_delete_fails_when_operation_expired() {
 			var stream = _fixture.GetStreamName();
 			var rpcException = await Assert.ThrowsAsync<RpcException>(() =>
-				_fixture.Client.SoftDeleteAsync(stream, StreamState.Any,
+				_fixture.Client.DeleteAsync(stream, StreamState.Any,
 					options => options.TimeoutAfter = TimeSpan.Zero));
 
 			Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
 		}
 
 		[Fact]
-		public async Task stream_revision_soft_delete_fails_when_operation_expired() {
+		public async Task stream_revision_delete_fails_when_operation_expired() {
 			var stream = _fixture.GetStreamName();
 
 			var rpcException = await Assert.ThrowsAsync<RpcException>(() =>
-				_fixture.Client.SoftDeleteAsync(stream, new StreamRevision(0),
+				_fixture.Client.DeleteAsync(stream, new StreamRevision(0),
 					options => options.TimeoutAfter = TimeSpan.Zero));
 
 			Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
