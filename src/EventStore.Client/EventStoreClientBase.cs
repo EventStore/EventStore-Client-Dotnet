@@ -21,7 +21,7 @@ namespace EventStore.Client {
 		private readonly IDictionary<string, Func<RpcException, Exception>> _exceptionMap;
 		private readonly CancellationTokenSource _cts;
 		private readonly ChannelCache _channelCache;
-		private readonly SharingProvider<DnsEndPoint?, ChannelInfo> _channelInfoProvider;
+		private readonly SharingProvider<ReconnectionRequired, ChannelInfo> _channelInfoProvider;
 
 		/// <summary>
 		/// The name of the connection.
@@ -48,27 +48,31 @@ namespace EventStore.Client {
 			ConnectionName = Settings.ConnectionName ?? $"ES-{Guid.NewGuid()}";
 
 			var channelSelector = new ChannelSelector(Settings, _channelCache);
-			_channelInfoProvider = new SharingProvider<DnsEndPoint?, ChannelInfo>(
-				factory: (endPoint, onBroken) => GetChannelInfoExpensive(endPoint, onBroken, channelSelector, _cts.Token),
-				initialInput: null);
+			_channelInfoProvider = new SharingProvider<ReconnectionRequired, ChannelInfo>(
+				factory: (endPoint, onBroken) =>
+					GetChannelInfoExpensive(endPoint, onBroken, channelSelector, _cts.Token),
+				initialInput: ReconnectionRequired.Rediscover.Instance);
 		}
 
 		// Select a channel and query its capabilities. This is an expensive call that
 		// we don't want to do often.
 		private async Task<ChannelInfo> GetChannelInfoExpensive(
-			DnsEndPoint? endPoint,
-			Action<DnsEndPoint?> onBroken,
+			ReconnectionRequired reconnectionRequired,
+			Action<ReconnectionRequired> onReconnectionRequired,
 			IChannelSelector channelSelector,
 			CancellationToken cancellationToken) {
 
-			var channel = endPoint is null
-				? await channelSelector.SelectChannelAsync(cancellationToken).ConfigureAwait(false)
-				: channelSelector.SelectChannel(endPoint);
+			var channel = reconnectionRequired switch {
+				ReconnectionRequired.Rediscover => await channelSelector.SelectChannelAsync(cancellationToken)
+					.ConfigureAwait(false),
+				ReconnectionRequired.NewLeader (var endPoint) => channelSelector.SelectChannel(endPoint),
+				_ => throw new ArgumentException(null, nameof(reconnectionRequired))
+			};
 
 			var invoker = channel.CreateCallInvoker()
 				.Intercept(new TypedExceptionInterceptor(_exceptionMap))
 				.Intercept(new ConnectionNameInterceptor(ConnectionName))
-				.Intercept(new ReportLeaderInterceptor(onBroken));
+				.Intercept(new ReportLeaderInterceptor(onReconnectionRequired));
 
 			if (Settings.Interceptors is not null) {
 				foreach (var interceptor in Settings.Interceptors) {
@@ -92,6 +96,7 @@ namespace EventStore.Client {
 		// in cases where the server doesn't yet let the client know that it needs to.
 		// see EventStoreClientExtensions.WarmUpWith.
 		// note if rediscovery is already in progress it will continue, not restart.
+		// ReSharper disable once UnusedMember.Local
 		private void Rediscover() {
 			_channelInfoProvider.Reset();
 		}

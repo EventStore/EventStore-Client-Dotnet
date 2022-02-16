@@ -18,11 +18,10 @@ namespace EventStore.Client {
 		[Fact]
 		public async Task over_the_hard_limit() {
 			var streamName = _fixture.GetStreamName();
-			var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Client.AppendToStreamAsync(
+			var ex = await Assert.ThrowsAsync<RpcException>(() => _fixture.Client.AppendToStreamAsync(
 				streamName, StreamState.NoStream,
 				_fixture.LargeEvent));
-			var rpcEx = Assert.IsType<RpcException>(ex.InnerException);
-			Assert.Equal(StatusCode.ResourceExhausted, rpcEx.StatusCode);
+			Assert.Equal(StatusCode.ResourceExhausted, ex.StatusCode);
 		}
 
 		public class Fixture : EventStoreClientFixture {

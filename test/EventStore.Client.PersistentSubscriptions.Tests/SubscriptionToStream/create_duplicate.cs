@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Xunit;
 
 namespace EventStore.Client.SubscriptionToStream {
@@ -21,10 +22,12 @@ namespace EventStore.Client.SubscriptionToStream {
 		}
 
 		[Fact]
-		public Task the_completion_fails_with_invalid_operation_exception() =>
-			Assert.ThrowsAsync<InvalidOperationException>(
+		public async Task the_completion_fails() {
+			var ex = await Assert.ThrowsAsync<RpcException>(
 				() => _fixture.Client.CreateAsync(Stream, "group32",
 					new PersistentSubscriptionSettings(),
 					TestCredentials.Root));
+			Assert.Equal(StatusCode.AlreadyExists, ex.StatusCode);
+		}
 	}
 }

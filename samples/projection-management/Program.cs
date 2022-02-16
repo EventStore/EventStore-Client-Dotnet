@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using EventStore.Client;
+using Grpc.Core;
 
 namespace projection_management {
 	public static class Program {
@@ -100,7 +101,9 @@ namespace projection_management {
 			#region DisableNotFound
 			try {
 				await managementClient.DisableAsync("projection that does not exists");
-			} catch (InvalidOperationException e) when (e.Message.Contains("NotFound")) {
+			} catch (RpcException e) when (e.StatusCode is StatusCode.NotFound) {
+				Console.WriteLine(e.Message);
+			} catch (RpcException e) when (e.Message.Contains("NotFound")) {  // will be removed in a future release
 				Console.WriteLine(e.Message);
 			}
 			#endregion DisableNotFound
@@ -116,7 +119,9 @@ namespace projection_management {
 			#region EnableNotFound
 			try {
 				await managementClient.EnableAsync("projection that does not exists");
-			} catch (InvalidOperationException e) when (e.Message.Contains("NotFound")) {
+			} catch (RpcException e) when (e.StatusCode is StatusCode.NotFound) {
+				Console.WriteLine(e.Message);
+			} catch (RpcException e) when (e.Message.Contains("NotFound")) {  // will be removed in a future release
 				Console.WriteLine(e.Message);
 			}
 			#endregion EnableNotFound
@@ -135,7 +140,9 @@ namespace projection_management {
 				var js =
 					"fromAll() .when({$init:function(){return {count:0};},$any:function(s, e){s.count += 1;}}).outputState();";
 				await managementClient.CreateContinuousAsync("countEvents_Abort", js);
-			} catch (InvalidOperationException e) when (e.Message.Contains("Conflict")) {
+			} catch (RpcException e) when (e.StatusCode is StatusCode.Aborted) {
+				// ignore was already created in a previous run
+			} catch (RpcException e) when (e.Message.Contains("Conflict")) {  // will be removed in a future release
 				// ignore was already created in a previous run
 			}
 
@@ -149,7 +156,9 @@ namespace projection_management {
 			#region Abort_NotFound
 			try {
 				await managementClient.AbortAsync("projection that does not exists");
-			} catch (InvalidOperationException e) when (e.Message.Contains("NotFound")) {
+			} catch (RpcException e) when (e.StatusCode is StatusCode.NotFound) {
+				Console.WriteLine(e.Message);
+			} catch (RpcException e) when (e.Message.Contains("NotFound")) {  // will be removed in a future release
 				Console.WriteLine(e.Message);
 			}
 			#endregion Abort_NotFound
@@ -160,7 +169,9 @@ namespace projection_management {
 				var js =
 					"fromAll() .when({$init:function(){return {count:0};},$any:function(s, e){s.count += 1;}}).outputState();";
 				await managementClient.CreateContinuousAsync("countEvents_Reset", js);
-			} catch (InvalidOperationException e) when (e.Message.Contains("Conflict")) {
+			} catch (RpcException e) when (e.StatusCode is StatusCode.Internal) {
+				// ignore was already created in a previous run
+			} catch (RpcException e) when (e.Message.Contains("Conflict")) {  // will be removed in a future release
 				// ignore was already created in a previous run
 			}
 
@@ -175,7 +186,9 @@ namespace projection_management {
 			#region Reset_NotFound
 			try {
 				await managementClient.ResetAsync("projection that does not exists");
-			} catch (InvalidOperationException e) when (e.Message.Contains("NotFound")) {
+			} catch (RpcException e) when (e.StatusCode is StatusCode.NotFound) {
+				Console.WriteLine(e.Message);
+			} catch (RpcException e) when (e.Message.Contains("NotFound")) {  // will be removed in a future release
 				Console.WriteLine(e.Message);
 			}
 			#endregion Reset_NotFound
@@ -227,7 +240,9 @@ namespace projection_management {
 			try {
 
 				await managementClient.CreateContinuousAsync(name, js);
-			} catch (InvalidOperationException e) when (e.Message.Contains("Conflict")) {
+			} catch (RpcException e) when (e.StatusCode is StatusCode.AlreadyExists) {
+				Console.WriteLine(e.Message);
+			} catch (RpcException e) when (e.Message.Contains("Conflict")) {  // will be removed in a future release
 				var format = $"{name} already exists";
 				Console.WriteLine(format);
 			}
@@ -259,7 +274,9 @@ namespace projection_management {
 			#region Update_NotFound
 			try {
 				await managementClient.UpdateAsync("Update Not existing projection", "fromAll().when()");
-			} catch (InvalidOperationException e) when (e.Message.Contains("NotFound")) {
+			} catch (RpcException e) when (e.StatusCode is StatusCode.NotFound) {
+				Console.WriteLine(e.Message);
+			} catch (RpcException e) when (e.Message.Contains("NotFound")) {  // will be removed in a future release
 				Console.WriteLine("'Update Not existing projection' does not exists and can not be updated");
 			}
 			#endregion Update_NotFound

@@ -1,5 +1,4 @@
 using System;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -10,13 +9,13 @@ namespace EventStore.Client.Interceptors {
 	// this has become more general than just detecting leader changes.
 	// triggers the action on any rpc exception with StatusCode.Unavailable
 	internal class ReportLeaderInterceptor : Interceptor {
-		private readonly Action<DnsEndPoint?> _onError;
+		private readonly Action<ReconnectionRequired> _onReconnectionRequired;
 
 		private const TaskContinuationOptions ContinuationOptions =
 			TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted;
 
-		internal ReportLeaderInterceptor(Action<DnsEndPoint?> onError) {
-			_onError = onError;
+		internal ReportLeaderInterceptor(Action<ReconnectionRequired> onReconnectionRequired) {
+			_onReconnectionRequired = onReconnectionRequired;
 		}
 
 		public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request,
@@ -24,7 +23,7 @@ namespace EventStore.Client.Interceptors {
 			AsyncUnaryCallContinuation<TRequest, TResponse> continuation) {
 			var response = continuation(request, context);
 
-			response.ResponseAsync.ContinueWith(ReportNewLeader, ContinuationOptions);
+			response.ResponseAsync.ContinueWith(OnReconnectionRequired, ContinuationOptions);
 
 			return new AsyncUnaryCall<TResponse>(response.ResponseAsync, response.ResponseHeadersAsync,
 				response.GetStatus, response.GetTrailers, response.Dispose);
@@ -35,7 +34,7 @@ namespace EventStore.Client.Interceptors {
 			AsyncClientStreamingCallContinuation<TRequest, TResponse> continuation) {
 			var response = continuation(context);
 
-			response.ResponseAsync.ContinueWith(ReportNewLeader, ContinuationOptions);
+			response.ResponseAsync.ContinueWith(OnReconnectionRequired, ContinuationOptions);
 
 			return new AsyncClientStreamingCall<TRequest, TResponse>(response.RequestStream, response.ResponseAsync,
 				response.ResponseHeadersAsync, response.GetStatus, response.GetTrailers, response.Dispose);
@@ -47,7 +46,8 @@ namespace EventStore.Client.Interceptors {
 			var response = continuation(context);
 
 			return new AsyncDuplexStreamingCall<TRequest, TResponse>(response.RequestStream,
-				new StreamReader<TResponse>(response.ResponseStream, ReportNewLeader), response.ResponseHeadersAsync,
+				new StreamReader<TResponse>(response.ResponseStream, OnReconnectionRequired),
+				response.ResponseHeadersAsync,
 				response.GetStatus, response.GetTrailers, response.Dispose);
 		}
 
@@ -57,17 +57,23 @@ namespace EventStore.Client.Interceptors {
 			var response = continuation(request, context);
 
 			return new AsyncServerStreamingCall<TResponse>(
-				new StreamReader<TResponse>(response.ResponseStream, ReportNewLeader), response.ResponseHeadersAsync,
+				new StreamReader<TResponse>(response.ResponseStream, OnReconnectionRequired),
+				response.ResponseHeadersAsync,
 				response.GetStatus, response.GetTrailers, response.Dispose);
 		}
 
-		private void ReportNewLeader<TResponse>(Task<TResponse> task) {
-			if (task.Exception?.InnerException is NotLeaderException ex) {
-				_onError(ex.LeaderEndpoint);
-			} else if (task.Exception?.InnerException?.InnerException is RpcException rpcException &&
-			           rpcException.StatusCode == StatusCode.Unavailable) {
-				_onError(null);
-			}
+		private void OnReconnectionRequired<TResponse>(Task<TResponse> task) {
+			ReconnectionRequired reconnectionRequired = task.Exception?.InnerException switch {
+				NotLeaderException ex => new ReconnectionRequired.NewLeader(ex.LeaderEndpoint),
+				RpcException {
+					StatusCode: StatusCode.Unavailable
+					// or StatusCode.Unknown or TODO: use RPC exceptions on server 
+				} => ReconnectionRequired.Rediscover.Instance,
+				_ => ReconnectionRequired.None.Instance
+			};
+
+			if (reconnectionRequired is not ReconnectionRequired.None)
+				_onReconnectionRequired(reconnectionRequired);
 		}
 
 		private class StreamReader<T> : IAsyncStreamReader<T> {
