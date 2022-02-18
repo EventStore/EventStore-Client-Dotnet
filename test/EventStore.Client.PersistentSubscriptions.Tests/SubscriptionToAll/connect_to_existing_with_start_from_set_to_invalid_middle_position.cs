@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -37,7 +36,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			protected override async Task Given() {
 				var invalidPosition = new Position(1L, 1L);
 				await Client.CreateToAllAsync(Group,
-					new PersistentSubscriptionSettings(startFrom: invalidPosition), TestCredentials.Root);
+					new PersistentSubscriptionSettings(startFrom: invalidPosition), userCredentials: TestCredentials.Root);
 			}
 
 			protected override async Task When() {
@@ -45,7 +44,7 @@ namespace EventStore.Client.SubscriptionToAll {
 					async (subscription, e, r, ct) => await subscription.Ack(e),
 					(subscription, reason, ex) => {
 						_dropped.TrySetResult((reason, ex));
-					}, TestCredentials.Root);
+					}, userCredentials: TestCredentials.Root);
 			}
 
 			public override Task DisposeAsync() {

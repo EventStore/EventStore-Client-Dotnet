@@ -18,7 +18,7 @@ namespace EventStore.Client.SubscriptionToAll {
 
 			protected override Task When() =>
 				Client.CreateToAllAsync("group32",
-					new PersistentSubscriptionSettings(), TestCredentials.Root);
+					new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 		}
 
 		[Fact]
@@ -26,7 +26,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			var ex = await Assert.ThrowsAsync<RpcException>(
 				() => _fixture.Client.CreateToAllAsync("group32",
 					new PersistentSubscriptionSettings(),
-					TestCredentials.Root));
+					userCredentials: TestCredentials.Root));
 			Assert.Equal(StatusCode.AlreadyExists, ex.StatusCode);
 		}
 	}

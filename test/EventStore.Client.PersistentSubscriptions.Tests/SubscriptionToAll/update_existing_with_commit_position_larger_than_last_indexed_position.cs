@@ -21,7 +21,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			protected override async Task When() {
 				await Client.CreateToAllAsync(Group,
 					new PersistentSubscriptionSettings(),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 
 				var lastEvent = await StreamsClient.ReadAllAsync(Direction.Backwards, Position.End, 1,
 					userCredentials: TestCredentials.Root).FirstAsync();
@@ -36,7 +36,7 @@ namespace EventStore.Client.SubscriptionToAll {
 				_fixture.Client.UpdateToAllAsync(Group,
 					new PersistentSubscriptionSettings(
 						startFrom: new Position(_fixture.LastCommitPosition + 1, _fixture.LastCommitPosition)),
-					TestCredentials.Root));
+					userCredentials: TestCredentials.Root));
 			Assert.Equal(StatusCode.Internal, ex.StatusCode);
 		}
 	}

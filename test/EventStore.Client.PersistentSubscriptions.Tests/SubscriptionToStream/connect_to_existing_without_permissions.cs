@@ -21,7 +21,7 @@ namespace EventStore.Client.SubscriptionToStream {
 					Stream,
 					"agroupname55",
 					new PersistentSubscriptionSettings(),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 
 			protected override Task When() => Task.CompletedTask;
 		}

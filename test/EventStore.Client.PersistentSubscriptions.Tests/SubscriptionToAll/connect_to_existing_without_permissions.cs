@@ -20,7 +20,7 @@ namespace EventStore.Client.SubscriptionToAll {
 				Client.CreateToAllAsync(
 					"agroupname55",
 					new PersistentSubscriptionSettings(),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 
 			protected override Task When() => Task.CompletedTask;
 		}

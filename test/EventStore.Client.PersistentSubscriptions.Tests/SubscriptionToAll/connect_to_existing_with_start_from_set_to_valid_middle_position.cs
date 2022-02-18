@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -41,7 +40,7 @@ namespace EventStore.Client.SubscriptionToAll {
 				ExpectedEvent = events[events.Length / 2]; //just a random event in the middle of the results
 
 				await Client.CreateToAllAsync(Group,
-					new PersistentSubscriptionSettings(startFrom: ExpectedEvent.OriginalPosition), TestCredentials.Root);
+					new PersistentSubscriptionSettings(startFrom: ExpectedEvent.OriginalPosition), userCredentials: TestCredentials.Root);
 			}
 
 			protected override async Task When() {
@@ -53,7 +52,7 @@ namespace EventStore.Client.SubscriptionToAll {
 						if (reason != SubscriptionDroppedReason.Disposed) {
 							_firstEventSource.TrySetException(ex!);
 						}
-					}, TestCredentials.Root);
+					}, userCredentials: TestCredentials.Root);
 			}
 
 			public override Task DisposeAsync() {

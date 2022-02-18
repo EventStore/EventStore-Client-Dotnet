@@ -39,7 +39,7 @@ namespace EventStore.Client.SubscriptionToStream {
 			protected override async Task Given() {
 				await Client.CreateAsync(Stream, Group,
 					new PersistentSubscriptionSettings(startFrom: StreamPosition.Start, resolveLinkTos: true),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 				_subscription = await Client.SubscribeToStreamAsync(Stream, Group,
 					async (subscription, e, retryCount, ct) => {
 						await subscription.Nack(PersistentSubscriptionNakEventAction.Park, "fail", e);

@@ -18,6 +18,7 @@ namespace EventStore.Client {
 		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream to append to.</param>
 		/// <param name="eventData">An <see cref="IEnumerable{EventData}"/> to append to the stream.</param>
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
@@ -26,6 +27,7 @@ namespace EventStore.Client {
 			StreamRevision expectedRevision,
 			IEnumerable<EventData> eventData,
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
+			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var options = Settings.OperationOptions.Clone();
@@ -37,8 +39,7 @@ namespace EventStore.Client {
 			var batchAppender = _streamAppender;
 			var task =
 				userCredentials == null && await batchAppender.IsUsable().ConfigureAwait(false)
-					? batchAppender.Append(streamName, expectedRevision, eventData, options.TimeoutAfter,
-						cancellationToken)
+					? batchAppender.Append(streamName, expectedRevision, eventData, deadline, cancellationToken)
 					:
 #else
 			var task =
@@ -50,7 +51,7 @@ namespace EventStore.Client {
 								StreamIdentifier = streamName,
 								Revision = expectedRevision
 							}
-						}, eventData, options, userCredentials, cancellationToken);
+						}, eventData, options, deadline, userCredentials, cancellationToken);
 
 			return (await task.ConfigureAwait(false)).OptionallyThrowWrongExpectedVersionException(options);
 		}
@@ -62,6 +63,7 @@ namespace EventStore.Client {
 		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream to append to.</param>
 		/// <param name="eventData">An <see cref="IEnumerable{EventData}"/> to append to the stream.</param>
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
@@ -70,6 +72,7 @@ namespace EventStore.Client {
 			StreamState expectedState,
 			IEnumerable<EventData> eventData,
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
+			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var operationOptions = Settings.OperationOptions.Clone();
@@ -81,8 +84,7 @@ namespace EventStore.Client {
 			var batchAppender = _streamAppender;
 			var task =
 				userCredentials == null && await batchAppender.IsUsable().ConfigureAwait(false)
-					? batchAppender.Append(streamName, expectedState, eventData, operationOptions.TimeoutAfter,
-						cancellationToken)
+					? batchAppender.Append(streamName, expectedState, eventData, deadline, cancellationToken)
 					:
 #else
 			var task =
@@ -93,7 +95,7 @@ namespace EventStore.Client {
 							Options = new AppendReq.Types.Options {
 								StreamIdentifier = streamName
 							}
-						}.WithAnyStreamRevision(expectedState), eventData, operationOptions, userCredentials,
+						}.WithAnyStreamRevision(expectedState), eventData, operationOptions, deadline, userCredentials,
 						cancellationToken);
 			return (await task.ConfigureAwait(false)).OptionallyThrowWrongExpectedVersionException(operationOptions);
 		}
@@ -103,12 +105,13 @@ namespace EventStore.Client {
 			AppendReq header,
 			IEnumerable<EventData> eventData,
 			EventStoreClientOperationOptions operationOptions,
+			TimeSpan? deadline,
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
 
 			using var call = new Streams.Streams.StreamsClient(
-				callInvoker).Append(EventStoreCallOptions.Create(
-				Settings, operationOptions, userCredentials, cancellationToken));
+				callInvoker).Append(EventStoreCallOptions.CreateNonStreaming(
+				Settings, deadline, userCredentials, cancellationToken));
 
 			IWriteResult writeResult;
 			try {
@@ -255,7 +258,7 @@ namespace EventStore.Client {
 
 						try {
 							writeResult.TrySetResult(response.ToWriteResult());
-						} catch (Exception ex) when (ex is not RpcException) {
+						} catch (Exception ex) {
 							writeResult.TrySetException(ex);
 						}
 					}

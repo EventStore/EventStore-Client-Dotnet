@@ -28,9 +28,8 @@ namespace EventStore.Client {
 		public string SubscriptionId { get; }
 
 		internal static async Task<PersistentSubscription> Confirm(
-			ChannelBase channel, CallInvoker callInvoker, EventStoreClientSettings settings,
-			EventStoreClientOperationOptions operationOptions, UserCredentials? userCredentials,
-			ReadReq.Types.Options options, ILogger log,
+			ChannelBase channel, CallInvoker callInvoker, EventStoreClientSettings settings, 
+			UserCredentials? userCredentials, ReadReq.Types.Options options, ILogger log,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped,
 			CancellationToken cancellationToken = default) {
@@ -43,7 +42,8 @@ namespace EventStore.Client {
 #endif
 
 			var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
-				.Read(EventStoreCallOptions.Create(settings, operationOptions, userCredentials, cts.Token));
+				.Read(EventStoreCallOptions.CreateStreaming(settings, userCredentials: userCredentials,
+					cancellationToken: cts.Token));
 
 			await call.RequestStream.WriteAsync(new ReadReq {
 				Options = options

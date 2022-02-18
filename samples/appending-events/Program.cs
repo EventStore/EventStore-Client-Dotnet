@@ -101,11 +101,11 @@ namespace appending_events {
 			await client.AppendToStreamAsync("concurrency-stream", StreamRevision.None,
 				new[] {new EventData(Uuid.NewUuid(), "-", ReadOnlyMemory<byte>.Empty)});
 			#region append-with-concurrency-check
+
 			var clientOneRead = client.ReadStreamAsync(
 				Direction.Forwards,
 				"concurrency-stream",
-				StreamPosition.Start,
-				configureOperationOptions: options => options.ThrowOnAppendFailure = false);
+				StreamPosition.Start);
 			var clientOneRevision = (await clientOneRead.LastAsync()).Event.EventNumber.ToUInt64();
 
 			var clientTwoRead = client.ReadStreamAsync(Direction.Forwards, "concurrency-stream", StreamPosition.Start);

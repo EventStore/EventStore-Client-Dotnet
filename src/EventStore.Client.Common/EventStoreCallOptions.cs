@@ -2,14 +2,25 @@ using System;
 using System.Threading;
 using Grpc.Core;
 using Timeout_ = System.Threading.Timeout;
+
 #nullable enable
 namespace EventStore.Client {
 	internal static class EventStoreCallOptions {
-		public static CallOptions Create(EventStoreClientSettings settings,
-			EventStoreClientOperationOptions operationOptions, UserCredentials? userCredentials,
-			CancellationToken cancellationToken) => new(
+		// deadline falls back to infinity
+		public static CallOptions CreateStreaming(EventStoreClientSettings settings,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) =>
+			Create(settings, deadline, userCredentials, cancellationToken);
+
+		// deadline falls back to connection DefaultDeadline
+		public static CallOptions CreateNonStreaming(EventStoreClientSettings settings, TimeSpan? deadline,
+			UserCredentials? userCredentials, CancellationToken cancellationToken) => Create(settings,
+			deadline ?? settings.DefaultDeadline, userCredentials, cancellationToken);
+
+		private static CallOptions Create(EventStoreClientSettings settings, TimeSpan? deadline,
+			UserCredentials? userCredentials, CancellationToken cancellationToken) => new(
 			cancellationToken: cancellationToken,
-			deadline: DeadlineAfter(operationOptions.TimeoutAfter),
+			deadline: DeadlineAfter(deadline),
 			headers: new Metadata {
 				{
 					Constants.Headers.RequiresLeader,

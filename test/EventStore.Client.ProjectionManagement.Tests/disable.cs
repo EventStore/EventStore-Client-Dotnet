@@ -13,8 +13,8 @@ namespace EventStore.Client {
 		[Fact]
 		public async Task status_is_stopped() {
 			var name = StandardProjections.Names.First();
-			await _fixture.Client.DisableAsync(name, TestCredentials.Root);
-			var result = await _fixture.Client.GetStatusAsync(name, TestCredentials.Root);
+			await _fixture.Client.DisableAsync(name, userCredentials: TestCredentials.Root);
+			var result = await _fixture.Client.GetStatusAsync(name, userCredentials: TestCredentials.Root);
 			Assert.Equal("Stopped", result.Status);
 		}
 

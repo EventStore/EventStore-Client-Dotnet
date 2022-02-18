@@ -12,7 +12,7 @@ namespace EventStore.Client {
 		[Theory, InlineData(true), InlineData(false), InlineData(null)]
 		public async Task returns_expected_result(bool? emitEnabled) {
 			await _fixture.Client.UpdateAsync(nameof(update),
-				"fromAll().when({$init: function (s, e) {return {};}});", emitEnabled, TestCredentials.Root);
+				"fromAll().when({$init: function (s, e) {return {};}});", emitEnabled, userCredentials: TestCredentials.Root);
 		}
 
 		public class Fixture : EventStoreClientFixture {

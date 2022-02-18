@@ -17,7 +17,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			await _fixture.Client.UpdateToAllAsync(
 				Group,
 				new PersistentSubscriptionSettings(resolveLinkTos: true),
-				TestCredentials.Root);
+				userCredentials: TestCredentials.Root);
 		}
 
 		public class Fixture : EventStoreClientFixture {
@@ -26,7 +26,7 @@ namespace EventStore.Client.SubscriptionToAll {
 					Group,
 					EventTypeFilter.Prefix("prefix-filter-"),
 					new PersistentSubscriptionSettings(),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 			}
 
 			protected override Task When() => Task.CompletedTask;

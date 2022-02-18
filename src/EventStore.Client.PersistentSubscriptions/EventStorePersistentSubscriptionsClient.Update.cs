@@ -64,12 +64,13 @@ namespace EventStore.Client {
 		/// <param name="streamName"></param>
 		/// <param name="groupName"></param>
 		/// <param name="settings"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public async Task UpdateAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
-			UserCredentials? userCredentials = null,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			if (streamName == null) {
 				throw new ArgumentNullException(nameof(streamName));
@@ -141,8 +142,7 @@ namespace EventStore.Client {
 							}
 						}
 					},
-					EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials,
-						cancellationToken));
+					EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -151,18 +151,15 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="groupName"></param>
 		/// <param name="settings"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public async Task UpdateToAllAsync(string groupName, PersistentSubscriptionSettings settings,
-			UserCredentials? userCredentials = null,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
-			await UpdateAsync(
-					streamName: SystemStreams.AllStream,
-					groupName: groupName,
-					settings: settings,
-					userCredentials: userCredentials,
-					cancellationToken: cancellationToken)
+			await UpdateAsync(SystemStreams.AllStream, groupName, settings, deadline, userCredentials,
+					cancellationToken)
 				.ConfigureAwait(false);
 	}
 }

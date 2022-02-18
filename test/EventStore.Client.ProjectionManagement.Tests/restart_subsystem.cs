@@ -1,6 +1,4 @@
-using System.Linq;
 using System.Threading.Tasks;
-using Grpc.Core;
 using Xunit;
 
 namespace EventStore.Client {
@@ -13,7 +11,7 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task does_not_throw() {
-			await _fixture.Client.RestartSubsystemAsync(TestCredentials.Root);
+			await _fixture.Client.RestartSubsystemAsync(userCredentials: TestCredentials.Root);
 		}
 
 		[Fact]

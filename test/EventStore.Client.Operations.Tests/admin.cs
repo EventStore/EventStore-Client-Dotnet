@@ -11,7 +11,7 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task merge_indexes_does_not_throw() {
-			await _fixture.Client.MergeIndexesAsync(TestCredentials.Root);
+			await _fixture.Client.MergeIndexesAsync(userCredentials: TestCredentials.Root);
 		}
 
 		[Fact]
@@ -21,7 +21,7 @@ namespace EventStore.Client {
 		
 		[Fact]
 		public async Task restart_persistent_subscriptions_does_not_throw() {
-			await _fixture.Client.RestartPersistentSubscriptions(TestCredentials.Root);
+			await _fixture.Client.RestartPersistentSubscriptions(userCredentials:TestCredentials.Root);
 		}
 
 		[Fact]

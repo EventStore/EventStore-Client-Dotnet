@@ -57,7 +57,7 @@ namespace EventStore.Client.SubscriptionToAll {
 						checkPointLowerBound: 5,
 						checkPointAfter: TimeSpan.FromSeconds(1),
 						startFrom: Position.Start),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 
 				_checkPointSubscription = await StreamsClient.SubscribeToStreamAsync(_checkPointStream,
 					FromStream.Start,

@@ -9,11 +9,6 @@ namespace EventStore.Client {
 	/// </summary>
 	public class EventStoreClientOperationOptions {
 		/// <summary>
-		/// An optional <see cref="TimeSpan"/> to use for gRPC deadlines.
-		/// </summary>
-		public TimeSpan? TimeoutAfter { get; set; }
-
-		/// <summary>
 		/// Whether or not to immediately throw a <see cref="WrongExpectedVersionException"/> when an append fails.
 		/// </summary>
 		public bool ThrowOnAppendFailure { get; set; }
@@ -32,10 +27,9 @@ namespace EventStore.Client {
 		/// <summary>
 		/// The default <see cref="EventStoreClientOperationOptions"/>.
 		/// </summary>
-		public static EventStoreClientOperationOptions Default => new EventStoreClientOperationOptions {
-			TimeoutAfter = TimeSpan.FromSeconds(5),
+		public static EventStoreClientOperationOptions Default => new() {
 			ThrowOnAppendFailure = true,
-			GetAuthenticationHeaderValue = (userCredentials, ct) => new ValueTask<string>(userCredentials.ToString()),
+			GetAuthenticationHeaderValue = (userCredentials, _) => new ValueTask<string>(userCredentials.ToString()),
 			BatchAppendSize = 3 * 1024 * 1024
 		};
 
@@ -44,12 +38,10 @@ namespace EventStore.Client {
 		/// Clones a copy of the current <see cref="EventStoreClientOperationOptions"/>.
 		/// </summary>
 		/// <returns></returns>
-		public EventStoreClientOperationOptions Clone() =>
-			new EventStoreClientOperationOptions {
-				TimeoutAfter = TimeoutAfter,
-				ThrowOnAppendFailure = ThrowOnAppendFailure,
-				GetAuthenticationHeaderValue = GetAuthenticationHeaderValue,
-				BatchAppendSize = BatchAppendSize
-			};
+		public EventStoreClientOperationOptions Clone() => new() {
+			ThrowOnAppendFailure = ThrowOnAppendFailure,
+			GetAuthenticationHeaderValue = GetAuthenticationHeaderValue,
+			BatchAppendSize = BatchAppendSize
+		};
 	}
 }

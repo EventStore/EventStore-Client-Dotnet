@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading;
@@ -14,12 +15,14 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="partition"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public async Task<JsonDocument> GetResultAsync(string name, string? partition = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			var value = await GetResultInternalAsync(name, partition, userCredentials, cancellationToken)
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
+			var value = await GetResultInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 
 			await using var stream = new MemoryStream();
@@ -38,14 +41,16 @@ namespace EventStore.Client {
 		/// <param name="name"></param>
 		/// <param name="partition"></param>
 		/// <param name="serializerOptions"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
 		public async Task<T> GetResultAsync<T>(string name, string? partition = null,
-			JsonSerializerOptions? serializerOptions = null, UserCredentials? userCredentials = null,
+			JsonSerializerOptions? serializerOptions = null, 
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var value = await GetResultInternalAsync(name, partition, userCredentials, cancellationToken)
+			var value = await GetResultInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 			await using var stream = new MemoryStream();
 			await using var writer = new Utf8JsonWriter(stream);
@@ -58,8 +63,7 @@ namespace EventStore.Client {
 		}
 
 		private async ValueTask<Value> GetResultInternalAsync(string name, string? partition,
-			UserCredentials? userCredentials,
-			CancellationToken cancellationToken) {
+			TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).ResultAsync(new ResultReq {
@@ -67,7 +71,7 @@ namespace EventStore.Client {
 					Name = name,
 					Partition = partition ?? string.Empty
 				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
 			var response = await call.ResponseAsync.ConfigureAwait(false);
 			return response.Result;
@@ -78,12 +82,14 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="partition"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public async Task<JsonDocument> GetStateAsync(string name, string? partition = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			var value = await GetStateInternalAsync(name, partition, userCredentials, cancellationToken)
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
+			var value = await GetStateInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 
 			await using var stream = new MemoryStream();
@@ -102,14 +108,15 @@ namespace EventStore.Client {
 		/// <param name="name"></param>
 		/// <param name="partition"></param>
 		/// <param name="serializerOptions"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
 		public async Task<T> GetStateAsync<T>(string name, string? partition = null,
-			JsonSerializerOptions? serializerOptions = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
-			var value = await GetStateInternalAsync(name, partition, userCredentials, cancellationToken)
+			JsonSerializerOptions? serializerOptions = null, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+			var value = await GetStateInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 
 			await using var stream = new MemoryStream();
@@ -122,9 +129,8 @@ namespace EventStore.Client {
 			return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
 		}
 
-		private async ValueTask<Value> GetStateInternalAsync(string name, string? partition,
-			UserCredentials? userCredentials,
-			CancellationToken cancellationToken) {
+		private async ValueTask<Value> GetStateInternalAsync(string name, string? partition, TimeSpan? deadline,
+			UserCredentials? userCredentials, CancellationToken cancellationToken) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).StateAsync(new StateReq {
@@ -132,7 +138,7 @@ namespace EventStore.Client {
 					Name = name,
 					Partition = partition ?? string.Empty
 				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
 			var response = await call.ResponseAsync.ConfigureAwait(false);
 			return response.State;
@@ -140,7 +146,7 @@ namespace EventStore.Client {
 
 		private class ValueSerializer : System.Text.Json.Serialization.JsonConverter<Value> {
 			public override Value Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-				throw new System.NotSupportedException();
+				throw new NotSupportedException();
 
 			public override void Write(Utf8JsonWriter writer, Value value, JsonSerializerOptions options) {
 				switch (value.KindCase) {

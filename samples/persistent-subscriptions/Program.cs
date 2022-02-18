@@ -28,7 +28,7 @@ namespace persistent_subscriptions
 			    "test-stream",
 			    "subscription-group",
 			    settings,
-			    userCredentials);
+			    userCredentials: userCredentials);
 		    #endregion create-persistent-subscription-to-stream
 	    }
 
@@ -56,7 +56,7 @@ namespace persistent_subscriptions
 			    "subscription-group",
 			    filter,
 			    settings,
-			    userCredentials);
+			    userCredentials: userCredentials);
 		    #endregion create-persistent-subscription-to-all
 	    }
 
@@ -101,7 +101,7 @@ namespace persistent_subscriptions
 			    "test-stream",
 			    "subscription-group",
 			    settings,
-			    userCredentials);
+			    userCredentials: userCredentials);
 		    #endregion update-persistent-subscription
 	    }
 
@@ -111,7 +111,7 @@ namespace persistent_subscriptions
 		    await client.DeleteAsync(
 			    "test-stream",
 			    "subscription-group",
-			    userCredentials);
+			    userCredentials: userCredentials);
 		    #endregion delete-persistent-subscription
 	    }
 

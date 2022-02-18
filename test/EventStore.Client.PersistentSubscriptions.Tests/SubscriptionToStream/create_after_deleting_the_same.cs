@@ -17,16 +17,16 @@ namespace EventStore.Client.SubscriptionToStream {
 			protected override async Task When() {
 				await StreamsClient.AppendToStreamAsync(Stream, StreamState.Any, CreateTestEvents());
 				await Client.CreateAsync(Stream, "existing",
-					new PersistentSubscriptionSettings(), TestCredentials.Root);
+					new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 				await Client.DeleteAsync(Stream, "existing",
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 			}
 		}
 
 		[Fact]
 		public async Task the_completion_succeeds() {
 			await _fixture.Client.CreateAsync(Stream, "existing",
-				new PersistentSubscriptionSettings(), TestCredentials.Root);
+				new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 		}
 	}
 }

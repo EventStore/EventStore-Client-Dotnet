@@ -1,6 +1,4 @@
 using System;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -39,7 +37,7 @@ namespace EventStore.Client.SubscriptionToAll {
 				}
 
 				await Client.CreateToAllAsync(Group,
-					new PersistentSubscriptionSettings(startFrom: Position.End), TestCredentials.Root);
+					new PersistentSubscriptionSettings(startFrom: Position.End), userCredentials: TestCredentials.Root);
 			}
 
 			protected override async Task When() {
@@ -55,7 +53,7 @@ namespace EventStore.Client.SubscriptionToAll {
 						if (reason != SubscriptionDroppedReason.Disposed) {
 							_firstNonSystemEventSource.TrySetException(ex!);
 						}
-					}, TestCredentials.Root);
+					}, userCredentials: TestCredentials.Root);
 			}
 
 			public override Task DisposeAsync() {

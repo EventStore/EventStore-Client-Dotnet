@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Threading;
 #if !GRPC_CORE
 using System.Net.Http;
 #endif
@@ -242,8 +241,7 @@ namespace EventStore.Client {
 				settings.ConnectivitySettings.NodePreference);
 			Assert.Equal(EventStoreClientConnectivitySettings.Default.Insecure,
 				settings.ConnectivitySettings.Insecure);
-			Assert.Equal(EventStoreClientOperationOptions.Default.TimeoutAfter!.Value.TotalMilliseconds,
-				settings.OperationOptions.TimeoutAfter!.Value.TotalMilliseconds);
+			Assert.Equal(TimeSpan.FromSeconds(10), settings.DefaultDeadline);
 			Assert.Equal(EventStoreClientOperationOptions.Default.ThrowOnAppendFailure,
 				settings.OperationOptions.ThrowOnAppendFailure);
 			Assert.Equal(EventStoreClientConnectivitySettings.Default.KeepAliveInterval,
@@ -279,9 +277,9 @@ namespace EventStore.Client {
 				["keepAliveTimeout"] = settings.ConnectivitySettings.KeepAliveTimeout.TotalMilliseconds.ToString(),
 			};
 
-			if (settings.OperationOptions.TimeoutAfter.HasValue) {
-				pairs.Add("operationTimeout",
-					settings.OperationOptions.TimeoutAfter.Value.TotalMilliseconds.ToString());
+			if (settings.DefaultDeadline.HasValue) {
+				pairs.Add("defaultDeadline",
+					settings.DefaultDeadline.Value.TotalMilliseconds.ToString());
 			}
 
 #if !GRPC_CORE
@@ -358,19 +356,17 @@ namespace EventStore.Client {
 
 		private class EventStoreClientOperationOptionsEqualityComparer
 			: IEqualityComparer<EventStoreClientOperationOptions> {
-			public static readonly EventStoreClientOperationOptionsEqualityComparer Instance =
-				new EventStoreClientOperationOptionsEqualityComparer();
+			public static readonly EventStoreClientOperationOptionsEqualityComparer Instance = new();
 
 			public bool Equals(EventStoreClientOperationOptions x, EventStoreClientOperationOptions y) {
 				if (ReferenceEquals(x, y)) return true;
 				if (ReferenceEquals(x, null)) return false;
 				if (ReferenceEquals(y, null)) return false;
-				if (x.GetType() != y.GetType()) return false;
-				return Nullable.Equals(x.TimeoutAfter, y.TimeoutAfter);
+				return x.GetType() == y.GetType();
 			}
 
 			public int GetHashCode(EventStoreClientOperationOptions obj) =>
-				HashCode.Hash.Combine(obj.TimeoutAfter).Combine(obj.ThrowOnAppendFailure);
+				System.HashCode.Combine(obj.ThrowOnAppendFailure);
 		}
 	}
 }

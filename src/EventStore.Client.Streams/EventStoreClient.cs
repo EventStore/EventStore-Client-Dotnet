@@ -93,11 +93,9 @@ namespace EventStore.Client {
 					return null;
 
 				var client = new Streams.Streams.StreamsClient(channelInfo.CallInvoker);
-				var operationOptions = Settings.OperationOptions.Clone();
-				operationOptions.TimeoutAfter = new TimeSpan?();
 
-				return client.BatchAppend(EventStoreCallOptions.Create(Settings,
-					operationOptions, Settings.DefaultCredentials, _disposedTokenSource.Token));
+				return client.BatchAppend(EventStoreCallOptions.CreateStreaming(Settings,
+					userCredentials: Settings.DefaultCredentials, cancellationToken: _disposedTokenSource.Token));
 			}
 		}
 #endif

@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,14 +8,21 @@ using Microsoft.Extensions.Logging;
 #nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreClient {
-		private async Task<StreamMetadataResult> GetStreamMetadataAsync(string streamName,
-			EventStoreClientOperationOptions operationOptions, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+		/// <summary>
+		/// Asynchronously reads the metadata for a stream
+		/// </summary>
+		/// <param name="streamName">The name of the stream to read the metadata for.</param>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public async Task<StreamMetadataResult> GetStreamMetadataAsync(string streamName, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			_log.LogDebug("Read stream metadata for {streamName}.", streamName);
 
 			try {
 				var result = ReadStreamAsync(Direction.Backwards, SystemStreams.MetastreamOf(streamName),
-					StreamPosition.End, 1, operationOptions, false, userCredentials, cancellationToken);
+					StreamPosition.End, 1, false, deadline, userCredentials, cancellationToken);
 				await foreach (var message in result.Messages.ConfigureAwait(false)) {
 					if (message is not StreamMessage.Event(var resolvedEvent)) {
 						continue;
@@ -34,59 +40,29 @@ namespace EventStore.Client {
 		}
 
 		/// <summary>
-		/// Asynchronously reads the metadata for a stream
-		/// </summary>
-		/// <param name="streamName">The name of the stream to read the metadata for.</param>
-		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
-		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public Task<StreamMetadataResult> GetStreamMetadataAsync(string streamName,
-			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			var options = Settings.OperationOptions.Clone();
-			configureOperationOptions?.Invoke(options);
-			return GetStreamMetadataAsync(streamName, options, userCredentials, cancellationToken);
-		}
-
-		private ValueTask<IWriteResult> SetStreamMetadataAsync(string streamName, StreamState expectedState,
-			StreamMetadata metadata, EventStoreClientOperationOptions operationOptions,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default)
-			=> SetStreamMetadataInternal(metadata, new AppendReq {
-				Options = new AppendReq.Types.Options {
-					StreamIdentifier = SystemStreams.MetastreamOf(streamName)
-				}
-			}.WithAnyStreamRevision(expectedState), operationOptions, userCredentials, cancellationToken);
-
-		/// <summary>
 		/// Asynchronously sets the metadata for a stream.
 		/// </summary>
 		/// <param name="streamName">The name of the stream to set metadata for.</param>
 		/// <param name="expectedState">The <see cref="StreamState"/> of the stream to append to.</param>
 		/// <param name="metadata">A <see cref="StreamMetadata"/> representing the new metadata.</param>
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public Task<IWriteResult> SetStreamMetadataAsync(string streamName, StreamState expectedState,
 			StreamMetadata metadata, Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
-			UserCredentials? userCredentials = null,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var options = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(options);
-			return SetStreamMetadataAsync(streamName, expectedState, metadata, options,
-				userCredentials, cancellationToken).AsTask();
-		}
 
-		private ValueTask<IWriteResult> SetStreamMetadataAsync(string streamName, StreamRevision expectedRevision,
-			StreamMetadata metadata, EventStoreClientOperationOptions operationOptions,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default)
-			=> SetStreamMetadataInternal(metadata, new AppendReq {
+			return SetStreamMetadataInternal(metadata, new AppendReq {
 				Options = new AppendReq.Types.Options {
-					StreamIdentifier = SystemStreams.MetastreamOf(streamName),
-					Revision = expectedRevision
+					StreamIdentifier = SystemStreams.MetastreamOf(streamName)
 				}
-			}, operationOptions, userCredentials, cancellationToken);
+			}.WithAnyStreamRevision(expectedState), options, deadline, userCredentials, cancellationToken);
+		}
 
 		/// <summary>
 		/// Asynchronously sets the metadata for a stream.
@@ -95,22 +71,29 @@ namespace EventStore.Client {
 		/// <param name="expectedRevision">The <see cref="StreamRevision"/> of the stream to append to.</param>
 		/// <param name="metadata">A <see cref="StreamMetadata"/> representing the new metadata.</param>
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public Task<IWriteResult> SetStreamMetadataAsync(string streamName, StreamRevision expectedRevision,
 			StreamMetadata metadata, Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
-			UserCredentials? userCredentials = null,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var options = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(options);
-			return SetStreamMetadataAsync(streamName, expectedRevision, metadata, options,
-				userCredentials, cancellationToken).AsTask();
+
+			return SetStreamMetadataInternal(metadata, new AppendReq {
+				Options = new AppendReq.Types.Options {
+					StreamIdentifier = SystemStreams.MetastreamOf(streamName),
+					Revision = expectedRevision
+				}
+			}, options, deadline, userCredentials, cancellationToken);
 		}
 
-		private async ValueTask<IWriteResult> SetStreamMetadataInternal(StreamMetadata metadata,
+		private async Task<IWriteResult> SetStreamMetadataInternal(StreamMetadata metadata,
 			AppendReq appendReq,
 			EventStoreClientOperationOptions operationOptions,
+			TimeSpan? deadline,
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
 
@@ -118,7 +101,7 @@ namespace EventStore.Client {
 			return await AppendToStreamInternal(channelInfo.CallInvoker, appendReq, new[] {
 				new EventData(Uuid.NewUuid(), SystemEventTypes.StreamMetadata,
 					JsonSerializer.SerializeToUtf8Bytes(metadata, StreamMetadataJsonSerializerOptions)),
-			}, operationOptions, userCredentials, cancellationToken).ConfigureAwait(false);
+			}, operationOptions, deadline, userCredentials, cancellationToken).ConfigureAwait(false);
 		}
 	}
 }

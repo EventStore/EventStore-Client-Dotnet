@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,10 +13,11 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="users"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="deadline"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task<UserDetails> GetCurrentUserAsync(this EventStoreUserManagementClient users,
-			UserCredentials userCredentials, CancellationToken cancellationToken = default)
-			=> users.GetUserAsync(userCredentials.Username!, userCredentials, cancellationToken);
+			UserCredentials userCredentials, TimeSpan? deadline = null, CancellationToken cancellationToken = default)
+			=> users.GetUserAsync(userCredentials.Username!, deadline, userCredentials, cancellationToken);
 	}
 }

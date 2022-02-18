@@ -20,19 +20,21 @@ namespace EventStore.Client {
 						StreamPosition.Start,
 						userCredentials: TestCredentials.Root,
 						cancellationToken: cancellationToken)
-					.ToArrayAsync();
+					.ToArrayAsync(cancellationToken);
 
 				if (users.Length == 0)
 					throw new Exception("no users yet");
 
 				// the read from leader above is not enough to guarantee the next write goes to leader
-				await self.AppendToStreamAsync($"warmup", StreamState.Any, Enumerable.Empty<EventData>());
+				await self.AppendToStreamAsync($"warmup", StreamState.Any, Enumerable.Empty<EventData>(),
+					cancellationToken: cancellationToken);
 			});
 		}
 
 		public static async Task WarmUpAsync(this EventStoreUserManagementClient self) {
 			await self.WarmUpWith(async cancellationToken => {
-				await self.ListAllAsync(TestCredentials.Root, cancellationToken).ToArrayAsync();
+				await self.ListAllAsync(userCredentials: TestCredentials.Root, cancellationToken: cancellationToken)
+					.ToArrayAsync(cancellationToken);
 			});
 		}
 

@@ -34,13 +34,14 @@ namespace EventStore.Client {
 		/// <param name="fullName"></param>
 		/// <param name="groups"></param>
 		/// <param name="password"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public async Task CreateUserAsync(string loginName, string fullName, string[] groups, string password,
-			UserCredentials? userCredentials = null,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			if (loginName == null) throw new ArgumentNullException(nameof(loginName));
 			if (fullName == null) throw new ArgumentNullException(nameof(fullName));
@@ -59,7 +60,7 @@ namespace EventStore.Client {
 					Password = password,
 					Groups = {groups}
 				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -67,13 +68,14 @@ namespace EventStore.Client {
 		/// Gets the <see cref="UserDetails"/> of an internal user.
 		/// </summary>
 		/// <param name="loginName"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
-		public async Task<UserDetails> GetUserAsync(string loginName, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+		public async Task<UserDetails> GetUserAsync(string loginName, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			if (loginName == null) {
 				throw new ArgumentNullException(nameof(loginName));
 			}
@@ -88,7 +90,7 @@ namespace EventStore.Client {
 				Options = new DetailsReq.Types.Options {
 					LoginName = loginName
 				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
 			await call.ResponseStream.MoveNext().ConfigureAwait(false);
 			var userDetails = call.ResponseStream.Current.UserDetails;
@@ -103,13 +105,14 @@ namespace EventStore.Client {
 		/// Deletes an internal user.
 		/// </summary>
 		/// <param name="loginName"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
-		public async Task DeleteUserAsync(string loginName, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+		public async Task DeleteUserAsync(string loginName, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			if (loginName == null) {
 				throw new ArgumentNullException(nameof(loginName));
 			}
@@ -124,7 +127,7 @@ namespace EventStore.Client {
 				Options = new DeleteReq.Types.Options {
 					LoginName = loginName
 				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -132,13 +135,14 @@ namespace EventStore.Client {
 		/// Enables a previously disabled internal user.
 		/// </summary>
 		/// <param name="loginName"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
-		public async Task EnableUserAsync(string loginName, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+		public async Task EnableUserAsync(string loginName, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			if (loginName == null) {
 				throw new ArgumentNullException(nameof(loginName));
 			}
@@ -153,7 +157,7 @@ namespace EventStore.Client {
 				Options = new EnableReq.Types.Options {
 					LoginName = loginName
 				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -161,12 +165,13 @@ namespace EventStore.Client {
 		/// Disables an internal user.
 		/// </summary>
 		/// <param name="loginName"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
-		public async Task DisableUserAsync(string loginName, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+		public async Task DisableUserAsync(string loginName, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			if (loginName == string.Empty) throw new ArgumentOutOfRangeException(nameof(loginName));
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
@@ -175,22 +180,24 @@ namespace EventStore.Client {
 				Options = new DisableReq.Types.Options {
 					LoginName = loginName
 				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
 		/// <summary>
 		/// Lists the <see cref="UserDetails"/> of all internal users.
 		/// </summary>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async IAsyncEnumerable<UserDetails> ListAllAsync(UserCredentials? userCredentials = null,
+		public async IAsyncEnumerable<UserDetails> ListAllAsync(TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Users.Users.UsersClient(
 				channelInfo.CallInvoker).Details(new DetailsReq(),
-				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
 			await foreach (var userDetail in call.ResponseStream
 				.ReadAllAsync(cancellationToken)
@@ -207,13 +214,15 @@ namespace EventStore.Client {
 		/// <param name="loginName"></param>
 		/// <param name="currentPassword"></param>
 		/// <param name="newPassword"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public async Task ChangePasswordAsync(string loginName, string currentPassword, string newPassword,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
 			if (loginName == null) throw new ArgumentNullException(nameof(loginName));
 			if (currentPassword == null) throw new ArgumentNullException(nameof(currentPassword));
 			if (newPassword == null) throw new ArgumentNullException(nameof(newPassword));
@@ -231,7 +240,7 @@ namespace EventStore.Client {
 						LoginName = loginName
 					}
 				},
-				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -240,13 +249,15 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="loginName"></param>
 		/// <param name="newPassword"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public async Task ResetPasswordAsync(string loginName, string newPassword,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
 			if (loginName == null) throw new ArgumentNullException(nameof(loginName));
 			if (newPassword == null) throw new ArgumentNullException(nameof(newPassword));
 			if (loginName == string.Empty) throw new ArgumentOutOfRangeException(nameof(loginName));
@@ -261,7 +272,7 @@ namespace EventStore.Client {
 						LoginName = loginName
 					}
 				},
-				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 

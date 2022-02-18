@@ -24,17 +24,17 @@ namespace EventStore.Client.SubscriptionToAll {
 			protected override async Task Given() {
 				await Client.CreateToAllAsync("groupname123",
 					new PersistentSubscriptionSettings(),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 				_subscription = await Client.SubscribeToAllAsync("groupname123",
 					async (s, e, i, ct) => await s.Ack(e),
-					(s, r, e) => _dropped.TrySetResult((r, e)), TestCredentials.Root);
+					(s, r, e) => _dropped.TrySetResult((r, e)), userCredentials: TestCredentials.Root);
 				// todo: investigate why this test is flaky without this delay
 				await Task.Delay(500);
 			}
 
 			protected override Task When() =>
 				Client.DeleteToAllAsync("groupname123",
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 
 			public override Task DisposeAsync() {
 				_subscription?.Dispose();

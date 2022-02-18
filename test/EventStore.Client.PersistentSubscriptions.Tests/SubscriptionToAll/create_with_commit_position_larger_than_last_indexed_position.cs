@@ -31,7 +31,7 @@ namespace EventStore.Client.SubscriptionToAll {
 				_fixture.Client.CreateToAllAsync("group57",
 					new PersistentSubscriptionSettings(
 						startFrom: new Position(_fixture.LastCommitPosition + 1, _fixture.LastCommitPosition)),
-					TestCredentials.Root));
+					userCredentials: TestCredentials.Root));
 			Assert.Equal(StatusCode.Internal, ex.StatusCode);
 		}
 	}

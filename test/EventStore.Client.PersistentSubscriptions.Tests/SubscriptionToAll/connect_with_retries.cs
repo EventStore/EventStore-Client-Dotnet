@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -29,7 +28,7 @@ namespace EventStore.Client.SubscriptionToAll {
 
 			protected override async Task Given() {
 				await Client.CreateToAllAsync(Group,
-					new PersistentSubscriptionSettings(startFrom: Position.Start), TestCredentials.Root);
+					new PersistentSubscriptionSettings(startFrom: Position.Start), userCredentials: TestCredentials.Root);
 				_subscription = await Client.SubscribeToAllAsync(Group,
 					async (subscription, e, r, ct) => {
 						if (r > 4) {

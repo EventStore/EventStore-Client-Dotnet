@@ -41,7 +41,7 @@ namespace EventStore.Client {
 		public async Task stop() {
 			var startResult = await _fixture.Client.StartScavengeAsync(userCredentials: TestCredentials.Root);
 			var stopResult = await _fixture.Client
-				.StopScavengeAsync(startResult.ScavengeId, TestCredentials.Root);
+				.StopScavengeAsync(startResult.ScavengeId, userCredentials: TestCredentials.Root);
 			Assert.Equal(DatabaseScavengeResult.Stopped(startResult.ScavengeId), stopResult);
 		}
 
@@ -49,7 +49,7 @@ namespace EventStore.Client {
 		public async Task stop_when_no_scavenge_is_running() {
 			var scavengeId = Guid.NewGuid().ToString();
 			var ex = await Assert.ThrowsAsync<ScavengeNotFoundException>(() =>
-				_fixture.Client.StopScavengeAsync(scavengeId, TestCredentials.Root));
+				_fixture.Client.StopScavengeAsync(scavengeId, userCredentials: TestCredentials.Root));
 			Assert.Null(ex.ScavengeId);
 		}
 

@@ -22,7 +22,7 @@ namespace EventStore.Client.SubscriptionToAll {
 				filterName,
 				filter,
 				new PersistentSubscriptionSettings(),
-				TestCredentials.Root);
+				userCredentials: TestCredentials.Root);
 		}
 		
 		public class Fixture : EventStoreClientFixture {

@@ -13,15 +13,15 @@ namespace EventStore.Client.Security {
 		[Fact]
 		public async Task write_to_all_is_never_allowed() {
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.AppendStream(SecurityFixture.AllStream));
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.AppendStream(SecurityFixture.AllStream, TestCredentials.TestUser1));
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.AppendStream(SecurityFixture.AllStream, TestCredentials.TestAdmin));
+			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.AppendStream(SecurityFixture.AllStream, userCredentials: TestCredentials.TestUser1));
+			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.AppendStream(SecurityFixture.AllStream, userCredentials: TestCredentials.TestAdmin));
 		}
 
 		[Fact]
 		public async Task delete_of_all_is_never_allowed() {
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.DeleteStream(SecurityFixture.AllStream));
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.DeleteStream(SecurityFixture.AllStream, TestCredentials.TestUser1));
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.DeleteStream(SecurityFixture.AllStream, TestCredentials.TestAdmin));
+			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.DeleteStream(SecurityFixture.AllStream, userCredentials: TestCredentials.TestUser1));
+			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.DeleteStream(SecurityFixture.AllStream, userCredentials: TestCredentials.TestAdmin));
 		}
 
 
@@ -37,7 +37,7 @@ namespace EventStore.Client.Security {
 		public async Task reading_and_subscribing_is_not_allowed_for_usual_user() {
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadAllForward(TestCredentials.TestUser1));
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadAllBackward(TestCredentials.TestUser1));
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadMeta(SecurityFixture.AllStream, TestCredentials.TestUser1));
+			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadMeta(SecurityFixture.AllStream, userCredentials: TestCredentials.TestUser1));
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.SubscribeToAll(TestCredentials.TestUser1));
 		}
 
@@ -45,7 +45,7 @@ namespace EventStore.Client.Security {
 		public async Task reading_and_subscribing_is_allowed_for_admin_user() {
 			await _fixture.ReadAllForward(TestCredentials.TestAdmin);
 			await _fixture.ReadAllBackward(TestCredentials.TestAdmin);
-			await _fixture.ReadMeta(SecurityFixture.AllStream, TestCredentials.TestAdmin);
+			await _fixture.ReadMeta(SecurityFixture.AllStream, userCredentials: TestCredentials.TestAdmin);
 			await _fixture.SubscribeToAll(TestCredentials.TestAdmin);
 		}
 
@@ -56,12 +56,12 @@ namespace EventStore.Client.Security {
 
 		[Fact]
 		public async Task meta_write_is_not_allowed_for_usual_user() {
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.WriteMeta(SecurityFixture.AllStream, TestCredentials.TestUser1));
+			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.WriteMeta(SecurityFixture.AllStream, userCredentials: TestCredentials.TestUser1));
 		}
 
 		[Fact]
 		public Task meta_write_is_allowed_for_admin_user() {
-			return _fixture.WriteMeta(SecurityFixture.AllStream, TestCredentials.TestAdmin);
+			return _fixture.WriteMeta(SecurityFixture.AllStream, userCredentials: TestCredentials.TestAdmin);
 		}
 
 		public class Fixture : SecurityFixture {

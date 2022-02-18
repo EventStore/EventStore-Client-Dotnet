@@ -34,7 +34,7 @@ namespace EventStore.Client {
 			private const string GossipTimeout = nameof(GossipTimeout);
 			private const string NodePreference = nameof(NodePreference);
 			private const string TlsVerifyCert = nameof(TlsVerifyCert);
-			private const string OperationTimeout = nameof(OperationTimeout);
+			private const string DefaultDeadline = nameof(DefaultDeadline);
 			private const string ThrowOnAppendFailure = nameof(ThrowOnAppendFailure);
 			private const string KeepAliveInterval = nameof(KeepAliveInterval);
 			private const string KeepAliveTimeout = nameof(KeepAliveTimeout);
@@ -46,7 +46,7 @@ namespace EventStore.Client {
 			private static readonly bool DefaultUseTls = true;
 
 			private static readonly Dictionary<string, Type> SettingsType =
-				new Dictionary<string, Type>(StringComparer.InvariantCultureIgnoreCase) {
+				new(StringComparer.InvariantCultureIgnoreCase) {
 					{ConnectionName, typeof(string)},
 					{MaxDiscoverAttempts, typeof(int)},
 					{DiscoveryInterval, typeof(int)},
@@ -54,7 +54,7 @@ namespace EventStore.Client {
 					{NodePreference, typeof(string)},
 					{Tls, typeof(bool)},
 					{TlsVerifyCert, typeof(bool)},
-					{OperationTimeout, typeof(int)},
+					{DefaultDeadline, typeof(int)},
 					{ThrowOnAppendFailure, typeof(bool)},
 					{KeepAliveInterval, typeof(int)},
 					{KeepAliveTimeout, typeof(int)},
@@ -163,24 +163,24 @@ namespace EventStore.Client {
 					useTls = (bool)tls;
 				}
 
-				if (typedOptions.TryGetValue(OperationTimeout, out object operationTimeout))
-					settings.OperationOptions.TimeoutAfter = TimeSpan.FromMilliseconds((int)operationTimeout);
+				if (typedOptions.TryGetValue(DefaultDeadline, out object operationTimeout))
+					settings.DefaultDeadline = TimeSpan.FromMilliseconds((int)operationTimeout);
 
 				if (typedOptions.TryGetValue(ThrowOnAppendFailure, out object throwOnAppendFailure))
 					settings.OperationOptions.ThrowOnAppendFailure = (bool)throwOnAppendFailure;
 
 				if (typedOptions.TryGetValue(KeepAliveInterval, out var keepAliveIntervalMs)) {
 					settings.ConnectivitySettings.KeepAliveInterval = keepAliveIntervalMs switch {
-						int value when value == -1 => Timeout_.InfiniteTimeSpan,
-						int value when value >= 0 => TimeSpan.FromMilliseconds(value),
+						-1 => Timeout_.InfiniteTimeSpan,
+						int value and >= 0 => TimeSpan.FromMilliseconds(value),
 						_ => throw new InvalidSettingException($"Invalid KeepAliveInterval: {keepAliveIntervalMs}")
 					};
 				}
 
 				if (typedOptions.TryGetValue(KeepAliveTimeout, out var keepAliveTimeoutMs)) {
 					settings.ConnectivitySettings.KeepAliveTimeout = keepAliveTimeoutMs switch {
-						int value when value == -1 => Timeout_.InfiniteTimeSpan,
-						int value when value >= 0 => TimeSpan.FromMilliseconds(value),
+						-1 => Timeout_.InfiniteTimeSpan,
+						int value and >= 0 => TimeSpan.FromMilliseconds(value),
 						_ => throw new InvalidSettingException($"Invalid KeepAliveTimeout: {keepAliveTimeoutMs}")
 					};
 				}

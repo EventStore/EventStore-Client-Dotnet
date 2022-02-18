@@ -22,7 +22,7 @@ namespace EventStore.Client.SubscriptionToAll {
 		public class Fixture : EventStoreClientFixture {
 			protected override async Task Given() {
 				await Client.CreateToAllAsync(Group, new PersistentSubscriptionSettings(),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 			}
 
 			protected override Task When() => Task.CompletedTask;

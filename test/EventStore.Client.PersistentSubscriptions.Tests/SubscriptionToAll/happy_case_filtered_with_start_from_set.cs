@@ -39,7 +39,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			
 			await _fixture.Client.CreateToAllAsync(filterName, filter,
 				new PersistentSubscriptionSettings(startFrom: eventToCaptureResult.LogPosition),
-				TestCredentials.Root);
+				userCredentials: TestCredentials.Root);
 			
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(filterName,
 				eventAppeared: async (s, e, r, ct) => {

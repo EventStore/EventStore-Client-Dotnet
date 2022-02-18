@@ -33,7 +33,7 @@ namespace EventStore.Client.SubscriptionToStream {
 			protected override async Task Given() {
 				await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, Events);
 				await Client.CreateAsync(Stream, Group,
-					new PersistentSubscriptionSettings(startFrom: StreamPosition.Start), TestCredentials.Root);
+					new PersistentSubscriptionSettings(startFrom: StreamPosition.Start), userCredentials: TestCredentials.Root);
 				_subscription = await Client.SubscribeToStreamAsync(Stream, Group,
 					async (subscription, e, r, ct) => {
 						if (r > 4) {

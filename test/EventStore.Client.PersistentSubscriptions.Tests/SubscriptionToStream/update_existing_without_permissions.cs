@@ -23,7 +23,7 @@ namespace EventStore.Client.SubscriptionToStream {
 			protected override async Task Given() {
 				await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, CreateTestEvents());
 				await Client.CreateAsync(Stream, Group, new PersistentSubscriptionSettings(),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 			}
 
 			protected override Task When() => Task.CompletedTask;

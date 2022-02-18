@@ -11,7 +11,7 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task resign_node_does_not_throw() {
-			await _fixture.Client.ResignNodeAsync(TestCredentials.Root);
+			await _fixture.Client.ResignNodeAsync(userCredentials: TestCredentials.Root);
 		}
 
 		[Fact]

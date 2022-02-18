@@ -19,7 +19,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(Group,
 				delegate { return Task.CompletedTask; }, (s, reason, ex) => dropped.TrySetResult((reason, ex)),
-				TestCredentials.Root).WithTimeout();
+				userCredentials: TestCredentials.Root).WithTimeout();
 			Assert.NotNull(subscription);
 
 			await Assert.ThrowsAsync<TimeoutException>(() => dropped.Task.WithTimeout());
@@ -30,7 +30,7 @@ namespace EventStore.Client.SubscriptionToAll {
 				Client.CreateToAllAsync(
 					Group,
 					new PersistentSubscriptionSettings(),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 
 			protected override Task When() => Task.CompletedTask;
 		}

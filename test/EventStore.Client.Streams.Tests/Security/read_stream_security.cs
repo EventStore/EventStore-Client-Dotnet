@@ -44,20 +44,20 @@ namespace EventStore.Client.Security {
 
 		[Fact]
 		public async Task reading_stream_with_authorized_user_credentials_succeeds() {
-			await _fixture.AppendStream(SecurityFixture.ReadStream, TestCredentials.TestUser1);
+			await _fixture.AppendStream(SecurityFixture.ReadStream, userCredentials: TestCredentials.TestUser1);
 
-			await _fixture.ReadEvent(SecurityFixture.ReadStream, TestCredentials.TestUser1);
-			await _fixture.ReadStreamForward(SecurityFixture.ReadStream, TestCredentials.TestUser1);
-			await _fixture.ReadStreamBackward(SecurityFixture.ReadStream, TestCredentials.TestUser1);
+			await _fixture.ReadEvent(SecurityFixture.ReadStream, userCredentials: TestCredentials.TestUser1);
+			await _fixture.ReadStreamForward(SecurityFixture.ReadStream, userCredentials: TestCredentials.TestUser1);
+			await _fixture.ReadStreamBackward(SecurityFixture.ReadStream, userCredentials: TestCredentials.TestUser1);
 		}
 
 		[Fact]
 		public async Task reading_stream_with_admin_user_credentials_succeeds() {
-			await _fixture.AppendStream(SecurityFixture.ReadStream, TestCredentials.TestAdmin);
+			await _fixture.AppendStream(SecurityFixture.ReadStream, userCredentials: TestCredentials.TestAdmin);
 
-			await _fixture.ReadEvent(SecurityFixture.ReadStream, TestCredentials.TestAdmin);
-			await _fixture.ReadStreamForward(SecurityFixture.ReadStream, TestCredentials.TestAdmin);
-			await _fixture.ReadStreamBackward(SecurityFixture.ReadStream, TestCredentials.TestAdmin);
+			await _fixture.ReadEvent(SecurityFixture.ReadStream, userCredentials: TestCredentials.TestAdmin);
+			await _fixture.ReadStreamForward(SecurityFixture.ReadStream, userCredentials: TestCredentials.TestAdmin);
+			await _fixture.ReadStreamBackward(SecurityFixture.ReadStream, userCredentials: TestCredentials.TestAdmin);
 		}
 
 
@@ -82,11 +82,11 @@ namespace EventStore.Client.Security {
 
 		[Fact]
 		public async Task reading_no_acl_stream_succeeds_when_any_existing_user_credentials_are_passed() {
-			await _fixture.AppendStream(SecurityFixture.NoAclStream, TestCredentials.TestUser1);
+			await _fixture.AppendStream(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestUser1);
 
-			await _fixture.ReadEvent(SecurityFixture.NoAclStream, TestCredentials.TestUser1);
-			await _fixture.ReadStreamForward(SecurityFixture.NoAclStream, TestCredentials.TestUser1);
-			await _fixture.ReadStreamBackward(SecurityFixture.NoAclStream, TestCredentials.TestUser1);
+			await _fixture.ReadEvent(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestUser1);
+			await _fixture.ReadStreamForward(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestUser1);
+			await _fixture.ReadStreamBackward(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestUser1);
 			await _fixture.ReadEvent(SecurityFixture.NoAclStream, TestCredentials.TestUser2);
 			await _fixture.ReadStreamForward(SecurityFixture.NoAclStream, TestCredentials.TestUser2);
 			await _fixture.ReadStreamBackward(SecurityFixture.NoAclStream, TestCredentials.TestUser2);
@@ -94,10 +94,10 @@ namespace EventStore.Client.Security {
 
 		[Fact]
 		public async Task reading_no_acl_stream_succeeds_when_admin_user_credentials_are_passed() {
-			await _fixture.AppendStream(SecurityFixture.NoAclStream, TestCredentials.TestAdmin);
-			await _fixture.ReadEvent(SecurityFixture.NoAclStream, TestCredentials.TestAdmin);
-			await _fixture.ReadStreamForward(SecurityFixture.NoAclStream, TestCredentials.TestAdmin);
-			await _fixture.ReadStreamBackward(SecurityFixture.NoAclStream, TestCredentials.TestAdmin);
+			await _fixture.AppendStream(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestAdmin);
+			await _fixture.ReadEvent(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestAdmin);
+			await _fixture.ReadStreamForward(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestAdmin);
+			await _fixture.ReadStreamBackward(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestAdmin);
 		}
 
 
@@ -122,10 +122,10 @@ namespace EventStore.Client.Security {
 
 		[Fact]
 		public async Task reading_all_access_normal_stream_succeeds_when_any_existing_user_credentials_are_passed() {
-			await _fixture.AppendStream(SecurityFixture.NormalAllStream, TestCredentials.TestUser1);
-			await _fixture.ReadEvent(SecurityFixture.NormalAllStream, TestCredentials.TestUser1);
-			await _fixture.ReadStreamForward(SecurityFixture.NormalAllStream, TestCredentials.TestUser1);
-			await _fixture.ReadStreamBackward(SecurityFixture.NormalAllStream, TestCredentials.TestUser1);
+			await _fixture.AppendStream(SecurityFixture.NormalAllStream, userCredentials: TestCredentials.TestUser1);
+			await _fixture.ReadEvent(SecurityFixture.NormalAllStream, userCredentials: TestCredentials.TestUser1);
+			await _fixture.ReadStreamForward(SecurityFixture.NormalAllStream, userCredentials: TestCredentials.TestUser1);
+			await _fixture.ReadStreamBackward(SecurityFixture.NormalAllStream, userCredentials: TestCredentials.TestUser1);
 			await _fixture.ReadEvent(SecurityFixture.NormalAllStream, TestCredentials.TestUser2);
 			await _fixture.ReadStreamForward(SecurityFixture.NormalAllStream, TestCredentials.TestUser2);
 			await _fixture.ReadStreamBackward(SecurityFixture.NormalAllStream, TestCredentials.TestUser2);
@@ -133,10 +133,10 @@ namespace EventStore.Client.Security {
 
 		[Fact]
 		public async Task reading_all_access_normal_stream_succeeds_when_admin_user_credentials_are_passed() {
-			await _fixture.AppendStream(SecurityFixture.NormalAllStream, TestCredentials.TestAdmin);
-			await _fixture.ReadEvent(SecurityFixture.NormalAllStream, TestCredentials.TestAdmin);
-			await _fixture.ReadStreamForward(SecurityFixture.NormalAllStream, TestCredentials.TestAdmin);
-			await _fixture.ReadStreamBackward(SecurityFixture.NormalAllStream, TestCredentials.TestAdmin);
+			await _fixture.AppendStream(SecurityFixture.NormalAllStream, userCredentials: TestCredentials.TestAdmin);
+			await _fixture.ReadEvent(SecurityFixture.NormalAllStream, userCredentials: TestCredentials.TestAdmin);
+			await _fixture.ReadStreamForward(SecurityFixture.NormalAllStream, userCredentials: TestCredentials.TestAdmin);
+			await _fixture.ReadStreamBackward(SecurityFixture.NormalAllStream, userCredentials: TestCredentials.TestAdmin);
 		}
 	}
 }

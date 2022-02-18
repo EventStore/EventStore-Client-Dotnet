@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -17,7 +16,7 @@ namespace EventStore.Client.SubscriptionToAll {
 		public async Task the_completion_fails_with_not_found() {
 			await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
 				() => _fixture.Client.UpdateToAllAsync(Group,
-					new PersistentSubscriptionSettings(), TestCredentials.Root));
+					new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root));
 		}
 
 		public class Fixture : EventStoreClientFixture {

@@ -6,7 +6,8 @@ namespace EventStore.Client {
 	public static class EventStoreProjectionManagementClientExtensions {
 		public static async Task WarmUpAsync(this EventStoreProjectionManagementClient self) {
 			await self.WarmUpWith(async cancellationToken => {
-				await self.ListAllAsync(TestCredentials.Root, cancellationToken).ToArrayAsync();
+				await self.ListAllAsync(userCredentials: TestCredentials.Root, cancellationToken: cancellationToken)
+					.ToArrayAsync(cancellationToken);
 			});
 		}
 	}

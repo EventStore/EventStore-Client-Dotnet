@@ -34,14 +34,14 @@ namespace EventStore.Client.SubscriptionToStream {
 			protected override async Task Given() {
 				await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, CreateTestEvents());
 				await Client.CreateAsync(Stream, Group, new PersistentSubscriptionSettings(),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 				_subscription = await Client.SubscribeToStreamAsync(Stream, Group,
 					delegate { return Task.CompletedTask; },
-					(subscription, reason, ex) => _droppedSource.TrySetResult((reason, ex)), TestCredentials.Root);
+					(_, reason, ex) => _droppedSource.TrySetResult((reason, ex)), TestCredentials.Root);
 			}
 
 			protected override Task When() => Client.UpdateAsync(Stream, Group,
-				new PersistentSubscriptionSettings(), TestCredentials.Root);
+				new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 
 			public override Task DisposeAsync() {
 				_subscription?.Dispose();

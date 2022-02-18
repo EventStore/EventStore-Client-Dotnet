@@ -3,7 +3,6 @@
 using System;
 using System.Net.Http;
 using EventStore.Client;
-using EventStore.Client.Operations;
 using Grpc.Core.Interceptors;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;

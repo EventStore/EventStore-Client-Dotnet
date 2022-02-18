@@ -60,12 +60,27 @@ namespace EventStore.Client {
 				    }) {
 					tcs.TrySetException(ex);
 				} else {
-					var task = _fixture.Client.SubscribeToStreamAsync(streamName,
-						FromStream.After(events[^1].OriginalEventNumber),
-						EventAppeared, subscriptionDropped: SubscriptionDropped);
-					task.ContinueWith(_ => resubscribe.SetResult(_.Result), TaskContinuationOptions.NotOnFaulted);
-					task.ContinueWith(_ => resubscribe.SetException(_.Exception!.GetBaseException()),
-						TaskContinuationOptions.OnlyOnFaulted);
+					Resubscribe();
+
+					void Resubscribe() {
+						var task = _fixture.Client.SubscribeToStreamAsync(streamName,
+							FromStream.After(events[^1].OriginalEventNumber),
+							EventAppeared, subscriptionDropped: SubscriptionDropped);
+						task.ContinueWith(_ => resubscribe.SetResult(_.Result),
+							TaskContinuationOptions.OnlyOnRanToCompletion);
+						task.ContinueWith(_ => {
+								var ex = _.Exception!.GetBaseException();
+
+								if (ex is RpcException {
+									    StatusCode: StatusCode.DeadlineExceeded
+								    }) {
+									Task.Delay(200).ContinueWith(_ => Resubscribe());
+								} else {
+									resubscribe.SetException(_.Exception!.GetBaseException());
+								}
+							},
+							TaskContinuationOptions.OnlyOnFaulted);
+					}
 				}
 			}
 		}
