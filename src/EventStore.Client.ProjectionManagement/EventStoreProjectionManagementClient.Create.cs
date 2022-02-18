@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Projections;
@@ -9,11 +10,12 @@ namespace EventStore.Client {
 		/// Creates a one-time projection.
 		/// </summary>
 		/// <param name="query"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task CreateOneTimeAsync(string query, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+		public async Task CreateOneTimeAsync(string query, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
@@ -21,7 +23,7 @@ namespace EventStore.Client {
 					OneTime = new Empty(),
 					Query = query
 				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -31,11 +33,13 @@ namespace EventStore.Client {
 		/// <param name="name"></param>
 		/// <param name="query"></param>
 		/// <param name="trackEmittedStreams"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public async Task CreateContinuousAsync(string name, string query, bool trackEmittedStreams = false,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
@@ -46,7 +50,7 @@ namespace EventStore.Client {
 					},
 					Query = query
 				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -55,11 +59,12 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="query"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task CreateTransientAsync(string name, string query, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+		public async Task CreateTransientAsync(string name, string query, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
@@ -69,7 +74,7 @@ namespace EventStore.Client {
 					},
 					Query = query
 				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 	}

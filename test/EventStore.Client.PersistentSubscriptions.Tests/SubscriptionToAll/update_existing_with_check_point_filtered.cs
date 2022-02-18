@@ -54,7 +54,7 @@ namespace EventStore.Client.SubscriptionToAll {
 						checkPointLowerBound: 5,
 						checkPointAfter: TimeSpan.FromSeconds(1),
 						startFrom: Position.Start),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 
 				var checkPointStream = $"$persistentsubscription-$all::{Group}-checkpoint";
 				_checkPointSubscription = await StreamsClient.SubscribeToStreamAsync(checkPointStream,
@@ -90,7 +90,7 @@ namespace EventStore.Client.SubscriptionToAll {
 
 			protected override async Task When() {
 				// Force restart of the subscription
-				await Client.UpdateToAllAsync(Group, new PersistentSubscriptionSettings(), TestCredentials.Root);
+				await Client.UpdateToAllAsync(Group, new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 
 				await _droppedSource.Task.WithTimeout();
 

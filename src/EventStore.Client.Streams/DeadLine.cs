@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Threading;
 
 #nullable enable
 namespace EventStore.Client {
-	internal static class DeadLine {
-		public static DateTime? After(TimeSpan? timeoutAfter){
-			if(!timeoutAfter.HasValue) return null;
-			if (timeoutAfter.Value == TimeSpan.MaxValue ||
-			    timeoutAfter.Value == System.Threading.Timeout.InfiniteTimeSpan) return DateTime.MaxValue;
-			return DateTime.UtcNow.Add(timeoutAfter.Value);
-		}
-
+#pragma warning disable CS1591
+	public static class DeadLine {
+#pragma warning restore CS1591
+		/// <summary>
+		/// Represents no deadline (i.e., wait infinitely)
+		/// </summary>
 		public static TimeSpan? None = null;
 	}
 }

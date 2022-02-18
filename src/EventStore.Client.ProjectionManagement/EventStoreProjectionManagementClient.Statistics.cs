@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Projections;
+using Grpc.Core;
 
 #nullable enable
 namespace EventStore.Client {
@@ -11,56 +13,80 @@ namespace EventStore.Client {
 		/// <summary>
 		/// List the <see cref="ProjectionDetails"/> of all one-time projections.
 		/// </summary>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public IAsyncEnumerable<ProjectionDetails> ListOneTimeAsync(UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) =>
+		public IAsyncEnumerable<ProjectionDetails> ListOneTimeAsync(TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) =>
 			ListInternalAsync(new StatisticsReq.Types.Options {
-				OneTime = new Empty()
-			}, userCredentials, cancellationToken);
+					OneTime = new Empty()
+				},
+				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken),
+				cancellationToken);
 
 		/// <summary>
 		/// List the <see cref="ProjectionDetails"/> of all continuous projections.
 		/// </summary>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public IAsyncEnumerable<ProjectionDetails> ListContinuousAsync(UserCredentials? userCredentials = null,
+		public IAsyncEnumerable<ProjectionDetails> ListContinuousAsync(TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
 			ListInternalAsync(new StatisticsReq.Types.Options {
-				Continuous = new Empty()
-			}, userCredentials, cancellationToken);
+					Continuous = new Empty()
+				},
+				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken),
+				cancellationToken);
 
 		/// <summary>
 		/// Gets the status of a projection.
 		/// </summary>
 		/// <param name="name"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task<ProjectionDetails?> GetStatusAsync(string name, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
-			var result = await ListInternalAsync(new StatisticsReq.Types.Options {
-				Name = name
-			}, userCredentials, cancellationToken).ToArrayAsync(cancellationToken).ConfigureAwait(false);
-			return result.FirstOrDefault();
-		}
+		public Task<ProjectionDetails?> GetStatusAsync(string name,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) => ListInternalAsync(new StatisticsReq.Types.Options {
+					Name = name
+				},
+				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken),
+				cancellationToken)
+			.FirstOrDefaultAsync(cancellationToken).AsTask();
+
+		/// <summary>
+		/// List the <see cref="ProjectionDetails"/> of all projections.
+		/// </summary>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public IAsyncEnumerable<ProjectionDetails> ListAllAsync(TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) =>
+			ListInternalAsync(new StatisticsReq.Types.Options {
+					All = new Empty()
+				},
+				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken),
+				cancellationToken);
 
 		private async IAsyncEnumerable<ProjectionDetails> ListInternalAsync(StatisticsReq.Types.Options options,
-			UserCredentials? userCredentials,
+			CallOptions callOptions,
 			[EnumeratorCancellation] CancellationToken cancellationToken) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).Statistics(new StatisticsReq {
 				Options = options
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			}, callOptions);
 
 			await foreach (var projectionDetails in call.ResponseStream
-				.ReadAllAsync(cancellationToken)
-				.Select(ConvertToProjectionDetails)
-				.WithCancellation(cancellationToken)
-				.ConfigureAwait(false)) {
+				               .ReadAllAsync(cancellationToken)
+				               .Select(ConvertToProjectionDetails)
+				               .WithCancellation(cancellationToken)
+				               .ConfigureAwait(false)) {
 				yield return projectionDetails;
 			}
 		}
@@ -75,17 +101,5 @@ namespace EventStore.Client {
 				details.BufferedEvents, details.WritePendingEventsBeforeCheckpoint,
 				details.WritePendingEventsAfterCheckpoint);
 		}
-
-		/// <summary>
-		/// List the <see cref="ProjectionDetails"/> of all projections.
-		/// </summary>
-		/// <param name="userCredentials"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public IAsyncEnumerable<ProjectionDetails> ListAllAsync(UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) =>
-			ListInternalAsync(new StatisticsReq.Types.Options {
-				All = new Empty()
-			}, userCredentials, cancellationToken);
 	}
 }

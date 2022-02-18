@@ -41,7 +41,7 @@ namespace EventStore.Client.SubscriptionToAll {
 				Events = await StreamsClient.ReadAllAsync(Direction.Forwards, Position.Start, 10, userCredentials: TestCredentials.Root).ToArrayAsync();
 
 				await Client.CreateToAllAsync(Group,
-					new PersistentSubscriptionSettings(startFrom: Position.Start), TestCredentials.Root);
+					new PersistentSubscriptionSettings(startFrom: Position.Start), userCredentials: TestCredentials.Root);
 			}
 
 			protected override async Task When() {
@@ -53,7 +53,7 @@ namespace EventStore.Client.SubscriptionToAll {
 						if (reason != SubscriptionDroppedReason.Disposed) {
 							_firstEventSource.TrySetException(ex!);
 						}
-					}, TestCredentials.Root);
+					}, userCredentials: TestCredentials.Root);
 			}
 
 			public override Task DisposeAsync() {

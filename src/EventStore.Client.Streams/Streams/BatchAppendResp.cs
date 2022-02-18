@@ -1,4 +1,5 @@
 using System;
+using Grpc.Core;
 using static EventStore.Client.WrongExpectedVersion.CurrentStreamRevisionOptionOneofCase;
 using static EventStore.Client.WrongExpectedVersion.ExpectedStreamPositionOptionOneofCase;
 
@@ -22,7 +23,8 @@ namespace EventStore.Client.Streams {
 				{ } when Error.Details.Is(StreamDeleted.Descriptor) =>
 					throw new StreamDeletedException(StreamIdentifier),
 				{ } when Error.Details.Is(AccessDenied.Descriptor) => throw new AccessDeniedException(),
-				{ } when Error.Details.Is(Timeout.Descriptor) => throw new TimeoutException(),
+				{ } when Error.Details.Is(Timeout.Descriptor) => throw new RpcException(
+					new Status(StatusCode.DeadlineExceeded, Error.Message)),
 				{ } when Error.Details.Is(Unknown.Descriptor) => throw new InvalidOperationException(Error.Message),
 				{ } when Error.Details.Is(MaximumAppendSizeExceeded.Descriptor) =>
 					throw new MaximumAppendSizeExceededException(

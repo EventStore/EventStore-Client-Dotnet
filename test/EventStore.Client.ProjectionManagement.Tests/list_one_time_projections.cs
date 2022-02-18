@@ -12,7 +12,7 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task returns_expected_result() {
-			var result = await _fixture.Client.ListOneTimeAsync(TestCredentials.Root)
+			var result = await _fixture.Client.ListOneTimeAsync(userCredentials: TestCredentials.Root)
 				.ToArrayAsync();
 
 			var details = Assert.Single(result);
@@ -22,7 +22,7 @@ namespace EventStore.Client {
 		public class Fixture : EventStoreClientFixture {
 			protected override Task Given() =>
 				Client.CreateOneTimeAsync(
-					"fromAll().when({$init: function (state, ev) {return {};}});", TestCredentials.Root);
+					"fromAll().when({$init: function (state, ev) {return {};}});", userCredentials: TestCredentials.Root);
 
 			protected override Task When() => Task.CompletedTask;
 		}

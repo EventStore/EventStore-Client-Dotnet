@@ -32,8 +32,8 @@ namespace EventStore.Client {
 					$"AutoAck is no longer supported. Please use {nameof(SubscribeToStreamAsync)} with manual acks instead.");
 			}
 
-			return await SubscribeToStreamAsync(streamName, groupName, eventAppeared, subscriptionDropped, userCredentials,
-				bufferSize, cancellationToken).ConfigureAwait(false);
+			return await SubscribeToStreamAsync(streamName, groupName, eventAppeared, subscriptionDropped,
+				userCredentials, bufferSize, cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -79,9 +79,6 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(bufferSize));
 			}
 
-			var operationOptions = Settings.OperationOptions.Clone();
-			operationOptions.TimeoutAfter = new TimeSpan?();
-
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 
 			if (streamName == SystemStreams.AllStream &&
@@ -101,8 +98,7 @@ namespace EventStore.Client {
 				readOptions.StreamIdentifier = streamName;
 			}
 
-			return await PersistentSubscription.Confirm(channelInfo.Channel, channelInfo.CallInvoker, Settings, 
-				operationOptions, userCredentials, readOptions, _log, eventAppeared,
+			return await PersistentSubscription.Confirm(channelInfo.Channel, channelInfo.CallInvoker, Settings, userCredentials, readOptions, _log, eventAppeared,
 				subscriptionDropped ?? delegate { }, cancellationToken).ConfigureAwait(false);
 		}
 
@@ -121,14 +117,8 @@ namespace EventStore.Client {
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
 			UserCredentials? userCredentials = null, int bufferSize = 10,
 			CancellationToken cancellationToken = default) =>
-			await SubscribeToStreamAsync(
-					streamName: SystemStreams.AllStream,
-					groupName: groupName,
-					eventAppeared: eventAppeared,
-					subscriptionDropped: subscriptionDropped,
-					userCredentials: userCredentials,
-					bufferSize: bufferSize,
-					cancellationToken: cancellationToken)
+			await SubscribeToStreamAsync(SystemStreams.AllStream, groupName, eventAppeared, subscriptionDropped,
+					userCredentials, bufferSize, cancellationToken)
 				.ConfigureAwait(false);
 	}
 }

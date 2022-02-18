@@ -34,7 +34,7 @@ namespace EventStore.Client {
 			if (RunStandardProjections) {
 				await Task
 					.WhenAll(StandardProjections.Names.Select(name =>
-						Client.EnableAsync(name, TestCredentials.Root)))
+						Client.EnableAsync(name, userCredentials: TestCredentials.Root)))
 					.WithTimeout(TimeSpan.FromMinutes(2));
 			}
 		}

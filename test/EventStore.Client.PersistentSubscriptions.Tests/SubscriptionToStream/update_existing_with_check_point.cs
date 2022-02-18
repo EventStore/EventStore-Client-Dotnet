@@ -54,7 +54,7 @@ namespace EventStore.Client.SubscriptionToStream {
 						checkPointLowerBound: 5,
 						checkPointAfter: TimeSpan.FromSeconds(1),
 						startFrom: StreamPosition.Start),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 
 				var checkPointStream = $"$persistentsubscription-{Stream}::{Group}-checkpoint";
 				await StreamsClient.SubscribeToStreamAsync(checkPointStream,
@@ -63,7 +63,7 @@ namespace EventStore.Client.SubscriptionToStream {
 						_checkPointSource.TrySetResult(e);
 						return Task.CompletedTask;
 					},
-					subscriptionDropped: (_, reason, ex) => {
+					subscriptionDropped: (_, _, ex) => {
 						if (ex != null) {
 							_checkPointSource.TrySetException(ex);
 						} else {
@@ -73,14 +73,14 @@ namespace EventStore.Client.SubscriptionToStream {
 					userCredentials: TestCredentials.Root);
 
 				_firstSubscription = await Client.SubscribeToStreamAsync(Stream, Group,
-					eventAppeared: async (s, e, r, ct) => {
+					eventAppeared: async (s, e, _, _) => {
 						_appearedEvents.Add(e);
 						await s.Ack(e);
 
 						if (_appearedEvents.Count == _events.Length)
 							_appeared.TrySetResult(true);
 					},
-					(subscription, reason, ex) => _droppedSource.TrySetResult((reason, ex)),
+					(_, reason, ex) => _droppedSource.TrySetResult((reason, ex)),
 					TestCredentials.Root);
 
 				await Task.WhenAll(_appeared.Task, _checkPointSource.Task).WithTimeout();
@@ -90,12 +90,13 @@ namespace EventStore.Client.SubscriptionToStream {
 
 			protected override async Task When() {
 				// Force restart of the subscription
-				await Client.UpdateAsync(Stream, Group, new PersistentSubscriptionSettings(), TestCredentials.Root);
+				await Client.UpdateAsync(Stream, Group, new PersistentSubscriptionSettings(),
+					userCredentials: TestCredentials.Root);
 
 				await _droppedSource.Task.WithTimeout();
 
 				_secondSubscription = await Client.SubscribeToStreamAsync(Stream, Group,
-					eventAppeared: async (s, e, r, ct) => {
+					eventAppeared: async (s, e, _, _) => {
 						_resumedSource.TrySetResult(e);
 						await s.Ack(e);
 					},

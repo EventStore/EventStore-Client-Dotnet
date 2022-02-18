@@ -57,7 +57,7 @@ namespace EventStore.Client.Bugs {
 						// This is a retry
 						await subscription.Ack(@event);
 					}
-				}, (s, dr, e) => {
+				},  (s, dr, e) => {
 					if (e != null)
 						completed.TrySetException(e);
 					else

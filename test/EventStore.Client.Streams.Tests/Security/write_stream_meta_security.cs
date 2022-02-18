@@ -16,7 +16,8 @@ namespace EventStore.Client.Security {
 		[Fact]
 		public async Task writing_meta_with_not_existing_credentials_is_not_authenticated() {
 			await Assert.ThrowsAsync<NotAuthenticatedException>(() =>
-				_fixture.WriteMeta(SecurityFixture.MetaWriteStream, TestCredentials.TestBadUser, TestCredentials.TestUser1.Username));
+				_fixture.WriteMeta(SecurityFixture.MetaWriteStream, TestCredentials.TestBadUser,
+					TestCredentials.TestUser1.Username));
 		}
 
 		[Fact]
@@ -28,17 +29,20 @@ namespace EventStore.Client.Security {
 		[Fact]
 		public async Task writing_meta_to_stream_with_not_authorized_user_credentials_is_denied() {
 			await Assert.ThrowsAsync<AccessDeniedException>(() =>
-				_fixture.WriteMeta(SecurityFixture.MetaWriteStream, TestCredentials.TestUser2, TestCredentials.TestUser1.Username));
+				_fixture.WriteMeta(SecurityFixture.MetaWriteStream, TestCredentials.TestUser2,
+					TestCredentials.TestUser1.Username));
 		}
 
 		[Fact]
 		public async Task writing_meta_to_stream_with_authorized_user_credentials_succeeds() {
-			await _fixture.WriteMeta(SecurityFixture.MetaWriteStream, TestCredentials.TestUser1, TestCredentials.TestUser1.Username);
+			await _fixture.WriteMeta(SecurityFixture.MetaWriteStream, TestCredentials.TestUser1,
+				TestCredentials.TestUser1.Username);
 		}
 
 		[Fact]
 		public async Task writing_meta_to_stream_with_admin_user_credentials_succeeds() {
-			await _fixture.WriteMeta(SecurityFixture.MetaWriteStream, TestCredentials.TestAdmin, TestCredentials.TestUser1.Username);
+			await _fixture.WriteMeta(SecurityFixture.MetaWriteStream, TestCredentials.TestAdmin,
+				TestCredentials.TestUser1.Username);
 		}
 
 

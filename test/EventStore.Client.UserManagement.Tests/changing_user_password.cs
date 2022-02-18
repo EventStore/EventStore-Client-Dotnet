@@ -26,7 +26,7 @@ namespace EventStore.Client {
 			string paramName) {
 			var ex = await Assert.ThrowsAsync<ArgumentNullException>(
 				() => _fixture.Client.ChangePasswordAsync(loginName, currentPassword, newPassword,
-					TestCredentials.Root));
+					userCredentials: TestCredentials.Root));
 			Assert.Equal(paramName, ex.ParamName);
 		}
 
@@ -45,7 +45,7 @@ namespace EventStore.Client {
 			string paramName) {
 			var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
 				() => _fixture.Client.ChangePasswordAsync(loginName, currentPassword, newPassword,
-					TestCredentials.Root));
+					userCredentials: TestCredentials.Root));
 			Assert.Equal(paramName, ex.ParamName);
 		}
 
@@ -53,40 +53,40 @@ namespace EventStore.Client {
 		public async Task with_user_with_insufficient_credentials_throws(string loginName,
 			UserCredentials userCredentials) {
 			await _fixture.Client.CreateUserAsync(loginName, "Full Name", Array.Empty<string>(),
-				"password", TestCredentials.Root);
+				"password", userCredentials: TestCredentials.Root);
 			await Assert.ThrowsAsync<AccessDeniedException>(
 				() => _fixture.Client.ChangePasswordAsync(loginName, "password", "newPassword",
-					userCredentials));
+					userCredentials: userCredentials));
 		}
 
 		[Fact]
 		public async Task when_the_current_password_is_wrong_throws() {
 			var loginName = Guid.NewGuid().ToString();
 			await _fixture.Client.CreateUserAsync(loginName, "Full Name", Array.Empty<string>(),
-				"password", TestCredentials.Root);
+				"password", userCredentials: TestCredentials.Root);
 			await Assert.ThrowsAsync<AccessDeniedException>(
 				() => _fixture.Client.ChangePasswordAsync(loginName, "wrong-password", "newPassword",
-					TestCredentials.Root));
+					userCredentials: TestCredentials.Root));
 		}
 
 		[Fact]
 		public async Task with_correct_credentials() {
 			var loginName = Guid.NewGuid().ToString();
 			await _fixture.Client.CreateUserAsync(loginName, "Full Name", Array.Empty<string>(),
-				"password", TestCredentials.Root);
+				"password", userCredentials: TestCredentials.Root);
 
 			await _fixture.Client.ChangePasswordAsync(loginName, "password", "newPassword",
-				TestCredentials.Root);
+				userCredentials: TestCredentials.Root);
 		}
 
 		[Fact]
 		public async Task with_own_credentials() {
 			var loginName = Guid.NewGuid().ToString();
 			await _fixture.Client.CreateUserAsync(loginName, "Full Name", Array.Empty<string>(),
-				"password", TestCredentials.Root);
+				"password", userCredentials: TestCredentials.Root);
 
 			await _fixture.Client.ChangePasswordAsync(loginName, "password", "newPassword",
-				new UserCredentials(loginName, "password"));
+				userCredentials: new UserCredentials(loginName, "password"));
 		}
 
 		public class Fixture : EventStoreClientFixture {

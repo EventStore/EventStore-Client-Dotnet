@@ -19,11 +19,11 @@ namespace EventStore.Client.SubscriptionToAll {
 		[Fact]
 		public Task the_completion_succeeds()
 			=> _fixture.Client.CreateToAllAsync(
-				"existing", new PersistentSubscriptionSettings(), TestCredentials.Root);
+				"existing", new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 
 		[Fact]
 		public Task throws_argument_exception_if_wrong_start_from_type_passed()
 			=> Assert.ThrowsAsync<ArgumentException>(() => _fixture.Client.CreateToAllAsync(
-				"existing", new PersistentSubscriptionSettings(startFrom: StreamPosition.End), TestCredentials.Root));
+				"existing", new PersistentSubscriptionSettings(startFrom: StreamPosition.End), userCredentials: TestCredentials.Root));
 	}
 }

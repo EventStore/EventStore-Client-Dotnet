@@ -17,12 +17,12 @@ namespace EventStore.Client.SubscriptionToAll {
 			protected override Task When() =>
 				Client.CreateToAllAsync("groupname123",
 					new PersistentSubscriptionSettings(),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 		}
 
 		[Fact]
 		public Task the_delete_of_group_succeeds() =>
 			_fixture.Client.DeleteToAllAsync("groupname123",
-				TestCredentials.Root);
+				userCredentials: TestCredentials.Root);
 	}
 }

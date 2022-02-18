@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Xunit;
@@ -17,8 +16,7 @@ namespace EventStore.Client {
 		public async Task any_stream_revision_delete_fails_when_operation_expired() {
 			var stream = _fixture.GetStreamName();
 			var rpcException = await Assert.ThrowsAsync<RpcException>(() =>
-				_fixture.Client.DeleteAsync(stream, StreamState.Any,
-					options => options.TimeoutAfter = TimeSpan.Zero));
+				_fixture.Client.DeleteAsync(stream, StreamState.Any, TimeSpan.Zero));
 
 			Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
 		}
@@ -28,8 +26,7 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 
 			var rpcException = await Assert.ThrowsAsync<RpcException>(() =>
-				_fixture.Client.DeleteAsync(stream, new StreamRevision(0),
-					options => options.TimeoutAfter = TimeSpan.Zero));
+				_fixture.Client.DeleteAsync(stream, new StreamRevision(0), TimeSpan.Zero));
 
 			Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
 		}
@@ -38,8 +35,7 @@ namespace EventStore.Client {
 		public async Task any_stream_revision_tombstoning_fails_when_operation_expired() {
 			var stream = _fixture.GetStreamName();
 			var rpcException = await Assert.ThrowsAsync<RpcException>(() =>
-				_fixture.Client.TombstoneAsync(stream, StreamState.Any,
-					options => options.TimeoutAfter = TimeSpan.Zero));
+				_fixture.Client.TombstoneAsync(stream, StreamState.Any, TimeSpan.Zero));
 
 			Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
 		}
@@ -49,8 +45,7 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 
 			var rpcException = await Assert.ThrowsAsync<RpcException>(() =>
-				_fixture.Client.TombstoneAsync(stream, new StreamRevision(0),
-					options => options.TimeoutAfter = TimeSpan.Zero));
+				_fixture.Client.TombstoneAsync(stream, new StreamRevision(0), TimeSpan.Zero));
 
 			Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
 		}

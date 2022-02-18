@@ -25,6 +25,6 @@ namespace EventStore.Client.SubscriptionToAll {
 				_fixture.Client.UpdateToAllAsync(Group,
 					new PersistentSubscriptionSettings(
 						startFrom: new Position(0, 1)),
-					TestCredentials.Root));
+					userCredentials: TestCredentials.Root));
 	}
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Xunit;
@@ -18,7 +17,7 @@ namespace EventStore.Client {
 			var stream = _fixture.GetStreamName();
 			var rpcException = await Assert.ThrowsAsync<RpcException>(() =>
 				_fixture.Client.SetStreamMetadataAsync(stream, StreamState.Any, new StreamMetadata(),
-					options => options.TimeoutAfter = TimeSpan.Zero));
+					deadline: TimeSpan.Zero));
 
 			Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
 		}
@@ -29,7 +28,7 @@ namespace EventStore.Client {
 
 			var rpcException = await Assert.ThrowsAsync<RpcException>(() =>
 				_fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(0), new StreamMetadata(),
-					options => options.TimeoutAfter = TimeSpan.Zero));
+					deadline: TimeSpan.Zero));
 
 			Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
 		}
@@ -38,10 +37,7 @@ namespace EventStore.Client {
 		public async Task get_fails_when_operation_expired() {
 			var stream = _fixture.GetStreamName();
 			var rpcException = await Assert.ThrowsAsync<RpcException>(() =>
-				_fixture.Client.GetStreamMetadataAsync(stream,
-					options => options.TimeoutAfter = TimeSpan.Zero));
-
-			Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
+				_fixture.Client.GetStreamMetadataAsync(stream, TimeSpan.Zero));
 		}
 
 		public class Fixture : EventStoreClientFixture {

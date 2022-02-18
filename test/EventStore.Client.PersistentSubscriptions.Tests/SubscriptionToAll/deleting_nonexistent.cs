@@ -16,7 +16,7 @@ namespace EventStore.Client.SubscriptionToAll {
 		public async Task the_delete_fails_with_argument_exception() {
 			await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
 				() => _fixture.Client.DeleteToAllAsync(
-					Guid.NewGuid().ToString(), TestCredentials.Root));
+					Guid.NewGuid().ToString(), userCredentials: TestCredentials.Root));
 		}
 
 		public class Fixture : EventStoreClientFixture {

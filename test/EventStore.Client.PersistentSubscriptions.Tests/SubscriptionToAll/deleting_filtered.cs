@@ -14,7 +14,7 @@ namespace EventStore.Client.SubscriptionToAll {
 
 		[Fact]
 		public async Task the_completion_succeeds() {
-			await _fixture.Client.DeleteToAllAsync(Group, TestCredentials.Root);
+			await _fixture.Client.DeleteToAllAsync(Group, userCredentials: TestCredentials.Root);
 		}
 
 		public class Fixture : EventStoreClientFixture {
@@ -23,7 +23,7 @@ namespace EventStore.Client.SubscriptionToAll {
 					Group,
 					EventTypeFilter.Prefix("prefix-filter-"),
 					new PersistentSubscriptionSettings(),
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 			}
 
 			protected override Task When() => Task.CompletedTask;

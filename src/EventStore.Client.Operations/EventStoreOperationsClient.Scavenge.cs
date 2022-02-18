@@ -11,6 +11,7 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="threadCount"></param>
 		/// <param name="startFromChunk"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
@@ -18,6 +19,7 @@ namespace EventStore.Client {
 		public async Task<DatabaseScavengeResult> StartScavengeAsync(
 			int threadCount = 1,
 			int startFromChunk = 0,
+			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			if (threadCount <= 0) {
@@ -37,8 +39,7 @@ namespace EventStore.Client {
 						StartFromChunk = startFromChunk
 					}
 				},
-				EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials,
-					cancellationToken));
+				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			var result = await call.ResponseAsync.ConfigureAwait(false);
 
 			return result.ScavengeResult switch {
@@ -53,11 +54,13 @@ namespace EventStore.Client {
 		/// Stops a scavenge operation.
 		/// </summary>
 		/// <param name="scavengeId"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public async Task<DatabaseScavengeResult> StopScavengeAsync(
 			string scavengeId,
+			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
@@ -66,7 +69,7 @@ namespace EventStore.Client {
 				Options = new StopScavengeReq.Types.Options {
 					ScavengeId = scavengeId
 				}
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
 			return result.ScavengeResult switch {
 				ScavengeResp.Types.ScavengeResult.Started => DatabaseScavengeResult.Started(result.ScavengeId),

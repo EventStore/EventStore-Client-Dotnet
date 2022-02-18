@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -46,7 +45,7 @@ namespace EventStore.Client.SubscriptionToAll {
 						StreamState.Any, new[] {@event});
 				}
 
-				await Client.CreateToAllAsync(Group, new PersistentSubscriptionSettings(startFrom: Position.End), TestCredentials.Root);
+				await Client.CreateToAllAsync(Group, new PersistentSubscriptionSettings(startFrom: Position.End), userCredentials: TestCredentials.Root);
 				_subscription = await Client.SubscribeToAllAsync(Group,
 					async (subscription, e, r, ct) => {
 						if (SystemStreams.IsSystemStream(e.OriginalStreamId)) {
@@ -59,7 +58,7 @@ namespace EventStore.Client.SubscriptionToAll {
 						if (reason != SubscriptionDroppedReason.Disposed) {
 							_firstNonSystemEventSource.TrySetException(ex!);
 						}
-					}, TestCredentials.Root);
+					}, userCredentials: TestCredentials.Root);
 			}
 
 			protected override async Task When() {

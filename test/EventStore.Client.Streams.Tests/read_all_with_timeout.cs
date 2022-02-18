@@ -16,8 +16,8 @@ namespace EventStore.Client {
 		[Fact]
 		public async Task fails_when_operation_expired() {
 			var rpcException = await Assert.ThrowsAsync<RpcException>(() => _fixture.Client
-				.ReadAllAsync(Direction.Backwards, Position.Start, 1,
-					options => options.TimeoutAfter = TimeSpan.Zero)
+				.ReadAllAsync(Direction.Backwards, Position.Start,
+					maxCount: 1, resolveLinkTos: false, deadline: TimeSpan.Zero)
 				.ToArrayAsync().AsTask());
 
 			Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);

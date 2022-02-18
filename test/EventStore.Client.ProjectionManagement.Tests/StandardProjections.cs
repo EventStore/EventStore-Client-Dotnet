@@ -16,7 +16,7 @@ namespace EventStore.Client {
 				bool ready = false;
 
 				while (!ready) {
-					var result = await client.GetStatusAsync(name, TestCredentials.Root);
+					var result = await client.GetStatusAsync(name, userCredentials: TestCredentials.Root);
 					if (result.Status.Contains("Running")) {
 						ready = true;
 					} else {

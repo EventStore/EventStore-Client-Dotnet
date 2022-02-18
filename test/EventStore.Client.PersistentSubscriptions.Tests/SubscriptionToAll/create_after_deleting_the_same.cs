@@ -16,15 +16,15 @@ namespace EventStore.Client.SubscriptionToAll {
 
 			protected override async Task When() {
 				await Client.CreateToAllAsync("existing",
-					new PersistentSubscriptionSettings(), TestCredentials.Root);
+					new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 				await Client.DeleteToAllAsync("existing",
-					TestCredentials.Root);
+					userCredentials: TestCredentials.Root);
 			}
 		}
 
 		[Fact]
 		public async Task the_completion_succeeds() =>
 			await _fixture.Client.CreateToAllAsync("existing",
-				new PersistentSubscriptionSettings(), TestCredentials.Root);
+				new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 	}
 }

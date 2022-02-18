@@ -16,9 +16,25 @@ using Channel = System.Threading.Channels.Channel;
 #nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreClient {
-		private ReadAllStreamResult ReadAllAsync(Direction direction, Position position, long maxCount,
-			EventStoreClientOperationOptions operationOptions, bool resolveLinkTos = false,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+		/// <summary>
+		/// Asynchronously reads all events.
+		/// </summary>
+		/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
+		/// <param name="position">The <see cref="Position"/> to start reading from.</param>
+		/// <param name="maxCount">The maximum count to read.</param>
+		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public ReadAllStreamResult ReadAllAsync(
+			Direction direction,
+			Position position,
+			long maxCount = long.MaxValue,
+			bool resolveLinkTos = false,
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
 			if (maxCount <= 0) {
 				throw new ArgumentOutOfRangeException(nameof(maxCount));
 			}
@@ -45,33 +61,7 @@ namespace EventStore.Client {
 					NoFilter = new(),
 					ControlOption = new() {Compatibility = 1}
 				}
-			}, Settings, operationOptions, userCredentials, cancellationToken);
-		}
-
-		/// <summary>
-		/// Asynchronously reads all events.
-		/// </summary>
-		/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
-		/// <param name="position">The <see cref="Position"/> to start reading from.</param>
-		/// <param name="maxCount">The maximum count to read.</param>
-		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
-		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
-		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public ReadAllStreamResult ReadAllAsync(
-			Direction direction,
-			Position position,
-			long maxCount = long.MaxValue,
-			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
-			bool resolveLinkTos = false,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
-			var operationOptions = Settings.OperationOptions.Clone();
-			configureOperationOptions?.Invoke(operationOptions);
-
-			return ReadAllAsync(direction, position, maxCount, operationOptions, resolveLinkTos, userCredentials,
-				cancellationToken);
+			}, Settings, deadline, userCredentials, cancellationToken);
 		}
 
 		/// <summary>
@@ -111,9 +101,9 @@ namespace EventStore.Client {
 			}
 
 			internal ReadAllStreamResult(Func<CancellationToken, Task<CallInvoker>> selectCallInvoker, ReadReq request,
-				EventStoreClientSettings settings, EventStoreClientOperationOptions operationOptions,
-				UserCredentials? userCredentials, CancellationToken cancellationToken) {
-				var callOptions = EventStoreCallOptions.Create(settings, operationOptions, userCredentials,
+				EventStoreClientSettings settings, TimeSpan? deadline, UserCredentials? userCredentials,
+				CancellationToken cancellationToken) {
+				var callOptions = EventStoreCallOptions.CreateStreaming(settings, deadline, userCredentials,
 					cancellationToken);
 
 				_channel = Channel.CreateBounded<StreamMessage>(new BoundedChannelOptions(1) {
@@ -165,9 +155,30 @@ namespace EventStore.Client {
 			}
 		}
 
-		private ReadStreamResult ReadStreamAsync(Direction direction, string streamName, StreamPosition revision,
-			long maxCount, EventStoreClientOperationOptions operationOptions, bool resolveLinkTos,
-			UserCredentials? userCredentials, CancellationToken cancellationToken) {
+		/// <summary>
+		/// Asynchronously reads all the events from a stream.
+		/// 
+		/// The result could also be inspected as a means to avoid handling exceptions as the <see cref="ReadState"/> would indicate whether or not the stream is readable./>
+		/// </summary>
+		/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
+		/// <param name="streamName">The name of the stream to read.</param>
+		/// <param name="revision">The <see cref="StreamRevision"/> to start reading from.</param>
+		/// <param name="maxCount">The number of events to read from the stream.</param>
+		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public ReadStreamResult ReadStreamAsync(
+			Direction direction,
+			string streamName,
+			StreamPosition revision,
+			long maxCount = long.MaxValue,
+			bool resolveLinkTos = false,
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
+
 			if (maxCount <= 0) {
 				throw new ArgumentOutOfRangeException(nameof(maxCount));
 			}
@@ -190,37 +201,7 @@ namespace EventStore.Client {
 					NoFilter = new(),
 					ControlOption = new() {Compatibility = 1}
 				}
-			}, Settings, operationOptions, userCredentials, cancellationToken);
-		}
-
-		/// <summary>
-		/// Asynchronously reads all the events from a stream.
-		///
-		/// The result could also be inspected as a means to avoid handling exceptions as the <see cref="ReadState"/> would indicate whether or not the stream is readable./>
-		/// </summary>
-		/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
-		/// <param name="streamName">The name of the stream to read.</param>
-		/// <param name="revision">The <see cref="StreamRevision"/> to start reading from.</param>
-		/// <param name="maxCount">The number of events to read from the stream.</param>
-		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
-		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
-		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public ReadStreamResult ReadStreamAsync(
-			Direction direction,
-			string streamName,
-			StreamPosition revision,
-			long maxCount = long.MaxValue,
-			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
-			bool resolveLinkTos = false,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
-			var operationOptions = Settings.OperationOptions.Clone();
-			configureOperationOptions?.Invoke(operationOptions);
-
-			return ReadStreamAsync(direction, streamName, revision, maxCount, operationOptions, resolveLinkTos,
-				userCredentials, cancellationToken);
+			}, Settings, deadline, userCredentials, cancellationToken);
 		}
 
 		/// <summary>
@@ -282,9 +263,9 @@ namespace EventStore.Client {
 			public Task<ReadState> ReadState { get; }
 
 			internal ReadStreamResult(Func<CancellationToken, Task<CallInvoker>> selectCallInvoker, ReadReq request,
-				EventStoreClientSettings settings, EventStoreClientOperationOptions operationOptions,
-				UserCredentials? userCredentials, CancellationToken cancellationToken) {
-				var callOptions = EventStoreCallOptions.Create(settings, operationOptions, userCredentials,
+				EventStoreClientSettings settings, TimeSpan? deadline, UserCredentials? userCredentials,
+				CancellationToken cancellationToken) {
+				var callOptions = EventStoreCallOptions.CreateStreaming(settings, deadline, userCredentials,
 					cancellationToken);
 
 				_channel = Channel.CreateBounded<StreamMessage>(new BoundedChannelOptions(1) {
@@ -365,7 +346,6 @@ namespace EventStore.Client {
 
 		private async IAsyncEnumerable<(SubscriptionConfirmation, Position?, ResolvedEvent)> ReadInternal(
 			ReadReq request,
-			EventStoreClientOperationOptions operationOptions,
 			UserCredentials? userCredentials,
 			[EnumeratorCancellation] CancellationToken cancellationToken) {
 			if (request.Options.CountOptionCase == ReadReq.Types.Options.CountOptionOneofCase.Count &&
@@ -390,7 +370,8 @@ namespace EventStore.Client {
 
 			using var call = new Streams.Streams.StreamsClient(
 				channelInfo.CallInvoker).Read(request,
-				EventStoreCallOptions.Create(Settings, operationOptions, userCredentials, cts.Token));
+				EventStoreCallOptions.CreateStreaming(Settings, userCredentials: userCredentials,
+					cancellationToken: cts.Token));
 
 			await foreach (var e in call.ResponseStream
 				.ReadAllAsync(cts.Token)

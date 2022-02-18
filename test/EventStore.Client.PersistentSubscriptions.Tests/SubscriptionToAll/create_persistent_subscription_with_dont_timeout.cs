@@ -21,6 +21,6 @@ namespace EventStore.Client.SubscriptionToAll {
 		public Task the_subscription_is_created_without_error() =>
 			_fixture.Client.CreateToAllAsync("dont-timeout",
 				new PersistentSubscriptionSettings(messageTimeout: TimeSpan.Zero),
-				TestCredentials.Root);
+				userCredentials: TestCredentials.Root);
 	}
 }

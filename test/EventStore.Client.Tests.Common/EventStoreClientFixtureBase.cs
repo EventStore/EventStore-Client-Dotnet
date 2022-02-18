@@ -61,7 +61,7 @@ namespace EventStore.Client {
 			var connectionString = GlobalEnvironment.UseCluster ? ConnectionStringCluster : ConnectionStringSingle;
 			Settings = clientSettings ?? EventStoreClientSettings.Create(connectionString);
 
-			Settings.OperationOptions.TimeoutAfter = Debugger.IsAttached
+			Settings.DefaultDeadline = Debugger.IsAttached
 				? new TimeSpan?()
 				: TimeSpan.FromSeconds(30);
 

@@ -12,7 +12,7 @@ namespace EventStore.Client {
 		[Fact]
 		public async Task one_time() {
 			await _fixture.Client.CreateOneTimeAsync(
-				"fromAll().when({$init: function (state, ev) {return {};}});", TestCredentials.Root);
+				"fromAll().when({$init: function (state, ev) {return {};}});", userCredentials: TestCredentials.Root);
 		}
 
 		[Theory, InlineData(true), InlineData(false)]
@@ -20,14 +20,14 @@ namespace EventStore.Client {
 			await _fixture.Client.CreateContinuousAsync(
 				$"{nameof(continuous)}_{trackEmittedStreams}",
 				"fromAll().when({$init: function (state, ev) {return {};}});", trackEmittedStreams,
-				TestCredentials.Root);
+				userCredentials: TestCredentials.Root);
 		}
 
 		[Fact]
 		public async Task transient() {
 			await _fixture.Client.CreateTransientAsync(
 				nameof(transient),
-				"fromAll().when({$init: function (state, ev) {return {};}});", TestCredentials.Root);
+				"fromAll().when({$init: function (state, ev) {return {};}});", userCredentials: TestCredentials.Root);
 		}
 
 		public class Fixture : EventStoreClientFixture {

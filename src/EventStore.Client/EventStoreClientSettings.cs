@@ -56,5 +56,10 @@ namespace EventStore.Client {
 		/// The optional <see cref="UserCredentials"/> to use if none have been supplied to the operation.
 		/// </summary>
 		public UserCredentials? DefaultCredentials { get; set; }
+
+		/// <summary>
+		/// The default deadline for calls. Will not be applied to reads or subscriptions.
+		/// </summary>
+		public TimeSpan? DefaultDeadline { get; set; } = TimeSpan.FromSeconds(10);
 	}
 }

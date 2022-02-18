@@ -13,7 +13,7 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task returns_all_users() {
-			var users = await _fixture.Client.ListAllAsync(TestCredentials.Root)
+			var users = await _fixture.Client.ListAllAsync(userCredentials: TestCredentials.Root)
 				.ToArrayAsync();
 
 			var expected = new[] {
@@ -55,7 +55,7 @@ namespace EventStore.Client {
 			protected override async Task Given() {
 				foreach (var user in Users) {
 					await Client.CreateUserAsync(user.LoginName, user.FullName,
-						user.Groups, Guid.NewGuid().ToString(), TestCredentials.Root);
+						user.Groups, Guid.NewGuid().ToString(), userCredentials: TestCredentials.Root);
 				}
 			}
 

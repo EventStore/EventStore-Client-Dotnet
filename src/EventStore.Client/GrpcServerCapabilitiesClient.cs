@@ -18,10 +18,10 @@ namespace EventStore.Client {
 			var client = new ServerFeatures.ServerFeatures.ServerFeaturesClient(callInvoker);
 			using var call = client.GetSupportedMethodsAsync(
 				new(),
-				EventStoreCallOptions.Create(
+				EventStoreCallOptions.CreateNonStreaming(
 					_settings,
-					_settings.OperationOptions,
-					userCredentials: null,
+					_settings.ConnectivitySettings.GossipTimeout,
+					null,
 					cancellationToken));
 
 			try {

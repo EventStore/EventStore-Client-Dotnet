@@ -32,12 +32,12 @@ namespace EventStore.Client.Security {
 
 		[Fact]
 		public async Task reading_stream_meta_with_authorized_user_credentials_succeeds() {
-			await _fixture.ReadMeta(SecurityFixture.MetaReadStream, TestCredentials.TestUser1);
+			await _fixture.ReadMeta(SecurityFixture.MetaReadStream, userCredentials: TestCredentials.TestUser1);
 		}
 
 		[Fact]
 		public async Task reading_stream_meta_with_admin_user_credentials_succeeds() {
-			await _fixture.ReadMeta(SecurityFixture.MetaReadStream, TestCredentials.TestAdmin);
+			await _fixture.ReadMeta(SecurityFixture.MetaReadStream, userCredentials: TestCredentials.TestAdmin);
 		}
 
 
@@ -54,13 +54,13 @@ namespace EventStore.Client.Security {
 
 		[Fact]
 		public async Task reading_no_acl_stream_meta_succeeds_when_any_existing_user_credentials_are_passed() {
-			await _fixture.ReadMeta(SecurityFixture.NoAclStream, TestCredentials.TestUser1);
+			await _fixture.ReadMeta(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestUser1);
 			await _fixture.ReadMeta(SecurityFixture.NoAclStream, TestCredentials.TestUser2);
 		}
 
 		[Fact]
 		public async Task reading_no_acl_stream_meta_succeeds_when_admin_user_credentials_are_passed() {
-			await _fixture.ReadMeta(SecurityFixture.NoAclStream, TestCredentials.TestAdmin);
+			await _fixture.ReadMeta(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestAdmin);
 		}
 
 
@@ -79,13 +79,13 @@ namespace EventStore.Client.Security {
 		[Fact]
 		public async Task
 			reading_all_access_normal_stream_meta_succeeds_when_any_existing_user_credentials_are_passed() {
-			await _fixture.ReadMeta(SecurityFixture.NormalAllStream, TestCredentials.TestUser1);
+			await _fixture.ReadMeta(SecurityFixture.NormalAllStream, userCredentials: TestCredentials.TestUser1);
 			await _fixture.ReadMeta(SecurityFixture.NormalAllStream, TestCredentials.TestUser2);
 		}
 
 		[Fact]
 		public async Task reading_all_access_normal_stream_meta_succeeds_when_admin_user_credentials_are_passed() {
-			await _fixture.ReadMeta(SecurityFixture.NormalAllStream, TestCredentials.TestAdmin);
+			await _fixture.ReadMeta(SecurityFixture.NormalAllStream, userCredentials: TestCredentials.TestAdmin);
 		}
 	}
 }

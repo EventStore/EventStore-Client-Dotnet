@@ -12,7 +12,7 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task returns_expected_result() {
-			var result = await _fixture.Client.ListAllAsync(TestCredentials.Root)
+			var result = await _fixture.Client.ListAllAsync(userCredentials: TestCredentials.Root)
 				.ToArrayAsync();
 
 			Assert.Equal(result.Select(x => x.Name).OrderBy(x => x), StandardProjections.Names.OrderBy(x => x));

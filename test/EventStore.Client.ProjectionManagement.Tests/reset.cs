@@ -13,8 +13,8 @@ namespace EventStore.Client {
 		[Fact]
 		public async Task status_is_running() {
 			var name = StandardProjections.Names.First();
-			await _fixture.Client.ResetAsync(name, TestCredentials.Root);
-			var result = await _fixture.Client.GetStatusAsync(name, TestCredentials.Root);
+			await _fixture.Client.ResetAsync(name, userCredentials: TestCredentials.Root);
+			var result = await _fixture.Client.GetStatusAsync(name, userCredentials: TestCredentials.Root);
 			Assert.Equal("Running", result.Status);
 		}
 

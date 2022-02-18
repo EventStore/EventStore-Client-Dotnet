@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Projections;
@@ -11,11 +12,13 @@ namespace EventStore.Client {
 		/// <param name="name"></param>
 		/// <param name="query"></param>
 		/// <param name="emitEnabled"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public async Task UpdateAsync(string name, string query, bool? emitEnabled = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
 			var options = new UpdateReq.Types.Options {
 				Name = name,
 				Query = query
@@ -30,7 +33,7 @@ namespace EventStore.Client {
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).UpdateAsync(new UpdateReq {
 				Options = options
-			}, EventStoreCallOptions.Create(Settings, Settings.OperationOptions, userCredentials, cancellationToken));
+			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
 			await call.ResponseAsync.ConfigureAwait(false);
 		}

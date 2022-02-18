@@ -15,24 +15,24 @@ namespace EventStore.Client.Security {
 				var settings = new SystemSettings(
 					systemStreamAcl: new StreamAcl(SystemRoles.All, SystemRoles.All, SystemRoles.All, SystemRoles.All,
 						SystemRoles.All));
-				return Client.SetSystemSettingsAsync(settings, TestCredentials.TestAdmin);
+				return Client.SetSystemSettingsAsync(settings, userCredentials: TestCredentials.TestAdmin);
 			}
 		}
 
 		[Fact]
 		public async Task operations_on_system_stream_succeeds_for_user() {
 			var stream = $"${_fixture.GetStreamName()}";
-			await _fixture.AppendStream(stream, TestCredentials.TestUser1);
-			await _fixture.ReadEvent(stream, TestCredentials.TestUser1);
-			await _fixture.ReadStreamForward(stream, TestCredentials.TestUser1);
-			await _fixture.ReadStreamBackward(stream, TestCredentials.TestUser1);
+			await _fixture.AppendStream(stream, userCredentials: TestCredentials.TestUser1);
+			await _fixture.ReadEvent(stream, userCredentials: TestCredentials.TestUser1);
+			await _fixture.ReadStreamForward(stream, userCredentials: TestCredentials.TestUser1);
+			await _fixture.ReadStreamBackward(stream, userCredentials: TestCredentials.TestUser1);
 
-			await _fixture.ReadMeta(stream, TestCredentials.TestUser1);
-			await _fixture.WriteMeta(stream, TestCredentials.TestUser1, null);
+			await _fixture.ReadMeta(stream, userCredentials: TestCredentials.TestUser1);
+			await _fixture.WriteMeta(stream, userCredentials: TestCredentials.TestUser1, null);
 
-			await _fixture.SubscribeToStream(stream, TestCredentials.TestUser1);
+			await _fixture.SubscribeToStream(stream, userCredentials: TestCredentials.TestUser1);
 
-			await _fixture.DeleteStream(stream, TestCredentials.TestUser1);
+			await _fixture.DeleteStream(stream, userCredentials: TestCredentials.TestUser1);
 		}
 
 		[Fact]
@@ -54,18 +54,18 @@ namespace EventStore.Client.Security {
 		[Fact]
 		public async Task operations_on_system_stream_succeed_for_admin() {
 			var stream = $"${_fixture.GetStreamName()}";
-			await _fixture.AppendStream(stream, TestCredentials.TestAdmin);
+			await _fixture.AppendStream(stream, userCredentials: TestCredentials.TestAdmin);
 
-			await _fixture.ReadEvent(stream, TestCredentials.TestAdmin);
-			await _fixture.ReadStreamForward(stream, TestCredentials.TestAdmin);
-			await _fixture.ReadStreamBackward(stream, TestCredentials.TestAdmin);
+			await _fixture.ReadEvent(stream, userCredentials: TestCredentials.TestAdmin);
+			await _fixture.ReadStreamForward(stream, userCredentials: TestCredentials.TestAdmin);
+			await _fixture.ReadStreamBackward(stream, userCredentials: TestCredentials.TestAdmin);
 
-			await _fixture.ReadMeta(stream, TestCredentials.TestAdmin);
-			await _fixture.WriteMeta(stream, TestCredentials.TestAdmin, null);
+			await _fixture.ReadMeta(stream, userCredentials: TestCredentials.TestAdmin);
+			await _fixture.WriteMeta(stream, userCredentials: TestCredentials.TestAdmin, null);
 
-			await _fixture.SubscribeToStream(stream, TestCredentials.TestAdmin);
+			await _fixture.SubscribeToStream(stream, userCredentials: TestCredentials.TestAdmin);
 
-			await _fixture.DeleteStream(stream, TestCredentials.TestAdmin);
+			await _fixture.DeleteStream(stream, userCredentials: TestCredentials.TestAdmin);
 		}
 	}
 }

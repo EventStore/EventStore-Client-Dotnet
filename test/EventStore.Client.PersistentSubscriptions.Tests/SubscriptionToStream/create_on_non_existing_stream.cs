@@ -20,7 +20,7 @@ namespace EventStore.Client.SubscriptionToStream {
 		public async Task the_completion_succeeds() {
 			await _fixture.Client.CreateAsync(Stream, "nonexistinggroup",
 				new PersistentSubscriptionSettings(),
-				TestCredentials.Root);
+				userCredentials: TestCredentials.Root);
 		}
 	}
 }

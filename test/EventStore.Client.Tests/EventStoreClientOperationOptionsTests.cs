@@ -1,19 +1,16 @@
-﻿using System;
-using Xunit;
+﻿using Xunit;
 
 namespace EventStore.Client {
 	public class EventStoreClientOperationOptionsTests {
 		[Fact]
 		public void setting_options_on_clone_should_not_modify_original() {
-			EventStoreClientOperationOptions options = new EventStoreClientOperationOptions {
-				TimeoutAfter = TimeSpan.FromDays(5),
-			};
+			EventStoreClientOperationOptions options = EventStoreClientOperationOptions.Default;
 			
 			var clonedOptions = options.Clone();
-			clonedOptions.TimeoutAfter = TimeSpan.FromSeconds(1);
+			clonedOptions.BatchAppendSize = int.MaxValue;
 			
-			Assert.Equal(options.TimeoutAfter, TimeSpan.FromDays(5));
-			Assert.Equal(clonedOptions.TimeoutAfter, TimeSpan.FromSeconds(1));
+			Assert.Equal(options.BatchAppendSize, EventStoreClientOperationOptions.Default.BatchAppendSize);
+			Assert.Equal(clonedOptions.BatchAppendSize, int.MaxValue);
 		}
 	}
 }

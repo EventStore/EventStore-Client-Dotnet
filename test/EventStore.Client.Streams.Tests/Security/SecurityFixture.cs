@@ -38,7 +38,7 @@ namespace EventStore.Client.Security {
 
 			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestAdmin.Username!,
 				nameof(TestCredentials.TestAdmin), new[] {SystemRoles.Admins}, TestCredentials.TestAdmin.Password!,
-				TestCredentials.Root).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
+				userCredentials: TestCredentials.Root).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 		}
 
 		protected override async Task Given() {
@@ -190,8 +190,8 @@ namespace EventStore.Client.Security {
 				       }, false, (_, _, ex) => {
 					       if (ex == null) source.TrySetResult(true);
 					       else source.TrySetException(ex);
-				       }, null, null,
-				       userCredentials, default).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs))) {
+				       },
+				       userCredentials: userCredentials).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs))) {
 				await source.Task.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 			}
 		}

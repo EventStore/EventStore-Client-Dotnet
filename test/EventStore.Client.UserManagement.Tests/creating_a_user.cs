@@ -28,7 +28,7 @@ namespace EventStore.Client {
 			string paramName) {
 			var ex = await Assert.ThrowsAsync<ArgumentNullException>(
 				() => _fixture.Client.CreateUserAsync(loginName, fullName, groups, password,
-					TestCredentials.Root));
+					userCredentials: TestCredentials.Root));
 			Assert.Equal(paramName, ex.ParamName);
 		}
 
@@ -48,7 +48,7 @@ namespace EventStore.Client {
 			string paramName) {
 			var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
 				() => _fixture.Client.CreateUserAsync(loginName, fullName, groups, password,
-					TestCredentials.Root));
+					userCredentials: TestCredentials.Root));
 			Assert.Equal(paramName, ex.ParamName);
 		}
 
@@ -58,20 +58,20 @@ namespace EventStore.Client {
 			if (userCredentials == null)
 				await Assert.ThrowsAsync<AccessDeniedException>(
 					() => _fixture.Client.CreateUserAsync(loginName, "Full Name", new[] { "foo", "bar" },
-						"password", userCredentials));
+						"password"));
 			else
 				await Assert.ThrowsAsync<NotAuthenticatedException>(
 					() => _fixture.Client.CreateUserAsync(loginName, "Full Name", new[] { "foo", "bar" },
-						"password", userCredentials));
+						"password", userCredentials: userCredentials));
 		}
 
 		[Fact]
 		public async Task can_be_read() {
 			var loginName = Guid.NewGuid().ToString();
 			await _fixture.Client.CreateUserAsync(loginName, "Full Name", new[] { "foo", "bar" }, "password",
-				TestCredentials.Root);
+				userCredentials: TestCredentials.Root);
 
-			var details = await _fixture.Client.GetUserAsync(loginName, TestCredentials.Root);
+			var details = await _fixture.Client.GetUserAsync(loginName, userCredentials: TestCredentials.Root);
 
 			Assert.Equal(new UserDetails(loginName, "Full Name", new[] { "foo", "bar" }, false, details.DateLastUpdated),
 				details);

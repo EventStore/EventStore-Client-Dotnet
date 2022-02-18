@@ -33,14 +33,14 @@ namespace EventStore.Client.Security {
 
 		[Fact]
 		public async Task reading_stream_with_authorized_user_credentials_succeeds() {
-			await _fixture.AppendStream(SecurityFixture.ReadStream, TestCredentials.TestUser1);
-			await _fixture.SubscribeToStream(SecurityFixture.ReadStream, TestCredentials.TestUser1);
+			await _fixture.AppendStream(SecurityFixture.ReadStream, userCredentials: TestCredentials.TestUser1);
+			await _fixture.SubscribeToStream(SecurityFixture.ReadStream, userCredentials: TestCredentials.TestUser1);
 		}
 
 		[Fact]
 		public async Task reading_stream_with_admin_user_credentials_succeeds() {
-			await _fixture.AppendStream(SecurityFixture.ReadStream, TestCredentials.TestAdmin);
-			await _fixture.SubscribeToStream(SecurityFixture.ReadStream, TestCredentials.TestAdmin);
+			await _fixture.AppendStream(SecurityFixture.ReadStream, userCredentials: TestCredentials.TestAdmin);
+			await _fixture.SubscribeToStream(SecurityFixture.ReadStream, userCredentials: TestCredentials.TestAdmin);
 		}
 
 		[Fact]
@@ -57,15 +57,15 @@ namespace EventStore.Client.Security {
 
 		[Fact]
 		public async Task subscribing_to_no_acl_stream_succeeds_when_any_existing_user_credentials_are_passed() {
-			await _fixture.AppendStream(SecurityFixture.NoAclStream, TestCredentials.TestUser1);
-			await _fixture.SubscribeToStream(SecurityFixture.NoAclStream, TestCredentials.TestUser1);
+			await _fixture.AppendStream(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestUser1);
+			await _fixture.SubscribeToStream(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestUser1);
 			await _fixture.SubscribeToStream(SecurityFixture.NoAclStream, TestCredentials.TestUser2);
 		}
 
 		[Fact]
 		public async Task subscribing_to_no_acl_stream_succeeds_when_admin_user_credentials_are_passed() {
-			await _fixture.AppendStream(SecurityFixture.NoAclStream, TestCredentials.TestAdmin);
-			await _fixture.SubscribeToStream(SecurityFixture.NoAclStream, TestCredentials.TestAdmin);
+			await _fixture.AppendStream(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestAdmin);
+			await _fixture.SubscribeToStream(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestAdmin);
 		}
 
 
@@ -85,15 +85,15 @@ namespace EventStore.Client.Security {
 		[Fact]
 		public async Task
 			subscribing_to_all_access_normal_stream_succeeds_when_any_existing_user_credentials_are_passed() {
-			await _fixture.AppendStream(SecurityFixture.NormalAllStream, TestCredentials.TestUser1);
-			await _fixture.SubscribeToStream(SecurityFixture.NormalAllStream, TestCredentials.TestUser1);
+			await _fixture.AppendStream(SecurityFixture.NormalAllStream, userCredentials: TestCredentials.TestUser1);
+			await _fixture.SubscribeToStream(SecurityFixture.NormalAllStream, userCredentials: TestCredentials.TestUser1);
 			await _fixture.SubscribeToStream(SecurityFixture.NormalAllStream, TestCredentials.TestUser2);
 		}
 
 		[Fact]
 		public async Task subscribing_to_all_access_normal_streamm_succeeds_when_admin_user_credentials_are_passed() {
-			await _fixture.AppendStream(SecurityFixture.NormalAllStream, TestCredentials.TestAdmin);
-			await _fixture.SubscribeToStream(SecurityFixture.NormalAllStream, TestCredentials.TestAdmin);
+			await _fixture.AppendStream(SecurityFixture.NormalAllStream, userCredentials: TestCredentials.TestAdmin);
+			await _fixture.SubscribeToStream(SecurityFixture.NormalAllStream, userCredentials: TestCredentials.TestAdmin);
 		}
 	}
 }

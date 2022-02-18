@@ -18,12 +18,12 @@ namespace EventStore.Client.SubscriptionToStream {
 
 			protected override Task When() =>
 				Client.CreateAsync(Stream, "group3211",
-					new PersistentSubscriptionSettings(), TestCredentials.Root);
+					new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 		}
 
 		[Fact]
 		public Task the_completion_succeeds() =>
 			_fixture.Client.CreateAsync("someother" + Stream,
-				"group3211", new PersistentSubscriptionSettings(), TestCredentials.Root);
+				"group3211", new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 	}
 }

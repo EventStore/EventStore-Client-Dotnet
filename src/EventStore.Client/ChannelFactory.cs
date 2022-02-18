@@ -1,5 +1,4 @@
 using System;
-using Grpc.Core;
 using EndPoint = System.Net.EndPoint;
 #if !GRPC_CORE
 using System.Net.Http;
@@ -7,6 +6,7 @@ using Grpc.Net.Client;
 using TChannel = Grpc.Net.Client.GrpcChannel;
 #else
 using System.Collections.Generic;
+using Grpc.Core;
 using TChannel = Grpc.Core.ChannelBase;
 #endif
 

@@ -21,6 +21,7 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="client"></param>
 		/// <param name="settings"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
@@ -28,13 +29,14 @@ namespace EventStore.Client {
 		public static Task SetSystemSettingsAsync(
 			this EventStoreClient client,
 			SystemSettings settings,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) {
 			if (client == null) throw new ArgumentNullException(nameof(client));
 			return client.AppendToStreamAsync(SystemStreams.SettingsStream, StreamState.Any,
 				new[] {
 					new EventData(Uuid.NewUuid(), SystemEventTypes.Settings,
 						JsonSerializer.SerializeToUtf8Bytes(settings, SystemSettingsJsonSerializerOptions))
-				}, userCredentials: userCredentials, cancellationToken: cancellationToken);
+				}, deadline: deadline, userCredentials: userCredentials, cancellationToken: cancellationToken);
 		}
 
 		/// <summary>
@@ -44,6 +46,7 @@ namespace EventStore.Client {
 		/// <param name="streamName"></param>
 		/// <param name="expectedRevision"></param>
 		/// <param name="eventData"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
@@ -53,6 +56,7 @@ namespace EventStore.Client {
 			string streamName,
 			StreamRevision expectedRevision,
 			IEnumerable<EventData> eventData,
+			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			if (client == null) {
@@ -60,7 +64,7 @@ namespace EventStore.Client {
 			}
 			try {
 				var result = await client.AppendToStreamAsync(streamName, expectedRevision, eventData,
-						options => options.ThrowOnAppendFailure = false, userCredentials, cancellationToken)
+						options => options.ThrowOnAppendFailure = false, deadline, userCredentials, cancellationToken)
 					.ConfigureAwait(false);
 				return ConditionalWriteResult.FromWriteResult(result);
 			} catch (StreamDeletedException) {
@@ -75,6 +79,7 @@ namespace EventStore.Client {
 		/// <param name="streamName"></param>
 		/// <param name="expectedState"></param>
 		/// <param name="eventData"></param>
+		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
@@ -84,6 +89,7 @@ namespace EventStore.Client {
 			string streamName,
 			StreamState expectedState,
 			IEnumerable<EventData> eventData,
+			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			if (client == null) {
@@ -91,7 +97,7 @@ namespace EventStore.Client {
 			}
 			try {
 				var result = await client.AppendToStreamAsync(streamName, expectedState, eventData,
-						options => options.ThrowOnAppendFailure = false, userCredentials, cancellationToken)
+						options => options.ThrowOnAppendFailure = false, deadline, userCredentials, cancellationToken)
 					.ConfigureAwait(false);
 				return ConditionalWriteResult.FromWriteResult(result);
 			} catch (StreamDeletedException) {
