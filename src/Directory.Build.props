@@ -15,7 +15,7 @@
 			Link="protos/$(ESProto)"/>
 	</ItemGroup>
 	<PropertyGroup>
-		<PackageIconUrl>ouro.png</PackageIconUrl>
+		<PackageIcon>ouro.png</PackageIcon>
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 		<PackageProjectUrl>https://eventstore.com</PackageProjectUrl>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
