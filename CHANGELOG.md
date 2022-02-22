@@ -2,17 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [22.0.0]
 
 ### Fixed
 - Get Certifications Path More Reliably [EventStore-Client-DotNet#178](https://github.com/EventStore/EventStore-Client-Dotnet/pull/178)
 - Make Client More Backwards Compatibility Friendly [EventStore-Client-DotNet#125](https://github.com/EventStore/EventStore-Client-Dotnet/pull/125)
 - Send correct writeCheckpoint option when disabling/aborting a projection [EventStore-Client-DotNet#116](https://github.com/EventStore/EventStore-Client-Dotnet/pull/116)
+- Force Rediscovery Only when Lost Connection [EventStore-Client-DotNet#195](https://github.com/EventStore/EventStore-Client-Dotnet/pull/195)
+- Align Persistent Subscription Names [EventStore-Client-DotNet#198](https://github.com/EventStore/EventStore-Client-Dotnet/pull/198)
 
 ### Removed
 - Remove autoAck from Persistent Subscriptions [EventStore-Client-DotNet#175](https://github.com/EventStore/EventStore-Client-Dotnet/pull/175)
 
 ### Added
+- Introduce New Types For Subscription Positions [EventStore-Client-DotNet#188](https://github.com/EventStore/EventStore-Client-Dotnet/pull/188)
 - Detect Server Capabilities [EventStore-Client-DotNet#172](https://github.com/EventStore/EventStore-Client-Dotnet/pull/172)
 - Implement Last/Next StreamPosition/Position [EventStore-Client-DotNet#151](https://github.com/EventStore/EventStore-Client-Dotnet/pull/151)
 - Add filtered persistent subscriptions [EventStore-Client-DotNet#122](https://github.com/EventStore/EventStore-Client-Dotnet/pull/122)
@@ -22,6 +25,8 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Adjustments to Disposal [EventStore-Client-DotNet#189](https://github.com/EventStore/EventStore-Client-Dotnet/pull/189)
 - send 'requires-leader' header based on NodePreference [EventStore-Client-DotNet#131](https://github.com/EventStore/EventStore-Client-Dotnet/pull/131)
+- Rename SoftDeleteAsync to DeleteAsync [EventStore-Client-DotNet#197](https://github.com/EventStore/EventStore-Client-Dotnet/pull/197)
+- Standardize gRPC Client Deadlines [EventStore-Client-DotNet#194](https://github.com/EventStore/EventStore-Client-Dotnet/pull/194)
 
 ## [21.2.0] - 2021-02-22
 
