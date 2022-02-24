@@ -33,6 +33,7 @@ jobs:
     - name: Scan for Vulnerabilities
       shell: bash
       run: |
+        dotnet nuget list source
         dotnet restore
         dotnet list package --vulnerable --include-transitive --framework ${{ matrix.framework }} | tee vulnerabilities.txt
         ! cat vulnerabilities.txt | grep -q "has the following vulnerable packages"
@@ -143,7 +144,7 @@ jobs:
       id: get_version
       run: | 
         echo "::set-output name=branch::${GITHUB_REF:10}"
-        
+        dotnet nuget list source  
         dotnet tool restore
         version=$(dotnet tool run minver -- --tag-prefix=v)
         echo "::set-output name=version::${version}"
@@ -180,5 +181,6 @@ jobs:
       shell: bash
       if: contains(steps.get_version.outputs.branch, 'v')
       run: |
+        dotnet nuget list source
         dotnet tool restore
         find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.nuget_key }} --source https://api.nuget.org/v3/index.json
