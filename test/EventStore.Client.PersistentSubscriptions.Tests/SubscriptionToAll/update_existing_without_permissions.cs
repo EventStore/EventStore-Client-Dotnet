@@ -12,7 +12,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task the_completion_fails_with_access_denied() {
 			await Assert.ThrowsAsync<AccessDeniedException>(
 				() => _fixture.Client.UpdateToAllAsync(Group,

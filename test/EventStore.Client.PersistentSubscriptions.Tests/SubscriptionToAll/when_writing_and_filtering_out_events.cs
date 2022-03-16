@@ -14,7 +14,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task it_should_write_a_check_point() {
 			await _fixture.SecondCheckPoint.WithTimeout();
 			var secondCheckPoint = _fixture.SecondCheckPoint.Result.Event.Data.ParsePosition();

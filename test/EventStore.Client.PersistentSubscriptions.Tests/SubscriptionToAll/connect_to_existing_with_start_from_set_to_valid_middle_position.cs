@@ -16,7 +16,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task the_subscription_gets_the_event_at_the_specified_start_position_as_its_first_event() {
 			var resolvedEvent = await _fixture.FirstEvent.WithTimeout();
 			Assert.Equal(_fixture.ExpectedEvent.OriginalPosition, resolvedEvent.Event.Position);

@@ -17,7 +17,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			protected override Task When() => Task.CompletedTask;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public Task the_subscription_is_created_without_error() =>
 			_fixture.Client.CreateToAllAsync("dont-timeout",
 				new PersistentSubscriptionSettings(messageTimeout: TimeSpan.Zero),

@@ -19,7 +19,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task the_subscription_gets_the_written_event_as_its_first_non_system_event() {
 			var resolvedEvent = await _fixture.FirstNonSystemEvent.WithTimeout();
 			Assert.Equal(_fixture.ExpectedEvent.EventId, resolvedEvent.Event.EventId);

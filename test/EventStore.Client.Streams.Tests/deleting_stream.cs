@@ -24,7 +24,7 @@ namespace EventStore.Client {
 			await _fixture.Client.TombstoneAsync(stream, expectedVersion);
 		}
 
-		[Fact]
+		[Regression.Fact(21, "fixed by")]
 		public async Task soft_deleting_a_stream_that_exists() {
 			var stream = _fixture.GetStreamName();
 

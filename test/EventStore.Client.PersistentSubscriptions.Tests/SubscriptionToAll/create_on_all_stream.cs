@@ -16,12 +16,12 @@ namespace EventStore.Client.SubscriptionToAll {
 			protected override Task When() => Task.CompletedTask;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public Task the_completion_succeeds()
 			=> _fixture.Client.CreateToAllAsync(
 				"existing", new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public Task throws_argument_exception_if_wrong_start_from_type_passed()
 			=> Assert.ThrowsAsync<ArgumentException>(() => _fixture.Client.CreateToAllAsync(
 				"existing", new PersistentSubscriptionSettings(startFrom: StreamPosition.End), userCredentials: TestCredentials.Root));

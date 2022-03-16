@@ -12,7 +12,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task the_completion_fails_with_not_found() {
 			await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
 				() => _fixture.Client.UpdateToAllAsync(Group,

@@ -16,7 +16,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task the_subscription_is_dropped() {
 			var (reason, exception) = await _fixture.Dropped.WithTimeout();
 			Assert.Equal(SubscriptionDroppedReason.ServerError, reason);

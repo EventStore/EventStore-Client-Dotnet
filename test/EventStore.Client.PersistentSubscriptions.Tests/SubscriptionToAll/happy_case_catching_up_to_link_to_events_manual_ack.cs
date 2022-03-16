@@ -19,7 +19,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task Test() {
 			await _fixture.EventsReceived.WithTimeout();
 		}

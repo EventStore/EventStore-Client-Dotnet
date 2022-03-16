@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     services: 
       esdb:
-        image: ghcr.io/eventstore/eventstore:21.10.1-focal # TODO replace with LTS
+        image: ghcr.io/eventstore/eventstore:lts # TODO replace with LTS
         env: 
           EVENTSTORE_INSECURE: true
           EVENTSTORE_MEMDB: true
@@ -88,9 +88,9 @@ jobs:
         os: [ubuntu-18.04]
         test: ["", .Streams, .PersistentSubscriptions, .Operations, .UserManagement, .ProjectionManagement]
         configuration: [release]
-        docker-tag: ['ci']
+        docker-tag: ['ci', 'lts', 'previous-lts']
     runs-on: ${{ matrix.os }}
-    name: build-${{ matrix.os }}/${{ matrix.framework }}/EventStore.Client${{ matrix.test }}
+    name: build-${{ matrix.os }}/${{ matrix.framework }}/${{ matrix.docker-tag }}/EventStore.Client${{ matrix.test }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2

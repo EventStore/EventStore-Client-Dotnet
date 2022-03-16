@@ -7,8 +7,10 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Ductus.FluentDocker.Builders;
+using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
 using Ductus.FluentDocker.Services;
+using Ductus.FluentDocker.Services.Extensions;
 using Polly;
 
 #nullable enable
@@ -18,6 +20,30 @@ namespace EventStore.Client {
 		private readonly IContainerService _eventStore;
 		private readonly HttpClient _httpClient;
 		private static readonly string ContainerName = "es-client-dotnet-test";
+		private static readonly string DockerImage = $"ghcr.io/eventstore/eventstore:{GlobalEnvironment.ImageTag}";
+
+		private static Version? _version;
+		public static Version Version => _version ??= GetVersion();
+
+		private static Version GetVersion() {
+			const string versionPrefix = "EventStoreDB version";
+
+			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+			using var eventstore = new Builder().UseContainer()
+				.UseImage(DockerImage)
+				.Command("--version")
+				.Build()
+				.Start();
+			using var log = eventstore.Logs(true, cts.Token);
+			foreach (var line in log.ReadToEnd()) {
+				if (line.StartsWith(versionPrefix) &&
+				    Version.TryParse(line[(versionPrefix.Length + 1)..].Split(' ')[0], out var version)) {
+					return version;
+				}
+			}
+
+			throw new InvalidOperationException("Could not determine server version.");
+		}
 
 		public EventStoreTestServer(
 			string hostCertificatePath,
@@ -49,7 +75,7 @@ namespace EventStore.Client {
 
 			_eventStore = new Builder()
 				.UseContainer()
-				.UseImage($"ghcr.io/eventstore/eventstore:{GlobalEnvironment.ImageTag}")
+				.UseImage(DockerImage)
 				.WithEnvironment(env.Select(pair => $"{pair.Key}={pair.Value}").ToArray())
 				.WithName(ContainerName)
 				.MountVolume(_hostCertificatePath, "/etc/eventstore/certs", MountType.ReadOnly)

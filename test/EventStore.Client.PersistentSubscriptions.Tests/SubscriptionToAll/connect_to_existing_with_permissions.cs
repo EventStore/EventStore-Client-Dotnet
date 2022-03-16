@@ -14,7 +14,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task the_subscription_succeeds() {
 			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(Group,

@@ -14,7 +14,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task resumes_from_check_point() {
 			var resumedEvent = await _fixture.Resumed.WithTimeout(TimeSpan.FromSeconds(10));
 			Assert.True(resumedEvent.Event.Position > _fixture.CheckPoint);

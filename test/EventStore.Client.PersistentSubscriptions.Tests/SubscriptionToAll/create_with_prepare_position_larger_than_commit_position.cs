@@ -17,7 +17,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			protected override Task When() => Task.CompletedTask;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public Task fails_with_argument_out_of_range_exception() =>
 			Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
 				_fixture.Client.CreateToAllAsync("group57",

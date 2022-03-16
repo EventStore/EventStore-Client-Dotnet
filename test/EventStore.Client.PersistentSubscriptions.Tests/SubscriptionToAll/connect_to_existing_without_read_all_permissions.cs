@@ -8,7 +8,7 @@ namespace EventStore.Client.SubscriptionToAll {
 		private readonly Fixture _fixture;
 		public connect_to_existing_without_read_all_permissions(Fixture fixture) { _fixture = fixture; }
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public Task throws_access_denied() =>
 			Assert.ThrowsAsync<AccessDeniedException>(async () => {
 				using var _ = await _fixture.Client.SubscribeToAllAsync("agroupname55",

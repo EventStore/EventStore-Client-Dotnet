@@ -21,7 +21,7 @@ namespace EventStore.Client.SubscriptionToAll {
 					new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task the_completion_fails() {
 			var ex = await Assert.ThrowsAsync<RpcException>(
 				() => _fixture.Client.CreateToAllAsync("group32",

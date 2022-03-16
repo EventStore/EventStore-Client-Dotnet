@@ -12,7 +12,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task events_are_retried_until_success() {
 			Assert.Equal(5, await _fixture.RetryCount.WithTimeout());
 		}

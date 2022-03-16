@@ -3,6 +3,9 @@
 	<PropertyGroup>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+		<DefineConstants>$(DefineConstants);GRPC_CORE</DefineConstants>
+	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="AutoFixture.Idioms" Version="4.17.0" />
 		<PackageReference Include="AutoFixture.Xunit2" Version="4.17.0" />

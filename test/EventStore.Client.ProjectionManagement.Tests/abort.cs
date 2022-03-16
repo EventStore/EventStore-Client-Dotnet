@@ -15,7 +15,7 @@ namespace EventStore.Client {
 			var name = StandardProjections.Names.First();
 			await _fixture.Client.AbortAsync(name, userCredentials: TestCredentials.Root);
 			var result = await _fixture.Client.GetStatusAsync(name, userCredentials: TestCredentials.Root);
-			Assert.Equal("Aborted/Stopped", result.Status);
+			Assert.Contains(new[] {"Aborted/Stopped", "Stopped"}, x => x == result.Status);
 		}
 
 		public class Fixture : EventStoreClientFixture {

@@ -12,7 +12,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task the_second_subscription_fails_to_connect() {
 			using var first = await _fixture.Client.SubscribeToAllAsync(Group,
 				delegate { return Task.CompletedTask; },

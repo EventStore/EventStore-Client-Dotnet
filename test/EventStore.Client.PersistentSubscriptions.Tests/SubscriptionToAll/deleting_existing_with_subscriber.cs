@@ -7,7 +7,6 @@ namespace EventStore.Client.SubscriptionToAll {
 		: IClassFixture<deleting_existing_with_subscriber.Fixture> {
 		private readonly Fixture _fixture;
 
-
 		public deleting_existing_with_subscriber(Fixture fixture) {
 			_fixture = fixture;
 		}
@@ -42,7 +41,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			}
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task the_subscription_is_dropped() {
 			var (reason, exception) = await _fixture.Dropped.WithTimeout();
 			Assert.Equal(SubscriptionDroppedReason.ServerError, reason);

@@ -13,7 +13,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task existing_subscriptions_are_dropped() {
 			var (reason, exception) = await _fixture.Dropped.WithTimeout(TimeSpan.FromSeconds(10));
 			Assert.Equal(SubscriptionDroppedReason.ServerError, reason);
