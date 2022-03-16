@@ -13,6 +13,9 @@
 		<OutputPath>$(MSBuildThisFileDirectory)\bin\$(Configuration)\$(MSBuildProjectName)\</OutputPath>
 		<RootNamespace>EventStore.Client</RootNamespace>
 		<UseLinkBase>true</UseLinkBase>
+		<GrpcPackageVersion>2.43.0</GrpcPackageVersion>
+		<GrpcCorePackageVersion>2.44.0</GrpcCorePackageVersion>
+		<GrpcToolsPackageVersion>2.44.0</GrpcToolsPackageVersion>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
 		<DefineConstants>$(DefineConstants);GRPC_CORE</DefineConstants>

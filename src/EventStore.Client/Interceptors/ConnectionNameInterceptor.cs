@@ -41,6 +41,6 @@ namespace EventStore.Client.Interceptors {
 
 		private void AddConnectionName<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context)
 			where TRequest : class where TResponse : class =>
-			context.Options.Headers.Add(Constants.Headers.ConnectionName, _connectionName);
+			context.Options.Headers?.Add(Constants.Headers.ConnectionName, _connectionName);
 	}
 }
