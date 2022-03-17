@@ -312,7 +312,7 @@ namespace projection_management {
 			await managementClient.CreateContinuousAsync(name, js);
 			var status = await managementClient.GetStatusAsync(name);
 			Console.WriteLine(
-				$@"{status.Name}, {status.Status}, {status.CheckpointStatus}, {status.Mode}, {status.Progress}");
+				$@"{status?.Name}, {status?.Status}, {status?.CheckpointStatus}, {status?.Mode}, {status?.Progress}");
 			#endregion GetStatus
 		}
 

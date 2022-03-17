@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Projections;
 
-#nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreProjectionManagementClient {
 		/// <summary>

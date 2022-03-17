@@ -1,6 +1,5 @@
 using Grpc.Core;
 
-#nullable enable
 namespace EventStore.Client {
 	internal static class MetadataExtensions {
 		public static bool TryGetValue(this Metadata metadata, string key, out string? value) {

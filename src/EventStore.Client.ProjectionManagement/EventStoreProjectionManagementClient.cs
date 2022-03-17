@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	///The client used to manage projections on the EventStoreDB.

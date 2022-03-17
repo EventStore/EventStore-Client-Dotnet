@@ -22,15 +22,15 @@ namespace EventStore.Client.SubscriptionToAll {
 		[SupportsPSToAll.Fact]
 		public async Task the_subscription_gets_the_written_event_as_its_first_non_system_event() {
 			var resolvedEvent = await _fixture.FirstNonSystemEvent.WithTimeout();
-			Assert.Equal(_fixture.ExpectedEvent.EventId, resolvedEvent.Event.EventId);
+			Assert.Equal(_fixture.ExpectedEvent!.EventId, resolvedEvent.Event.EventId);
 			Assert.Equal(_fixture.ExpectedStreamId, resolvedEvent.Event.EventStreamId);
 		}
 
 		public class Fixture : EventStoreClientFixture {
 			private readonly TaskCompletionSource<ResolvedEvent> _firstNonSystemEventSource;
 			public Task<ResolvedEvent> FirstNonSystemEvent => _firstNonSystemEventSource.Task;
-			private PersistentSubscription _subscription;
-			public readonly EventData ExpectedEvent;
+			private PersistentSubscription? _subscription;
+			public readonly EventData? ExpectedEvent;
 			public readonly string ExpectedStreamId;
 
 			public Fixture() {
@@ -62,7 +62,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			}
 
 			protected override async Task When() {
-				await StreamsClient.AppendToStreamAsync(ExpectedStreamId, StreamState.NoStream, new []{ ExpectedEvent });
+				await StreamsClient.AppendToStreamAsync(ExpectedStreamId, StreamState.NoStream, new []{ ExpectedEvent! });
 			}
 
 			public override Task DisposeAsync() {

@@ -4,7 +4,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-#nullable enable
 namespace EventStore.Client {
 	[Trait("Category", "LongRunning")]
 	public class read_all_events_forward_with_linkto_passed_max_count

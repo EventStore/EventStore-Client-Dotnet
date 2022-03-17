@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// Represents an access control list for a stream

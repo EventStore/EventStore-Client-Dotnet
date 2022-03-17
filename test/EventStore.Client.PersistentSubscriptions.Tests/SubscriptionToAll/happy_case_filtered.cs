@@ -12,7 +12,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 		
-		public static IEnumerable<object[]> FilterCases() => Filters.All.Select(filter => new object[] {filter});
+		public static IEnumerable<object?[]> FilterCases() => Filters.All.Select(filter => new object[] {filter});
 
 		[SupportsPSToAll.Theory, MemberData(nameof(FilterCases))]
 		public async Task reads_all_existing_filtered_events(string filterName) {

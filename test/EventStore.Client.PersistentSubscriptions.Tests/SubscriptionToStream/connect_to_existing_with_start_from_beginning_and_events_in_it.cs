@@ -29,7 +29,7 @@ namespace EventStore.Client.SubscriptionToStream {
 			private readonly TaskCompletionSource<ResolvedEvent> _firstEventSource;
 			public Task<ResolvedEvent> FirstEvent => _firstEventSource.Task;
 			public readonly EventData[] Events;
-			private PersistentSubscription _subscription;
+			private PersistentSubscription? _subscription;
 
 			public Fixture() {
 				_firstEventSource = new TaskCompletionSource<ResolvedEvent>();

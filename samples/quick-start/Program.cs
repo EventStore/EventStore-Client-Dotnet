@@ -12,8 +12,8 @@ using EventStore.Client;
 
 namespace quick_start {
 	public class TestEvent {
-		public string EntityId      { get; set; }
-		public string ImportantData { get; set; }
+		public string? EntityId      { get; set; }
+		public string? ImportantData { get; set; }
 	}
 	
 	class Program {

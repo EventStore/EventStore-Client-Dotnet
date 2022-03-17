@@ -3,15 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace EventStore.Client {
-	public class InvalidCredentialsCases : IEnumerable<object[]> {
-		public IEnumerator<object[]> GetEnumerator() {
+	public class InvalidCredentialsCases : IEnumerable<object?[]> {
+		public IEnumerator<object?[]> GetEnumerator() {
 			var loginName = Guid.NewGuid().ToString();
 
-			yield return new object[] {loginName, null};
+			yield return new object?[] {loginName, null};
 			loginName = Guid.NewGuid().ToString();
-			yield return new object[] {loginName, new UserCredentials(Guid.NewGuid().ToString(), "password")};
+			yield return new object?[] {loginName, new UserCredentials(Guid.NewGuid().ToString(), "password")};
 			loginName = Guid.NewGuid().ToString();
-			yield return new object[] {loginName, new UserCredentials(loginName, "wrong-password")};
+			yield return new object?[] {loginName, new UserCredentials(loginName, "wrong-password")};
 		}
 
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

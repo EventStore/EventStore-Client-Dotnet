@@ -1,6 +1,5 @@
 using System;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// An <see cref="IWriteResult"/> that indicates a successful append to a stream.

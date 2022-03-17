@@ -1,5 +1,4 @@
-﻿#nullable enable
-namespace EventStore.Client {
+﻿namespace EventStore.Client {
 	/// <summary>
 	/// An <see cref="IWriteResult"/> that indicates a failed append to a stream.
 	/// </summary>

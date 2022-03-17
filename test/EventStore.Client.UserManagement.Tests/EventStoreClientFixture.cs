@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 
-#nullable enable
 namespace EventStore.Client {
 	public abstract class EventStoreClientFixture : EventStoreClientFixtureBase {
 		public EventStoreUserManagementClient Client { get; }

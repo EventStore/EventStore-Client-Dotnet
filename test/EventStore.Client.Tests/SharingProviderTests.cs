@@ -28,7 +28,7 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task CanReturnBroken() {
-			Action<bool> onBroken = null;
+			Action<bool>? onBroken = null;
 			var count = 0;
 			var sut = new SharingProvider<bool, int>(
 				factory: async (_, f) => {
@@ -39,16 +39,16 @@ namespace EventStore.Client {
 
 			Assert.Equal(0, await sut.CurrentAsync);
 
-			onBroken(true);
+			onBroken?.Invoke(true);
 			Assert.Equal(1, await sut.CurrentAsync);
 
-			onBroken(true);
+			onBroken?.Invoke(true);
 			Assert.Equal(2, await sut.CurrentAsync);
 		}
 
 		[Fact]
 		public async Task CanReturnSameBoxTwice() {
-			Action<bool> onBroken = null;
+			Action<bool>? onBroken = null;
 			var count = 0;
 			var sut = new SharingProvider<bool, int>(
 				factory: async (_, f) => {
@@ -60,9 +60,9 @@ namespace EventStore.Client {
 			Assert.Equal(0, await sut.CurrentAsync);
 
 			var firstOnBroken = onBroken;
-			firstOnBroken(true);
-			firstOnBroken(true);
-			firstOnBroken(true);
+			firstOnBroken?.Invoke(true);
+			firstOnBroken?.Invoke(true);
+			firstOnBroken?.Invoke(true);
 
 			// factory is only executed once
 			Assert.Equal(1, await sut.CurrentAsync);
@@ -71,7 +71,7 @@ namespace EventStore.Client {
 		[Fact]
 		public async Task CanReturnPendingBox() {
 			var trigger = new SemaphoreSlim(0);
-			Action<bool> onBroken = null;
+			Action<bool>? onBroken = null;
 			var count = 0;
 			var sut = new SharingProvider<bool, int>(
 				factory: async (_, f) => {
@@ -88,7 +88,7 @@ namespace EventStore.Client {
 			Assert.False(currentTask.IsCompleted);
 
 			// return it even though it is pending
-			onBroken(true);
+			onBroken?.Invoke(true);
 
 			// box wasn't replaced
 			Assert.Equal(currentTask, sut.CurrentAsync);

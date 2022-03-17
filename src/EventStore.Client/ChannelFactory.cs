@@ -10,7 +10,6 @@ using Grpc.Core;
 using TChannel = Grpc.Core.ChannelBase;
 #endif
 
-#nullable enable
 namespace EventStore.Client {
 	internal static class ChannelFactory {
 		private const int MaxReceiveMessageLength = 17 * 1024 * 1024;

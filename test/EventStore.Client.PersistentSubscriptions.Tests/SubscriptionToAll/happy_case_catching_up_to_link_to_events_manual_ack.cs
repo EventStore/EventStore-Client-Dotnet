@@ -29,7 +29,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			private readonly TaskCompletionSource<bool> _eventsReceived;
 			public Task EventsReceived => _eventsReceived.Task;
 
-			private PersistentSubscription _subscription;
+			private PersistentSubscription? _subscription;
 			private int _eventReceivedCount;
 
 			public Fixture() {

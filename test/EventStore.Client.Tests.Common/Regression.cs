@@ -11,7 +11,7 @@ namespace EventStore.Client {
 				_skipMessage = skipMessage;
 			}
 
-			public override string Skip {
+			public override string? Skip {
 				get => (EventStoreTestServer.Version?.Major ?? int.MaxValue) < _major
 					? _skipMessage
 					: null;
@@ -28,7 +28,7 @@ namespace EventStore.Client {
 				_skipMessage = skipMessage;
 			}
 
-			public override string Skip {
+			public override string? Skip {
 				get => (EventStoreTestServer.Version?.Major ?? int.MaxValue) < _major
 					? _skipMessage
 					: null;

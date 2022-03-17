@@ -10,10 +10,10 @@ namespace EventStore.Client {
 		public StreamStateTests() : base(new ScenarioFixture()) {
 		}
 
-		public static IEnumerable<object[]> ArgumentOutOfRangeTestCases() {
-			yield return new object[] {0};
-			yield return new object[] {int.MaxValue};
-			yield return new object[] {-3};
+		public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
+			yield return new object?[] {0};
+			yield return new object?[] {int.MaxValue};
+			yield return new object?[] {-3};
 		}
 
 		[Theory, MemberData(nameof(ArgumentOutOfRangeTestCases))]
@@ -35,10 +35,10 @@ namespace EventStore.Client {
 			Assert.Equal(expected, new StreamState(expected));
 		}
 
-		public static IEnumerable<object[]> ToStringTestCases() {
-			yield return new object[] {StreamState.Any, nameof(StreamState.Any)};
-			yield return new object[] {StreamState.NoStream, nameof(StreamState.NoStream)};
-			yield return new object[] {StreamState.StreamExists, nameof(StreamState.StreamExists)};
+		public static IEnumerable<object?[]> ToStringTestCases() {
+			yield return new object?[] {StreamState.Any, nameof(StreamState.Any)};
+			yield return new object?[] {StreamState.NoStream, nameof(StreamState.NoStream)};
+			yield return new object?[] {StreamState.StreamExists, nameof(StreamState.StreamExists)};
 		}
 
 		[Theory, MemberData(nameof(ToStringTestCases))]

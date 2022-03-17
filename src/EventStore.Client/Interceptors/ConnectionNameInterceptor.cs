@@ -1,7 +1,6 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
-#nullable enable
 namespace EventStore.Client.Interceptors {
 	internal class ConnectionNameInterceptor : Interceptor {
 		private readonly string _connectionName;

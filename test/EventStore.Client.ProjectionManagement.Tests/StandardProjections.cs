@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace EventStore.Client {
 	internal static class StandardProjections {
@@ -17,7 +18,8 @@ namespace EventStore.Client {
 
 				while (!ready) {
 					var result = await client.GetStatusAsync(name, userCredentials: TestCredentials.Root);
-					if (result.Status.Contains("Running")) {
+					
+					if (result?.Status.Contains("Running") ?? false) {
 						ready = true;
 					} else {
 						await Task.Delay(100);

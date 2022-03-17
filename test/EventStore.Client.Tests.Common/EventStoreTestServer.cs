@@ -13,7 +13,6 @@ using Ductus.FluentDocker.Services;
 using Ductus.FluentDocker.Services.Extensions;
 using Polly;
 
-#nullable enable
 namespace EventStore.Client {
 	public class EventStoreTestServer : IEventStoreTestServer {
 		private readonly string _hostCertificatePath;

@@ -17,8 +17,8 @@ namespace EventStore.Client {
 		public async Task when_the_connection_is_lost() {
 			var streamName = _fixture.GetStreamName();
 			var eventCount = 512;
-			var tcs = new TaskCompletionSource<object>();
-			var signal = new TaskCompletionSource<object>();
+			var tcs = new TaskCompletionSource<object?>();
+			var signal = new TaskCompletionSource<object?>();
 			var events = new List<ResolvedEvent>();
 			var resubscribe = new TaskCompletionSource<StreamSubscription>();
 
@@ -48,8 +48,8 @@ namespace EventStore.Client {
 				}
 			}
 
-			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception ex) {
-				if (reason == SubscriptionDroppedReason.Disposed) {
+			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) {
+				if (reason == SubscriptionDroppedReason.Disposed || ex is null) {
 					return;
 				}
 

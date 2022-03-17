@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using EventStoreOperationsClient = EventStore.Client.EventStoreOperationsClient;
 
-#nullable enable
 namespace Microsoft.Extensions.DependencyInjection {
 	/// <summary>
 	/// A set of extension methods for <see cref="IServiceCollection"/> which provide support for an <see cref="EventStoreOperationsClient"/>.

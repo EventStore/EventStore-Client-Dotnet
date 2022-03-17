@@ -1,4 +1,3 @@
-#nullable enable
 namespace EventStore.Client {
 	///<summary>
 	///Constants for System event types

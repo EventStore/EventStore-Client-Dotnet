@@ -10,7 +10,7 @@ using Xunit;
 
 namespace EventStore.Client.Interceptors {
 	public class ReportLeaderInterceptorTests {
-		public delegate Task GrpcCall(Interceptor interceptor, Task<object> response = null);
+		public delegate Task GrpcCall(Interceptor interceptor, Task<object>? response = null);
 
 		private static readonly Marshaller<object> _marshaller = new(_ => Array.Empty<byte>(), _ => new object());
 
@@ -27,11 +27,11 @@ namespace EventStore.Client.Interceptors {
 			yield return MakeServerStreamingCall;
 		}
 
-		public static IEnumerable<object[]> ReportsNewLeaderCases() => GrpcCalls().Select(call => new object[] {call});
+		public static IEnumerable<object?[]> ReportsNewLeaderCases() => GrpcCalls().Select(call => new object[] {call});
 
 		[Theory, MemberData(nameof(ReportsNewLeaderCases))]
 		public async Task ReportsNewLeader(GrpcCall call) {
-			ReconnectionRequired actual = default;
+			ReconnectionRequired? actual = default;
 			var sut = new ReportLeaderInterceptor(result => actual = result);
 
 			var result = await Assert.ThrowsAsync<NotLeaderException>(() =>
@@ -39,13 +39,13 @@ namespace EventStore.Client.Interceptors {
 			Assert.Equal(new ReconnectionRequired.NewLeader(result.LeaderEndpoint), actual);
 		}
 
-		public static IEnumerable<object[]> ForcesRediscoveryCases() => from call in GrpcCalls()
+		public static IEnumerable<object?[]> ForcesRediscoveryCases() => from call in GrpcCalls()
 			from statusCode in ForcesRediscoveryStatusCodes
 			select new object[] {call, statusCode};
 
 		[Theory, MemberData(nameof(ForcesRediscoveryCases))]
 		public async Task ForcesRediscovery(GrpcCall call, StatusCode statusCode) {
-			ReconnectionRequired actual = default;
+			ReconnectionRequired? actual = default;
 			var sut = new ReportLeaderInterceptor(result => actual = result);
 
 			await Assert.ThrowsAsync<RpcException>(() => call(sut,
@@ -53,7 +53,7 @@ namespace EventStore.Client.Interceptors {
 			Assert.Equal(ReconnectionRequired.Rediscover.Instance, actual);
 		}
 		
-		public static IEnumerable<object[]> DoesNotForceRediscoveryCases() => from call in GrpcCalls()
+		public static IEnumerable<object?[]> DoesNotForceRediscoveryCases() => from call in GrpcCalls()
 			from statusCode in Enum.GetValues(typeof(StatusCode))
 				.OfType<StatusCode>()
 				.Except(ForcesRediscoveryStatusCodes)
@@ -70,35 +70,35 @@ namespace EventStore.Client.Interceptors {
 		}
 		
 
-		private static async Task MakeUnaryCall(Interceptor interceptor, Task<object> response = null) {
+		private static async Task MakeUnaryCall(Interceptor interceptor, Task<object>? response = null) {
 			using var call = interceptor.AsyncUnaryCall(new object(),
 				CreateClientInterceptorContext(MethodType.Unary),
 				(_, context) => new AsyncUnaryCall<object>(response ?? Task.FromResult(new object()),
-					Task.FromResult(context.Options.Headers), GetSuccess, GetTrailers, OnDispose));
+					Task.FromResult(context.Options.Headers!), GetSuccess, GetTrailers, OnDispose));
 			await call.ResponseAsync;
 		}
 
-		private static async Task MakeClientStreamingCall(Interceptor interceptor, Task<object> response = null) {
+		private static async Task MakeClientStreamingCall(Interceptor interceptor, Task<object>? response = null) {
 			using var call = interceptor.AsyncClientStreamingCall(
 				CreateClientInterceptorContext(MethodType.ClientStreaming),
-				context => new AsyncClientStreamingCall<object, object>(null, response ?? Task.FromResult(new object()),
-					Task.FromResult(context.Options.Headers), GetSuccess, GetTrailers, OnDispose));
+				context => new AsyncClientStreamingCall<object, object>(null!, response ?? Task.FromResult(new object()),
+					Task.FromResult(context.Options.Headers!), GetSuccess, GetTrailers, OnDispose));
 			await call.ResponseAsync;
 		}
 
-		private static async Task MakeServerStreamingCall(Interceptor interceptor, Task<object> response = null) {
+		private static async Task MakeServerStreamingCall(Interceptor interceptor, Task<object>? response = null) {
 			using var call = interceptor.AsyncServerStreamingCall(new object(),
 				CreateClientInterceptorContext(MethodType.ServerStreaming),
 				(_, context) => new AsyncServerStreamingCall<object>(new TestAsyncStreamReader(response),
-					Task.FromResult(context.Options.Headers), GetSuccess, GetTrailers, OnDispose));
+					Task.FromResult(context.Options.Headers!), GetSuccess, GetTrailers, OnDispose));
 			await call.ResponseStream.ReadAllAsync().ToArrayAsync();
 		}
 
-		private static async Task MakeDuplexStreamingCall(Interceptor interceptor, Task<object> response = null) {
+		private static async Task MakeDuplexStreamingCall(Interceptor interceptor, Task<object>? response = null) {
 			using var call = interceptor.AsyncDuplexStreamingCall(
 				CreateClientInterceptorContext(MethodType.ServerStreaming),
-				context => new AsyncDuplexStreamingCall<object, object>(null, new TestAsyncStreamReader(response),
-					Task.FromResult(context.Options.Headers), GetSuccess, GetTrailers, OnDispose));
+				context => new AsyncDuplexStreamingCall<object, object>(null!, new TestAsyncStreamReader(response),
+					Task.FromResult(context.Options.Headers!), GetSuccess, GetTrailers, OnDispose));
 			await call.ResponseStream.ReadAllAsync().ToArrayAsync();
 		}
 
@@ -121,7 +121,7 @@ namespace EventStore.Client.Interceptors {
 
 			public object Current => _response.Result;
 
-			public TestAsyncStreamReader(Task<object> response = null) {
+			public TestAsyncStreamReader(Task<object>? response = null) {
 				_response = response ?? Task.FromResult(new object());
 			}
 		}

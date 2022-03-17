@@ -20,7 +20,6 @@ using Serilog.Formatting.Display;
 using Xunit;
 using Xunit.Abstractions;
 
-#nullable enable
 namespace EventStore.Client {
 	public abstract class EventStoreClientFixtureBase : IAsyncLifetime {
 		public const string TestEventType = "-";

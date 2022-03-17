@@ -8,7 +8,6 @@ using Google.Protobuf;
 using EventStore.Client.Streams;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
-#nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreClient {
 		/// <summary>
@@ -164,7 +163,7 @@ namespace EventStore.Client {
 						if (operationOptions.ThrowOnAppendFailure) {
 							if (response.WrongExpectedVersion.ExpectedRevisionOptionCase == AppendResp.Types
 								.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedRevision) {
-								throw new WrongExpectedVersionException(header.Options.StreamIdentifier,
+								throw new WrongExpectedVersionException(header.Options.StreamIdentifier!,
 									new StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
 									actualStreamRevision);
 							}
@@ -179,17 +178,17 @@ namespace EventStore.Client {
 								_ => StreamState.Any
 							};
 
-							throw new WrongExpectedVersionException(header.Options.StreamIdentifier,
+							throw new WrongExpectedVersionException(header.Options.StreamIdentifier!,
 								expectedStreamState, actualStreamRevision);
 						}
 
 						if (response.WrongExpectedVersion.ExpectedRevisionOptionCase == AppendResp.Types
 							.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedRevision) {
-							writeResult = new WrongExpectedVersionResult(header.Options.StreamIdentifier,
+							writeResult = new WrongExpectedVersionResult(header.Options.StreamIdentifier!,
 								new StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
 								actualStreamRevision);
 						} else {
-							writeResult = new WrongExpectedVersionResult(header.Options.StreamIdentifier,
+							writeResult = new WrongExpectedVersionResult(header.Options.StreamIdentifier!,
 								StreamRevision.None,
 								actualStreamRevision);
 						}

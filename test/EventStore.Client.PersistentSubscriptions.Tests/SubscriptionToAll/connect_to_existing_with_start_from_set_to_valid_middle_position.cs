@@ -27,7 +27,7 @@ namespace EventStore.Client.SubscriptionToAll {
 		public class Fixture : EventStoreClientFixture {
 			private readonly TaskCompletionSource<ResolvedEvent> _firstEventSource;
 			public Task<ResolvedEvent> FirstEvent => _firstEventSource.Task;
-			private PersistentSubscription _subscription;
+			private PersistentSubscription? _subscription;
 			public ResolvedEvent ExpectedEvent { get; private set; }
 
 			public Fixture() {

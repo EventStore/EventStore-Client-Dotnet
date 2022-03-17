@@ -12,9 +12,9 @@ namespace EventStore.Client {
 			_fixture = fixture;
 		}
 
-		public static IEnumerable<object[]> ExpectedVersionCreateStreamTestCases() {
-			yield return new object[] {StreamState.Any};
-			yield return new object[] {StreamState.NoStream};
+		public static IEnumerable<object?[]> ExpectedVersionCreateStreamTestCases() {
+			yield return new object?[] {StreamState.Any};
+			yield return new object?[] {StreamState.NoStream};
 		}
 
 		[Theory, MemberData(nameof(ExpectedVersionCreateStreamTestCases))]

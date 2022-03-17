@@ -10,7 +10,6 @@ using TChannel = Grpc.Core.ChannelBase;
 using TChannel = Grpc.Net.Client.GrpcChannel;
 #endif
 
-#nullable enable
 namespace EventStore.Client {
 	// Maintains Channels keyed by DnsEndPoint so the channels can be reused.
 	// Deals with the disposal difference between grpc.net and grpc.core

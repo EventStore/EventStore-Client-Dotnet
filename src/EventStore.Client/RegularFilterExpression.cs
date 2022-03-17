@@ -1,7 +1,6 @@
 using System;
 using System.Text.RegularExpressions;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// A structure representing a regular expression filter.

@@ -24,7 +24,7 @@ namespace EventStore.Client.Bugs {
 			_completed = new TaskCompletionSource<bool>();
 		}
 
-		public static IEnumerable<object[]> TestCases() => Enumerable.Range(0, 5)
+		public static IEnumerable<object?[]> TestCases() => Enumerable.Range(0, 5)
 			.Select(i => new object[] {i});
 
 		[Theory, MemberData(nameof(TestCases))]
@@ -89,7 +89,7 @@ namespace EventStore.Client.Bugs {
 			});
 		}
 
-		private void SubscriptionDropped(StreamSubscription _, SubscriptionDroppedReason reason, Exception ex) {
+		private void SubscriptionDropped(StreamSubscription _, SubscriptionDroppedReason reason, Exception? ex) {
 			if (ex == null) return;
 			_completed.TrySetException(ex);
 		}

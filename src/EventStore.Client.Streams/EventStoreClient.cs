@@ -13,7 +13,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using ReadReq = EventStore.Client.Streams.ReadReq;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// The client used for operations on streams.

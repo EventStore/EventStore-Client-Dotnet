@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Operations;
 
-#nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreOperationsClient {
 		private static readonly Empty EmptyResult = new Empty();

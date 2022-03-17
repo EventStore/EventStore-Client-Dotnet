@@ -30,8 +30,8 @@ namespace EventStore.Client.SubscriptionToAll {
 			public ResolvedEvent[] AppearedEvents => _appearedEvents.ToArray();
 
 			private readonly TaskCompletionSource<ResolvedEvent> _firstCheckPointSource, _secondCheckPointSource;
-			private PersistentSubscription _subscription;
-			private StreamSubscription _checkPointSubscription;
+			private PersistentSubscription? _subscription;
+			private StreamSubscription? _checkPointSubscription;
 			private readonly TaskCompletionSource<bool> _appeared;
 			private readonly List<ResolvedEvent> _appearedEvents, _checkPoints;
 			private readonly EventData[] _events;

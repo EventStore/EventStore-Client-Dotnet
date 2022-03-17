@@ -10,7 +10,7 @@ using Xunit;
 
 namespace EventStore.Client {
 	public class ConnectionStringTests {
-		public static IEnumerable<object[]> ValidCases() {
+		public static IEnumerable<object?[]> ValidCases() {
 			var fixture = new Fixture();
 			fixture.Customize<TimeSpan>(composer => composer.FromFactory<int>(s => TimeSpan.FromSeconds(s % 60)));
 			fixture.Customize<Uri>(composer => composer.FromFactory<DnsEndPoint>(e => new UriBuilder {
@@ -20,7 +20,7 @@ namespace EventStore.Client {
 
 			return Enumerable.Range(0, 3).SelectMany(GetTestCases);
 
-			IEnumerable<object[]> GetTestCases(int _) {
+			IEnumerable<object?[]> GetTestCases(int _) {
 				var settings = new EventStoreClientSettings {
 					ConnectionName = fixture.Create<string>(),
 					ConnectivitySettings = fixture.Create<EventStoreClientConnectivitySettings>(),
@@ -32,12 +32,12 @@ namespace EventStore.Client {
 						Scheme = settings.ConnectivitySettings.Insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps
 					}.Uri;
 
-				yield return new object[] {
+				yield return new object?[] {
 					GetConnectionString(settings),
 					settings
 				};
 
-				yield return new object[] {
+				yield return new object?[] {
 					GetConnectionString(settings, MockingTone),
 					settings
 				};
@@ -55,12 +55,12 @@ namespace EventStore.Client {
 
 				ipGossipSettings.ConnectivitySettings.DnsGossipSeeds = null;
 
-				yield return new object[] {
+				yield return new object?[] {
 					GetConnectionString(ipGossipSettings),
 					ipGossipSettings
 				};
 
-				yield return new object[] {
+				yield return new object?[] {
 					GetConnectionString(ipGossipSettings, MockingTone),
 					ipGossipSettings
 				};
@@ -76,12 +76,12 @@ namespace EventStore.Client {
 					Scheme = singleNodeSettings.ConnectivitySettings.Insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps
 				}.Uri;
 
-				yield return new object[] {
+				yield return new object?[] {
 					GetConnectionString(singleNodeSettings),
 					singleNodeSettings
 				};
 
-				yield return new object[] {
+				yield return new object?[] {
 					GetConnectionString(singleNodeSettings, MockingTone),
 					singleNodeSettings
 				};
@@ -114,7 +114,7 @@ namespace EventStore.Client {
 			var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
 			if (!tlsVerifyCert) {
 				Assert.NotNull(socketsHandler.SslOptions.RemoteCertificateValidationCallback);
-				Assert.True(socketsHandler.SslOptions.RemoteCertificateValidationCallback.Invoke(null!, default,
+				Assert.True(socketsHandler.SslOptions.RemoteCertificateValidationCallback!.Invoke(null!, default,
 					default, default));
 			} else {
 				Assert.Null(socketsHandler.SslOptions.RemoteCertificateValidationCallback);
@@ -251,7 +251,7 @@ namespace EventStore.Client {
 		}
 
 		private static string GetConnectionString(EventStoreClientSettings settings,
-			Func<string, string> getKey = default)
+			Func<string, string>? getKey = default)
 			=> $"{GetScheme(settings)}{GetAuthority(settings)}?{GetKeyValuePairs(settings, getKey)}";
 
 		private static string GetScheme(EventStoreClientSettings settings) => settings.ConnectivitySettings.IsSingleNode
@@ -265,8 +265,8 @@ namespace EventStore.Client {
 					settings.ConnectivitySettings.GossipSeeds.Select(x => $"{x.GetHost()}:{x.GetPort()}"));
 
 		private static string GetKeyValuePairs(EventStoreClientSettings settings,
-			Func<string, string> getKey = default) {
-			var pairs = new Dictionary<string, string> {
+			Func<string, string>? getKey = default) {
+			var pairs = new Dictionary<string, string?> {
 				["tls"] = (!settings.ConnectivitySettings.Insecure).ToString(),
 				["connectionName"] = settings.ConnectionName,
 				["maxDiscoverAttempts"] = settings.ConnectivitySettings.MaxDiscoverAttempts.ToString(),
@@ -300,7 +300,7 @@ namespace EventStore.Client {
 			public static readonly EventStoreClientSettingsEqualityComparer Instance =
 				new EventStoreClientSettingsEqualityComparer();
 
-			public bool Equals(EventStoreClientSettings x, EventStoreClientSettings y) {
+			public bool Equals(EventStoreClientSettings? x, EventStoreClientSettings? y) {
 				if (ReferenceEquals(x, y)) return true;
 				if (ReferenceEquals(x, null)) return false;
 				if (ReferenceEquals(y, null)) return false;
@@ -322,10 +322,9 @@ namespace EventStore.Client {
 
 		private class EventStoreClientConnectivitySettingsEqualityComparer
 			: IEqualityComparer<EventStoreClientConnectivitySettings> {
-			public static readonly EventStoreClientConnectivitySettingsEqualityComparer Instance =
-				new EventStoreClientConnectivitySettingsEqualityComparer();
+			public static readonly EventStoreClientConnectivitySettingsEqualityComparer Instance = new();
 
-			public bool Equals(EventStoreClientConnectivitySettings x, EventStoreClientConnectivitySettings y) {
+			public bool Equals(EventStoreClientConnectivitySettings? x, EventStoreClientConnectivitySettings? y) {
 				if (ReferenceEquals(x, y)) return true;
 				if (ReferenceEquals(x, null)) return false;
 				if (ReferenceEquals(y, null)) return false;
@@ -358,7 +357,7 @@ namespace EventStore.Client {
 			: IEqualityComparer<EventStoreClientOperationOptions> {
 			public static readonly EventStoreClientOperationOptionsEqualityComparer Instance = new();
 
-			public bool Equals(EventStoreClientOperationOptions x, EventStoreClientOperationOptions y) {
+			public bool Equals(EventStoreClientOperationOptions? x, EventStoreClientOperationOptions? y) {
 				if (ReferenceEquals(x, y)) return true;
 				if (ReferenceEquals(x, null)) return false;
 				if (ReferenceEquals(y, null)) return false;

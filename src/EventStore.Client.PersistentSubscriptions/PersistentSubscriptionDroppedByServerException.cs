@@ -1,6 +1,5 @@
 using System;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// The exception that is thrown when the EventStoreDB drops a persistent subscription.

@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using EventStore.Client.Projections;
 using Grpc.Core;
 
-#nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreProjectionManagementClient {
 		/// <summary>

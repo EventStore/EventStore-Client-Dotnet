@@ -1,6 +1,5 @@
 ﻿using System;
 
-#nullable enable
 namespace EventStore.Client {
 #pragma warning disable CS1591
 	public static class DeadLine {

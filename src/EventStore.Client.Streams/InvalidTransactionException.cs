@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.Serialization;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// Exception thrown if there is an attempt to operate inside a

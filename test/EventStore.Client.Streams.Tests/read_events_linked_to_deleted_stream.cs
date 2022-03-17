@@ -4,7 +4,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-#nullable enable
 namespace EventStore.Client {
 	public abstract class read_events_linked_to_deleted_stream {
 		private readonly Fixture _fixture;

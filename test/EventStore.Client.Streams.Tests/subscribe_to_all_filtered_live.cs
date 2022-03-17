@@ -14,7 +14,7 @@ namespace EventStore.Client {
 			_fixture.CaptureLogs(outputHelper);
 		}
 
-		public static IEnumerable<object[]> FilterCases() => Filters.All.Select(filter => new object[] {filter});
+		public static IEnumerable<object?[]> FilterCases() => Filters.All.Select(filter => new object[] {filter});
 
 		[Theory, MemberData(nameof(FilterCases))]
 		public async Task does_not_read_all_events_but_keep_listening_to_new_ones(string filterName) {
@@ -22,7 +22,7 @@ namespace EventStore.Client {
 			var (getFilter, prepareEvent) = Filters.GetFilter(filterName);
 
 			var appeared = new TaskCompletionSource<bool>();
-			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
+			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 
 			var filter = getFilter(streamPrefix);
 			var events = _fixture.CreateTestEvents(20).Select(e => prepareEvent(streamPrefix, e))
@@ -72,7 +72,7 @@ namespace EventStore.Client {
 				return Task.CompletedTask;
 			}
 
-			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception ex) =>
+			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) =>
 				dropped.SetResult((reason, ex));
 		}
 

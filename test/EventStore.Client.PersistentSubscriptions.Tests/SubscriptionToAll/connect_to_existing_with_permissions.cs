@@ -16,7 +16,7 @@ namespace EventStore.Client.SubscriptionToAll {
 
 		[SupportsPSToAll.Fact]
 		public async Task the_subscription_succeeds() {
-			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
+			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(Group,
 				delegate { return Task.CompletedTask; }, (s, reason, ex) => dropped.TrySetResult((reason, ex)),
 				userCredentials: TestCredentials.Root).WithTimeout();

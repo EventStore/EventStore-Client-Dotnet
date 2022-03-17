@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// A structure representing a filter on event types for read operations.

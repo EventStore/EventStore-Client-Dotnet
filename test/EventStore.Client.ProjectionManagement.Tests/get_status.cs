@@ -15,7 +15,8 @@ namespace EventStore.Client {
 			var name = StandardProjections.Names.First();
 			var result = await _fixture.Client.GetStatusAsync(name, userCredentials: TestCredentials.TestUser1);
 
-			Assert.Equal(name, result.Name);
+			Assert.NotNull(result);
+			Assert.Equal(name, result!.Name);
 		}
 
 		public class Fixture : EventStoreClientFixture {

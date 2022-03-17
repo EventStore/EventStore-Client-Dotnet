@@ -28,7 +28,7 @@ namespace EventStore.Client.Security {
 			await _fixture.ReadStreamBackward(stream, userCredentials: TestCredentials.TestUser1);
 
 			await _fixture.ReadMeta(stream, userCredentials: TestCredentials.TestUser1);
-			await _fixture.WriteMeta(stream, userCredentials: TestCredentials.TestUser1, null);
+			await _fixture.WriteMeta(stream, userCredentials: TestCredentials.TestUser1);
 
 			await _fixture.SubscribeToStream(stream, userCredentials: TestCredentials.TestUser1);
 
@@ -44,7 +44,7 @@ namespace EventStore.Client.Security {
 			await _fixture.ReadStreamBackward(stream);
 
 			await _fixture.ReadMeta(stream);
-			await _fixture.WriteMeta(stream, null);
+			await _fixture.WriteMeta(stream);
 
 			await _fixture.SubscribeToStream(stream);
 
@@ -61,7 +61,7 @@ namespace EventStore.Client.Security {
 			await _fixture.ReadStreamBackward(stream, userCredentials: TestCredentials.TestAdmin);
 
 			await _fixture.ReadMeta(stream, userCredentials: TestCredentials.TestAdmin);
-			await _fixture.WriteMeta(stream, userCredentials: TestCredentials.TestAdmin, null);
+			await _fixture.WriteMeta(stream, userCredentials: TestCredentials.TestAdmin);
 
 			await _fixture.SubscribeToStream(stream, userCredentials: TestCredentials.TestAdmin);
 

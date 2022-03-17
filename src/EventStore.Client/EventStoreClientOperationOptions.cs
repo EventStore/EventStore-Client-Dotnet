@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// A class representing the options to apply to an individual operation.

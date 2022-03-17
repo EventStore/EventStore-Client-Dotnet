@@ -10,7 +10,7 @@ namespace EventStore.Client.SubscriptionToAll {
 		}
 
 		private readonly Fixture _fixture;
-		public static IEnumerable<object[]> FilterCases() => Filters.All.Select(filter => new object[] {filter});
+		public static IEnumerable<object?[]> FilterCases() => Filters.All.Select(filter => new object[] {filter});
 
 		[SupportsPSToAll.Theory, MemberData(nameof(FilterCases))]
 		public async Task the_completion_succeeds(string filterName) {

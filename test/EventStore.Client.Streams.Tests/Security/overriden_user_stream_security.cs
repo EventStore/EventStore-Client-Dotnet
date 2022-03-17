@@ -28,7 +28,7 @@ namespace EventStore.Client.Security
 			await _fixture.ReadStreamBackward(stream, userCredentials: TestCredentials.TestUser1);
 
 			await _fixture.ReadMeta(stream, userCredentials: TestCredentials.TestUser1);
-			await _fixture.WriteMeta(stream, userCredentials: TestCredentials.TestUser1, null);
+			await _fixture.WriteMeta(stream, userCredentials: TestCredentials.TestUser1);
 
 			await _fixture.SubscribeToStream(stream, userCredentials: TestCredentials.TestUser1);
 
@@ -44,7 +44,7 @@ namespace EventStore.Client.Security
 
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.AppendStream(stream, TestCredentials.TestUser2));
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadMeta(stream, TestCredentials.TestUser2));
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.WriteMeta(stream, TestCredentials.TestUser2, null));
+			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.WriteMeta(stream, TestCredentials.TestUser2));
 
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.SubscribeToStream(stream, TestCredentials.TestUser2));
 
@@ -60,7 +60,7 @@ namespace EventStore.Client.Security
 
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.AppendStream(stream));
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadMeta(stream));
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.WriteMeta(stream, null));
+			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.WriteMeta(stream));
 
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.SubscribeToStream(stream));
 
@@ -77,7 +77,7 @@ namespace EventStore.Client.Security
 			await _fixture.ReadStreamBackward(stream, userCredentials: TestCredentials.TestAdmin);
 
 			await _fixture.ReadMeta(stream, userCredentials: TestCredentials.TestAdmin);
-			await _fixture.WriteMeta(stream, userCredentials: TestCredentials.TestAdmin, null);
+			await _fixture.WriteMeta(stream, userCredentials: TestCredentials.TestAdmin);
 
 			await _fixture.SubscribeToStream(stream, userCredentials: TestCredentials.TestAdmin);
 

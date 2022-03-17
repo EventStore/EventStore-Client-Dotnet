@@ -23,12 +23,12 @@ namespace EventStore.Client.SubscriptionToStream {
 		}
 
 		public class Fixture : EventStoreClientFixture {
-			private readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception)> _droppedSource;
-			public Task<(SubscriptionDroppedReason, Exception)> Dropped => _droppedSource.Task;
-			private PersistentSubscription _subscription;
+			private readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception?)> _droppedSource;
+			public Task<(SubscriptionDroppedReason, Exception?)> Dropped => _droppedSource.Task;
+			private PersistentSubscription? _subscription;
 
 			public Fixture() {
-				_droppedSource = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
+				_droppedSource = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 			}
 
 			protected override async Task Given() {

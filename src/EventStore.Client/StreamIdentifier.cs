@@ -4,9 +4,9 @@ using Google.Protobuf;
 namespace EventStore.Client {
 #pragma warning disable 1591
 	public partial class StreamIdentifier {
-		private string _cached;
+		private string? _cached;
 
-		public static implicit operator string(StreamIdentifier source) {
+		public static implicit operator string?(StreamIdentifier? source) {
 			if (source == null) {
 				return null;
 			}
@@ -19,6 +19,6 @@ namespace EventStore.Client {
 		}
 
 		public static implicit operator StreamIdentifier(string source) =>
-			new StreamIdentifier {StreamName = ByteString.CopyFromUtf8(source)};
+			new() {StreamName = ByteString.CopyFromUtf8(source)};
 	}
 }

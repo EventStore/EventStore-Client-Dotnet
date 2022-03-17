@@ -7,7 +7,6 @@ using EventStore.Client.Projections;
 using Google.Protobuf.WellKnownTypes;
 using Type = System.Type;
 
-#nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreProjectionManagementClient {
 		/// <summary>

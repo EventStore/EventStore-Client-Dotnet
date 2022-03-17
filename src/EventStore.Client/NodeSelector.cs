@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
-#nullable enable
 namespace EventStore.Client {
 	// Selects a node to connect to from a ClusterInfo, based on the node preference.
 	// Deals with endpoints, no grpc here.

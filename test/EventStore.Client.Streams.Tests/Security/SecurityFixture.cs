@@ -112,52 +112,52 @@ namespace EventStore.Client.Security {
 				userCredentials: TestCredentials.TestAdmin).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 		}
 
-		public Task ReadEvent(string streamId, UserCredentials userCredentials = default) =>
+		public Task ReadEvent(string streamId, UserCredentials? userCredentials = default) =>
 			Client.ReadStreamAsync(Direction.Forwards, streamId, StreamPosition.Start, 1, resolveLinkTos: false,
 					userCredentials: userCredentials)
 				.ToArrayAsync()
 				.AsTask()
 				.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		public Task ReadStreamForward(string streamId, UserCredentials userCredentials = default) =>
+		public Task ReadStreamForward(string streamId, UserCredentials? userCredentials = default) =>
 			Client.ReadStreamAsync(Direction.Forwards, streamId, StreamPosition.Start, 1, resolveLinkTos: false,
 					userCredentials: userCredentials)
 				.ToArrayAsync()
 				.AsTask()
 				.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		public Task ReadStreamBackward(string streamId, UserCredentials userCredentials = default) =>
+		public Task ReadStreamBackward(string streamId, UserCredentials? userCredentials = default) =>
 			Client.ReadStreamAsync(Direction.Backwards, streamId, StreamPosition.Start, 1, resolveLinkTos: false,
 					userCredentials: userCredentials)
 				.ToArrayAsync()
 				.AsTask()
 				.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		public Task<IWriteResult> AppendStream(string streamId, UserCredentials userCredentials = default) =>
+		public Task<IWriteResult> AppendStream(string streamId, UserCredentials? userCredentials = default) =>
 			Client.AppendToStreamAsync(streamId, StreamState.Any, CreateTestEvents(3),
 					userCredentials: userCredentials)
 				.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		public Task ReadAllForward(UserCredentials userCredentials = default) =>
+		public Task ReadAllForward(UserCredentials? userCredentials = default) =>
 			Client.ReadAllAsync(Direction.Forwards, Position.Start, 1, resolveLinkTos: false,
 					userCredentials: userCredentials)
 				.ToArrayAsync()
 				.AsTask()
 				.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		public Task ReadAllBackward(UserCredentials userCredentials = default) =>
+		public Task ReadAllBackward(UserCredentials? userCredentials = default) =>
 			Client.ReadAllAsync(Direction.Backwards, Position.End, 1, resolveLinkTos: false,
 					userCredentials: userCredentials)
 				.ToArrayAsync()
 				.AsTask()
 				.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		public Task<StreamMetadataResult> ReadMeta(string streamId, UserCredentials userCredentials = default) =>
+		public Task<StreamMetadataResult> ReadMeta(string streamId, UserCredentials? userCredentials = default) =>
 			Client.GetStreamMetadataAsync(streamId, userCredentials: userCredentials)
 				.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		public Task<IWriteResult> WriteMeta(string streamId, UserCredentials userCredentials = default,
-			string role = default) =>
+		public Task<IWriteResult> WriteMeta(string streamId, UserCredentials? userCredentials = default,
+			string? role = default) =>
 			Client.SetStreamMetadataAsync(streamId, StreamState.Any,
 					new StreamMetadata(acl: new StreamAcl(
 						writeRole: role,
@@ -167,7 +167,7 @@ namespace EventStore.Client.Security {
 					userCredentials: userCredentials)
 				.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		public async Task SubscribeToStream(string streamId, UserCredentials userCredentials = default) {
+		public async Task SubscribeToStream(string streamId, UserCredentials? userCredentials = default) {
 			var source = new TaskCompletionSource<bool>();
 			using (await Client.SubscribeToStreamAsync(streamId, FromStream.Start, (_, _, _) => {
 					       source.TrySetResult(true);
@@ -181,7 +181,7 @@ namespace EventStore.Client.Security {
 			}
 		}
 
-		public async Task SubscribeToAll(UserCredentials userCredentials = default) {
+		public async Task SubscribeToAll(UserCredentials? userCredentials = default) {
 			var source = new TaskCompletionSource<bool>();
 			using (await Client.SubscribeToAllAsync(FromAll.Start,
 				       (_, _, _) => {
@@ -204,7 +204,7 @@ namespace EventStore.Client.Security {
 			return streamId;
 		}
 
-		public Task<DeleteResult> DeleteStream(string streamId, UserCredentials userCredentials = default) =>
+		public Task<DeleteResult> DeleteStream(string streamId, UserCredentials? userCredentials = default) =>
 			Client.TombstoneAsync(streamId, StreamState.Any, userCredentials: userCredentials)
 				.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 

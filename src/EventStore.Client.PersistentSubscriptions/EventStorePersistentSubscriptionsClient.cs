@@ -5,7 +5,6 @@ using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// The client used to manage persistent subscriptions in the EventStoreDB.

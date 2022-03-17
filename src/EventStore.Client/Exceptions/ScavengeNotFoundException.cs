@@ -1,6 +1,5 @@
 using System;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// The exception that is thrown when attempting to see the status of a scavenge operation that does not exist.

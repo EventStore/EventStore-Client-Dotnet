@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
 
-#nullable enable
 namespace EventStore.Client {
 	public partial class EventStorePersistentSubscriptionsClient {
 		private static readonly IDictionary<string, UpdateReq.Types.ConsumerStrategy> NamedConsumerStrategyToUpdateProto

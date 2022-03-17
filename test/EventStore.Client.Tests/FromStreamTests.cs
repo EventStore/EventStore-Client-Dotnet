@@ -21,12 +21,12 @@ namespace EventStore.Client {
 		public void LiveIsGreaterThanAll(FromStream other) =>
 			Assert.True(FromStream.End > other);
 
-		public static IEnumerable<object[]> ToStringCases() {
+		public static IEnumerable<object?[]> ToStringCases() {
 			var fixture = new ScenarioFixture();
 			var position = fixture.Create<StreamPosition>();
-			yield return new object[] {FromStream.After(position), position.ToString()};
-			yield return new object[] {FromStream.Start, "Start"};
-			yield return new object[] {FromStream.End, "Live"};
+			yield return new object?[] {FromStream.After(position), position.ToString()};
+			yield return new object?[] {FromStream.Start, "Start"};
+			yield return new object?[] {FromStream.End, "Live"};
 		}
 
 		[Theory, MemberData(nameof(ToStringCases))]

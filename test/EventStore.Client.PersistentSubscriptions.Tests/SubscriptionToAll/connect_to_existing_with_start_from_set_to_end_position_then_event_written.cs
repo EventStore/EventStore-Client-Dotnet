@@ -29,7 +29,7 @@ namespace EventStore.Client.SubscriptionToAll {
 		public class Fixture : EventStoreClientFixture {
 			private readonly TaskCompletionSource<ResolvedEvent> _firstNonSystemEventSource;
 			public Task<ResolvedEvent> FirstNonSystemEvent => _firstNonSystemEventSource.Task;
-			private PersistentSubscription _subscription;
+			private PersistentSubscription? _subscription;
 			public readonly EventData ExpectedEvent;
 			public readonly string ExpectedStreamId;
 

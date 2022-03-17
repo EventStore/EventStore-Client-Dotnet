@@ -10,7 +10,6 @@ using Ductus.FluentDocker.Common;
 using Ductus.FluentDocker.Services;
 using Polly;
 
-#nullable enable
 namespace EventStore.Client {
 	public class EventStoreTestServerCluster : IEventStoreTestServer {
 		private readonly ICompositeService _eventStoreCluster;

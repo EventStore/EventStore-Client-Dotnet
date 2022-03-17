@@ -6,7 +6,6 @@ using Grpc.Core.Interceptors;
 
 using Microsoft.Extensions.Logging;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// A class that represents the settings to use for operations made from an implementation of <see cref="EventStoreClientBase"/>.

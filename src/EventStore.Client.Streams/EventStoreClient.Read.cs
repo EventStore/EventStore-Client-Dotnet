@@ -13,7 +13,6 @@ using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
 using Channel = System.Threading.Channels.Channel;
 #endif
 
-#nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreClient {
 		/// <summary>
@@ -274,7 +273,7 @@ namespace EventStore.Client {
 					AllowSynchronousContinuations = true
 				});
 
-				StreamName = request.Options.Stream.StreamIdentifier;
+				StreamName = request.Options.Stream.StreamIdentifier!;
 
 				var tcs = new TaskCompletionSource<ReadState>();
 #pragma warning disable CS0612
@@ -410,7 +409,7 @@ namespace EventStore.Client {
 			e == null
 				? null
 				: new EventRecord(
-					e.StreamIdentifier,
+					e.StreamIdentifier!,
 					Uuid.FromDto(e.Id),
 					new StreamPosition(e.StreamRevision),
 					new Position(e.CommitPosition, e.PreparePosition),

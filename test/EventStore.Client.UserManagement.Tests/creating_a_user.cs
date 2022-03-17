@@ -11,16 +11,16 @@ namespace EventStore.Client {
 			_fixture = fixture;
 		}
 
-		public static IEnumerable<object[]> NullInputCases() {
+		public static IEnumerable<object?[]> NullInputCases() {
 			var loginName = "ouro";
 			var fullName = "greg";
 			var groups = new[] { "foo", "bar" };
 			var password = "foofoofoo";
 
-			yield return new object[] { null, fullName, groups, password, nameof(loginName) };
-			yield return new object[] { loginName, null, groups, password, nameof(fullName) };
-			yield return new object[] { loginName, fullName, null, password, nameof(groups) };
-			yield return new object[] { loginName, fullName, groups, null, nameof(password) };
+			yield return new object?[] { null, fullName, groups, password, nameof(loginName) };
+			yield return new object?[] { loginName, null, groups, password, nameof(fullName) };
+			yield return new object?[] { loginName, fullName, null, password, nameof(groups) };
+			yield return new object?[] { loginName, fullName, groups, null, nameof(password) };
 		}
 
 		[Theory, MemberData(nameof(NullInputCases))]
@@ -32,15 +32,15 @@ namespace EventStore.Client {
 			Assert.Equal(paramName, ex.ParamName);
 		}
 
-		public static IEnumerable<object[]> EmptyInputCases() {
+		public static IEnumerable<object?[]> EmptyInputCases() {
 			var loginName = "ouro";
 			var fullName = "greg";
 			var groups = new[] { "foo", "bar" };
 			var password = "foofoofoo";
 
-			yield return new object[] { string.Empty, fullName, groups, password, nameof(loginName) };
-			yield return new object[] { loginName, string.Empty, groups, password, nameof(fullName) };
-			yield return new object[] { loginName, fullName, groups, string.Empty, nameof(password) };
+			yield return new object?[] { string.Empty, fullName, groups, password, nameof(loginName) };
+			yield return new object?[] { loginName, string.Empty, groups, password, nameof(fullName) };
+			yield return new object?[] { loginName, fullName, groups, string.Empty, nameof(password) };
 		}
 
 		[Theory, MemberData(nameof(EmptyInputCases))]
