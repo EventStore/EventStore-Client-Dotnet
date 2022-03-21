@@ -158,52 +158,69 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task ExampleUsage() {
-			// factory waits to be signalled.
+			// factory waits to be signalled by completeConstruction being released
 			// sometimes the factory succeeds, sometimes it throws.
+			// failure of the produced item is trigged by 
 			var completeConstruction = new SemaphoreSlim(0);
+			var constructionCompleted = new SemaphoreSlim(0);
+
 			var triggerFailure = new SemaphoreSlim(0);
 			var failed = new SemaphoreSlim(0);
 
 			async Task<int> Factory(int input, Action<int> onBroken) {
 				await completeConstruction.WaitAsync();
-				if (input == 2) {
-					throw new Exception($"fail to create {input} in factory");
-				} else {
-					_ = triggerFailure.WaitAsync().ContinueWith(t => {
-						onBroken(input + 1);
-						failed.Release();
-					});
-					return input;
+				try {
+					if (input == 2) {
+						throw new Exception($"fail to create {input} in factory");
+					} else {
+						_ = triggerFailure.WaitAsync().ContinueWith(t => {
+							onBroken(input + 1);
+							failed.Release();
+						});
+						return input;
+					}
+				} finally {
+					constructionCompleted.Release();
 				}
 			}
 
 			var sut = new SharingProvider<int, int>(Factory, 0);
 
-			// got a value
+			// got an item (0)
 			completeConstruction.Release();
 			Assert.Equal(0, await sut.CurrentAsync);
 
-			// break item fails
+			// when item 0 fails
 			triggerFailure.Release();
 			await failed.WaitAsync();
 
-			// got a new value
+			// then a new item is produced (1)
+			await constructionCompleted.WaitAsync();
 			completeConstruction.Release();
 			Assert.Equal(1, await sut.CurrentAsync);
 
-			// item fails, then fail to create a new item
+			// when item 1 fails
 			triggerFailure.Release();
 			await failed.WaitAsync();
 
+			// then item 2 is not created
 			var t = sut.CurrentAsync;
+			await constructionCompleted.WaitAsync();
 			completeConstruction.Release();
 			var ex = await Assert.ThrowsAsync<Exception>(async () => {
 				await t;
 			});
 			Assert.Equal("fail to create 2 in factory", ex.Message);
 
-			// got a new value, back to initial
+			// when the factory is allowed to produce another item (0), it does:
+			await constructionCompleted.WaitAsync();
 			completeConstruction.Release();
+			// the previous box failed to be constructured, the factory will be called to produce another
+			// one. but until this has happened the old box with the error is the current one.
+			// therefore wait until the factory has had a chance to attempt another construction.
+			// the previous awaiting this semaphor are only there so that we can tell when
+			// this one is done.
+			await constructionCompleted.WaitAsync();
 			Assert.Equal(0, await sut.CurrentAsync);
 		}
 	}
