@@ -21,7 +21,7 @@ namespace secure_with_tls
 		static async Task Main(string[] args) 
 		{
 			// take the address from environment variable (when run with Docker) or use localhost by default 
-			var connectionString = Environment.GetEnvironmentVariable("ESDB_CONNECTION_STRING") ?? "esdb://localhost:2113?tls=false";
+			var connectionString = Environment.GetEnvironmentVariable("ESDB_CONNECTION_STRING") ?? "esdb://localhost:2113?tls=true";
 
 			Console.WriteLine($"Connecting to EventStoreDB at: `{connectionString}`");
 			
