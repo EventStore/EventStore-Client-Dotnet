@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
 #nullable enable
@@ -63,34 +64,52 @@ namespace EventStore.Client {
 		private async Task Subscribe() {
 			_log.LogDebug("Subscription {subscriptionId} confirmed.", SubscriptionId);
 			using var _ = _disposed;
+
 			try {
 				await foreach (var resolvedEvent in _events.ConfigureAwait(false)) {
 					try {
-						_log.LogTrace("Subscription {subscriptionId} received event {streamName}@{streamRevision} {position}",
-							SubscriptionId, resolvedEvent.OriginalEvent.EventStreamId,
-							resolvedEvent.OriginalEvent.EventNumber, resolvedEvent.OriginalEvent.Position);
+						_log.LogTrace(
+							"Subscription {subscriptionId} received event {streamName}@{streamRevision} {position}",
+							SubscriptionId,
+							resolvedEvent.OriginalEvent.EventStreamId,
+							resolvedEvent.OriginalEvent.EventNumber,
+							resolvedEvent.OriginalEvent.Position
+						);
 						await _eventAppeared(this, resolvedEvent, _disposed.Token).ConfigureAwait(false);
-					} catch (Exception ex) when (ex is ObjectDisposedException or OperationCanceledException) {
+					} catch (Exception ex) when
+						(ex is ObjectDisposedException or OperationCanceledException) {
 						if (_subscriptionDroppedInvoked != 0) {
 							return;
 						}
-						_log.LogWarning(ex,
+
+						_log.LogWarning(
+							ex,
 							"Subscription {subscriptionId} was dropped because cancellation was requested by another caller.",
-							SubscriptionId);
+							SubscriptionId
+						);
 
 						SubscriptionDropped(SubscriptionDroppedReason.Disposed);
 
 						return;
 					} catch (Exception ex) {
-						_log.LogError(ex,
+						_log.LogError(
+							ex,
 							"Subscription {subscriptionId} was dropped because the subscriber made an error.",
-							SubscriptionId);
+							SubscriptionId
+						);
 						SubscriptionDropped(SubscriptionDroppedReason.SubscriberError, ex);
 
 						return;
 					}
 				}
-			} catch (Exception ex) {
+			} catch (RpcException ex) when (ex.Status.StatusCode == StatusCode.Cancelled &&
+			                                ex.Status.Detail.Contains("Call canceled by the client.")) {
+				_log.LogInformation(
+					"Subscription {subscriptionId} was dropped because cancellation was requested by the client.", 
+					SubscriptionId);
+				 SubscriptionDropped(SubscriptionDroppedReason.Disposed, ex);
+			}
+			catch (Exception ex) {
 				if (_subscriptionDroppedInvoked == 0) {
 					_log.LogError(ex,
 						"Subscription {subscriptionId} was dropped because an error occurred on the server.",
