@@ -2,7 +2,6 @@ using System;
 using System.Net.Http.Headers;
 using System.Text;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// Represents either a username/password pair or a JWT token used for authentication and

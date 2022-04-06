@@ -1,6 +1,5 @@
 using System;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// A class representing the settings of a persistent subscription.

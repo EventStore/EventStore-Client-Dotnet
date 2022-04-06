@@ -7,14 +7,20 @@
 		<Compile Remove="..\EventStore.Client.Tests.Common\*.cs" />
 	</ItemGroup>
 	<ItemGroup>
-		<Protobuf Condition="'$(TargetFramework)' == 'net5.0'" Include="..\..\src\EventStore.Client.Common\protos\serverfeatures.proto" ProtoCompile="false" ProtoRoot="..\..\src\EventStore.Client.Common\protos" GrpcServices="Server" />
+		<Protobuf Condition="'$(TargetFramework)' == 'net5.0' OR '$(TargetFramework)' == 'net6.0'" Include="..\..\src\EventStore.Client.Common\protos\serverfeatures.proto" ProtoCompile="false" ProtoRoot="..\..\src\EventStore.Client.Common\protos" GrpcServices="Server" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.1.23" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="5.0.12" />
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="5.0.15" />
 	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
-		<PackageReference Include="Grpc.AspNetCore" Version="2.41.0" />
-		<PackageReference Include="Grpc.Tools" Version="2.42.0">
+	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="6.0.3" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net5.0' OR '$(TargetFramework)' == 'net6.0'">
+		<PackageReference Include="Grpc.AspNetCore" Version="$(GrpcPackageVersion)" />
+		<PackageReference Include="Grpc.Tools" Version="$(GrpcToolsPackageVersion)">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>

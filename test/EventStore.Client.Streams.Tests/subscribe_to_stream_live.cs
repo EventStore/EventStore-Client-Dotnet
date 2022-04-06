@@ -85,7 +85,7 @@ namespace EventStore.Client {
 		public async Task calls_subscription_dropped_when_disposed() {
 			var stream = _fixture.GetStreamName();
 
-			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
+			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 
 			using var _ = await _fixture.Client
 				.SubscribeToStreamAsync(stream, FromStream.End, EventAppeared, false,
@@ -98,7 +98,7 @@ namespace EventStore.Client {
 				return Task.CompletedTask;
 			}
 
-			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception ex)
+			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex)
 				=> dropped.SetResult((reason, ex));
 
 			var (reason, ex) = await dropped.Task.WithTimeout();
@@ -111,7 +111,7 @@ namespace EventStore.Client {
 		public async Task catches_deletions() {
 			var stream = _fixture.GetStreamName();
 
-			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
+			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 
 			using var _ = await _fixture.Client
 				.SubscribeToStreamAsync(stream, FromStream.End, EventAppeared, false,
@@ -122,12 +122,12 @@ namespace EventStore.Client {
 			var (reason, ex) = await dropped.Task.WithTimeout();
 
 			Assert.Equal(SubscriptionDroppedReason.ServerError, reason);
-			Assert.IsType<StreamDeletedException>(ex);
-			Assert.Equal(stream, ((StreamDeletedException)ex).Stream);
+			var sdex = Assert.IsType<StreamDeletedException>(ex);
+			Assert.Equal(stream, sdex.Stream);
 
 			Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) => Task.CompletedTask;
 
-			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception ex) =>
+			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) =>
 				dropped.SetResult((reason, ex));
 		}
 

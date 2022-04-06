@@ -13,7 +13,7 @@ namespace EventStore.Client.Bugs {
 			_fixture = fixture;
 		}
 
-		public static IEnumerable<object[]> TestCases() => Enumerable.Range(0, 50)
+		public static IEnumerable<object?[]> TestCases() => Enumerable.Range(0, 50)
 			.Select(i => new object[] {i});
 
 		[Theory, MemberData(nameof(TestCases))]

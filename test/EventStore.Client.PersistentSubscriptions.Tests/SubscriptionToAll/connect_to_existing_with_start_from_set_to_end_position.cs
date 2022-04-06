@@ -16,7 +16,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task the_subscription_gets_no_non_system_events() {
 			await Assert.ThrowsAsync<TimeoutException>(() => _fixture.FirstNonSystemEvent.WithTimeout());
 		}
@@ -24,7 +24,7 @@ namespace EventStore.Client.SubscriptionToAll {
 		public class Fixture : EventStoreClientFixture {
 			private readonly TaskCompletionSource<ResolvedEvent> _firstNonSystemEventSource;
 			public Task<ResolvedEvent> FirstNonSystemEvent => _firstNonSystemEventSource.Task;
-			private PersistentSubscription _subscription;
+			private PersistentSubscription? _subscription;
 
 			public Fixture() {
 				_firstNonSystemEventSource = new TaskCompletionSource<ResolvedEvent>();

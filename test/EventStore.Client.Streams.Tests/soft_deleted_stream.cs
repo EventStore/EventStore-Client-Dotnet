@@ -40,9 +40,9 @@ namespace EventStore.Client {
 					.ToArrayAsync().AsTask());
 		}
 
-		public static IEnumerable<object[]> RecreatingTestCases() {
-			yield return new object[] {StreamState.Any, nameof(StreamState.Any)};
-			yield return new object[] {StreamState.NoStream, nameof(StreamState.NoStream)};
+		public static IEnumerable<object?[]> RecreatingTestCases() {
+			yield return new object?[] {StreamState.Any, nameof(StreamState.Any)};
+			yield return new object?[] {StreamState.NoStream, nameof(StreamState.NoStream)};
 		}
 
 		[Theory, MemberData(nameof(RecreatingTestCases))]

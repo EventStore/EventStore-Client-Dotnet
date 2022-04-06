@@ -1,6 +1,5 @@
 using System;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// A structure representing the logical position of a subscription. />

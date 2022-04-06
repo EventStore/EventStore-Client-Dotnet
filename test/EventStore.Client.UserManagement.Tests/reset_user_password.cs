@@ -11,12 +11,12 @@ namespace EventStore.Client {
 			_fixture = fixture;
 		}
 
-		public static IEnumerable<object[]> NullInputCases() {
+		public static IEnumerable<object?[]> NullInputCases() {
 			var loginName = "ouro";
 			var newPassword = "foofoofoofoofoofoo";
 
-			yield return new object[] {null, newPassword, nameof(loginName)};
-			yield return new object[] {loginName, null, nameof(newPassword)};
+			yield return new object?[] {null, newPassword, nameof(loginName)};
+			yield return new object?[] {loginName, null, nameof(newPassword)};
 		}
 
 		[Theory, MemberData(nameof(NullInputCases))]
@@ -28,12 +28,12 @@ namespace EventStore.Client {
 			Assert.Equal(paramName, ex.ParamName);
 		}
 
-		public static IEnumerable<object[]> EmptyInputCases() {
+		public static IEnumerable<object?[]> EmptyInputCases() {
 			var loginName = "ouro";
 			var newPassword = "foofoofoofoofoofoo";
 
-			yield return new object[] {string.Empty, newPassword, nameof(loginName)};
-			yield return new object[] {loginName, string.Empty, nameof(newPassword)};
+			yield return new object?[] {string.Empty, newPassword, nameof(loginName)};
+			yield return new object?[] {loginName, string.Empty, nameof(newPassword)};
 		}
 
 		[Theory, MemberData(nameof(EmptyInputCases))]

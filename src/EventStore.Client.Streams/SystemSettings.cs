@@ -1,4 +1,3 @@
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// A class representing default access control lists.

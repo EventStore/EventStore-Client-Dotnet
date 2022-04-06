@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Operations;
 
-#nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreOperationsClient {
 		/// <summary>
@@ -69,7 +68,8 @@ namespace EventStore.Client {
 				Options = new StopScavengeReq.Types.Options {
 					ScavengeId = scavengeId
 				}
-			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken))
+				.ResponseAsync.ConfigureAwait(false);
 
 			return result.ScavengeResult switch {
 				ScavengeResp.Types.ScavengeResult.Started => DatabaseScavengeResult.Started(result.ScavengeId),

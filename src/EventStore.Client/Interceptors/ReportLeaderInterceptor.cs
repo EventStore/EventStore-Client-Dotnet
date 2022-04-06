@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
-#nullable enable
 namespace EventStore.Client.Interceptors {
 	// this has become more general than just detecting leader changes.
 	// triggers the action on any rpc exception with StatusCode.Unavailable

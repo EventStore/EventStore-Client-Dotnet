@@ -16,7 +16,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			protected override Task When() => Task.CompletedTask;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public Task the_completion_fails_with_access_denied() =>
 			Assert.ThrowsAsync<AccessDeniedException>(() =>
 				_fixture.Client.CreateToAllAsync("group57",

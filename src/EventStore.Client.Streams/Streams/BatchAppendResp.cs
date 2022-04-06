@@ -21,7 +21,7 @@ namespace EventStore.Client.Streams {
 				{ } when Error.Details.Is(WrongExpectedVersion.Descriptor) =>
 					FromWrongExpectedVersion(StreamIdentifier, Error.Details.Unpack<WrongExpectedVersion>()),
 				{ } when Error.Details.Is(StreamDeleted.Descriptor) =>
-					throw new StreamDeletedException(StreamIdentifier),
+					throw new StreamDeletedException(StreamIdentifier!),
 				{ } when Error.Details.Is(AccessDenied.Descriptor) => throw new AccessDeniedException(),
 				{ } when Error.Details.Is(Timeout.Descriptor) => throw new RpcException(
 					new Status(StatusCode.DeadlineExceeded, Error.Message)),
@@ -37,7 +37,7 @@ namespace EventStore.Client.Streams {
 		};
 
 		private static WrongExpectedVersionResult FromWrongExpectedVersion(StreamIdentifier streamIdentifier,
-			WrongExpectedVersion wrongExpectedVersion) => new(streamIdentifier,
+			WrongExpectedVersion wrongExpectedVersion) => new(streamIdentifier!,
 			wrongExpectedVersion.ExpectedStreamPositionOptionCase switch {
 				ExpectedStreamPosition => wrongExpectedVersion.ExpectedStreamPosition,
 				_ => StreamRevision.None

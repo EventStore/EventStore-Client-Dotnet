@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// A class representing a <see cref="StreamSubscription"/>.

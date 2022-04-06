@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-#nullable enable
 namespace EventStore.Client {
 	public class EventStoreTestServerExternal : IEventStoreTestServer {
 		public EventStoreTestServerExternal() {

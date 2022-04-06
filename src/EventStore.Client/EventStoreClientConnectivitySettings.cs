@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// A class used to describe how to connect to an instance of EventStoreDB.

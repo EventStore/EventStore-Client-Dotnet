@@ -25,7 +25,7 @@ namespace EventStore.Client {
 			Port = endPoint.GetPort()
 		}.Uri;
 
-		public static string ToHttpUrl(this EndPoint endPoint, string schema, string rawUrl = null) =>
+		public static string? ToHttpUrl(this EndPoint endPoint, string schema, string? rawUrl = null) =>
 			endPoint switch {
 				IPEndPoint ipEndPoint => CreateHttpUrl(schema, ipEndPoint.Address.ToString(), ipEndPoint.Port,
 					rawUrl != null ? rawUrl.TrimStart('/') : string.Empty),

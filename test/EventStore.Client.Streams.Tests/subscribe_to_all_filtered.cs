@@ -15,7 +15,7 @@ namespace EventStore.Client {
 			_fixture.CaptureLogs(outputHelper);
 		}
 
-		public static IEnumerable<object[]> FilterCases() => Filters.All.Select(filter => new object[] {filter});
+		public static IEnumerable<object?[]> FilterCases() => Filters.All.Select(filter => new object[] {filter});
 
 		[Theory, MemberData(nameof(FilterCases))]
 		public async Task reads_all_existing_events(string filterName) {
@@ -23,7 +23,7 @@ namespace EventStore.Client {
 			var (getFilter, prepareEvent) = Filters.GetFilter(filterName);
 
 			var appeared = new TaskCompletionSource<bool>();
-			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
+			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 			var checkpointSeen = new TaskCompletionSource<bool>();
 			var filter = getFilter(streamPrefix);
 			var events = _fixture.CreateTestEvents(20).Select(e => prepareEvent(streamPrefix, e))
@@ -70,7 +70,7 @@ namespace EventStore.Client {
 				return Task.CompletedTask;
 			}
 
-			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception ex) {
+			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) {
 				dropped.SetResult((reason, ex));
 				if (reason != SubscriptionDroppedReason.Disposed) {
 					appeared.TrySetException(ex!);
@@ -92,7 +92,7 @@ namespace EventStore.Client {
 			var (getFilter, prepareEvent) = Filters.GetFilter(filterName);
 
 			var appeared = new TaskCompletionSource<bool>();
-			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
+			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 			var checkpointSeen = new TaskCompletionSource<bool>();
 			var filter = getFilter(streamPrefix);
 			var events = _fixture.CreateTestEvents(20).Select(e => prepareEvent(streamPrefix, e))
@@ -146,7 +146,7 @@ namespace EventStore.Client {
 				return Task.CompletedTask;
 			}
 
-			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception ex) {
+			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) {
 				dropped.SetResult((reason, ex));
 				if (reason != SubscriptionDroppedReason.Disposed) {
 					appeared.TrySetException(ex!);

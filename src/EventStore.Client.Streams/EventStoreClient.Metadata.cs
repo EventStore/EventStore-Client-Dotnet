@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using EventStore.Client.Streams;
 using Microsoft.Extensions.Logging;
 
-#nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreClient {
 		/// <summary>

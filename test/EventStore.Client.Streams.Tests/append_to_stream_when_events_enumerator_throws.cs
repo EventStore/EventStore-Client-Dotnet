@@ -28,12 +28,12 @@ namespace EventStore.Client {
 
 		public class Fixture : EventStoreClientFixture {
 			public string StreamName { get; }
+			public Exception? CaughtException { get; private set; }
+
 
 			public Fixture() {
 				StreamName = GetStreamName("stream");
 			}
-
-			public Exception CaughtException { get; private set; }
 
 			protected override async Task Given() {
 				try {

@@ -14,7 +14,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task resumes_from_check_point() {
 			var resumedEvent = await _fixture.Resumed.WithTimeout(TimeSpan.FromSeconds(10));
 			Assert.True(resumedEvent.Event.Position > _fixture.CheckPoint);
@@ -24,18 +24,18 @@ namespace EventStore.Client.SubscriptionToAll {
 			public Task<ResolvedEvent> Resumed => _resumedSource.Task;
 			public Position CheckPoint { get; private set; }
 
-			private readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception)> _droppedSource;
+			private readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception?)> _droppedSource;
 			private readonly TaskCompletionSource<ResolvedEvent> _resumedSource;
 			private readonly TaskCompletionSource<ResolvedEvent> _checkPointSource;
-			private PersistentSubscription _firstSubscription;
-			private PersistentSubscription _secondSubscription;
-			private StreamSubscription _checkPointSubscription;
+			private PersistentSubscription? _firstSubscription;
+			private PersistentSubscription? _secondSubscription;
+			private StreamSubscription? _checkPointSubscription;
 			private readonly TaskCompletionSource<bool> _appeared;
 			private readonly List<ResolvedEvent> _appearedEvents;
 			private readonly EventData[] _events;
 
 			public Fixture() {
-				_droppedSource = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
+				_droppedSource = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 				_resumedSource = new TaskCompletionSource<ResolvedEvent>();
 				_checkPointSource = new TaskCompletionSource<ResolvedEvent>();
 				_appeared = new TaskCompletionSource<bool>();

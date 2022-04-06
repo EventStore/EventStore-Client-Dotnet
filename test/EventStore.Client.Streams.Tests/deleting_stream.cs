@@ -11,9 +11,9 @@ namespace EventStore.Client {
 			_fixture = fixture;
 		}
 
-		public static IEnumerable<object[]> ExpectedStreamStateCases() {
-			yield return new object[] {StreamState.Any, nameof(StreamState.Any)};
-			yield return new object[] {StreamState.NoStream, nameof(StreamState.NoStream)};
+		public static IEnumerable<object?[]> ExpectedStreamStateCases() {
+			yield return new object?[] {StreamState.Any, nameof(StreamState.Any)};
+			yield return new object?[] {StreamState.NoStream, nameof(StreamState.NoStream)};
 		}
 
 		[Theory, MemberData(nameof(ExpectedStreamStateCases))]
@@ -24,7 +24,7 @@ namespace EventStore.Client {
 			await _fixture.Client.TombstoneAsync(stream, expectedVersion);
 		}
 
-		[Fact]
+		[Regression.Fact(21, "fixed by")]
 		public async Task soft_deleting_a_stream_that_exists() {
 			var stream = _fixture.GetStreamName();
 

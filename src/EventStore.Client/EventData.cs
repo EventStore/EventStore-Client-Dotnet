@@ -1,7 +1,6 @@
 using System;
 using System.Net.Http.Headers;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// Represents an event to be written.

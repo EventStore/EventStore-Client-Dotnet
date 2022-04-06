@@ -1,4 +1,3 @@
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// The reason why a conditional write fails

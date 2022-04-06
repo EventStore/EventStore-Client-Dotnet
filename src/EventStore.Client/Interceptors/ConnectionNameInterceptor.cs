@@ -1,7 +1,6 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
-#nullable enable
 namespace EventStore.Client.Interceptors {
 	internal class ConnectionNameInterceptor : Interceptor {
 		private readonly string _connectionName;
@@ -41,6 +40,6 @@ namespace EventStore.Client.Interceptors {
 
 		private void AddConnectionName<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context)
 			where TRequest : class where TResponse : class =>
-			context.Options.Headers.Add(Constants.Headers.ConnectionName, _connectionName);
+			context.Options.Headers?.Add(Constants.Headers.ConnectionName, _connectionName);
 	}
 }

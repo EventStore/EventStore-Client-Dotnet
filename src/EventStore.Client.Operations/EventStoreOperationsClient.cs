@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// The client used to perform maintenance and other administrative tasks on the EventStoreDB.

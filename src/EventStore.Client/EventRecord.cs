@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// Represents a previously written event.

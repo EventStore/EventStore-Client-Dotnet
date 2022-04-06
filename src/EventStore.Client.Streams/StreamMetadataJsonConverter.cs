@@ -3,7 +3,6 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-#nullable enable
 namespace EventStore.Client {
 	internal class StreamMetadataJsonConverter : JsonConverter<StreamMetadata> {
 		public static readonly StreamMetadataJsonConverter Instance = new StreamMetadataJsonConverter();

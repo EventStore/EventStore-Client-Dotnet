@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
-#nullable enable
 namespace EventStore.Client.Interceptors {
 	internal class TypedExceptionInterceptor : Interceptor {
 		private static readonly IDictionary<string, Func<RpcException, Exception>> DefaultExceptionMap =

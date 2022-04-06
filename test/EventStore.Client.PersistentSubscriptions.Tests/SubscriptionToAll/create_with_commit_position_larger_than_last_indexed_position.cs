@@ -25,7 +25,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			protected override Task When() => Task.CompletedTask;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task fails() {
 			var ex = await Assert.ThrowsAsync<RpcException>(() =>
 				_fixture.Client.CreateToAllAsync("group57",

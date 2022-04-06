@@ -23,7 +23,7 @@ namespace EventStore.Client.SubscriptionToStream {
 			private readonly TaskCompletionSource<int> _retryCountSource;
 			public Task<int> RetryCount => _retryCountSource.Task;
 			public readonly EventData[] Events;
-			private PersistentSubscription _subscription;
+			private PersistentSubscription? _subscription;
 
 			public Fixture() {
 				_retryCountSource = new TaskCompletionSource<int>();

@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
 
-#nullable enable
 namespace EventStore.Client {
 	partial class EventStorePersistentSubscriptionsClient {
 		/// <summary>

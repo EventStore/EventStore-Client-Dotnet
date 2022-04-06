@@ -69,7 +69,7 @@ namespace EventStore.Client {
 
 				currentIndex = schemeIndex + SchemeSeparator.Length;
 				var userInfoIndex = connectionString.IndexOf(UserInfoSeparator, currentIndex, StringComparison.Ordinal);
-				(string user, string pass) userInfo = (null, null);
+				(string user, string pass)? userInfo = null;
 				if (userInfoIndex != -1) {
 					userInfo = ParseUserInfo(connectionString.Substring(currentIndex, userInfoIndex - currentIndex));
 					currentIndex = userInfoIndex + UserInfoSeparator.Length;
@@ -107,15 +107,15 @@ namespace EventStore.Client {
 				return CreateSettings(scheme, userInfo, hosts, options);
 			}
 
-			private static EventStoreClientSettings CreateSettings(string scheme, (string user, string pass) userInfo,
+			private static EventStoreClientSettings CreateSettings(string scheme, (string user, string pass)? userInfo,
 				EndPoint[] hosts, Dictionary<string, string> options) {
 				var settings = new EventStoreClientSettings {
 					ConnectivitySettings = EventStoreClientConnectivitySettings.Default,
 					OperationOptions = EventStoreClientOperationOptions.Default
 				};
 
-				if (userInfo != (null, null))
-					settings.DefaultCredentials = new UserCredentials(userInfo.user, userInfo.pass);
+				if (userInfo.HasValue)
+					settings.DefaultCredentials = new UserCredentials(userInfo.Value.user, userInfo.Value.pass);
 
 				var typedOptions = new Dictionary<string, object>(StringComparer.InvariantCultureIgnoreCase);
 				foreach (var (key, value) in options) {
@@ -134,21 +134,21 @@ namespace EventStore.Client {
 					}
 				}
 
-				if (typedOptions.TryGetValue(ConnectionName, out object connectionName))
+				if (typedOptions.TryGetValue(ConnectionName, out object? connectionName))
 					settings.ConnectionName = (string)connectionName;
 
 				var connSettings = settings.ConnectivitySettings;
 
-				if (typedOptions.TryGetValue(MaxDiscoverAttempts, out object maxDiscoverAttempts))
+				if (typedOptions.TryGetValue(MaxDiscoverAttempts, out object? maxDiscoverAttempts))
 					connSettings.MaxDiscoverAttempts = (int)maxDiscoverAttempts;
 
-				if (typedOptions.TryGetValue(DiscoveryInterval, out object discoveryInterval))
+				if (typedOptions.TryGetValue(DiscoveryInterval, out object? discoveryInterval))
 					connSettings.DiscoveryInterval = TimeSpan.FromMilliseconds((int)discoveryInterval);
 
-				if (typedOptions.TryGetValue(GossipTimeout, out object gossipTimeout))
+				if (typedOptions.TryGetValue(GossipTimeout, out object? gossipTimeout))
 					connSettings.GossipTimeout = TimeSpan.FromMilliseconds((int)gossipTimeout);
 
-				if (typedOptions.TryGetValue(NodePreference, out object nodePreference)) {
+				if (typedOptions.TryGetValue(NodePreference, out object? nodePreference)) {
 					connSettings.NodePreference = ((string)nodePreference).ToLowerInvariant() switch {
 						"leader" => EventStore.Client.NodePreference.Leader,
 						"follower" => EventStore.Client.NodePreference.Follower,
@@ -159,14 +159,14 @@ namespace EventStore.Client {
 				}
 
 				var useTls = DefaultUseTls;
-				if (typedOptions.TryGetValue(Tls, out object tls)) {
+				if (typedOptions.TryGetValue(Tls, out object? tls)) {
 					useTls = (bool)tls;
 				}
 
-				if (typedOptions.TryGetValue(DefaultDeadline, out object operationTimeout))
+				if (typedOptions.TryGetValue(DefaultDeadline, out object? operationTimeout))
 					settings.DefaultDeadline = TimeSpan.FromMilliseconds((int)operationTimeout);
 
-				if (typedOptions.TryGetValue(ThrowOnAppendFailure, out object throwOnAppendFailure))
+				if (typedOptions.TryGetValue(ThrowOnAppendFailure, out object? throwOnAppendFailure))
 					settings.OperationOptions.ThrowOnAppendFailure = (bool)throwOnAppendFailure;
 
 				if (typedOptions.TryGetValue(KeepAliveInterval, out var keepAliveIntervalMs)) {
@@ -194,7 +194,7 @@ namespace EventStore.Client {
 						connSettings.DnsGossipSeeds =
 							Array.ConvertAll(hosts, x => new DnsEndPoint(x.GetHost(), x.GetPort()));
 					else
-						connSettings.IpGossipSeeds = Array.ConvertAll(hosts, x => x as IPEndPoint);
+						connSettings.IpGossipSeeds = Array.ConvertAll(hosts, x => (IPEndPoint)x);
 				}
 
 #if !GRPC_CORE
@@ -250,7 +250,7 @@ namespace EventStore.Client {
 						throw new InvalidHostException(hostToken);
 					}
 
-					if (IPAddress.TryParse(host, out IPAddress ip)) {
+					if (IPAddress.TryParse(host, out IPAddress? ip)) {
 						hosts.Add(new IPEndPoint(ip, port));
 					} else {
 						hosts.Add(new DnsEndPoint(host, port));

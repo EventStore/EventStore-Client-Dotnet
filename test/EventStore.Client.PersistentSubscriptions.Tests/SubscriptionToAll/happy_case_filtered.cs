@@ -12,9 +12,9 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 		
-		public static IEnumerable<object[]> FilterCases() => Filters.All.Select(filter => new object[] {filter});
+		public static IEnumerable<object?[]> FilterCases() => Filters.All.Select(filter => new object[] {filter});
 
-		[Theory, MemberData(nameof(FilterCases))]
+		[SupportsPSToAll.Theory, MemberData(nameof(FilterCases))]
 		public async Task reads_all_existing_filtered_events(string filterName) {
 			var streamPrefix = $"{filterName}-{_fixture.GetStreamName()}";
 			var (getFilter, prepareEvent) = Filters.GetFilter(filterName);

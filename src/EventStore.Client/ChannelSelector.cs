@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 
-#nullable enable
 namespace EventStore.Client {
 	internal class ChannelSelector : IChannelSelector {
 		private readonly IChannelSelector _inner;

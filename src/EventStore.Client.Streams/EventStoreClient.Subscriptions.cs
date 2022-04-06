@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
 
-#nullable enable
 namespace EventStore.Client {
 	public partial class EventStoreClient {
 		/// <summary>

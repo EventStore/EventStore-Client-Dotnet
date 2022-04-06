@@ -1,6 +1,5 @@
 using System;
 
-#nullable enable
 namespace EventStore.Client {
 	internal struct SubscriptionConfirmation : IEquatable<SubscriptionConfirmation> {
 		public static readonly SubscriptionConfirmation None = default;

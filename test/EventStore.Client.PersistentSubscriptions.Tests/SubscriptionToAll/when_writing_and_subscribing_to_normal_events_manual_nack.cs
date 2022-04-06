@@ -18,7 +18,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task Test() {
 			await _fixture.EventsReceived.WithTimeout();
 		}
@@ -28,7 +28,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			private readonly TaskCompletionSource<bool> _eventsReceived;
 			public Task EventsReceived => _eventsReceived.Task;
 
-			private PersistentSubscription _subscription;
+			private PersistentSubscription? _subscription;
 			private int _eventReceivedCount;
 
 			public Fixture()  {

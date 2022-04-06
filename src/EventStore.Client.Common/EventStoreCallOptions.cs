@@ -3,7 +3,6 @@ using System.Threading;
 using Grpc.Core;
 using Timeout_ = System.Threading.Timeout;
 
-#nullable enable
 namespace EventStore.Client {
 	internal static class EventStoreCallOptions {
 		// deadline falls back to infinity

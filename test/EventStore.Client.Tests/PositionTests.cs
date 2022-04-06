@@ -24,14 +24,14 @@ namespace EventStore.Client {
 			Assert.Equal($"C:{sut.CommitPosition}/P:{sut.PreparePosition}", sut.ToString());
 		}
 
-		public static IEnumerable<object[]> ArgumentOutOfRangeTestCases() {
+		public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
 			const string commitPosition = nameof(commitPosition);
 			const string preparePosition = nameof(preparePosition);
 
-			yield return new object[] {5, 6, commitPosition};
-			yield return new object[] {ulong.MaxValue - 1, 6, commitPosition};
-			yield return new object[] {ulong.MaxValue, ulong.MaxValue - 1, preparePosition};
-			yield return new object[] {(ulong)long.MaxValue + 1, long.MaxValue, commitPosition};
+			yield return new object?[] {5, 6, commitPosition};
+			yield return new object?[] {ulong.MaxValue - 1, 6, commitPosition};
+			yield return new object?[] {ulong.MaxValue, ulong.MaxValue - 1, preparePosition};
+			yield return new object?[] {(ulong)long.MaxValue + 1, long.MaxValue, commitPosition};
 		}
 
 		[Theory, MemberData(nameof(ArgumentOutOfRangeTestCases))]

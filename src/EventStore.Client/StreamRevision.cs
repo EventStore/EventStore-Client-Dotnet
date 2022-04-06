@@ -1,6 +1,5 @@
 using System;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// A structure referring to the expected stream revision when writing to a stream.

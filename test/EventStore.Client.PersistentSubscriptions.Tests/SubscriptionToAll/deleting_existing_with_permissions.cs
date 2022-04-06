@@ -20,7 +20,7 @@ namespace EventStore.Client.SubscriptionToAll {
 					userCredentials: TestCredentials.Root);
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public Task the_delete_of_group_succeeds() =>
 			_fixture.Client.DeleteToAllAsync("groupname123",
 				userCredentials: TestCredentials.Root);

@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Polly;
 
-#nullable enable
 namespace EventStore.Client {
 	internal static class EventStoreUserManagementClientExtensions {
 		public static Task CreateUserWithRetry(this EventStoreUserManagementClient client, string loginName,

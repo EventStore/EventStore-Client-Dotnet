@@ -12,9 +12,9 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 		
-		public static IEnumerable<object[]> FilterCases() => Filters.All.Select(filter => new object[] {filter});
+		public static IEnumerable<object?[]> FilterCases() => Filters.All.Select(filter => new object[] {filter});
 
-		[Theory, MemberData(nameof(FilterCases))]
+		[SupportsPSToAll.Theory, MemberData(nameof(FilterCases))]
 		public async Task reads_all_existing_filtered_events_from_specified_start(string filterName) {
 			var streamPrefix = $"{filterName}-{_fixture.GetStreamName()}";
 			var (getFilter, prepareEvent) = Filters.GetFilter(filterName);
@@ -25,7 +25,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			var events = _fixture.CreateTestEvents(20).Select(e => prepareEvent(streamPrefix, e)).ToArray();
 			var eventsToSkip = events.Take(10).ToArray();
 			var eventsToCapture = events.Skip(10).ToArray();
-			IWriteResult eventToCaptureResult = null;
+			IWriteResult? eventToCaptureResult = null;
 
 			foreach (var e in eventsToSkip) {
 				await _fixture.StreamsClient.AppendToStreamAsync($"{streamPrefix}_{Guid.NewGuid():n}",
@@ -38,7 +38,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			}
 			
 			await _fixture.Client.CreateToAllAsync(filterName, filter,
-				new PersistentSubscriptionSettings(startFrom: eventToCaptureResult.LogPosition),
+				new PersistentSubscriptionSettings(startFrom: eventToCaptureResult!.LogPosition),
 				userCredentials: TestCredentials.Root);
 			
 			using var subscription = await _fixture.Client.SubscribeToAllAsync(filterName,

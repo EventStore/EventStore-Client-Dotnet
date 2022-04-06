@@ -4,7 +4,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	///  A set of extension methods for an <see cref="EventStoreClient"/>.

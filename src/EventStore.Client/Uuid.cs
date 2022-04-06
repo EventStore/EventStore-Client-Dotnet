@@ -1,6 +1,5 @@
 using System;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// An RFC-4122 compliant v4 UUID.

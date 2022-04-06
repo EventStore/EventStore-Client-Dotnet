@@ -19,7 +19,7 @@ namespace EventStore.Client {
 			ClusterMessages.VNodeState.DiscoverLeader
 		};
 
-		public static IEnumerable<object[]> InvalidStatesCases() {
+		public static IEnumerable<object?[]> InvalidStatesCases() {
 			foreach (var state in _notAllowedStates) {
 				var allowedNodeId = Uuid.NewUuid();
 				var allowedNode = new DnsEndPoint(allowedNodeId.ToString(), 2113);
@@ -34,7 +34,7 @@ namespace EventStore.Client {
 					}
 				};
 
-				yield return new object[] {
+				yield return new object?[] {
 					new ClusterMessages.ClusterInfo(new ClusterMessages.MemberInfo[] {
 						new(allowedNodeId, ClusterMessages.VNodeState.Leader, true, allowedNode),
 						new(notAllowedNodeId, state, true, notAllowedNode),

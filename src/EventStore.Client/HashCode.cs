@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 
-#nullable enable
 namespace EventStore.Client {
 	#pragma warning disable 1591
 	public readonly struct HashCode {

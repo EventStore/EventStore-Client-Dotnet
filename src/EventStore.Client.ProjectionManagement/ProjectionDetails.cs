@@ -1,4 +1,3 @@
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// Provides the details for a projection.

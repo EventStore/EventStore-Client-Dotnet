@@ -1,0 +1,15 @@
+name: Test LTS
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+    tags:
+      - v*
+
+jobs:
+  test:
+    uses: ./.github/workflows/base.yml
+    with:
+      docker-tag: lts

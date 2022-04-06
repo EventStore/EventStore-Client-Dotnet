@@ -14,15 +14,15 @@ namespace EventStore.Client {
 			_fixture = fixture;
 		}
 
-		public static IEnumerable<object[]> TestCases() {
+		public static IEnumerable<object?[]> TestCases() {
 			var json = @"{""some"":""json""}";
 
-			yield return new object[] {true, json, string.Empty};
-			yield return new object[] {true, string.Empty, json};
-			yield return new object[] {true, json, json};
-			yield return new object[] {false, json, string.Empty};
-			yield return new object[] {false, string.Empty, json};
-			yield return new object[] {false, json, json};
+			yield return new object?[] {true, json, string.Empty};
+			yield return new object?[] {true, string.Empty, json};
+			yield return new object?[] {true, json, json};
+			yield return new object?[] {false, json, string.Empty};
+			yield return new object?[] {false, string.Empty, json};
+			yield return new object?[] {false, json, json};
 		}
 
 		[Theory, MemberData(nameof(TestCases))]
@@ -52,7 +52,7 @@ namespace EventStore.Client {
 		}
 
 		private string GetStreamName(bool isJson, string data, string metadata,
-			[CallerMemberName] string testMethod = default)
+			[CallerMemberName] string? testMethod = default)
 			=>
 				$"{_fixture.GetStreamName(testMethod)}_{isJson}_{(data == string.Empty ? "no_data" : "data")}_{(metadata == string.Empty ? "no_metadata" : "metadata")}";
 

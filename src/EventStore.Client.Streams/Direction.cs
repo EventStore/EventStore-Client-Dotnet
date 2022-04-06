@@ -1,5 +1,4 @@
-﻿#nullable enable
-namespace EventStore.Client {
+﻿namespace EventStore.Client {
 	/// <summary>
 	/// An enumeration that indicates the direction of the read operation.
 	/// </summary>

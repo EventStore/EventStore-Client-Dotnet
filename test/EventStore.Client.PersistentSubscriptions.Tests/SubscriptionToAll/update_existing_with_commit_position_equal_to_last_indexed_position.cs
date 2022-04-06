@@ -29,7 +29,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			protected override Task When() => Task.CompletedTask;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task the_completion_succeeds() =>
 			await _fixture.Client.UpdateToAllAsync(Group,
 					new PersistentSubscriptionSettings(

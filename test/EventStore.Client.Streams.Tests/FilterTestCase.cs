@@ -24,7 +24,7 @@ namespace EventStore.Client {
 		public static readonly IEnumerable<string> All = typeof(Filters)
 			.GetFields(BindingFlags.NonPublic | BindingFlags.Static)
 			.Where(fi => fi.IsLiteral && !fi.IsInitOnly)
-			.Select(fi => (string)fi.GetRawConstantValue());
+			.Select(fi => (string)fi.GetRawConstantValue()!);
 
 		public static (Func<string, IEventFilter> getFilter, Func<string, EventData, EventData> prepareEvent)
 			GetFilter(string name) => s_filters[name];

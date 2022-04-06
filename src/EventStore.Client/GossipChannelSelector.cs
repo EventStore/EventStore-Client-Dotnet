@@ -7,7 +7,6 @@ using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-#nullable enable
 namespace EventStore.Client {
 	// Thread safe
 	internal class GossipChannelSelector : IChannelSelector {

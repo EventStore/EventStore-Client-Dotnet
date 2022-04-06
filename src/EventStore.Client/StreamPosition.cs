@@ -1,6 +1,5 @@
 using System;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// A structure referring to an <see cref="EventRecord"/>'s position within a stream.

@@ -25,9 +25,9 @@ namespace EventStore.Client {
 			Assert.Equal(sut + 1, sut.Next());
 		}
 
-		public static IEnumerable<object[]> AdditionOutOfBoundsCases() {
-			yield return new object[] {StreamPosition.End, 1};
-			yield return new object[] {new StreamPosition(long.MaxValue), long.MaxValue + 2UL};
+		public static IEnumerable<object?[]> AdditionOutOfBoundsCases() {
+			yield return new object?[] {StreamPosition.End, 1};
+			yield return new object?[] {new StreamPosition(long.MaxValue), long.MaxValue + 2UL};
 		}
 
 		[Theory, MemberData(nameof(AdditionOutOfBoundsCases))]
@@ -43,9 +43,9 @@ namespace EventStore.Client {
 			Assert.Equal(new StreamPosition(0), 1 - sut);
 		}
 
-		public static IEnumerable<object[]> SubtractionOutOfBoundsCases() {
-			yield return new object[] {new StreamPosition(1), 2};
-			yield return new object[] {StreamPosition.Start, 1};
+		public static IEnumerable<object?[]> SubtractionOutOfBoundsCases() {
+			yield return new object?[] {new StreamPosition(1), 2};
+			yield return new object?[] {StreamPosition.Start, 1};
 		}
 
 		[Theory, MemberData(nameof(SubtractionOutOfBoundsCases))]
@@ -54,9 +54,9 @@ namespace EventStore.Client {
 			Assert.Throws<OverflowException>(() => (ulong)streamPosition - new StreamPosition(operand));
 		}
 
-		public static IEnumerable<object[]> ArgumentOutOfRangeTestCases() {
-			yield return new object[] {long.MaxValue + 1UL};
-			yield return new object[] {ulong.MaxValue - 1UL};
+		public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
+			yield return new object?[] {long.MaxValue + 1UL};
+			yield return new object?[] {ulong.MaxValue - 1UL};
 		}
 
 		[Theory, MemberData(nameof(ArgumentOutOfRangeTestCases))]

@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Polly;
 
-#nullable enable
 namespace EventStore.Client {
 	public static class EventStoreClientExtensions {
 		public static async Task WarmUpAsync(this EventStoreClient self) {

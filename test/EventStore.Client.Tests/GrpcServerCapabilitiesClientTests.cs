@@ -12,9 +12,9 @@ using Xunit;
 
 namespace EventStore.Client {
 	public class GrpcServerCapabilitiesClientTests {
-		public static IEnumerable<object[]> ExpectedResultsCases() {
-			yield return new object[] {new SupportedMethods(), new ServerCapabilities()};
-			yield return new object[] {
+		public static IEnumerable<object?[]> ExpectedResultsCases() {
+			yield return new object?[] {new SupportedMethods(), new ServerCapabilities()};
+			yield return new object?[] {
 				new SupportedMethods {
 					Methods = {
 						new SupportedMethod {
@@ -25,7 +25,7 @@ namespace EventStore.Client {
 				},
 				new ServerCapabilities(SupportsBatchAppend: true)
 			};
-			yield return new object[] {
+			yield return new object?[] {
 				new SupportedMethods {
 					Methods = {
 						new SupportedMethod {
@@ -37,7 +37,7 @@ namespace EventStore.Client {
 				},
 				new ServerCapabilities(SupportsPersistentSubscriptionsToAll: true)
 			};
-			yield return new object[] {
+			yield return new object?[] {
 				new SupportedMethods {
 					Methods = {
 						new SupportedMethod {

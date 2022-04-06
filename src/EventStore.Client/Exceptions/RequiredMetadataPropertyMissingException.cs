@@ -1,6 +1,5 @@
 ﻿using System;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// Exception thrown when a required metadata property is missing.

@@ -12,16 +12,16 @@ namespace EventStore.Client {
 
 		[Fact]
 		public void succeeds() {
-			Assert.Equal(new StreamRevision(0), _fixture.Result.NextExpectedStreamRevision);
+			Assert.Equal(new StreamRevision(0), _fixture.Result!.NextExpectedStreamRevision);
 		}
 
 		[Fact]
 		public void returns_position() {
-			Assert.True(_fixture.Result.LogPosition > Position.Start);
+			Assert.True(_fixture.Result!.LogPosition > Position.Start);
 		}
 
 		public class Fixture : EventStoreClientFixture {
-			public IWriteResult Result { get; private set; }
+			public IWriteResult? Result { get; private set; }
 
 			protected override Task Given() => Task.CompletedTask;
 

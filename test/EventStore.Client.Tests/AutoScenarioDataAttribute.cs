@@ -24,7 +24,7 @@ namespace EventStore.Client {
 		}
 
 		private class CustomAutoData : AutoDataAttribute {
-			public CustomAutoData(Type fixtureType) : base(() => (IFixture)Activator.CreateInstance(fixtureType)) {
+			public CustomAutoData(Type fixtureType) : base(() => (IFixture)Activator.CreateInstance(fixtureType)!) {
 			}
 		}
 	}

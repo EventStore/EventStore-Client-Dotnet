@@ -1,6 +1,5 @@
 ﻿using System.Net;
 
-#nullable enable
 namespace EventStore.Client {
 	internal static class ClusterMessages {
 		public record ClusterInfo(MemberInfo[] Members);

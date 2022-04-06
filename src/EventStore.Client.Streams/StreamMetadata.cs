@@ -1,7 +1,6 @@
 using System;
 using System.Text.Json;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// A structure representing a stream's custom metadata with strongly typed properties

@@ -7,7 +7,6 @@ using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// Represents a persistent subscription connection.
@@ -221,7 +220,7 @@ namespace EventStore.Client {
 				e == null
 					? null
 					: new EventRecord(
-						e.StreamIdentifier,
+						e.StreamIdentifier!,
 						Uuid.FromDto(e.Id),
 						new StreamPosition(e.StreamRevision),
 						new Position(e.CommitPosition, e.PreparePosition),

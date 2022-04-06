@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-#nullable enable
 namespace EventStore.Client {
 	public static class EventStorePersistentSubscriptionsClientExtensions {
 		public static async Task WarmUpAsync(this EventStorePersistentSubscriptionsClient self) {

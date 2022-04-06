@@ -7,7 +7,6 @@ using EventStore.Client.Interceptors;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// The base class used by clients used to communicate with the EventStoreDB.

@@ -1,4 +1,3 @@
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// A collection of constants and methods to identify streams.

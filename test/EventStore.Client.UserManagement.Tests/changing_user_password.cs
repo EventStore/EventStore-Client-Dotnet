@@ -11,14 +11,14 @@ namespace EventStore.Client {
 			_fixture = fixture;
 		}
 
-		public static IEnumerable<object[]> NullInputCases() {
+		public static IEnumerable<object?[]> NullInputCases() {
 			var loginName = "ouro";
 			var currentPassword = "foofoofoo";
 			var newPassword = "foofoofoofoofoofoo";
 
-			yield return new object[] {null, currentPassword, newPassword, nameof(loginName)};
-			yield return new object[] {loginName, null, newPassword, nameof(currentPassword)};
-			yield return new object[] {loginName, currentPassword, null, nameof(newPassword)};
+			yield return new object?[] {null, currentPassword, newPassword, nameof(loginName)};
+			yield return new object?[] {loginName, null, newPassword, nameof(currentPassword)};
+			yield return new object?[] {loginName, currentPassword, null, nameof(newPassword)};
 		}
 
 		[Theory, MemberData(nameof(NullInputCases))]
@@ -30,14 +30,14 @@ namespace EventStore.Client {
 			Assert.Equal(paramName, ex.ParamName);
 		}
 
-		public static IEnumerable<object[]> EmptyInputCases() {
+		public static IEnumerable<object?[]> EmptyInputCases() {
 			var loginName = "ouro";
 			var currentPassword = "foofoofoo";
 			var newPassword = "foofoofoofoofoofoo";
 
-			yield return new object[] {string.Empty, currentPassword, newPassword, nameof(loginName)};
-			yield return new object[] {loginName, string.Empty, newPassword, nameof(currentPassword)};
-			yield return new object[] {loginName, currentPassword, string.Empty, nameof(newPassword)};
+			yield return new object?[] {string.Empty, currentPassword, newPassword, nameof(loginName)};
+			yield return new object?[] {loginName, string.Empty, newPassword, nameof(currentPassword)};
+			yield return new object?[] {loginName, currentPassword, string.Empty, nameof(newPassword)};
 		}
 
 		[Theory, MemberData(nameof(EmptyInputCases))]

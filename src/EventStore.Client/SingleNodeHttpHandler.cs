@@ -3,7 +3,6 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-#nullable enable
 namespace EventStore.Client {
 	internal class SingleNodeHttpHandler : DelegatingHandler {
 		private readonly EventStoreClientSettings _settings;

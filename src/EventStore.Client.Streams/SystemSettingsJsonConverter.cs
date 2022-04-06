@@ -2,7 +2,6 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-#nullable enable
 namespace EventStore.Client {
 	internal class SystemSettingsJsonConverter : JsonConverter<SystemSettings> {
 		public static readonly SystemSettingsJsonConverter Instance = new SystemSettingsJsonConverter();

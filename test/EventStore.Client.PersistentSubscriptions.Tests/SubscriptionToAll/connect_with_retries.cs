@@ -12,7 +12,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			_fixture = fixture;
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task events_are_retried_until_success() {
 			Assert.Equal(5, await _fixture.RetryCount.WithTimeout());
 		}
@@ -20,7 +20,7 @@ namespace EventStore.Client.SubscriptionToAll {
 		public class Fixture : EventStoreClientFixture {
 			private readonly TaskCompletionSource<int> _retryCountSource;
 			public Task<int> RetryCount => _retryCountSource.Task;
-			private PersistentSubscription _subscription;
+			private PersistentSubscription? _subscription;
 
 			public Fixture() {
 				_retryCountSource = new TaskCompletionSource<int>();

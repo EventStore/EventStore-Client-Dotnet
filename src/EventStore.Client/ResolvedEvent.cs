@@ -1,4 +1,3 @@
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// A structure representing a single event or a resolved link event.

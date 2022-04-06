@@ -7,18 +7,17 @@ namespace EventStore.Client.SubscriptionToAll {
 		: IClassFixture<deleting_existing_with_subscriber.Fixture> {
 		private readonly Fixture _fixture;
 
-
 		public deleting_existing_with_subscriber(Fixture fixture) {
 			_fixture = fixture;
 		}
 
 		public class Fixture : EventStoreClientFixture {
-			public Task<(SubscriptionDroppedReason reason, Exception exception)> Dropped => _dropped.Task;
-			private readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception)> _dropped;
-			private PersistentSubscription _subscription;
+			public Task<(SubscriptionDroppedReason, Exception?)> Dropped => _dropped.Task;
+			private readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception?)> _dropped;
+			private PersistentSubscription? _subscription;
 
 			public Fixture() {
-				_dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
+				_dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 			}
 
 			protected override async Task Given() {
@@ -42,7 +41,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			}
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task the_subscription_is_dropped() {
 			var (reason, exception) = await _fixture.Dropped.WithTimeout();
 			Assert.Equal(SubscriptionDroppedReason.ServerError, reason);

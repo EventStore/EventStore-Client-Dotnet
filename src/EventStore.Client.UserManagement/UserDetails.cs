@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// Provides the details for a user.

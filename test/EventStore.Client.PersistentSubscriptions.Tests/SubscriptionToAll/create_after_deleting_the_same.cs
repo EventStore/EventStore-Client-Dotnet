@@ -22,7 +22,7 @@ namespace EventStore.Client.SubscriptionToAll {
 			}
 		}
 
-		[Fact]
+		[SupportsPSToAll.Fact]
 		public async Task the_completion_succeeds() =>
 			await _fixture.Client.CreateToAllAsync("existing",
 				new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);

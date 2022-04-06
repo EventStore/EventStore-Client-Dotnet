@@ -55,18 +55,18 @@ namespace EventStore.Client.Security {
 		public async Task
 			writing_meta_to_no_acl_stream_is_not_authenticated_when_not_existing_credentials_are_passed() {
 			await Assert.ThrowsAsync<NotAuthenticatedException>(() =>
-				_fixture.WriteMeta(SecurityFixture.NoAclStream, TestCredentials.TestBadUser, null));
+				_fixture.WriteMeta(SecurityFixture.NoAclStream, TestCredentials.TestBadUser));
 		}
 
 		[Fact]
 		public async Task writing_meta_to_no_acl_stream_succeeds_when_any_existing_user_credentials_are_passed() {
-			await _fixture.WriteMeta(SecurityFixture.NoAclStream, TestCredentials.TestUser1, null);
-			await _fixture.WriteMeta(SecurityFixture.NoAclStream, TestCredentials.TestUser2, null);
+			await _fixture.WriteMeta(SecurityFixture.NoAclStream, TestCredentials.TestUser1);
+			await _fixture.WriteMeta(SecurityFixture.NoAclStream, TestCredentials.TestUser2);
 		}
 
 		[Fact]
 		public async Task writing_meta_to_no_acl_stream_succeeds_when_admin_user_credentials_are_passed() {
-			await _fixture.WriteMeta(SecurityFixture.NoAclStream, TestCredentials.TestAdmin, null);
+			await _fixture.WriteMeta(SecurityFixture.NoAclStream, TestCredentials.TestAdmin);
 		}
 
 

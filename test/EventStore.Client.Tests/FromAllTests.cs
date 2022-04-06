@@ -18,12 +18,12 @@ namespace EventStore.Client {
 		[Theory, AutoScenarioData(typeof(ScenarioFixture))]
 		public void LiveIsGreaterThanAll(FromAll other) => Assert.True(FromAll.End > other);
 
-		public static IEnumerable<object[]> ToStringCases() {
+		public static IEnumerable<object?[]> ToStringCases() {
 			var fixture = new ScenarioFixture();
 			var position = fixture.Create<Position>();
-			yield return new object[] {FromAll.After(position), position.ToString()};
-			yield return new object[] {FromAll.Start, "Start"};
-			yield return new object[] {FromAll.End, "Live"};
+			yield return new object?[] {FromAll.After(position), position.ToString()};
+			yield return new object?[] {FromAll.Start, "Start"};
+			yield return new object?[] {FromAll.End, "Live"};
 		}
 
 		[Theory, MemberData(nameof(ToStringCases))]

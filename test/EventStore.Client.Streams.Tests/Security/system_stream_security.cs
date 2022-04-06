@@ -26,7 +26,7 @@ namespace EventStore.Client.Security
 
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadMeta("$system-no-acl", TestCredentials.TestUser1));
 			await Assert.ThrowsAsync<AccessDeniedException>(() =>
-				_fixture.WriteMeta("$system-no-acl", TestCredentials.TestUser1, null));
+				_fixture.WriteMeta("$system-no-acl", TestCredentials.TestUser1));
 
 			await Assert.ThrowsAsync<AccessDeniedException>(() =>
 				_fixture.SubscribeToStream("$system-no-acl", TestCredentials.TestUser1));
@@ -41,7 +41,7 @@ namespace EventStore.Client.Security
 			await _fixture.ReadStreamBackward("$system-no-acl", TestCredentials.TestAdmin);
 
 			await _fixture.ReadMeta("$system-no-acl", TestCredentials.TestAdmin);
-			await _fixture.WriteMeta("$system-no-acl", TestCredentials.TestAdmin, null);
+			await _fixture.WriteMeta("$system-no-acl", TestCredentials.TestAdmin);
 
 			await _fixture.SubscribeToStream("$system-no-acl", TestCredentials.TestAdmin);
 		}

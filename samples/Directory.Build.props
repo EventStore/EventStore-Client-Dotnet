@@ -1,0 +1,6 @@
+<Project>
+	<PropertyGroup>
+		<Nullable>enable</Nullable>
+		<NullableContextOptions>enable</NullableContextOptions>
+	</PropertyGroup>
+</Project>

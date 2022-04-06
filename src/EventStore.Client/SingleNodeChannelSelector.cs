@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 
-#nullable enable
 namespace EventStore.Client {
 	internal class SingleNodeChannelSelector : IChannelSelector {
 		private readonly ChannelCache _channelCache;

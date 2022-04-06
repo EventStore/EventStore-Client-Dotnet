@@ -1,7 +1,6 @@
 using System;
 using System.Net;
 
-#nullable enable
 namespace EventStore.Client {
 	/// <summary>
 	/// The exception that is thrown when an operation requiring a leader node is made on a follower node.

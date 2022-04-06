@@ -21,7 +21,7 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task calls_subscription_dropped_when_disposed() {
-			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
+			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 
 			using var subscription = await _fixture.Client
 				.SubscribeToAllAsync(FromAll.End, EventAppeared, false, SubscriptionDropped)
@@ -40,14 +40,14 @@ namespace EventStore.Client {
 
 			Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) => Task.CompletedTask;
 
-			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception ex) =>
+			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) =>
 				dropped.SetResult((reason, ex));
 		}
 
 		[Fact]
 		public async Task calls_subscription_dropped_when_error_processing_event() {
 			var stream = _fixture.GetStreamName();
-			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
+			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 			var expectedException = new Exception("Error");
 
 			using var subscription = await _fixture.Client
@@ -64,14 +64,14 @@ namespace EventStore.Client {
 			Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) =>
 				Task.FromException(expectedException);
 
-			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception ex) =>
+			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) =>
 				dropped.SetResult((reason, ex));
 		}
 
 		[Fact]
 		public async Task subscribe_to_empty_database() {
 			var appeared = new TaskCompletionSource<bool>();
-			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
+			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 
 			using var subscription = await _fixture.Client
 				.SubscribeToAllAsync(FromAll.End, EventAppeared, false, SubscriptionDropped)
@@ -98,14 +98,14 @@ namespace EventStore.Client {
 				return Task.CompletedTask;
 			}
 
-			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception ex) =>
+			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) =>
 				dropped.SetResult((reason, ex));
 		}
 
 		[Fact]
 		public async Task does_not_read_existing_events_but_keep_listening_to_new_ones() {
 			var appeared = new TaskCompletionSource<bool>();
-			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception)>();
+			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 			var appearedEvents = new List<EventRecord>();
 			var afterEvents = _fixture.CreateTestEvents(10).ToArray();
 
@@ -145,7 +145,7 @@ namespace EventStore.Client {
 				return Task.CompletedTask;
 			}
 
-			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception ex) =>
+			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) =>
 				dropped.SetResult((reason, ex));
 		}
 
