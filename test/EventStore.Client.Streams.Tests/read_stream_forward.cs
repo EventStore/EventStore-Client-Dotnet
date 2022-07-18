@@ -150,6 +150,25 @@ namespace EventStore.Client {
 			Assert.True(count == maxCount);
 		}
 
+		[Fact]
+		public async Task populates_log_position_of_event() {
+			if (EventStoreTestServer.Version.Major < 22)
+				return;
+
+			var stream = _fixture.GetStreamName();
+
+			var events = _fixture.CreateTestEvents(1).ToArray();
+
+			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+
+			var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 1)
+				.Select(x => x.Event)
+				.ToArrayAsync();
+
+			Assert.Single(actual);
+			Assert.Equal(writeResult.LogPosition.PreparePosition, writeResult.LogPosition.CommitPosition);
+			Assert.Equal(writeResult.LogPosition, actual.First().Position);
+		}
 
 		public class Fixture : EventStoreClientFixture {
 			protected override Task Given() => Task.CompletedTask;
