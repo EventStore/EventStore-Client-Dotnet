@@ -4,8 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-namespace EventStore.Client
-{
+namespace EventStore.Client {
 	public static class ReadOnlyMemoryExtensions {
 		public static Position ParsePosition(this ReadOnlyMemory<byte> json) {
 			var checkPoint = json.ParseJson<string>();
@@ -20,10 +19,8 @@ namespace EventStore.Client
 			return StreamPosition.FromInt64(int.Parse(checkPoint));
 		}
 
-		private static T ParseJson<T>(this ReadOnlyMemory<byte> json) {
-			var result = JsonConvert.DeserializeObject<T>(UTF8NoBom.GetString(json.ToArray()), JsonSettings);
-			return result;
-		}
+		private static T ParseJson<T>(this ReadOnlyMemory<byte> json) =>
+			JsonConvert.DeserializeObject<T>(UTF8NoBom.GetString(json.ToArray()), JsonSettings)!;
 
 		private static readonly UTF8Encoding UTF8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
