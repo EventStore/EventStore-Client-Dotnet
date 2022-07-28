@@ -6,74 +6,67 @@ using System.Threading.Tasks;
 using EventStore.Client;
 
 namespace secure_with_tls {
-
-
-
 	class AllSubscription {
 
 		public async Task Run(EventStoreClient client) {
-			Console.WriteLine(DateTime.Now + " subscribing to $all");
+			Console.WriteLine(DateTime.Now + " subscribing!");
 
 			// broken sub doesn't process anything it receives
-			{
-				await MultiSubscribeAsync("broken", client, async evt => {
-					await new TaskCompletionSource<bool>().Task;
-				});
-			}
+			await MultiSubscribeAsync("broken", client, () => async evt => {
+				await new TaskCompletionSource<bool>().Task;
+			});
 
 			// slow sub processes one event each second
-			{
-				await MultiSubscribeAsync("slow", client, async evt => {
-					Console.WriteLine(DateTime.Now + " slow {0} {1}", evt.Event.EventNumber, evt.OriginalPosition);
-					await Task.Delay(500);
-				});
-			}
+			await MultiSubscribeAsync("slow", client, () => async evt => {
+				Console.WriteLine(DateTime.Now + " slow {0} {1}", evt.Event.EventNumber, evt.OriginalPosition);
+				await Task.Delay(500);
+			});
 
 			// fast sub drops everything on the floor
-			{
+			await MultiSubscribeAsync("fast", client, () => {
 				var count = 0L;
-				await MultiSubscribeAsync("fast", client, evt => {
+				return evt => {
 					if (count++ % 500 == 0)
 						Console.WriteLine(DateTime.Now + "                     fast {0} {1}", evt.Event.EventNumber, evt.OriginalPosition);
 					return Task.CompletedTask;
-				});
-			}
+				};
+			});
 
 			// bursty sub goes fast and slow. alternating
-			{
+			await MultiSubscribeAsync("bursty", client, () => {
 				var sw = Stopwatch.StartNew();
 				var count = 0L;
-				await MultiSubscribeAsync("bursty", client, async evt => {
+				return async evt => {
 					if (sw.ElapsedMilliseconds > 1000) {
 						await Task.Delay(1000);
 						sw.Restart();
 					}
 					if (count++ % 500 == 0)
 						Console.WriteLine(DateTime.Now + "                                                bursty {0} {1}", evt.Event.EventNumber, evt.OriginalPosition);
-				});
-			}
+				};
+			});
 
 			Console.WriteLine(DateTime.Now + " subscribed");
 
 			var r = new Random();
 			while (true) {
 				var evts = Enumerable
-					.Range(0, r.Next(100)) //qqqqqqq used to be 100
+					.Range(0, r.Next(100))
 					.Select(_ => new EventData(Uuid.NewUuid(), "testtype", Encoding.UTF8.GetBytes(@$"{{""data"": ""{new string('#', 1)}""}}")))
 					.ToArray();
 				var result = await client.AppendToStreamAsync(streamName: "test", StreamState.Any, evts);
-				await Task.Delay(1); //qqqq used ot be 1
+				await Task.Delay(1);
 			}
 		}
 
 		private async Task MultiSubscribeAsync(
 			string name,
 			EventStoreClient client,
-			Func<ResolvedEvent, Task> eventAppeared) {
+			Func<Func<ResolvedEvent, Task>> genEventAppeared) {
 
-//			await SubscribeToStreamAsync(name, client, eventAppeared);
-//			await SubscribeToAllAsync(name, client, eventAppeared);
-			await SubscribeToAllFilteredAsync(name, client, eventAppeared);
+			await SubscribeToStreamAsync($"{name}-stream", client, genEventAppeared());
+			await SubscribeToAllAsync($"{name}-all", client, genEventAppeared());
+			await SubscribeToAllFilteredAsync($"{name}-allfiltered", client, genEventAppeared());
 		}
 
 		private async Task SubscribeToStreamAsync(
