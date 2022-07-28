@@ -5,8 +5,7 @@ using System.Threading.Tasks;
 using EventStore.Client;
 using Grpc.Core;
 
-namespace secure_with_tls 
-{
+namespace secure_with_tls {
 	class Program 
 	{
 		private const string NoNodeConnectionErrorMessage =
@@ -21,71 +20,30 @@ namespace secure_with_tls
 		static async Task Main(string[] args) 
 		{
 			// take the address from environment variable (when run with Docker) or use localhost by default 
-			var connectionString = Environment.GetEnvironmentVariable("ESDB_CONNECTION_STRING") ?? "esdb://localhost:2113?tls=true&tlsVerifyCert=false";
+//			var connectionString = "esdb://localhost:2111,localhost:2112,localhost:2113?tls=false"; // ?tls=true&tlsVerifyCert=false
+			var connectionString = "esdb://localhost:2113?tls=false"; // ?tls=true&tlsVerifyCert=false
 
 			Console.WriteLine($"Connecting to EventStoreDB at: `{connectionString}`");
 
 			var settings = EventStoreClientSettings.Create(connectionString);
+			settings.ConnectivitySettings.NodePreference = NodePreference.Follower;
+
+			//			settings.DefaultCredentials = new UserCredentials("admin", "changeit");
+
 			await using var client = new EventStoreClient(settings);
-
-			//qq
-
+			await using var operations = new EventStoreOperationsClient(settings);
+			await using var persistentSubscriptions = new EventStorePersistentSubscriptionsClient(settings);
 
 			try {
-				// append some events
-				var eventData1 = new EventData(Uuid.NewUuid(), "testtype", Encoding.UTF8.GetBytes("{\"id\": \"1\", \"value\": \"some value\"}"));
-				var eventData2 = new EventData(Uuid.NewUuid(), "testtype", Encoding.UTF8.GetBytes("{\"id\": \"1\", \"value\": \"some value\"}"));
-				var eventData3 = new EventData(Uuid.NewUuid(), "testtype", Encoding.UTF8.GetBytes("{\"id\": \"1\", \"value\": \"some value\"}"));
-
-				var stream = $"test-{Guid.Empty}";
-				var appendResult = await client.AppendToStreamAsync(
-					stream,
-					StreamState.Any,
-					new List<EventData> { eventData1, eventData2, eventData3 });
-
-				Console.WriteLine("Appended");
 
 
-				client.ReadStreamAsync(Direction.Backwards, stream, StreamP)
+				// await new HeartbeatTester().Run(client, persistentSubscriptions);
+				// await new DoStuff().Run(client);
+				//await new DirtyReadTester().Run(client, operations);
+				//await new SubscriptionStallTester().Run(client);
+				await new AllSubscription().Run(client);
 
-				await foreach (var e in client.ReadStreamAsync(Direction.Forwards, "$ce-test", StreamPosition.Start, resolveLinkTos: true, maxCount: 500)) {
-					;
-				}
-				Console.WriteLine("Read");
-
-
-				var earlyReturn = true;
-				if (earlyReturn)
-					return;
-
-				await Task.Delay(500);
-
-				var creds = new UserCredentials("admin", "changeit");
-			
-				await foreach (var e in client.ReadStreamAsync(Direction.Forwards, "$ce-test", StreamPosition.Start, resolveLinkTos: true, userCredentials: creds)) {
-					;
-				}
-
-				await foreach (var e in client.ReadAllAsync(Direction.Forwards, Position.Start, resolveLinkTos: true, userCredentials: creds)) {
-					if (e.OriginalStreamId == "$ce-test") {
-						int i = 0;
-						i++;
-					}
-				}
-
-				var sub = await client.SubscribeToAllAsync(
-					FromAll.Start,
-					async (s, e, ct) => {
-						if (e.OriginalStreamId == "$ce-test") {
-							int i = 0;
-							i++;
-						}
-						await Task.Yield();
-					},
-					resolveLinkTos: true,
-					userCredentials: creds);
-			} 
-			catch (Exception exception) 
+			} catch (Exception exception) 
 			{
 				var innerException = exception.InnerException;
 

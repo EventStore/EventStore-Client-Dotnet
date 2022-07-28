@@ -49,7 +49,7 @@ namespace EventStore.Client {
 		static string UseClusterName => "ES_USE_CLUSTER";
 		static string UseExternalServerName => "ES_USE_EXTERNAL_SERVER";
 		static string ImageTagName => "ES_DOCKER_TAG";
-		static string ImageTagDefault => "ci"; // e.g. "21.10.1-focal";
+		static string ImageTagDefault => "tim-all-position"; // "ci"; // e.g. "21.10.1-focal";
 		static string DbLogFormatName => "EVENTSTORE_DB_LOG_FORMAT";
 		static string DbLogFormatDefault => "V2";
 
