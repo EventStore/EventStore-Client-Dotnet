@@ -56,12 +56,18 @@ namespace secure_with_tls {
 
 			var r = new Random();
 			while (true) {
-				var evts = Enumerable
-					.Range(0, r.Next(100))
-					.Select(_ => new EventData(Uuid.NewUuid(), "testtype", Encoding.UTF8.GetBytes(@$"{{""data"": ""{new string('#', 1)}""}}")))
-					.ToArray();
-				var result = await subscribeClient.AppendToStreamAsync(streamName: "test", StreamState.Any, evts);
-				await Task.Delay(1);
+				try {
+					var evts = Enumerable
+						.Range(0, r.Next(100))
+						.Select(_ => new EventData(Uuid.NewUuid(), "testtype", Encoding.UTF8.GetBytes(@$"{{""data"": ""{new string('#', 1)}""}}")))
+						.ToArray();
+					var result = await subscribeClient.AppendToStreamAsync(streamName: "test", StreamState.Any, evts);
+					await Task.Delay(1);
+				}
+				catch (Exception ex) {
+					Console.WriteLine(DateTime.Now + $" append failed. Retrying. ex: {ex.Message}");
+					await Task.Delay(100);
+				}
 			}
 		}
 
