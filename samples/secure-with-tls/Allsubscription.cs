@@ -2,13 +2,18 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
+using Timeout = System.Threading.Timeout;
 
 namespace secure_with_tls {
 	// when running this we expect to see
 	// 1. no out of order events (such an event will stop the process with an error)
-	// 2. no stalled subscriptions - currently this is not detected, they just stop outputting
+	// 2. no stalled subscriptions (this will also stop the process with an error)
+	//      - it could happen because
+	//
+	// this is intended to be run on an empty database to allow the catchup subscriptions to quickly transition to live
 	class AllSubscription {
 
 		public async Task Run(EventStoreClient leaderClient, EventStoreClient followerClient, EventStoreClient readOnlyReplicaClient) {
@@ -18,18 +23,18 @@ namespace secure_with_tls {
 			var subscribeClient = readOnlyReplicaClient;
 
 			// broken sub doesn't process anything it receives
-			await MultiSubscribeAsync("broken", subscribeClient, () => async (name, evt) => {
+			await MultiSubscribeAsync("broken", Timeout.InfiniteTimeSpan, subscribeClient, () => async (name, evt) => {
 				await new TaskCompletionSource<bool>().Task;
 			});
 
-			// slow sub processes one event each second
-			await MultiSubscribeAsync("slow", subscribeClient, () => async (name, evt) => {
+			// slow sub processes two events each second
+			await MultiSubscribeAsync("slow", TimeSpan.FromSeconds(10), subscribeClient, () => async (name, evt) => {
 				Console.WriteLine(DateTime.Now + " {0} {1} {2}", name, evt.Event.EventNumber, evt.OriginalPosition);
 				await Task.Delay(500);
 			});
 
 			// fast sub drops everything on the floor
-			await MultiSubscribeAsync("fast", subscribeClient, () => {
+			await MultiSubscribeAsync("fast", TimeSpan.FromSeconds(10), subscribeClient, () => {
 				var count = 0L;
 				return (name, evt) => {
 					if (count++ % 500 == 0)
@@ -39,7 +44,7 @@ namespace secure_with_tls {
 			});
 
 			// bursty sub goes fast and slow. alternating
-			await MultiSubscribeAsync("bursty", subscribeClient, () => {
+			await MultiSubscribeAsync("bursty", TimeSpan.FromSeconds(10), subscribeClient, () => {
 				var sw = Stopwatch.StartNew();
 				var count = 0L;
 				return async (name, evt) => {
@@ -73,40 +78,47 @@ namespace secure_with_tls {
 
 		private async Task MultiSubscribeAsync(
 			string name,
+			TimeSpan activityCheckInterval,
 			EventStoreClient client,
 			Func<Func<string, ResolvedEvent, Task>> genEventAppeared) {
 
-			await SubscribeToStreamAsync($"{name}-stream", client, genEventAppeared());
-			await SubscribeToAllAsync($"{name}-all", client, genEventAppeared());
-			await SubscribeToAllFilteredAsync($"{name}-allfiltered", client, genEventAppeared());
+			await SubscribeToStreamAsync($"{name}-stream", activityCheckInterval, client, genEventAppeared());
+			await SubscribeToAllAsync($"{name}-all", activityCheckInterval, client, genEventAppeared());
+			await SubscribeToAllFilteredAsync($"{name}-allfiltered", activityCheckInterval, client, genEventAppeared());
 		}
+
 
 		private async Task SubscribeToStreamAsync(
 			string name,
+			TimeSpan activityCheckInterval,
 			EventStoreClient client,
 			Func<string, ResolvedEvent, Task> eventAppeared,
-			EventOrderTracker tracker = null,
+			EventOrderTracker orderTracker = null,
 			StreamPosition? checkpoint = null) {
 
-			tracker ??= new(name);
+			orderTracker ??= new(name);
 			var start = checkpoint == null ? FromStream.Start : FromStream.After(checkpoint.Value);
 
 			while (true) {
+				var activityTracker = new ActivityTracker(name, activityCheckInterval);
 				try {
 					await client.SubscribeToStreamAsync(
 						"test",
 						start: start,
 						eventAppeared: async (s, evt, ct) => {
 							checkpoint = evt.Event.EventNumber;
-							tracker.OnEvent(evt);
+							orderTracker.OnEvent(evt);
+							activityTracker.Touch();
 							await eventAppeared(name, evt);
 						},
 						subscriptionDropped: (s, reason, ex) => {
 							Console.WriteLine(DateTime.Now + $" {name} was dropped {reason} {ex.Message}. Resubscribing...");
-							_ = SubscribeToStreamAsync(name, client, eventAppeared, tracker, checkpoint);
+							activityTracker.Dispose();
+							_ = SubscribeToStreamAsync(name, activityCheckInterval, client, eventAppeared, orderTracker, checkpoint);
 						});
 					return;
 				} catch (Exception ex) {
+					activityTracker.Dispose();
 					Console.WriteLine(DateTime.Now + $" {name} failed to subscribe. Retrying. ex: {ex}");
 				}
 			}
@@ -114,29 +126,34 @@ namespace secure_with_tls {
 
 		private async Task SubscribeToAllAsync(
 			string name,
+			TimeSpan activityCheckInterval,
 			EventStoreClient client,
 			Func<string, ResolvedEvent, Task> eventAppeared,
-			EventOrderTracker tracker = null,
+			EventOrderTracker orderTracker = null,
 			Position? checkpoint = null) {
 
-			tracker ??= new(name);
+			orderTracker ??= new(name);
 			var start = checkpoint == null ? FromAll.Start : FromAll.After(checkpoint.Value);
 
 			while (true) {
+				var activityTracker = new ActivityTracker(name, activityCheckInterval);
 				try {
 					await client.SubscribeToAllAsync(
 						start: start,
 						eventAppeared: async (s, evt, ct) => {
 							checkpoint = evt.OriginalPosition;
-							tracker.OnEvent(evt);
+							orderTracker.OnEvent(evt);
+							activityTracker.Touch();
 							await eventAppeared(name, evt);
 						},
 						subscriptionDropped: (s, reason, ex) => {
 							Console.WriteLine(DateTime.Now + $" {name} was dropped {reason} {ex.Message}. Resubscribing...");
-							_ = SubscribeToAllAsync(name, client, eventAppeared, tracker, checkpoint);
+							activityTracker.Dispose();
+							_ = SubscribeToAllAsync(name, activityCheckInterval, client, eventAppeared, orderTracker, checkpoint);
 						});
 					return;
 				} catch (Exception ex) {
+					activityTracker.Dispose();
 					Console.WriteLine(DateTime.Now + $" {name} failed to subscribe. Retrying. ex: {ex}");
 				}
 			}
@@ -144,27 +161,31 @@ namespace secure_with_tls {
 
 		private async Task SubscribeToAllFilteredAsync(
 			string name,
+			TimeSpan activityCheckInterval,
 			EventStoreClient client,
 			Func<string, ResolvedEvent, Task> eventAppeared,
-			EventOrderTracker tracker = null,
+			EventOrderTracker orderTracker = null,
 			Position? checkpoint = null) {
 
-			tracker ??= new(name);
+			orderTracker ??= new(name);
 			var start = checkpoint == null ? FromAll.Start : FromAll.After(checkpoint.Value);
 
 			while (true) {
+				var activityTracker = new ActivityTracker(name, activityCheckInterval);
 				try {
 					await client.SubscribeToAllAsync(
 						start: start,
 						eventAppeared: async (s, evt, ct) => {
 							if (checkpoint == null || checkpoint < evt.OriginalPosition)
 								checkpoint = evt.OriginalPosition;
-							tracker.OnEvent(evt);
+							orderTracker.OnEvent(evt);
+							activityTracker.Touch();
 							await eventAppeared(name, evt);
 						},
 						subscriptionDropped: (s, reason, ex) => {
 							Console.WriteLine(DateTime.Now + $" {name} was dropped {reason} {ex.Message}. Resubscribing...");
-							_ = SubscribeToAllFilteredAsync(name, client, eventAppeared, tracker, checkpoint);
+							activityTracker.Dispose();
+							_ = SubscribeToAllFilteredAsync(name, activityCheckInterval, client, eventAppeared, orderTracker, checkpoint);
 						},
 						filterOptions: new SubscriptionFilterOptions(
 							EventStore.Client.EventTypeFilter.ExcludeSystemEvents(),
@@ -175,6 +196,7 @@ namespace secure_with_tls {
 							}));
 					return;
 				} catch (Exception ex) {
+					activityTracker.Dispose();
 					Console.WriteLine(DateTime.Now + $" {name} failed to subscribe. Retrying. ex: {ex}");
 				}
 			}
@@ -199,6 +221,37 @@ namespace secure_with_tls {
 				}
 				_expectedEventNumber = _expectedEventNumber.Next();
 			}
+		}
+	}
+
+	class ActivityTracker : IDisposable {
+		private int _count;
+		private int _disposed;
+
+		public ActivityTracker(string name, TimeSpan interval) {
+			_ = Start();
+
+			async Task Start() {
+				var lastCount = _count;
+				while (_disposed == 0) {
+					await Task.Delay(interval);
+
+					var newCount = _count;
+					if (newCount == lastCount && _disposed == 0) {
+						Console.WriteLine(DateTime.Now + $" {name} HAS BECOME INACTIVE. No activity in {interval}. Count: {newCount}");
+						Environment.Exit(1);
+					}
+					lastCount = newCount;
+				}
+			}
+		}
+
+		public void Dispose() {
+			Interlocked.CompareExchange(ref _disposed, 1, 0);
+		}
+
+		public void Touch() {
+			Interlocked.Increment(ref _count);
 		}
 	}
 }
