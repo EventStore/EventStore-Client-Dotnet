@@ -26,13 +26,23 @@ namespace secure_with_tls {
 			Console.WriteLine($"Connecting to EventStoreDB at: `{connectionString}`");
 
 			var settings = EventStoreClientSettings.Create(connectionString);
-			settings.ConnectivitySettings.NodePreference = NodePreference.Follower;
+			settings.ConnectivitySettings.NodePreference = NodePreference.Leader;
+
+			var followerSettings = EventStoreClientSettings.Create(connectionString);
+			followerSettings.ConnectivitySettings.NodePreference = NodePreference.Follower;
+
+			var readOnlyReplicaSettings = EventStoreClientSettings.Create(connectionString);
+			readOnlyReplicaSettings.ConnectivitySettings.NodePreference = NodePreference.ReadOnlyReplica;
 
 			//			settings.DefaultCredentials = new UserCredentials("admin", "changeit");
 
-			await using var client = new EventStoreClient(settings);
+			await using var leaderClient = new EventStoreClient(settings);
+			await using var followerClient = new EventStoreClient(followerSettings);
+			await using var readOnlyReplicaClient = new EventStoreClient(readOnlyReplicaSettings);
+
 			await using var operations = new EventStoreOperationsClient(settings);
 			await using var persistentSubscriptions = new EventStorePersistentSubscriptionsClient(settings);
+
 
 			try {
 
@@ -41,7 +51,7 @@ namespace secure_with_tls {
 				// await new DoStuff().Run(client);
 				//await new DirtyReadTester().Run(client, operations);
 				//await new SubscriptionStallTester().Run(client);
-				await new AllSubscription().Run(client);
+				await new AllSubscription().Run(leaderClient, followerClient, readOnlyReplicaClient);
 
 			} catch (Exception exception) 
 			{

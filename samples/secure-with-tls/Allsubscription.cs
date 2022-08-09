@@ -6,43 +6,49 @@ using System.Threading.Tasks;
 using EventStore.Client;
 
 namespace secure_with_tls {
+	// when running this we expect to see
+	// 1. no out of order events (such an event will stop the process with an error)
+	// 2. no stalled subscriptions - currently this is not detected, they just stop outputting
 	class AllSubscription {
 
-		public async Task Run(EventStoreClient client) {
+		public async Task Run(EventStoreClient leaderClient, EventStoreClient followerClient, EventStoreClient readOnlyReplicaClient) {
 			Console.WriteLine(DateTime.Now + " subscribing!");
 
+			var appendClient = leaderClient;
+			var subscribeClient = readOnlyReplicaClient;
+
 			// broken sub doesn't process anything it receives
-			await MultiSubscribeAsync("broken", client, () => async evt => {
+			await MultiSubscribeAsync("broken", subscribeClient, () => async (name, evt) => {
 				await new TaskCompletionSource<bool>().Task;
 			});
 
 			// slow sub processes one event each second
-			await MultiSubscribeAsync("slow", client, () => async evt => {
-				Console.WriteLine(DateTime.Now + " slow {0} {1}", evt.Event.EventNumber, evt.OriginalPosition);
+			await MultiSubscribeAsync("slow", subscribeClient, () => async (name, evt) => {
+				Console.WriteLine(DateTime.Now + " {0} {1} {2}", name, evt.Event.EventNumber, evt.OriginalPosition);
 				await Task.Delay(500);
 			});
 
 			// fast sub drops everything on the floor
-			await MultiSubscribeAsync("fast", client, () => {
+			await MultiSubscribeAsync("fast", subscribeClient, () => {
 				var count = 0L;
-				return evt => {
+				return (name, evt) => {
 					if (count++ % 500 == 0)
-						Console.WriteLine(DateTime.Now + "                     fast {0} {1}", evt.Event.EventNumber, evt.OriginalPosition);
+						Console.WriteLine(DateTime.Now + "                     {0} {1} {2}", name, evt.Event.EventNumber, evt.OriginalPosition);
 					return Task.CompletedTask;
 				};
 			});
 
 			// bursty sub goes fast and slow. alternating
-			await MultiSubscribeAsync("bursty", client, () => {
+			await MultiSubscribeAsync("bursty", subscribeClient, () => {
 				var sw = Stopwatch.StartNew();
 				var count = 0L;
-				return async evt => {
+				return async (name, evt) => {
 					if (sw.ElapsedMilliseconds > 1000) {
 						await Task.Delay(1000);
 						sw.Restart();
 					}
 					if (count++ % 500 == 0)
-						Console.WriteLine(DateTime.Now + "                                                bursty {0} {1}", evt.Event.EventNumber, evt.OriginalPosition);
+						Console.WriteLine(DateTime.Now + "                                                {0} {1} {2}", name, evt.Event.EventNumber, evt.OriginalPosition);
 				};
 			});
 
@@ -54,7 +60,7 @@ namespace secure_with_tls {
 					.Range(0, r.Next(100))
 					.Select(_ => new EventData(Uuid.NewUuid(), "testtype", Encoding.UTF8.GetBytes(@$"{{""data"": ""{new string('#', 1)}""}}")))
 					.ToArray();
-				var result = await client.AppendToStreamAsync(streamName: "test", StreamState.Any, evts);
+				var result = await subscribeClient.AppendToStreamAsync(streamName: "test", StreamState.Any, evts);
 				await Task.Delay(1);
 			}
 		}
@@ -62,7 +68,7 @@ namespace secure_with_tls {
 		private async Task MultiSubscribeAsync(
 			string name,
 			EventStoreClient client,
-			Func<Func<ResolvedEvent, Task>> genEventAppeared) {
+			Func<Func<string, ResolvedEvent, Task>> genEventAppeared) {
 
 			await SubscribeToStreamAsync($"{name}-stream", client, genEventAppeared());
 			await SubscribeToAllAsync($"{name}-all", client, genEventAppeared());
@@ -72,7 +78,7 @@ namespace secure_with_tls {
 		private async Task SubscribeToStreamAsync(
 			string name,
 			EventStoreClient client,
-			Func<ResolvedEvent, Task> eventAppeared,
+			Func<string, ResolvedEvent, Task> eventAppeared,
 			EventOrderTracker tracker = null,
 			StreamPosition? checkpoint = null) {
 
@@ -87,7 +93,7 @@ namespace secure_with_tls {
 						eventAppeared: async (s, evt, ct) => {
 							checkpoint = evt.Event.EventNumber;
 							tracker.OnEvent(evt);
-							await eventAppeared(evt);
+							await eventAppeared(name, evt);
 						},
 						subscriptionDropped: (s, reason, ex) => {
 							Console.WriteLine(DateTime.Now + $" {name} was dropped {reason} {ex.Message}. Resubscribing...");
@@ -103,7 +109,7 @@ namespace secure_with_tls {
 		private async Task SubscribeToAllAsync(
 			string name,
 			EventStoreClient client,
-			Func<ResolvedEvent, Task> eventAppeared,
+			Func<string, ResolvedEvent, Task> eventAppeared,
 			EventOrderTracker tracker = null,
 			Position? checkpoint = null) {
 
@@ -117,7 +123,7 @@ namespace secure_with_tls {
 						eventAppeared: async (s, evt, ct) => {
 							checkpoint = evt.OriginalPosition;
 							tracker.OnEvent(evt);
-							await eventAppeared(evt);
+							await eventAppeared(name, evt);
 						},
 						subscriptionDropped: (s, reason, ex) => {
 							Console.WriteLine(DateTime.Now + $" {name} was dropped {reason} {ex.Message}. Resubscribing...");
@@ -133,7 +139,7 @@ namespace secure_with_tls {
 		private async Task SubscribeToAllFilteredAsync(
 			string name,
 			EventStoreClient client,
-			Func<ResolvedEvent, Task> eventAppeared,
+			Func<string, ResolvedEvent, Task> eventAppeared,
 			EventOrderTracker tracker = null,
 			Position? checkpoint = null) {
 
@@ -148,7 +154,7 @@ namespace secure_with_tls {
 							if (checkpoint == null || checkpoint < evt.OriginalPosition)
 								checkpoint = evt.OriginalPosition;
 							tracker.OnEvent(evt);
-							await eventAppeared(evt);
+							await eventAppeared(name, evt);
 						},
 						subscriptionDropped: (s, reason, ex) => {
 							Console.WriteLine(DateTime.Now + $" {name} was dropped {reason} {ex.Message}. Resubscribing...");
