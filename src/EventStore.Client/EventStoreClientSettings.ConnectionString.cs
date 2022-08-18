@@ -201,7 +201,8 @@ namespace EventStore.Client {
 				settings.CreateHttpMessageHandler = () => {
 					var handler = new SocketsHttpHandler {
 						KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,
-						KeepAlivePingTimeout = settings.ConnectivitySettings.KeepAliveTimeout
+						KeepAlivePingTimeout = settings.ConnectivitySettings.KeepAliveTimeout,
+						EnableMultipleHttp2Connections = true,
 					};
 
 					if (typedOptions.TryGetValue(TlsVerifyCert, out var tlsVerifyCert) && !(bool)tlsVerifyCert) {
