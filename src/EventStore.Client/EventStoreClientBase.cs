@@ -87,8 +87,10 @@ namespace EventStore.Client {
 		}
 
 #pragma warning disable 1591
-		protected async ValueTask<ChannelInfo> GetChannelInfo(CancellationToken cancellationToken) =>
-			await _channelInfoProvider.CurrentAsync.WithCancellation(cancellationToken).ConfigureAwait(false);
+		protected async ValueTask<ChannelInfo> GetChannelInfo(CancellationToken cancellationToken) {
+			_channelInfoProvider.Reset();
+			return await _channelInfoProvider.CurrentAsync.WithCancellation(cancellationToken).ConfigureAwait(false);
+		}
 #pragma warning restore 1591
 
 		// only exists so that we can manually trigger rediscovery in the tests (by reflection)
