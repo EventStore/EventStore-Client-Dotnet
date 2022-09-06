@@ -35,9 +35,9 @@ namespace EventStore.Client {
 		/// Constructs a new instance of <see cref="WrongExpectedVersionException" /> with the expected and actual versions if available.
 		/// </summary>
 		public WrongExpectedVersionException(string streamName, StreamRevision expectedStreamRevision,
-			StreamRevision actualStreamRevision, Exception? exception = null) :
+			StreamRevision actualStreamRevision, Exception? exception = null, string? message = null) :
 			base(
-				$"Append failed due to WrongExpectedVersion. Stream: {streamName}, Expected version: {expectedStreamRevision}, Actual version: {actualStreamRevision}",
+				message ?? $"Append failed due to WrongExpectedVersion. Stream: {streamName}, Expected version: {expectedStreamRevision}, Actual version: {actualStreamRevision}",
 				exception) {
 			StreamName = streamName;
 			ActualStreamRevision = actualStreamRevision;
