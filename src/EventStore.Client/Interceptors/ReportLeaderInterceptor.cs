@@ -35,7 +35,9 @@ namespace EventStore.Client.Interceptors {
 
 			response.ResponseAsync.ContinueWith(OnReconnectionRequired, ContinuationOptions);
 
-			return new AsyncClientStreamingCall<TRequest, TResponse>(response.RequestStream, response.ResponseAsync,
+			return new AsyncClientStreamingCall<TRequest, TResponse>(
+				new StreamWriter<TRequest>(response.RequestStream, OnReconnectionRequired),
+				response.ResponseAsync,
 				response.ResponseHeadersAsync, response.GetStatus, response.GetTrailers, response.Dispose);
 		}
 
@@ -44,7 +46,8 @@ namespace EventStore.Client.Interceptors {
 			AsyncDuplexStreamingCallContinuation<TRequest, TResponse> continuation) {
 			var response = continuation(context);
 
-			return new AsyncDuplexStreamingCall<TRequest, TResponse>(response.RequestStream,
+			return new AsyncDuplexStreamingCall<TRequest, TResponse>(
+				new StreamWriter<TRequest>(response.RequestStream, OnReconnectionRequired),
 				new StreamReader<TResponse>(response.ResponseStream, OnReconnectionRequired),
 				response.ResponseHeadersAsync,
 				response.GetStatus, response.GetTrailers, response.Dispose);
@@ -61,7 +64,7 @@ namespace EventStore.Client.Interceptors {
 				response.GetStatus, response.GetTrailers, response.Dispose);
 		}
 
-		private void OnReconnectionRequired<TResponse>(Task<TResponse> task) {
+		private void OnReconnectionRequired(Task task) {
 			ReconnectionRequired reconnectionRequired = task.Exception?.InnerException switch {
 				NotLeaderException ex => new ReconnectionRequired.NewLeader(ex.LeaderEndpoint),
 				RpcException {
@@ -75,11 +78,38 @@ namespace EventStore.Client.Interceptors {
 				_onReconnectionRequired(reconnectionRequired);
 		}
 
+		private class StreamWriter<T> : IClientStreamWriter<T> {
+			private readonly IClientStreamWriter<T> _inner;
+			private readonly Action<Task> _reportNewLeader;
+
+			public StreamWriter(IClientStreamWriter<T> inner, Action<Task> reportNewLeader) {
+				_inner = inner;
+				_reportNewLeader = reportNewLeader;
+			}
+
+			public WriteOptions WriteOptions {
+				get => _inner.WriteOptions;
+				set => _inner.WriteOptions = value;
+			}
+
+			public Task CompleteAsync() {
+				var task = _inner.CompleteAsync();
+				task.ContinueWith(_reportNewLeader, ContinuationOptions);
+				return task;
+			}
+
+			public Task WriteAsync(T message) {
+				var task = _inner.WriteAsync(message);
+				task.ContinueWith(_reportNewLeader, ContinuationOptions);
+				return task;
+			}
+		}
+
 		private class StreamReader<T> : IAsyncStreamReader<T> {
 			private readonly IAsyncStreamReader<T> _inner;
-			private readonly Action<Task<bool>> _reportNewLeader;
+			private readonly Action<Task> _reportNewLeader;
 
-			public StreamReader(IAsyncStreamReader<T> inner, Action<Task<bool>> reportNewLeader) {
+			public StreamReader(IAsyncStreamReader<T> inner, Action<Task> reportNewLeader) {
 				_inner = inner;
 				_reportNewLeader = reportNewLeader;
 			}
