@@ -1,8 +1,19 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EventStore.Client {
+	internal class SharingProvider {
+		protected ILogger Log { get; }
+
+		public SharingProvider(ILoggerFactory? loggerFactory) {
+			Log = loggerFactory?.CreateLogger<SharingProvider>() ??
+					new NullLogger<SharingProvider>();
+		}
+	}
+
 	// Given a factory for items of type TOutput, where the items:
 	//  - are expensive to produce
 	//  - can be shared by consumers
@@ -19,12 +30,17 @@ namespace EventStore.Client {
 	// thread safe, but it does need to terminate.
 	//
 	// This class is thread safe.
-	internal class SharingProvider<TInput, TOutput> {
+
+	internal class SharingProvider<TInput, TOutput> : SharingProvider {
 		private readonly Func<TInput, Action<TInput>, Task<TOutput>> _factory;
 		private readonly TInput _initialInput;
 		private TaskCompletionSource<TOutput> _currentBox;
 
-		public SharingProvider(Func<TInput, Action<TInput>, Task<TOutput>> factory, TInput initialInput) {
+		public SharingProvider(
+			Func<TInput, Action<TInput>, Task<TOutput>> factory,
+			TInput initialInput,
+			ILoggerFactory? loggerFactory = null) : base(loggerFactory) {
+
 			_factory = factory;
 			_initialInput = initialInput;
 			_currentBox = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -43,6 +59,7 @@ namespace EventStore.Client {
 			if (!brokenBox.Task.IsCompleted) {
 				// factory is still working on this box. don't create a new box to fill
 				// or we would have to require the factory be thread safe.
+				Log.LogDebug("{type} returned to factory. Production already in progress.", typeof(TOutput).Name);
 				return;
 			}
 
@@ -54,18 +71,23 @@ namespace EventStore.Client {
 
 			if (originalBox == brokenBox) {
 				// replaced the _currentBox, call the factory to fill it.
+				Log.LogDebug("{type} returned to factory. Producing a new one.", typeof(TOutput).Name);
 				_ = FillBoxAsync(_currentBox, input);
 			} else {
 				// did not replace. a new one was created previously. do nothing.
+				Log.LogDebug("{type} returned to factory. Production already complete.", typeof(TOutput).Name);
 			}
 		}
 
 		private async Task FillBoxAsync(TaskCompletionSource<TOutput> box, TInput input) {
 			try {
+				Log.LogDebug("{type} being produced...", typeof(TOutput).Name);
 				var item = await _factory(input, x => OnBroken(box, x)).ConfigureAwait(false);
 				box.TrySetResult(item);
+				Log.LogDebug("{type} produced!", typeof(TOutput).Name);
 			} catch (Exception ex) {
 				await Task.Yield(); // avoid risk of stack overflow
+				Log.LogDebug(ex, "{type} production failed", typeof(TOutput).Name);
 				box.TrySetException(ex);
 				OnBroken(box, _initialInput);
 			}

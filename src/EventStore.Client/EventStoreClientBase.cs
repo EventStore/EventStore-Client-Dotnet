@@ -50,7 +50,8 @@ namespace EventStore.Client {
 			_channelInfoProvider = new SharingProvider<ReconnectionRequired, ChannelInfo>(
 				factory: (endPoint, onBroken) =>
 					GetChannelInfoExpensive(endPoint, onBroken, channelSelector, _cts.Token),
-				initialInput: ReconnectionRequired.Rediscover.Instance);
+				initialInput: ReconnectionRequired.Rediscover.Instance,
+				loggerFactory: Settings.LoggerFactory);
 		}
 
 		// Select a channel and query its capabilities. This is an expensive call that
