@@ -44,7 +44,7 @@ namespace EventStore.Client {
 				ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!,
 				ex.Trailers.GetStreamRevision(Constants.Exceptions.ExpectedVersion),
 				ex.Trailers.GetStreamRevision(Constants.Exceptions.ActualVersion),
-				ex),
+				ex, ex.Message),
 			[Constants.Exceptions.MaximumAppendSizeExceeded] = ex =>
 				new MaximumAppendSizeExceededException(
 					ex.Trailers.GetIntValueOrDefault(Constants.Exceptions.MaximumAppendSize), ex),
