@@ -19,12 +19,13 @@ namespace EventStore.Client.Interceptors {
 			StatusCode.Unavailable
 		};
 
-
 		private static IEnumerable<GrpcCall> GrpcCalls() {
 			yield return MakeUnaryCall;
 			yield return MakeClientStreamingCall;
 			yield return MakeDuplexStreamingCall;
 			yield return MakeServerStreamingCall;
+			yield return MakeClientStreamingCallForWriting;
+			yield return MakeDuplexStreamingCallForWriting;
 		}
 
 		public static IEnumerable<object?[]> ReportsNewLeaderCases() => GrpcCalls().Select(call => new object[] {call});
@@ -39,7 +40,8 @@ namespace EventStore.Client.Interceptors {
 			Assert.Equal(new ReconnectionRequired.NewLeader(result.LeaderEndpoint), actual);
 		}
 
-		public static IEnumerable<object?[]> ForcesRediscoveryCases() => from call in GrpcCalls()
+		public static IEnumerable<object?[]> ForcesRediscoveryCases() =>
+			from call in GrpcCalls()
 			from statusCode in ForcesRediscoveryStatusCodes
 			select new object[] {call, statusCode};
 
@@ -53,7 +55,8 @@ namespace EventStore.Client.Interceptors {
 			Assert.Equal(ReconnectionRequired.Rediscover.Instance, actual);
 		}
 		
-		public static IEnumerable<object?[]> DoesNotForceRediscoveryCases() => from call in GrpcCalls()
+		public static IEnumerable<object?[]> DoesNotForceRediscoveryCases() =>
+			from call in GrpcCalls()
 			from statusCode in Enum.GetValues(typeof(StatusCode))
 				.OfType<StatusCode>()
 				.Except(ForcesRediscoveryStatusCodes)
@@ -102,6 +105,35 @@ namespace EventStore.Client.Interceptors {
 			await call.ResponseStream.ReadAllAsync().ToArrayAsync();
 		}
 
+		// we might write to the server before listening to its response. if that write fails because
+		// the server is down then we will never listen to its response, so the failed write should
+		// trigger rediscovery itself
+		private static async Task MakeClientStreamingCallForWriting(Interceptor interceptor, Task<object>? response = null) {
+			using var call = interceptor.AsyncClientStreamingCall(
+				context: CreateClientInterceptorContext(MethodType.ClientStreaming),
+				continuation: context => new AsyncClientStreamingCall<object, object>(
+					requestStream: new TestAsyncStreamWriter(response),
+					responseAsync: Task.FromResult(new object()),
+					responseHeadersAsync: Task.FromResult(context.Options.Headers!),
+					getStatusFunc: GetSuccess,
+					getTrailersFunc: GetTrailers,
+					disposeAction: OnDispose));
+			await call.RequestStream.WriteAsync(new object());
+		}
+
+		private static async Task MakeDuplexStreamingCallForWriting(Interceptor interceptor, Task<object>? response = null) {
+			using var call = interceptor.AsyncDuplexStreamingCall(
+				context: CreateClientInterceptorContext(MethodType.ServerStreaming),
+				continuation: context => new AsyncDuplexStreamingCall<object, object>(
+					requestStream: new TestAsyncStreamWriter(response),
+					responseStream: null!,
+					responseHeadersAsync: null!,
+					getStatusFunc: GetSuccess,
+					getTrailersFunc: GetTrailers,
+					disposeAction: OnDispose));
+			await call.RequestStream.WriteAsync(new object());
+		}
+
 		private static Status GetSuccess() => Status.DefaultSuccess;
 
 		private static Metadata GetTrailers() => Metadata.Empty;
@@ -124,6 +156,25 @@ namespace EventStore.Client.Interceptors {
 			public TestAsyncStreamReader(Task<object>? response = null) {
 				_response = response ?? Task.FromResult(new object());
 			}
+		}
+
+		private class TestAsyncStreamWriter : IClientStreamWriter<object> {
+			private readonly Task<object> _response;
+
+			public TestAsyncStreamWriter(Task<object>? response = null) {
+				_response = response ?? Task.FromResult(new object());
+			}
+
+			public WriteOptions WriteOptions {
+				get => throw new NotImplementedException();
+				set => throw new NotImplementedException();
+			}
+
+			public Task CompleteAsync() => throw new NotImplementedException();
+
+			public Task WriteAsync(object message) => _response.IsFaulted
+				? Task.FromException<bool>(_response.Exception!.GetBaseException())
+				: Task.FromResult(false);
 		}
 	}
 }
