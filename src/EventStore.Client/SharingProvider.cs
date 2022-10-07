@@ -33,15 +33,18 @@ namespace EventStore.Client {
 
 	internal class SharingProvider<TInput, TOutput> : SharingProvider {
 		private readonly Func<TInput, Action<TInput>, Task<TOutput>> _factory;
+		private readonly TimeSpan _factoryRetryDelay;
 		private readonly TInput _initialInput;
 		private TaskCompletionSource<TOutput> _currentBox;
 
 		public SharingProvider(
 			Func<TInput, Action<TInput>, Task<TOutput>> factory,
+			TimeSpan factoryRetryDelay,
 			TInput initialInput,
 			ILoggerFactory? loggerFactory = null) : base(loggerFactory) {
 
 			_factory = factory;
+			_factoryRetryDelay = factoryRetryDelay;
 			_initialInput = initialInput;
 			_currentBox = new(TaskCreationOptions.RunContinuationsAsynchronously);
 			_ = FillBoxAsync(_currentBox, input: initialInput);
@@ -87,7 +90,8 @@ namespace EventStore.Client {
 				Log.LogDebug("{type} produced!", typeof(TOutput).Name);
 			} catch (Exception ex) {
 				await Task.Yield(); // avoid risk of stack overflow
-				Log.LogDebug(ex, "{type} production failed", typeof(TOutput).Name);
+				Log.LogDebug(ex, "{type} production failed. Retrying in {delay}", typeof(TOutput).Name, _factoryRetryDelay);
+				await Task.Delay(_factoryRetryDelay).ConfigureAwait(false);
 				box.TrySetException(ex);
 				OnBroken(box, _initialInput);
 			}
