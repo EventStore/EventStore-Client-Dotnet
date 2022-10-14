@@ -27,3 +27,5 @@ We have a community discussion space at [Event Store Discuss](https://discuss.ev
 
 Development is done on the `master` branch.
 We attempt to do our best to ensure that the history remains clean and to do so, we generally ask contributors to squash their commits into a set or single logical commit.
+
+CI test for QA 22.10
