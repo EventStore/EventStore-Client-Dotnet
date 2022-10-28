@@ -35,7 +35,7 @@ namespace EventStore.Client {
 			Assert.Equal(StreamMessage.Ok.Instance, result[0]);
 			Assert.Equal(_fixture.Count, result.OfType<StreamMessage.Event>().Count());
 			if (_fixture.HasLastStreamPosition) {
-				Assert.Equal(new StreamMessage.LastStreamPosition(new StreamPosition(31)), result[^1]);
+				Assert.Equal(new StreamMessage.LastStreamPosition(new StreamPosition(31)), result[result.Length - 1]);
 			}
 		}
 

@@ -267,8 +267,8 @@ namespace EventStore.Client {
 
 					// complete whatever tcs's we have
 					_onException(ex);
-					foreach (var (_, source) in _pendingRequests) {
-						source.TrySetException(ex);
+					foreach (var kv in _pendingRequests) {
+						kv.Value.TrySetException(ex);
 					}
 				}
 			}
@@ -278,9 +278,10 @@ namespace EventStore.Client {
 				if (call is null)
 					throw new NotSupportedException("Server does not support batch append");
 
-				await foreach (var appendRequest in _channel.Reader.ReadAllAsync(_cancellationToken)
-					.ConfigureAwait(false)) {
-					await call.RequestStream.WriteAsync(appendRequest).ConfigureAwait(false);
+				while (await _channel.Reader.WaitToReadAsync().ConfigureAwait(false)) {
+					while (_channel.Reader.TryRead(out var appendRequest)) {
+						await call.RequestStream.WriteAsync(appendRequest).ConfigureAwait(false);
+					}
 				}
 
 				await call.RequestStream.CompleteAsync().ConfigureAwait(false);

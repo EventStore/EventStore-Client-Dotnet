@@ -15,6 +15,7 @@
 			Link="protos/$(ESProto)"/>
 	</ItemGroup>
 	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net5.0;net6.0</TargetFrameworks>
 		<PackageIcon>ouro.png</PackageIcon>
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 		<PackageProjectUrl>https://eventstore.com</PackageProjectUrl>

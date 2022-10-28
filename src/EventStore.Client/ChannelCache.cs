@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-#if GRPC_CORE
+#if GRPC_NETSTANDARD
 using TChannel = Grpc.Core.ChannelBase;
 #else
 using TChannel = Grpc.Net.Client.GrpcChannel;
@@ -15,7 +15,7 @@ namespace EventStore.Client {
 	// Deals with the disposal difference between grpc.net and grpc.core
 	// Thread safe.
 	internal class ChannelCache :
-#if !GRPC_CORE
+#if !GRPC_NETSTANDARD
 		IDisposable, // for grpc.net we can dispose synchronously, but not for grpc.core
 #endif
 		IAsyncDisposable {
@@ -88,7 +88,7 @@ namespace EventStore.Client {
 			}
 		}
 
-#if !GRPC_CORE
+#if !GRPC_NETSTANDARD
 		public void Dispose() {
 			lock (_lock) {
 				if (_disposed)

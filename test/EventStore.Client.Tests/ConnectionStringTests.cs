@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-#if !GRPC_CORE
+#if !GRPC_NETSTANDARD
 using System.Net.Http;
 #endif
 using AutoFixture;
@@ -105,7 +105,7 @@ namespace EventStore.Client {
 			Assert.Equal(expected, result, EventStoreClientSettingsEqualityComparer.Instance);
 		}
 
-#if !GRPC_CORE
+#if !GRPC_NETSTANDARD
 		[Theory, InlineData(false), InlineData(true)]
 		public void tls_verify_cert(bool tlsVerifyCert) {
 			var connectionString = $"esdb://localhost:2113/?tlsVerifyCert={tlsVerifyCert}";
@@ -131,7 +131,7 @@ namespace EventStore.Client {
 			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveInterval);
 			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveTimeout);
 
-#if !GRPC_CORE
+#if !GRPC_NETSTANDARD
 			using var handler = result.CreateHttpMessageHandler?.Invoke();
 			var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
 			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingTimeout);
@@ -282,7 +282,7 @@ namespace EventStore.Client {
 					settings.DefaultDeadline.Value.TotalMilliseconds.ToString());
 			}
 
-#if !GRPC_CORE
+#if !GRPC_NETSTANDARD
 			if (settings.CreateHttpMessageHandler != null) {
 				using var handler = settings.CreateHttpMessageHandler.Invoke();
 				if (handler is SocketsHttpHandler socketsHttpHandler &&

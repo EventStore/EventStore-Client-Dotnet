@@ -42,13 +42,13 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="streamId"></param>
 		/// <returns></returns>
-		public static bool IsMetastream(string streamId) => streamId[..2] == "$$";
+		public static bool IsMetastream(string streamId) => streamId[0] == '$' && streamId[1] == '$';
 
 		/// <summary>
 		/// Returns the original stream of the metadata stream.
 		/// </summary>
 		/// <param name="metastreamId"></param>
 		/// <returns></returns>
-		public static string OriginalStreamOf(string metastreamId) => metastreamId[2..];
+		public static string OriginalStreamOf(string metastreamId) => metastreamId.Substring(2);
 	}
 }

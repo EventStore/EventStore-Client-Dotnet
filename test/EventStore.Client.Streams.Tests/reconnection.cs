@@ -64,7 +64,7 @@ namespace EventStore.Client {
 
 					void Resubscribe() {
 						var task = _fixture.Client.SubscribeToStreamAsync(streamName,
-							FromStream.After(events[^1].OriginalEventNumber),
+							FromStream.After(events[events.Count-1].OriginalEventNumber),
 							EventAppeared, subscriptionDropped: SubscriptionDropped);
 						task.ContinueWith(_ => resubscribe.SetResult(_.Result),
 							TaskContinuationOptions.OnlyOnRanToCompletion);

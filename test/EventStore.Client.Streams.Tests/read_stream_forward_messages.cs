@@ -36,13 +36,13 @@ namespace EventStore.Client {
 			Assert.Equal(_fixture.Count, result.OfType<StreamMessage.Event>().Count());
 			var first = Assert.IsType<StreamMessage.Event>(result[1]);
 			Assert.Equal(new StreamPosition(0), first.ResolvedEvent.OriginalEventNumber);
-			var last = Assert.IsType<StreamMessage.Event>(result[_fixture.HasStreamPositions ? ^2 : ^1]);
+			var last = Assert.IsType<StreamMessage.Event>(result[_fixture.HasStreamPositions ? result.Length-2 : result.Length-1]);
 			Assert.Equal(new StreamPosition((ulong)_fixture.Count - 1), last.ResolvedEvent.OriginalEventNumber);
 
 			if (_fixture.HasStreamPositions) {
 				if (_fixture.HasStreamPositions) {
 					Assert.Equal(new StreamMessage.LastStreamPosition(new StreamPosition((ulong)_fixture.Count - 1)),
-						result[^1]);
+						result[result.Length-1]);
 				}
 			}
 		}
@@ -73,7 +73,7 @@ namespace EventStore.Client {
 			
 			if (_fixture.HasStreamPositions) {
 				Assert.Equal(new StreamMessage.LastStreamPosition(new StreamPosition((ulong)_fixture.Count - 1)),
-					result[^1]);
+					result[result.Length-1]);
 			}
 		}
 

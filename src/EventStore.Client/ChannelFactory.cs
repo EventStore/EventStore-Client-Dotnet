@@ -1,6 +1,6 @@
 using System;
 using EndPoint = System.Net.EndPoint;
-#if !GRPC_CORE
+#if !GRPC_NETSTANDARD
 using System.Net.Http;
 using Grpc.Net.Client;
 using TChannel = Grpc.Net.Client.GrpcChannel;
@@ -20,7 +20,7 @@ namespace EventStore.Client {
 		public static TChannel CreateChannel(EventStoreClientSettings settings, Uri? address) {
 			address ??= settings.ConnectivitySettings.Address;
 
-#if !GRPC_CORE
+#if !GRPC_NETSTANDARD
 			if (address.Scheme == Uri.UriSchemeHttp ||settings.ConnectivitySettings.Insecure) {
 				//this must be switched on before creation of the HttpMessageHandler
 				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);

@@ -11,11 +11,11 @@
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
 		<PackageReference Include="System.Linq.Async" Version="6.0.1" />
 	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
 		<PackageReference Include="Grpc.Core" Version="$(GrpcCorePackageVersion)" />
 		<PackageReference Include="System.Text.Json" Version="6.0.2" />
 	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' != 'netcoreapp3.1'">
+	<ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
 		<PackageReference Include="Grpc.Net.Client" Version="$(GrpcPackageVersion)" />
 	</ItemGroup>
 	<ItemGroup>

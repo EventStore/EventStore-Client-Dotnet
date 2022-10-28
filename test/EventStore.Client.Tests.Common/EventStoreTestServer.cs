@@ -36,7 +36,7 @@ namespace EventStore.Client {
 			using var log = eventstore.Logs(true, cts.Token);
 			foreach (var line in log.ReadToEnd()) {
 				if (line.StartsWith(versionPrefix) &&
-				    Version.TryParse(line[(versionPrefix.Length + 1)..].Split(' ')[0], out var version)) {
+				    Version.TryParse(line.Substring(versionPrefix.Length + 1).Split(' ')[0], out var version)) {
 					return version;
 				}
 			}
@@ -68,8 +68,8 @@ namespace EventStore.Client {
 				["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"] = "10000",
 				["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"] = "True"
 			};
-			foreach (var (key, value) in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
-				env[key] = value;
+			foreach (var kv in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
+				env[kv.Key] = kv.Value;
 			}
 
 			_eventStore = new Builder()

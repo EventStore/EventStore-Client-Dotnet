@@ -1,10 +1,11 @@
 <Project>
 	<Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 	<PropertyGroup>
+		<TargetFrameworks>netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-		<DefineConstants>$(DefineConstants);GRPC_CORE</DefineConstants>
+		<DefineConstants>$(DefineConstants);GRPC_NETSTANDARD</DefineConstants>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="AutoFixture.Idioms" Version="4.17.0" />

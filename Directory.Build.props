@@ -1,6 +1,5 @@
 <Project>
 	<PropertyGroup>
-		<TargetFrameworks>netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
 		<Platform>x64</Platform>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<Nullable>enable</Nullable>
@@ -17,7 +16,7 @@
 		<GrpcCorePackageVersion>2.44.0</GrpcCorePackageVersion>
 		<GrpcToolsPackageVersion>2.44.0</GrpcToolsPackageVersion>
 	</PropertyGroup>
-	<PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-		<DefineConstants>$(DefineConstants);GRPC_CORE</DefineConstants>
+	<PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+		<DefineConstants>$(DefineConstants);GRPC_NETSTANDARD</DefineConstants>
 	</PropertyGroup>
 </Project>

@@ -1,4 +1,4 @@
-#if !GRPC_CORE
+#if !GRPC_NETSTANDARD
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

@@ -4,4 +4,7 @@
 		<ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
 		<ProjectReference Include="..\..\src\EventStore.Client.UserManagement\EventStore.Client.UserManagement.csproj" />
 	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" />
+	</ItemGroup>
 </Project>

@@ -34,7 +34,7 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken = default) {
 
 			var cts =
-#if GRPC_CORE
+#if GRPC_NETSTANDARD
 					CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ((Channel)channel).ShutdownToken);
 #else
 					CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

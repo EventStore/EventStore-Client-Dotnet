@@ -10,7 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-#if GRPC_CORE
+#if GRPC_NETSTANDARD
 using Grpc.Core;
 #endif
 using Serilog;
@@ -46,7 +46,7 @@ namespace EventStore.Client {
 				.WriteTo.Observers(observable => observable.Subscribe(LogEventSubject.OnNext))
 				.WriteTo.Seq("http://localhost:5341/", period: TimeSpan.FromMilliseconds(1));
 			Log.Logger = loggerConfiguration.CreateLogger();
-#if GRPC_CORE
+#if GRPC_NETSTANDARD
 			GrpcEnvironment.SetLogger(new GrpcCoreSerilogLogger(Log.Logger.ForContext<GrpcCoreSerilogLogger>()));
 #endif
 			AppDomain.CurrentDomain.DomainUnload += (_, e) => Log.CloseAndFlush();
@@ -67,7 +67,7 @@ namespace EventStore.Client {
 			var hostCertificatePath = Path.Combine(ProjectDir.Current, "..", "..",
 				GlobalEnvironment.UseCluster ? "certs-cluster" : "certs");
 
-#if GRPC_CORE
+#if GRPC_NETSTANDARD
 			Settings.ChannelCredentials ??= GetServerCertificate();
 
 			SslCredentials GetServerCertificate() => new SslCredentials(

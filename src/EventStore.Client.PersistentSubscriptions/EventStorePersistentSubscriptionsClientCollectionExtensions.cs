@@ -12,7 +12,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 	/// A set of extension methods for <see cref="IServiceCollection"/> which provide support for an <see cref="EventStorePersistentSubscriptionsClient"/>.
 	/// </summary>
 	public static class EventStorePersistentSubscriptionsClientCollectionExtensions {
-#if GRPC_CORE
+#if GRPC_NETSTANDARD
 		/// <summary>
 		/// Adds an <see cref="EventStorePersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>

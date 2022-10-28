@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Timeout_ = System.Threading.Timeout;
-#if !GRPC_CORE
+#if !GRPC_NETSTANDARD
 using System.Net.Http;
 #endif
 
@@ -118,19 +118,19 @@ namespace EventStore.Client {
 					settings.DefaultCredentials = new UserCredentials(userInfo.Value.user, userInfo.Value.pass);
 
 				var typedOptions = new Dictionary<string, object>(StringComparer.InvariantCultureIgnoreCase);
-				foreach (var (key, value) in options) {
-					if (!SettingsType.TryGetValue(key, out var type))
-						throw new InvalidSettingException($"Unknown option: {key}");
+				foreach (var kv in options) {
+					if (!SettingsType.TryGetValue(kv.Key, out var type))
+						throw new InvalidSettingException($"Unknown option: {kv.Key}");
 					if (type == typeof(int)) {
-						if (!int.TryParse(value, out var intValue))
-							throw new InvalidSettingException($"{key} must be an integer value");
-						typedOptions.Add(key, intValue);
+						if (!int.TryParse(kv.Value, out var intValue))
+							throw new InvalidSettingException($"{kv.Key} must be an integer value");
+						typedOptions.Add(kv.Key, intValue);
 					} else if (type == typeof(bool)) {
-						if (!bool.TryParse(value, out var boolValue))
-							throw new InvalidSettingException($"{key} must be either true or false");
-						typedOptions.Add(key, boolValue);
+						if (!bool.TryParse(kv.Value, out var boolValue))
+							throw new InvalidSettingException($"{kv.Key} must be either true or false");
+						typedOptions.Add(kv.Key, boolValue);
 					} else if (type == typeof(string)) {
-						typedOptions.Add(key, value);
+						typedOptions.Add(kv.Key, kv.Value);
 					}
 				}
 
@@ -197,7 +197,7 @@ namespace EventStore.Client {
 						connSettings.IpGossipSeeds = Array.ConvertAll(hosts, x => (IPEndPoint)x);
 				}
 
-#if !GRPC_CORE
+#if !GRPC_NETSTANDARD
 				settings.CreateHttpMessageHandler = () => {
 					var handler = new SocketsHttpHandler {
 						KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,

@@ -158,7 +158,7 @@ namespace EventStore.Client {
 			return options;
 		}
 
-#if !GRPC_CORE && NET5_0_OR_GREATER
+#if !GRPC_NETSTANDARD && NET5_0_OR_GREATER
 		/// <inheritdoc />
 		public override void Dispose() {
 			if (_streamAppenderLazy.IsValueCreated)

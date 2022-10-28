@@ -12,7 +12,7 @@ namespace EventStore.Client {
 	/// The base class used by clients used to communicate with the EventStoreDB.
 	/// </summary>
 	public abstract class EventStoreClientBase :
-#if !GRPC_CORE
+#if !GRPC_NETSTANDARD
 		IDisposable, // for grpc.net we can dispose synchronously, but not for grpc.core
 #endif
 		IAsyncDisposable {
@@ -101,7 +101,7 @@ namespace EventStore.Client {
 			_channelInfoProvider.Reset();
 		}
 
-#if !GRPC_CORE
+#if !GRPC_NETSTANDARD
 		/// <inheritdoc />
 		public virtual void Dispose() {
 			_cts.Cancel();

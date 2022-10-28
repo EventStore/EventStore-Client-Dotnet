@@ -136,7 +136,7 @@ namespace EventStore.Client {
 				.ToArrayAsync();
 
 			Assert.Single(events);
-			Assert.True(EventDataComparer.Equal(testEvents[^1], events[0]));
+			Assert.True(EventDataComparer.Equal(testEvents[testEvents.Length-1], events[0]));
 		}
 
 		[Fact]

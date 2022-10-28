@@ -65,10 +65,15 @@ namespace EventStore.Client {
 			}
 
 			Span<byte> data = stackalloc byte[16];
-
+#if !GRPC_NETSTANDARD
 			if (!value.TryWriteBytes(data)) {
 				throw new InvalidOperationException();
 			}
+#else
+			if (!value.ToByteArray().AsSpan().TryCopyTo(data)) {
+				throw new InvalidOperationException();
+			}
+#endif
 
 			data.Slice(0, 8).Reverse();
 			data.Slice(0, 2).Reverse();
@@ -76,8 +81,13 @@ namespace EventStore.Client {
 			data.Slice(4, 4).Reverse();
 			data.Slice(8).Reverse();
 
+#if !GRPC_NETSTANDARD
 			_msb = BitConverter.ToInt64(data);
 			_lsb = BitConverter.ToInt64(data.Slice(8));
+#else
+			_msb = BitConverter.ToInt64(data.ToArray(), 0);
+			_lsb = BitConverter.ToInt64(data.Slice(8).ToArray(), 0);
+#endif
 		}
 
 		private Uuid(string value) : this(value == null
@@ -148,10 +158,26 @@ namespace EventStore.Client {
 			}
 
 			Span<byte> data = stackalloc byte[16];
+#if !GRPC_NETSTANDARD
 			if (!BitConverter.TryWriteBytes(data, _msb) ||
 			    !BitConverter.TryWriteBytes(data.Slice(8), _lsb)) {
 				throw new InvalidOperationException();
 			}
+#else
+			try
+			{
+				var dataByteArray = new byte[16];
+				var msb = BitConverter.GetBytes(_msb);
+				var lsb = BitConverter.GetBytes(_lsb);
+				msb.CopyTo(dataByteArray, 0);
+				lsb.CopyTo(dataByteArray, 8);
+				data = dataByteArray.AsSpan();
+			}
+			catch (Exception)
+			{
+				throw new InvalidOperationException();
+			}
+#endif
 
 			data.Slice(0, 8).Reverse();
 			data.Slice(0, 4).Reverse();
@@ -159,7 +185,11 @@ namespace EventStore.Client {
 			data.Slice(6, 2).Reverse();
 			data.Slice(8).Reverse();
 
+#if !GRPC_NETSTANDARD
 			return new Guid(data);
+#else
+			return new Guid(data.ToArray());
+#endif
 		}
 	}
 }

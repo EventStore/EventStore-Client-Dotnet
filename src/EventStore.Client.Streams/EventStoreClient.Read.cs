@@ -88,12 +88,14 @@ namespace EventStore.Client {
 							throw new InvalidOperationException("Messages may only be enumerated once.");
 						}
 
-						await foreach (var message in _channel.Reader.ReadAllAsync().ConfigureAwait(false)) {
-							if (message is StreamMessage.LastAllStreamPosition(var position)) {
-								LastPosition = position;
-							}
+						while (await _channel.Reader.WaitToReadAsync().ConfigureAwait(false)) {
+							while (_channel.Reader.TryRead(out var message)) {
+								if (message is StreamMessage.LastAllStreamPosition(var position)) {
+									LastPosition = position;
+								}
 
-							yield return message;
+								yield return message;
+							}
 						}
 					}
 				}
@@ -144,12 +146,14 @@ namespace EventStore.Client {
 			/// <inheritdoc />
 			public async IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(
 				CancellationToken cancellationToken = default) {
-				await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
-					if (message is not StreamMessage.Event e) {
-						continue;
-					}
+				while (await _channel.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false)) {
+					while (_channel.Reader.TryRead(out var message)) {
+						if (message is not StreamMessage.Event e) {
+							continue;
+						}
 
-					yield return e.ResolvedEvent;
+						yield return e.ResolvedEvent;
+					}
 				}
 			}
 		}
@@ -238,19 +242,21 @@ namespace EventStore.Client {
 							throw new InvalidOperationException("Messages may only be enumerated once.");
 						}
 
-						await foreach (var message in _channel.Reader.ReadAllAsync().ConfigureAwait(false)) {
-							switch (message) {
-								case StreamMessage.FirstStreamPosition(var streamPosition):
-									FirstStreamPosition = streamPosition;
-									break;
-								case StreamMessage.LastStreamPosition(var lastStreamPosition):
-									LastStreamPosition = lastStreamPosition;
-									break;
-								default:
-									break;
-							}
+						while (await _channel.Reader.WaitToReadAsync().ConfigureAwait(false)) {
+							while (_channel.Reader.TryRead(out var message)) {
+								switch (message) {
+									case StreamMessage.FirstStreamPosition(var streamPosition):
+										FirstStreamPosition = streamPosition;
+										break;
+									case StreamMessage.LastStreamPosition(var lastStreamPosition):
+										LastStreamPosition = lastStreamPosition;
+										break;
+									default:
+										break;
+								}
 
-							yield return message;
+								yield return message;
+							}
 						}
 					}
 				}
@@ -329,16 +335,18 @@ namespace EventStore.Client {
 			/// <inheritdoc />
 			public async IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(
 				CancellationToken cancellationToken = default) {
-				await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
-					if (message is StreamMessage.NotFound) {
-						throw new StreamNotFoundException(StreamName);
-					}
+				while (await _channel.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false)) {
+					while (_channel.Reader.TryRead(out var message)) {
+						if (message is StreamMessage.NotFound) {
+							throw new StreamNotFoundException(StreamName);
+						}
 
-					if (message is not StreamMessage.Event e) {
-						continue;
-					}
+						if (message is not StreamMessage.Event e) {
+							continue;
+						}
 
-					yield return e.ResolvedEvent;
+						yield return e.ResolvedEvent;
+					}
 				}
 			}
 		}
@@ -361,7 +369,7 @@ namespace EventStore.Client {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 
 			using var cts =
-#if GRPC_CORE
+#if GRPC_NETSTANDARD
 					CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ((Grpc.Core.Channel)channelInfo.Channel).ShutdownToken);
 #else
 					CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
