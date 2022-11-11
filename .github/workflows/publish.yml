@@ -38,7 +38,12 @@ jobs:
 
   build-samples:
     timeout-minutes: 5
+    name: build-samples/${{ matrix.framework }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: [ net5.0, net6.0, net7.0 ]
     services:
       esdb:
         image: ghcr.io/eventstore/eventstore:lts
@@ -67,7 +72,7 @@ jobs:
       - name: Run
         shell: bash
         run: |
-          find samples/ -type f -iname "*.csproj" -print0 | xargs -0L1 dotnet run --project
+          find samples/ -type f -iname "*.csproj" -print0 | xargs -0L1 dotnet run --framework ${{ matrix.framework }} --project
 
   test:
     timeout-minutes: 10
