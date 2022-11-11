@@ -24,9 +24,6 @@ namespace EventStore.Client {
 		/// <summary>
 		/// An optional <see cref="HttpMessageHandler"/> factory.
 		/// </summary>
-#if NETCOREAPP3_1
-		[Obsolete]
-#endif
 		public Func<HttpMessageHandler>? CreateHttpMessageHandler { get; set; }
 
 		/// <summary>

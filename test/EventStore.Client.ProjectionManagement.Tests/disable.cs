@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Xunit;
 
 namespace EventStore.Client {
-	public class disable : IClassFixture<disable.Fixture> {
+	public class @disable : IClassFixture<disable.Fixture> {
 		private readonly Fixture _fixture;
 
 		public disable(Fixture fixture) {

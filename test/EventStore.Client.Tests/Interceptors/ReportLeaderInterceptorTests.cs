@@ -165,7 +165,7 @@ namespace EventStore.Client.Interceptors {
 				_response = response ?? Task.FromResult(new object());
 			}
 
-			public WriteOptions WriteOptions {
+			public WriteOptions? WriteOptions {
 				get => throw new NotImplementedException();
 				set => throw new NotImplementedException();
 			}

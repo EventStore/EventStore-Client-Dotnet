@@ -33,12 +33,7 @@ namespace EventStore.Client {
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped,
 			CancellationToken cancellationToken = default) {
 
-			var cts =
-#if GRPC_CORE
-					CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ((Channel)channel).ShutdownToken);
-#else
-					CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-#endif
+			var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
 			var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
 				.Read(EventStoreCallOptions.CreateStreaming(settings, userCredentials: userCredentials,

@@ -1,23 +1,19 @@
 <Project>
 	<PropertyGroup>
-		<TargetFrameworks>netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+		<TargetFrameworks>net5.0;net6.0;net7.0</TargetFrameworks>
 		<Platform>x64</Platform>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<Nullable>enable</Nullable>
 		<NullableContextOptions>enable</NullableContextOptions>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<LangVersion>9.0</LangVersion>
+		<LangVersion>11</LangVersion>
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 		<DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
 		<DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
 		<OutputPath>$(MSBuildThisFileDirectory)\bin\$(Configuration)\$(MSBuildProjectName)\</OutputPath>
 		<RootNamespace>EventStore.Client</RootNamespace>
 		<UseLinkBase>true</UseLinkBase>
-		<GrpcPackageVersion>2.43.0</GrpcPackageVersion>
-		<GrpcCorePackageVersion>2.44.0</GrpcCorePackageVersion>
-		<GrpcToolsPackageVersion>2.44.0</GrpcToolsPackageVersion>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-		<DefineConstants>$(DefineConstants);GRPC_CORE</DefineConstants>
+		<GrpcPackageVersion>2.49.0</GrpcPackageVersion>
+		<GrpcToolsPackageVersion>2.50.0</GrpcToolsPackageVersion>
 	</PropertyGroup>
 </Project>

@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Xunit;
 
 namespace EventStore.Client {
-	public class admin : IClassFixture<admin.Fixture> {
+	public class @admin : IClassFixture<admin.Fixture> {
 		private readonly Fixture _fixture;
 
 		public admin(Fixture fixture) {

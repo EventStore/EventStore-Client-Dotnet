@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [ netcoreapp3.1, net5.0, net6.0 ]
+        framework: [ net5.0, net6.0, net7.0 ]
         os: [ ubuntu-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     name: scan-vulnerabilities/${{ matrix.os }}/${{ matrix.framework }}
@@ -25,9 +25,9 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: |
-            3.1.x
             5.0.x
             6.0.x
+            7.0.x
       - name: Scan for Vulnerabilities
         shell: bash
         run: |
@@ -57,9 +57,9 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: |
-            3.1.x
             5.0.x
             6.0.x
+            7.0.x
       - name: Compile
         shell: bash
         run: |
@@ -74,7 +74,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [netcoreapp3.1, net5.0, net6.0]
+        framework: [net5.0, net6.0, net7.0]
         os: [ubuntu-latest, windows-latest]
         configuration: [release]
     runs-on: ${{ matrix.os }}
@@ -89,9 +89,9 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: |
-            3.1.x
             5.0.x
             6.0.x
+            7.0.x
       - name: Compile
         shell: bash
         run: |
@@ -145,9 +145,9 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: |
-            3.1.x
             5.0.x
             6.0.x
+            7.0.x
       - name: Dotnet Pack
         shell: bash
         run: |

@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Xunit;
 
 namespace EventStore.Client {
-	public class create : IClassFixture<create.Fixture> {
+	public class @create : IClassFixture<create.Fixture> {
 		private readonly Fixture _fixture;
 
 		public create(Fixture fixture) {

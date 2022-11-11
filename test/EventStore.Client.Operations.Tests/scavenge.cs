@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Xunit;
 
 namespace EventStore.Client {
-	public class scavenge : IClassFixture<scavenge.Fixture> {
+	public class @scavenge : IClassFixture<scavenge.Fixture> {
 		private readonly Fixture _fixture;
 
 		public scavenge(Fixture fixture) {

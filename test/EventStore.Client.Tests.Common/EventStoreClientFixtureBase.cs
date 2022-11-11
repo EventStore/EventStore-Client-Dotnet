@@ -10,9 +10,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-#if GRPC_CORE
-using Grpc.Core;
-#endif
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
@@ -66,13 +63,6 @@ namespace EventStore.Client {
 
 			var hostCertificatePath = Path.Combine(ProjectDir.Current, "..", "..",
 				GlobalEnvironment.UseCluster ? "certs-cluster" : "certs");
-
-#if GRPC_CORE
-			Settings.ChannelCredentials ??= GetServerCertificate();
-
-			SslCredentials GetServerCertificate() => new SslCredentials(
-				File.ReadAllText(Path.Combine(hostCertificatePath, "ca", "ca.crt")), null, _ => true);
-#endif
 
 			Settings.LoggerFactory ??= new SerilogLoggerFactory();
 

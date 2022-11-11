@@ -1,14 +1,8 @@
 using System;
 using EndPoint = System.Net.EndPoint;
-#if !GRPC_CORE
 using System.Net.Http;
 using Grpc.Net.Client;
 using TChannel = Grpc.Net.Client.GrpcChannel;
-#else
-using System.Collections.Generic;
-using Grpc.Core;
-using TChannel = Grpc.Core.ChannelBase;
-#endif
 
 namespace EventStore.Client {
 	internal static class ChannelFactory {
@@ -20,7 +14,6 @@ namespace EventStore.Client {
 		public static TChannel CreateChannel(EventStoreClientSettings settings, Uri? address) {
 			address ??= settings.ConnectivitySettings.Address;
 
-#if !GRPC_CORE
 			if (address.Scheme == Uri.UriSchemeHttp ||settings.ConnectivitySettings.Insecure) {
 				//this must be switched on before creation of the HttpMessageHandler
 				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -48,25 +41,6 @@ namespace EventStore.Client {
 					EnableMultipleHttp2Connections = true
 				};
 			}
-#else
-			return new Channel(address.Host, address.Port, settings.ChannelCredentials ?? ChannelCredentials.Insecure,
-				GetChannelOptions());
-
-			IEnumerable<ChannelOption> GetChannelOptions() {
-				yield return new ChannelOption("grpc.keepalive_time_ms",
-					GetValue((int)settings.ConnectivitySettings.KeepAliveInterval.TotalMilliseconds));
-
-				yield return new ChannelOption("grpc.keepalive_timeout_ms",
-					GetValue((int)settings.ConnectivitySettings.KeepAliveTimeout.TotalMilliseconds));
-
-				yield return new ChannelOption("grpc.max_receive_message_length", MaxReceiveMessageLength);
-			}
-
-			static int GetValue(int value) => value switch {
-				{ } v when v < 0 => int.MaxValue,
-				_ => value
-			};
-#endif
 		}
 	}
 }

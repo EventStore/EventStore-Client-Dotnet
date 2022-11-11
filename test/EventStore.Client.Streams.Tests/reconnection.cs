@@ -6,7 +6,7 @@ using Grpc.Core;
 using Xunit;
 
 namespace EventStore.Client {
-	public class reconnection : IClassFixture<reconnection.Fixture> {
+	public class @reconnection : IClassFixture<reconnection.Fixture> {
 		private readonly Fixture _fixture;
 
 		public reconnection(Fixture fixture) {
