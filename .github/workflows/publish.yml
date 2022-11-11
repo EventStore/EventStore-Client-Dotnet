@@ -100,27 +100,9 @@ jobs:
         shell: bash
         run: |
           dotnet test --configuration ${{ matrix.configuration }} --blame \
-            --logger:"GitHubActions;report-warnings=false" --logger:html --logger:trx --logger:"console;verbosity=normal" \
-            --results-directory=$(pwd)/test-results/test/EventStore.Client.Tests \
+            --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
             --framework ${{ matrix.framework }} \
             test/EventStore.Client.Tests
-      - name: Collect Test Results
-        shell: bash
-        if: always()
-        run: |
-          echo $(find ./test-results -name "*.html" | xargs cat) > test-results.html
-      - name: Publish Test Results (HTML)
-        uses: actions/upload-artifact@v1
-        if: always()
-        with:
-          path: test-results.html
-          name: test-results-EventStore.Client-${{ matrix.configuration }}-${{matrix.os}}-${{ matrix.framework }}.html
-      - name: Publish Test Results (All)
-        uses: actions/upload-artifact@v1
-        if: always()
-        with:
-          name: test-results-EventStore.Client-${{ matrix.configuration }}-${{matrix.os}}-${{ matrix.framework }}
-          path: test-results
 
   publish:
     timeout-minutes: 5
