@@ -4,9 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-#if NET5_0_OR_GREATER
 using EventStore.Client.Streams;
-#endif
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -26,11 +24,9 @@ namespace EventStore.Client {
 		};
 
 		private readonly ILogger<EventStoreClient> _log;
-#if NET5_0_OR_GREATER
 		private Lazy<StreamAppender> _streamAppenderLazy;
 		private StreamAppender _streamAppender => _streamAppenderLazy.Value;
 		private readonly CancellationTokenSource _disposedTokenSource;
-#endif
 
 
 		private static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
@@ -70,13 +66,10 @@ namespace EventStore.Client {
 		/// <param name="settings"></param>
 		public EventStoreClient(EventStoreClientSettings? settings = null) : base(settings, ExceptionMap) {
 			_log = Settings.LoggerFactory?.CreateLogger<EventStoreClient>() ?? new NullLogger<EventStoreClient>();
-#if NET5_0_OR_GREATER
 			_disposedTokenSource = new CancellationTokenSource();
 			_streamAppenderLazy = new Lazy<StreamAppender>(CreateStreamAppender);
-#endif
 		}
 
-#if NET5_0_OR_GREATER
 		private void SwapStreamAppender(Exception ex) =>
 			Interlocked.Exchange(ref _streamAppenderLazy,
 					new Lazy<StreamAppender>(CreateStreamAppender))
@@ -97,7 +90,6 @@ namespace EventStore.Client {
 					userCredentials: Settings.DefaultCredentials, cancellationToken: _disposedTokenSource.Token));
 			}
 		}
-#endif
 
 		private static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(
 			SubscriptionFilterOptions? filterOptions) {
@@ -158,7 +150,6 @@ namespace EventStore.Client {
 			return options;
 		}
 
-#if !GRPC_CORE && NET5_0_OR_GREATER
 		/// <inheritdoc />
 		public override void Dispose() {
 			if (_streamAppenderLazy.IsValueCreated)
@@ -166,9 +157,7 @@ namespace EventStore.Client {
 			_disposedTokenSource.Dispose();
 			base.Dispose();
 		}
-#endif
 
-#if NET5_0_OR_GREATER
 		/// <inheritdoc />
 		public override async ValueTask DisposeAsync() {
 			if (_streamAppenderLazy.IsValueCreated)
@@ -176,6 +165,5 @@ namespace EventStore.Client {
 			_disposedTokenSource.Dispose();
 			await base.DisposeAsync().ConfigureAwait(false);
 		}
-#endif
 	}
 }

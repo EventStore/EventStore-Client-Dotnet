@@ -9,9 +9,6 @@ using EventStore.Client.Streams;
 using Grpc.Core;
 using static EventStore.Client.Streams.ReadResp;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
-#if !NET5_0_OR_GREATER
-using Channel = System.Threading.Channels.Channel;
-#endif
 
 namespace EventStore.Client {
 	public partial class EventStoreClient {
@@ -360,12 +357,7 @@ namespace EventStore.Client {
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 
-			using var cts =
-#if GRPC_CORE
-					CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ((Grpc.Core.Channel)channelInfo.Channel).ShutdownToken);
-#else
-					CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-#endif
+			using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
 			using var call = new Streams.Streams.StreamsClient(
 				channelInfo.CallInvoker).Read(request,

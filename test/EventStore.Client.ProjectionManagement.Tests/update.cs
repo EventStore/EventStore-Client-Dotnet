@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Xunit;
 
 namespace EventStore.Client {
-	public class update : IClassFixture<update.Fixture> {
+	public class @update : IClassFixture<update.Fixture> {
 		private readonly Fixture _fixture;
 
 		public update(Fixture fixture) {

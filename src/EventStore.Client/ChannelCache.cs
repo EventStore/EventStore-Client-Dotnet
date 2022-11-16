@@ -4,20 +4,14 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-#if GRPC_CORE
-using TChannel = Grpc.Core.ChannelBase;
-#else
 using TChannel = Grpc.Net.Client.GrpcChannel;
-#endif
 
 namespace EventStore.Client {
 	// Maintains Channels keyed by DnsEndPoint so the channels can be reused.
 	// Deals with the disposal difference between grpc.net and grpc.core
 	// Thread safe.
 	internal class ChannelCache :
-#if !GRPC_CORE
 		IDisposable, // for grpc.net we can dispose synchronously, but not for grpc.core
-#endif
 		IAsyncDisposable {
 
 		private readonly EventStoreClientSettings _settings;
@@ -88,7 +82,6 @@ namespace EventStore.Client {
 			}
 		}
 
-#if !GRPC_CORE
 		public void Dispose() {
 			lock (_lock) {
 				if (_disposed)
@@ -103,7 +96,6 @@ namespace EventStore.Client {
 				_channels.Clear();
 			}
 		}
-#endif
 
 		public async ValueTask DisposeAsync() {
 			var channelsToDispose = Array.Empty<TChannel>();

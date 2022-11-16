@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using Timeout_ = System.Threading.Timeout;
-#if !GRPC_CORE
 using System.Net.Http;
-#endif
+using Timeout_ = System.Threading.Timeout;
 
 namespace EventStore.Client {
 	public partial class EventStoreClientSettings {
@@ -197,7 +195,6 @@ namespace EventStore.Client {
 						connSettings.IpGossipSeeds = Array.ConvertAll(hosts, x => (IPEndPoint)x);
 				}
 
-#if !GRPC_CORE
 				settings.CreateHttpMessageHandler = () => {
 					var handler = new SocketsHttpHandler {
 						KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,
@@ -211,7 +208,6 @@ namespace EventStore.Client {
 
 					return handler;
 				};
-#endif
 
 				return settings;
 			}

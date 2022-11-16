@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-#if !GRPC_CORE
 using System.Net.Http;
-#endif
 using AutoFixture;
 using Xunit;
 
@@ -131,12 +129,10 @@ namespace EventStore.Client {
 			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveInterval);
 			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveTimeout);
 
-#if !GRPC_CORE
 			using var handler = result.CreateHttpMessageHandler?.Invoke();
 			var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
 			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingTimeout);
 			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingDelay);
-#endif
 		}
 
 		[Fact]

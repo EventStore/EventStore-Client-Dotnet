@@ -55,7 +55,7 @@ namespace EventStore.Client {
 			protected abstract ValueTask<ResolvedEvent[]> Read();
 		}
 
-		public class forwards : read_events_linked_to_deleted_stream, IClassFixture<forwards.Fixture> {
+		public class @forwards : read_events_linked_to_deleted_stream, IClassFixture<forwards.Fixture> {
 			public forwards(Fixture fixture) : base(fixture) {
 			}
 
@@ -66,7 +66,7 @@ namespace EventStore.Client {
 			}
 		}
 
-		public class backwards : read_events_linked_to_deleted_stream, IClassFixture<backwards.Fixture> {
+		public class @backwards : read_events_linked_to_deleted_stream, IClassFixture<backwards.Fixture> {
 			public backwards(Fixture fixture) : base(fixture) {
 			}
 

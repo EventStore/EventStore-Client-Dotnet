@@ -87,7 +87,7 @@ namespace EventStore.Client.Interceptors {
 				_reportNewLeader = reportNewLeader;
 			}
 
-			public WriteOptions WriteOptions {
+			public WriteOptions? WriteOptions {
 				get => _inner.WriteOptions;
 				set => _inner.WriteOptions = value;
 			}

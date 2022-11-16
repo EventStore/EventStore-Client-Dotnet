@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Xunit;
 
 namespace EventStore.Client {
-	public class abort : IClassFixture<abort.Fixture> {
+	public class @abort : IClassFixture<abort.Fixture> {
 		private readonly Fixture _fixture;
 
 		public abort(Fixture fixture) {

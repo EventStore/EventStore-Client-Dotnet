@@ -34,16 +34,11 @@ namespace EventStore.Client {
 
 			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedRevision);
 
-#if NET5_0_OR_GREATER
 			var batchAppender = _streamAppender;
 			var task =
 				userCredentials == null && await batchAppender.IsUsable().ConfigureAwait(false)
 					? batchAppender.Append(streamName, expectedRevision, eventData, deadline, cancellationToken)
-					:
-#else
-			var task =
-#endif
-					AppendToStreamInternal(
+					: AppendToStreamInternal(
 						(await GetChannelInfo(cancellationToken).ConfigureAwait(false)).CallInvoker,
 						new AppendReq {
 							Options = new AppendReq.Types.Options {
@@ -79,16 +74,11 @@ namespace EventStore.Client {
 
 			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedState);
 
-#if NET5_0_OR_GREATER
 			var batchAppender = _streamAppender;
 			var task =
 				userCredentials == null && await batchAppender.IsUsable().ConfigureAwait(false)
 					? batchAppender.Append(streamName, expectedState, eventData, deadline, cancellationToken)
-					:
-#else
-			var task =
-#endif
-					AppendToStreamInternal(
+					: AppendToStreamInternal(
 						(await GetChannelInfo(cancellationToken).ConfigureAwait(false)).CallInvoker,
 						new AppendReq {
 							Options = new AppendReq.Types.Options {
