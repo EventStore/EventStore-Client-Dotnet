@@ -65,6 +65,7 @@ namespace EventStore.Client {
 		/// </summary>
 		public class ReadAllStreamResult : IAsyncEnumerable<ResolvedEvent> {
 			private readonly Channel<StreamMessage> _channel;
+			private readonly CancellationTokenSource _cts;
 
 			private int _messagesEnumerated;
 
@@ -85,12 +86,16 @@ namespace EventStore.Client {
 							throw new InvalidOperationException("Messages may only be enumerated once.");
 						}
 
-						await foreach (var message in _channel.Reader.ReadAllAsync().ConfigureAwait(false)) {
-							if (message is StreamMessage.LastAllStreamPosition(var position)) {
-								LastPosition = position;
-							}
+						try {
+							await foreach (var message in _channel.Reader.ReadAllAsync().ConfigureAwait(false)) {
+								if (message is StreamMessage.LastAllStreamPosition(var position)) {
+									LastPosition = position;
+								}
 
-							yield return message;
+								yield return message;
+							}
+						} finally {
+							_cts.Cancel();
 						}
 					}
 				}
@@ -108,14 +113,17 @@ namespace EventStore.Client {
 					AllowSynchronousContinuations = true
 				});
 
+				_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+				var linkedCancellationToken = _cts.Token;
+
 				_ = PumpMessages();
 
 				async Task PumpMessages() {
 					try {
-						var callInvoker = await selectCallInvoker(cancellationToken).ConfigureAwait(false);
+						var callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
 						var client = new Streams.Streams.StreamsClient(callInvoker);
 						using var call = client.Read(request, callOptions);
-						await foreach (var response in call.ResponseStream.ReadAllAsync(cancellationToken)
+						await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken)
 							.ConfigureAwait(false)) {
 							await _channel.Writer.WriteAsync(response.ContentCase switch {
 								StreamNotFound => StreamMessage.NotFound.Instance,
@@ -128,7 +136,7 @@ namespace EventStore.Client {
 									new Position(response.LastAllStreamPosition.CommitPosition,
 										response.LastAllStreamPosition.PreparePosition)),
 								_ => StreamMessage.Unknown.Instance
-							}, cancellationToken).ConfigureAwait(false);
+							}, linkedCancellationToken).ConfigureAwait(false);
 						}
 
 						_channel.Writer.Complete();
@@ -141,12 +149,17 @@ namespace EventStore.Client {
 			/// <inheritdoc />
 			public async IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(
 				CancellationToken cancellationToken = default) {
-				await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
-					if (message is not StreamMessage.Event e) {
-						continue;
-					}
 
-					yield return e.ResolvedEvent;
+				try {
+					await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
+						if (message is not StreamMessage.Event e) {
+							continue;
+						}
+
+						yield return e.ResolvedEvent;
+					}
+				} finally {
+					_cts.Cancel();
 				}
 			}
 		}
@@ -205,6 +218,7 @@ namespace EventStore.Client {
 		/// </summary>
 		public class ReadStreamResult : IAsyncEnumerable<ResolvedEvent> {
 			private readonly Channel<StreamMessage> _channel;
+			private readonly CancellationTokenSource _cts;
 
 			private int _messagesEnumerated;
 
@@ -235,19 +249,23 @@ namespace EventStore.Client {
 							throw new InvalidOperationException("Messages may only be enumerated once.");
 						}
 
-						await foreach (var message in _channel.Reader.ReadAllAsync().ConfigureAwait(false)) {
-							switch (message) {
-								case StreamMessage.FirstStreamPosition(var streamPosition):
-									FirstStreamPosition = streamPosition;
-									break;
-								case StreamMessage.LastStreamPosition(var lastStreamPosition):
-									LastStreamPosition = lastStreamPosition;
-									break;
-								default:
-									break;
-							}
+						try {
+							await foreach (var message in _channel.Reader.ReadAllAsync().ConfigureAwait(false)) {
+								switch (message) {
+									case StreamMessage.FirstStreamPosition(var streamPosition):
+										FirstStreamPosition = streamPosition;
+										break;
+									case StreamMessage.LastStreamPosition(var lastStreamPosition):
+										LastStreamPosition = lastStreamPosition;
+										break;
+									default:
+										break;
+								}
 
-							yield return message;
+								yield return message;
+							}
+						} finally {
+							_cts.Cancel();
 						}
 					}
 				}
@@ -273,6 +291,8 @@ namespace EventStore.Client {
 				StreamName = request.Options.Stream.StreamIdentifier!;
 
 				var tcs = new TaskCompletionSource<ReadState>();
+				_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+				var linkedCancellationToken = _cts.Token;
 #pragma warning disable CS0612
 				ReadState = tcs.Task;
 #pragma warning restore CS0612
@@ -283,17 +303,17 @@ namespace EventStore.Client {
 					var firstMessageRead = false;
 
 					try {
-						var callInvoker = await selectCallInvoker(cancellationToken).ConfigureAwait(false);
+						var callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
 						var client = new Streams.Streams.StreamsClient(callInvoker);
 						using var call = client.Read(request, callOptions);
 
-						await foreach (var response in call.ResponseStream.ReadAllAsync(cancellationToken)
+						await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken)
 							.ConfigureAwait(false)) {
 							if (!firstMessageRead) {
 								firstMessageRead = true;
 
 								if (response.ContentCase != StreamNotFound || request.Options.Stream == null) {
-									await _channel.Writer.WriteAsync(StreamMessage.Ok.Instance, cancellationToken)
+									await _channel.Writer.WriteAsync(StreamMessage.Ok.Instance, linkedCancellationToken)
 										.ConfigureAwait(false);
 									tcs.SetResult(Client.ReadState.Ok);
 								} else {
@@ -312,7 +332,7 @@ namespace EventStore.Client {
 									new Position(response.LastAllStreamPosition.CommitPosition,
 										response.LastAllStreamPosition.PreparePosition)),
 								_ => StreamMessage.Unknown.Instance
-							}, cancellationToken).ConfigureAwait(false);
+							}, linkedCancellationToken).ConfigureAwait(false);
 						}
 
 						_channel.Writer.Complete();
@@ -326,16 +346,21 @@ namespace EventStore.Client {
 			/// <inheritdoc />
 			public async IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(
 				CancellationToken cancellationToken = default) {
-				await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
-					if (message is StreamMessage.NotFound) {
-						throw new StreamNotFoundException(StreamName);
-					}
 
-					if (message is not StreamMessage.Event e) {
-						continue;
-					}
+				try {
+					await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
+						if (message is StreamMessage.NotFound) {
+							throw new StreamNotFoundException(StreamName);
+						}
 
-					yield return e.ResolvedEvent;
+						if (message is not StreamMessage.Event e) {
+							continue;
+						}
+
+						yield return e.ResolvedEvent;
+					}
+				} finally {
+					_cts.Cancel();
 				}
 			}
 		}
