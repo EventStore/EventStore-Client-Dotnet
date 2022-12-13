@@ -10,6 +10,7 @@ namespace EventStore.Client {
 		public async Task CanGetCurrent() {
 			var sut = new SharingProvider<int, int>(
 				factory: async (x, _) => x + 1,
+				factoryRetryDelay: TimeSpan.FromSeconds(0),
 				initialInput: 5);
 			Assert.Equal(6, await sut.CurrentAsync);
 		}
@@ -19,6 +20,7 @@ namespace EventStore.Client {
 			var count = 0;
 			var sut = new SharingProvider<bool, int>(
 				factory: async (_, _) => count++,
+				factoryRetryDelay: TimeSpan.FromSeconds(0),
 				initialInput: true);
 
 			Assert.Equal(0, await sut.CurrentAsync);
@@ -35,6 +37,7 @@ namespace EventStore.Client {
 					onBroken = f;
 					return count++;
 				},
+				factoryRetryDelay: TimeSpan.FromSeconds(0),
 				initialInput: true);
 
 			Assert.Equal(0, await sut.CurrentAsync);
@@ -55,6 +58,7 @@ namespace EventStore.Client {
 					onBroken = f;
 					return count++;
 				},
+				factoryRetryDelay: TimeSpan.FromSeconds(0),
 				initialInput: true);
 
 			Assert.Equal(0, await sut.CurrentAsync);
@@ -80,6 +84,7 @@ namespace EventStore.Client {
 					await trigger.WaitAsync();
 					return count;
 				},
+				factoryRetryDelay: TimeSpan.FromSeconds(0),
 				initialInput: true);
 
 
@@ -110,6 +115,7 @@ namespace EventStore.Client {
 		public async Task FactoryCanThrow() {
 			var sut = new SharingProvider<int, int>(
 				factory: (x, _) => throw new Exception($"input {x}"),
+				factoryRetryDelay: TimeSpan.FromSeconds(0),
 				initialInput: 0);
 
 			// exception propagated to consumer
@@ -131,6 +137,7 @@ namespace EventStore.Client {
 						onBroken(5);
 					return x;
 				},
+				factoryRetryDelay: TimeSpan.FromSeconds(0),
 				initialInput: 0);
 
 			// onBroken was called but it didn't do anything
@@ -147,6 +154,7 @@ namespace EventStore.Client {
 					}
 					return x;
 				},
+				factoryRetryDelay: TimeSpan.FromSeconds(0),
 				initialInput: 0);
 
 			var ex = await Assert.ThrowsAsync<Exception>(async () => {
@@ -184,7 +192,7 @@ namespace EventStore.Client {
 				}
 			}
 
-			var sut = new SharingProvider<int, int>(Factory, 0);
+			var sut = new SharingProvider<int, int>(Factory, TimeSpan.FromSeconds(0), 0);
 
 			// got an item (0)
 			completeConstruction.Release();

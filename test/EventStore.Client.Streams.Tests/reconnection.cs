@@ -17,10 +17,10 @@ namespace EventStore.Client {
 		public async Task when_the_connection_is_lost() {
 			var streamName = _fixture.GetStreamName();
 			var eventCount = 512;
-			var tcs = new TaskCompletionSource<object?>();
-			var signal = new TaskCompletionSource<object?>();
-			var events = new List<ResolvedEvent>();
-			var resubscribe = new TaskCompletionSource<StreamSubscription>();
+			var receivedAllEvents = new TaskCompletionSource();
+			var serverRestarted = new TaskCompletionSource();
+			var receivedEvents = new List<ResolvedEvent>();
+			var resubscribed = new TaskCompletionSource<StreamSubscription>();
 
 			using var _ = await _fixture.Client.SubscribeToStreamAsync(streamName, FromStream.Start,
 					EventAppeared, subscriptionDropped: SubscriptionDropped)
@@ -34,17 +34,17 @@ namespace EventStore.Client {
 			await Task.Delay(TimeSpan.FromSeconds(2));
 
 			await _fixture.TestServer.StartAsync().WithTimeout();
-			signal.SetResult(null);
+			serverRestarted.SetResult();
 
-			await resubscribe.Task.WithTimeout(TimeSpan.FromSeconds(10));
+			await resubscribed.Task.WithTimeout(TimeSpan.FromSeconds(10));
 
-			await tcs.Task.WithTimeout(TimeSpan.FromSeconds(10));
+			await receivedAllEvents.Task.WithTimeout(TimeSpan.FromSeconds(10));
 			
 			async Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) {
-				await signal.Task;
-				events.Add(e);
-				if (events.Count == eventCount) {
-					tcs.TrySetResult(null);
+				await serverRestarted.Task;
+				receivedEvents.Add(e);
+				if (receivedEvents.Count == eventCount) {
+					receivedAllEvents.TrySetResult();
 				}
 			}
 
@@ -53,33 +53,29 @@ namespace EventStore.Client {
 					return;
 				}
 
-				if (ex is not RpcException {
-					    Status: {
-						    StatusCode: StatusCode.Unavailable
-					    }
-				    }) {
-					tcs.TrySetException(ex);
+				if (ex is not RpcException { Status.StatusCode: StatusCode.Unavailable }) {
+					receivedAllEvents.TrySetException(ex);
 				} else {
-					Resubscribe();
+					var _ = ResubscribeAsync();
+				}
+			}
 
-					void Resubscribe() {
-						var task = _fixture.Client.SubscribeToStreamAsync(streamName,
-							FromStream.After(events[^1].OriginalEventNumber),
-							EventAppeared, subscriptionDropped: SubscriptionDropped);
-						task.ContinueWith(_ => resubscribe.SetResult(_.Result),
-							TaskContinuationOptions.OnlyOnRanToCompletion);
-						task.ContinueWith(_ => {
-								var ex = _.Exception!.GetBaseException();
+			async Task ResubscribeAsync() {
+				try {
+					var sub = await _fixture.Client.SubscribeToStreamAsync(
+						streamName,
+						FromStream.After(receivedEvents[^1].OriginalEventNumber),
+						EventAppeared,
+						subscriptionDropped: SubscriptionDropped);
+					resubscribed.SetResult(sub);
+				} catch (Exception ex) {
+					ex = ex.GetBaseException();
 
-								if (ex is RpcException {
-									    StatusCode: StatusCode.DeadlineExceeded
-								    }) {
-									Task.Delay(200).ContinueWith(_ => Resubscribe());
-								} else {
-									resubscribe.SetException(_.Exception!.GetBaseException());
-								}
-							},
-							TaskContinuationOptions.OnlyOnFaulted);
+					if (ex is RpcException) {
+						await Task.Delay(200);
+						var _ = ResubscribeAsync();
+					} else {
+						resubscribed.SetException(ex);
 					}
 				}
 			}
