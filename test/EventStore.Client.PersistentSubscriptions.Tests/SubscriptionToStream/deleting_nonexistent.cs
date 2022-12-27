@@ -15,7 +15,7 @@ namespace EventStore.Client.SubscriptionToStream {
 		[Fact]
 		public async Task the_delete_fails_with_argument_exception() {
 			await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
-				() => _fixture.Client.DeleteAsync(Stream,
+				() => _fixture.Client.DeleteToStreamAsync(Stream,
 					Guid.NewGuid().ToString(), userCredentials: TestCredentials.Root));
 		}
 

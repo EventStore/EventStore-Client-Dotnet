@@ -17,9 +17,6 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Constructs a new <see cref="PersistentSubscriptionNotFoundException"/>.
 		/// </summary>
-		/// <param name="streamName"></param>
-		/// <param name="groupName"></param>
-		/// <param name="exception"></param>
 		/// <exception cref="ArgumentNullException"></exception>
 		public PersistentSubscriptionNotFoundException(string streamName, string groupName, Exception? exception = null)
 			: base($"Subscription group '{groupName}' on stream '{streamName}' does not exist.", exception) {

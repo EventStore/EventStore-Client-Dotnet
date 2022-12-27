@@ -19,7 +19,7 @@ namespace EventStore.Client.SubscriptionToStream {
 		[Fact]
 		public Task the_completion_fails_with_access_denied() =>
 			Assert.ThrowsAsync<AccessDeniedException>(() =>
-				_fixture.Client.CreateAsync(Stream, "group57",
+				_fixture.Client.CreateToStreamAsync(Stream, "group57",
 					new PersistentSubscriptionSettings()));
 	}
 }

@@ -6,14 +6,27 @@ namespace EventStore.Client {
 	/// A class used to describe how to connect to an instance of EventStoreDB.
 	/// </summary>
 	public class EventStoreClientConnectivitySettings {
+		private const int DefaultPort = 2113;
+		private bool _insecure;
+		private Uri? _address;
+		
 		/// <summary>
 		/// The <see cref="Uri"/> of the EventStoreDB. Use this when connecting to a single node.
 		/// </summary>
-		public Uri Address { get; set; } = new UriBuilder {
-			Scheme = Uri.UriSchemeHttps,
-			Port = 2113
-		}.Uri;
+		public Uri Address {
+			get { return _address != null && IsSingleNode ? _address : DefaultAddress; }
+			set { _address = value; }
+		}
 
+		private Uri DefaultAddress {
+			get {
+				return new UriBuilder {
+						Scheme = _insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps,
+						Port = DefaultPort
+					}.Uri;
+			}
+		}
+		
 		/// <summary>
 		/// The maximum number of times to attempt <see cref="EndPoint"/> discovery.
 		/// </summary>
@@ -74,12 +87,26 @@ namespace EventStore.Client {
 		/// True if pointing to a single EventStoreDB node.
 		/// </summary>
 		public bool IsSingleNode => GossipSeeds.Length == 0;
+		
+		/// <summary>
+		/// True if communicating over an insecure channel; otherwise false.
+		/// </summary>
+		public bool Insecure {
+			get {
+				return IsSingleNode
+					? string.Equals(Address.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+					: _insecure;
+			}
+			set {
+				_insecure = value;
+			}
+		}
 
 		/// <summary>
-		/// True if communicating over a secure channel; otherwise false.
+		/// True if certificates will be validated; otherwise false. 
 		/// </summary>
-		public bool Insecure { get; set; }
-
+		public bool TlsVerifyCert { get; set; } = true;
+		
 		/// <summary>
 		/// The default <see cref="EventStoreClientConnectivitySettings"/>.
 		/// </summary>
@@ -90,6 +117,7 @@ namespace EventStore.Client {
 			NodePreference = NodePreference.Leader,
 			KeepAliveInterval = TimeSpan.FromSeconds(10),
 			KeepAliveTimeout =  TimeSpan.FromSeconds(10),
+			TlsVerifyCert = true,
 		};
 	}
 }

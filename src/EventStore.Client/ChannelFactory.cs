@@ -8,13 +8,10 @@ namespace EventStore.Client {
 	internal static class ChannelFactory {
 		private const int MaxReceiveMessageLength = 17 * 1024 * 1024;
 
-		public static TChannel CreateChannel(EventStoreClientSettings settings, EndPoint endPoint, bool https) =>
-			CreateChannel(settings, endPoint.ToUri(https));
+		public static TChannel CreateChannel(EventStoreClientSettings settings, EndPoint endPoint) {
+			var address = endPoint.ToUri(!settings.ConnectivitySettings.Insecure);
 
-		public static TChannel CreateChannel(EventStoreClientSettings settings, Uri? address) {
-			address ??= settings.ConnectivitySettings.Address;
-
-			if (address.Scheme == Uri.UriSchemeHttp ||settings.ConnectivitySettings.Insecure) {
+			if (settings.ConnectivitySettings.Insecure) {
 				//this must be switched on before creation of the HttpMessageHandler
 				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 			}

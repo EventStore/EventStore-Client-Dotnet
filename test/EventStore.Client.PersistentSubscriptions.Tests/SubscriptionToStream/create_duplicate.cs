@@ -17,14 +17,14 @@ namespace EventStore.Client.SubscriptionToStream {
 			protected override Task Given() => Task.CompletedTask;
 
 			protected override Task When() =>
-				Client.CreateAsync(Stream, "group32",
+				Client.CreateToStreamAsync(Stream, "group32",
 					new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
 		}
 
 		[Fact]
 		public async Task the_completion_fails() {
 			var ex = await Assert.ThrowsAsync<RpcException>(
-				() => _fixture.Client.CreateAsync(Stream, "group32",
+				() => _fixture.Client.CreateToStreamAsync(Stream, "group32",
 					new PersistentSubscriptionSettings(),
 					userCredentials: TestCredentials.Root));
 			Assert.Equal(StatusCode.AlreadyExists, ex.StatusCode);

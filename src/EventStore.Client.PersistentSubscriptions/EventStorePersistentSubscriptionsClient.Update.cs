@@ -60,15 +60,18 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Updates a persistent subscription.
 		/// </summary>
-		/// <param name="streamName"></param>
-		/// <param name="groupName"></param>
-		/// <param name="settings"></param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
-		public async Task UpdateAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
+		[Obsolete("UpdateAsync is no longer supported. Use UpdateToStreamAsync instead.", false)]
+		public Task UpdateAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default) => 
+			UpdateToStreamAsync(streamName, groupName, settings, deadline, userCredentials, cancellationToken);
+
+		/// <summary>
+		/// Updates a persistent subscription.
+		/// </summary>
+		/// <exception cref="ArgumentNullException"></exception>
+		public async Task UpdateToStreamAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			if (streamName == null) {
@@ -148,16 +151,10 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Updates a persistent subscription to $all.
 		/// </summary>
-		/// <param name="groupName"></param>
-		/// <param name="settings"></param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
 		public async Task UpdateToAllAsync(string groupName, PersistentSubscriptionSettings settings,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) =>
-			await UpdateAsync(SystemStreams.AllStream, groupName, settings, deadline, userCredentials,
+			await UpdateToStreamAsync(SystemStreams.AllStream, groupName, settings, deadline, userCredentials,
 					cancellationToken)
 				.ConfigureAwait(false);
 	}

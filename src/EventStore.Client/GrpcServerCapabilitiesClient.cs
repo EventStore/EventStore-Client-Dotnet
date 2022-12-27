@@ -27,7 +27,11 @@ namespace EventStore.Client {
 			try {
 				var supportsBatchAppend = false;
 				var supportsPersistentSubscriptionsToAll = false;
-
+				var supportsPersistentSubscriptionsGetInfo = false;
+				var supportsPersistentSubscriptionsRestartSubsystem = false;
+				var supportsPersistentSubscriptionsReplayParked = false;
+				var supportsPersistentSubscriptionsList = false;
+				
 				var response = await call.ResponseAsync.ConfigureAwait(false);
 
 				foreach (var supportedMethod in response.Methods) {
@@ -38,12 +42,28 @@ namespace EventStore.Client {
 						case ("event_store.client.persistent_subscriptions.persistentsubscriptions", "read"):
 							supportsPersistentSubscriptionsToAll = supportedMethod.Features.Contains("all");
 							continue;
+						case ("event_store.client.persistent_subscriptions.persistentsubscriptions", "getinfo"):
+							supportsPersistentSubscriptionsGetInfo = true;
+							continue;
+						case ("event_store.client.persistent_subscriptions.persistentsubscriptions", "restartsubsystem"):
+							supportsPersistentSubscriptionsRestartSubsystem = true;
+							continue;
+						case ("event_store.client.persistent_subscriptions.persistentsubscriptions", "replayparked"):
+							supportsPersistentSubscriptionsReplayParked = true;
+							continue;
+						case ("event_store.client.persistent_subscriptions.persistentsubscriptions", "list"):
+							supportsPersistentSubscriptionsList = true;
+							continue;
 					}
 				}
 
 				return new(
 					SupportsBatchAppend: supportsBatchAppend,
-					SupportsPersistentSubscriptionsToAll: supportsPersistentSubscriptionsToAll);
+					SupportsPersistentSubscriptionsToAll: supportsPersistentSubscriptionsToAll,
+					SupportsPersistentSubscriptionsGetInfo: supportsPersistentSubscriptionsGetInfo,
+					SupportsPersistentSubscriptionsRestartSubsystem: supportsPersistentSubscriptionsRestartSubsystem,
+					SupportsPersistentSubscriptionsReplayParked: supportsPersistentSubscriptionsReplayParked,
+					SupportsPersistentSubscriptionsList: supportsPersistentSubscriptionsList);
 
 			} catch (Exception ex) when (ex.GetBaseException() is RpcException rpcException &&
 				rpcException.StatusCode == StatusCode.Unimplemented) {

@@ -27,15 +27,14 @@ namespace EventStore.Client {
 				DnsEndPointEqualityComparer.Instance);
 		}
 
-		public TChannel GetChannelInfo(DnsEndPoint endPoint, bool? https = null) {
+		public TChannel GetChannelInfo(DnsEndPoint endPoint) {
 			lock (_lock) {
 				ThrowIfDisposed();
 
 				if (!_channels.TryGetValue(endPoint, out var channel)) {
 					channel = ChannelFactory.CreateChannel(
 						settings: _settings,
-						endPoint: endPoint,
-						https: https ?? !_settings.ConnectivitySettings.Insecure);
+						endPoint: endPoint);
 					_channels[endPoint] = channel;
 				}
 

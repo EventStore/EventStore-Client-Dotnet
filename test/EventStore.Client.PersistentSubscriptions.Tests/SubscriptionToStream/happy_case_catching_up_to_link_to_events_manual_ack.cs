@@ -45,7 +45,7 @@ namespace EventStore.Client.SubscriptionToStream {
 					await StreamsClient.AppendToStreamAsync(Stream, StreamState.Any, new[] {e});
 				}
 
-				await Client.CreateAsync(Stream, Group,
+				await Client.CreateToStreamAsync(Stream, Group,
 					new PersistentSubscriptionSettings(startFrom: StreamPosition.Start, resolveLinkTos: true),
 					userCredentials: TestCredentials.Root);
 				_subscription = await Client.SubscribeToStreamAsync(Stream, Group,

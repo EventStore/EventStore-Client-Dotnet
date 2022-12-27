@@ -17,9 +17,6 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Constructs a new <see cref="MaximumSubscribersReachedException"/>.
 		/// </summary>
-		/// <param name="streamName"></param>
-		/// <param name="groupName"></param>
-		/// <param name="exception"></param>
 		/// <exception cref="ArgumentNullException"></exception>
 		public MaximumSubscribersReachedException(string streamName, string groupName, Exception? exception = null)
 			: base($"Maximum subscriptions reached for subscription group '{groupName}' on stream '{streamName}.'",

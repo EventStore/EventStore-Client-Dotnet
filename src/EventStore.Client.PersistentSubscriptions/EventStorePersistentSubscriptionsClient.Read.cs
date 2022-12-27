@@ -8,15 +8,6 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Subscribes to a persistent subscription.
 		/// </summary>
-		/// <param name="streamName"></param>
-		/// <param name="groupName"></param>
-		/// <param name="eventAppeared"></param>
-		/// <param name="subscriptionDropped"></param>
-		/// <param name="userCredentials"></param>
-		/// <param name="bufferSize"></param>
-		/// <param name="autoAck"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
@@ -38,14 +29,6 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Subscribes to a persistent subscription. Messages must be manually acknowledged
 		/// </summary>
-		/// <param name="streamName"></param>
-		/// <param name="groupName"></param>
-		/// <param name="eventAppeared"></param>
-		/// <param name="subscriptionDropped"></param>
-		/// <param name="userCredentials"></param>
-		/// <param name="bufferSize"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
@@ -104,13 +87,6 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged
 		/// </summary>
-		/// <param name="groupName"></param>
-		/// <param name="eventAppeared"></param>
-		/// <param name="subscriptionDropped"></param>
-		/// <param name="userCredentials"></param>
-		/// <param name="bufferSize"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
 		public async Task<PersistentSubscription> SubscribeToAllAsync(string groupName,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,

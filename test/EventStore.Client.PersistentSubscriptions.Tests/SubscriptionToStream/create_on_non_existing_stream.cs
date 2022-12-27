@@ -18,7 +18,7 @@ namespace EventStore.Client.SubscriptionToStream {
 
 		[Fact]
 		public async Task the_completion_succeeds() {
-			await _fixture.Client.CreateAsync(Stream, "nonexistinggroup",
+			await _fixture.Client.CreateToStreamAsync(Stream, "nonexistinggroup",
 				new PersistentSubscriptionSettings(),
 				userCredentials: TestCredentials.Root);
 		}

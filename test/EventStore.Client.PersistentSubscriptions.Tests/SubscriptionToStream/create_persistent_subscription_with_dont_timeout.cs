@@ -19,7 +19,7 @@ namespace EventStore.Client.SubscriptionToStream {
 
 		[Fact]
 		public Task the_subscription_is_created_without_error() =>
-			_fixture.Client.CreateAsync(Stream, "dont-timeout",
+			_fixture.Client.CreateToStreamAsync(Stream, "dont-timeout",
 				new PersistentSubscriptionSettings(messageTimeout: TimeSpan.Zero),
 				userCredentials: TestCredentials.Root);
 	}

@@ -73,7 +73,7 @@ namespace EventStore.Client {
 				TestServer = new EventStoreTestServerExternal();
 			} else {
 				TestServer = GlobalEnvironment.UseCluster
-					? (IEventStoreTestServer)new EventStoreTestServerCluster(hostCertificatePath, Settings.ConnectivitySettings.Address, env)
+					? new EventStoreTestServerCluster(hostCertificatePath, Settings.ConnectivitySettings.Address, env) 
 					: new EventStoreTestServer(hostCertificatePath, Settings.ConnectivitySettings.Address, env);
 			}
 		}

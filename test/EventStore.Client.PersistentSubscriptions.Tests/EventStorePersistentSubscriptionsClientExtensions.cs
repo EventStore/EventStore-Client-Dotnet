@@ -6,7 +6,7 @@ namespace EventStore.Client {
 		public static async Task WarmUpAsync(this EventStorePersistentSubscriptionsClient self) {
 			await self.WarmUpWith(async cancellationToken => {
 				var id = Guid.NewGuid();
-				await self.CreateAsync(
+				await self.CreateToStreamAsync(
 						streamName: $"warmup-stream-{id}",
 						groupName: $"warmup-group-{id}",
 						settings: new(),

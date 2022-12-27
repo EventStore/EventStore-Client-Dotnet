@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Interceptors;
@@ -19,29 +18,23 @@ namespace EventStore.Client {
 		private readonly CancellationTokenSource _cts;
 		private readonly ChannelCache _channelCache;
 		private readonly SharingProvider<ReconnectionRequired, ChannelInfo> _channelInfoProvider;
-
-		/// <summary>
+		private readonly Lazy<HttpFallback> _httpFallback;
+		
 		/// The name of the connection.
-		/// </summary>
 		public string ConnectionName { get; }
-
-		/// <summary>
+		
 		/// The <see cref="EventStoreClientSettings"/>.
-		/// </summary>
 		protected EventStoreClientSettings Settings { get; }
 
-		/// <summary>
 		/// Constructs a new <see cref="EventStoreClientBase"/>.
-		/// </summary>
-		/// <param name="settings"></param>
-		/// <param name="exceptionMap"></param>
 		protected EventStoreClientBase(EventStoreClientSettings? settings,
 			IDictionary<string, Func<RpcException, Exception>> exceptionMap) {
 			Settings = settings ?? new EventStoreClientSettings();
 			_exceptionMap = exceptionMap;
 			_cts = new CancellationTokenSource();
 			_channelCache = new(Settings);
-
+			_httpFallback = new Lazy<HttpFallback>(() => new HttpFallback(Settings));
+			
 			ConnectionName = Settings.ConnectionName ?? $"ES-{Guid.NewGuid()}";
 
 			var channelSelector = new ChannelSelector(Settings, _channelCache);
@@ -52,7 +45,7 @@ namespace EventStore.Client {
 				initialInput: ReconnectionRequired.Rediscover.Instance,
 				loggerFactory: Settings.LoggerFactory);
 		}
-
+		
 		// Select a channel and query its capabilities. This is an expensive call that
 		// we don't want to do often.
 		private async Task<ChannelInfo> GetChannelInfoExpensive(
@@ -85,11 +78,10 @@ namespace EventStore.Client {
 
 			return new(channel, caps, invoker);
 		}
-
-#pragma warning disable 1591
+		
+		/// Gets the current channel info.
 		protected async ValueTask<ChannelInfo> GetChannelInfo(CancellationToken cancellationToken) =>
 			await _channelInfoProvider.CurrentAsync.WithCancellation(cancellationToken).ConfigureAwait(false);
-#pragma warning restore 1591
 
 		// only exists so that we can manually trigger rediscovery in the tests (by reflection)
 		// in cases where the server doesn't yet let the client know that it needs to.
@@ -100,11 +92,33 @@ namespace EventStore.Client {
 			_channelInfoProvider.Reset();
 		}
 
+		/// Returns the result of an HTTP Get request based on the client settings.
+		protected async Task<T> HttpGet<T>(string path, Action onNotFound, ChannelInfo channelInfo,
+			TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
+			
+			return await _httpFallback.Value
+				.HttpGetAsync<T>(path, channelInfo, deadline, userCredentials, onNotFound, cancellationToken)
+				.ConfigureAwait(false);
+		}
+
+		/// Executes an HTTP Post request based on the client settings.
+		protected async Task HttpPost(string path, string query, Action onNotFound, ChannelInfo channelInfo,
+			TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
+			
+			await _httpFallback.Value
+				.HttpPostAsync(path, query, channelInfo, deadline, userCredentials, onNotFound, cancellationToken)
+				.ConfigureAwait(false);
+		}
+
 		/// <inheritdoc />
 		public virtual void Dispose() {
 			_cts.Cancel();
 			_cts.Dispose();
 			_channelCache.Dispose();
+			
+			if (_httpFallback.IsValueCreated) {
+				_httpFallback.Value.Dispose();
+			}
 		}
 
 		/// <inheritdoc />
@@ -112,13 +126,13 @@ namespace EventStore.Client {
 			_cts.Cancel();
 			_cts.Dispose();
 			await _channelCache.DisposeAsync().ConfigureAwait(false);
+
+			if (_httpFallback.IsValueCreated) {
+				_httpFallback.Value.Dispose();
+			}
 		}
 
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="option">The invalid option</param>
-		/// <typeparam name="T">The type of the option</typeparam>
+		/// Returns an InvalidOperation exception.
 		protected Exception InvalidOption<T>(T option) where T : Enum =>
 			new InvalidOperationException($"The {typeof(T).Name} {option:x} was not valid.");
 	}

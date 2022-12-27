@@ -19,7 +19,6 @@ namespace EventStore.Client {
 		private readonly IContainerService _eventStore;
 		private readonly HttpClient _httpClient;
 		private static readonly string ContainerName = "es-client-dotnet-test";
-		private static readonly string DockerImage = $"ghcr.io/eventstore/eventstore:{GlobalEnvironment.ImageTag}";
 
 		private static Version? _version;
 		public static Version Version => _version ??= GetVersion();
@@ -29,7 +28,7 @@ namespace EventStore.Client {
 
 			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 			using var eventstore = new Builder().UseContainer()
-				.UseImage(DockerImage)
+				.UseImage(GlobalEnvironment.DockerImage)
 				.Command("--version")
 				.Build()
 				.Start();
@@ -74,7 +73,7 @@ namespace EventStore.Client {
 
 			_eventStore = new Builder()
 				.UseContainer()
-				.UseImage(DockerImage)
+				.UseImage(GlobalEnvironment.DockerImage)
 				.WithEnvironment(env.Select(pair => $"{pair.Key}={pair.Value}").ToArray())
 				.WithName(ContainerName)
 				.MountVolume(_hostCertificatePath, "/etc/eventstore/certs", MountType.ReadOnly)

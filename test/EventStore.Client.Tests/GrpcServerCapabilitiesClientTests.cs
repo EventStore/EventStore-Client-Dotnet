@@ -1,5 +1,5 @@
-using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 using EventStore.Client.ServerFeatures;
 using Grpc.Core;
@@ -69,7 +69,7 @@ namespace EventStore.Client {
 							new EventStoreClientSettings {
 								CreateHttpMessageHandler = kestrel.CreateHandler
 							},
-							new UriBuilder().Uri)
+							new DnsEndPoint("localhost", 80))
 						.CreateCallInvoker(),
 					cancellationToken: default);
 

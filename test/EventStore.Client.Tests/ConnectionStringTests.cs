@@ -27,7 +27,7 @@ namespace EventStore.Client {
 
 				settings.ConnectivitySettings.Address =
 					new UriBuilder(EventStoreClientConnectivitySettings.Default.Address) {
-						Scheme = settings.ConnectivitySettings.Insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps
+						Scheme = settings.ConnectivitySettings.Address.Scheme
 					}.Uri;
 
 				yield return new object?[] {
@@ -48,7 +48,7 @@ namespace EventStore.Client {
 
 				ipGossipSettings.ConnectivitySettings.Address =
 					new UriBuilder(EventStoreClientConnectivitySettings.Default.Address) {
-						Scheme = ipGossipSettings.ConnectivitySettings.Insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps
+						Scheme = ipGossipSettings.ConnectivitySettings.Address.Scheme
 					}.Uri;
 
 				ipGossipSettings.ConnectivitySettings.DnsGossipSeeds = null;
@@ -71,7 +71,7 @@ namespace EventStore.Client {
 				singleNodeSettings.ConnectivitySettings.DnsGossipSeeds = null;
 				singleNodeSettings.ConnectivitySettings.IpGossipSeeds = null;
 				singleNodeSettings.ConnectivitySettings.Address = new UriBuilder(fixture.Create<Uri>()) {
-					Scheme = singleNodeSettings.ConnectivitySettings.Insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps
+					Scheme = singleNodeSettings.ConnectivitySettings.Address.Scheme
 				}.Uri;
 
 				yield return new object?[] {
@@ -244,6 +244,55 @@ namespace EventStore.Client {
 				settings.ConnectivitySettings.KeepAliveInterval);
 			Assert.Equal(EventStoreClientConnectivitySettings.Default.KeepAliveTimeout,
 				settings.ConnectivitySettings.KeepAliveTimeout);
+		}
+		
+		[Theory,
+		 InlineData("esdb://localhost", true),
+		 InlineData("esdb://localhost/?tls=false", false),
+		 InlineData("esdb://localhost/?tls=true", true),
+		 InlineData("esdb://localhost1,localhost2,localhost3", true),
+		 InlineData("esdb://localhost1,localhost2,localhost3/?tls=false", false),
+		 InlineData("esdb://localhost1,localhost2,localhost3/?tls=true", true)]
+		public void use_tls(string connectionString, bool expectedUseTls) {
+			var result = EventStoreClientSettings.Create(connectionString);
+			var expectedScheme = expectedUseTls ? "https" : "http";
+			Assert.NotEqual(expectedUseTls, result.ConnectivitySettings.Insecure);
+			Assert.Equal(expectedScheme, result.ConnectivitySettings.Address.Scheme);
+		}
+
+		[Theory,
+		 InlineData("esdb://localhost", null, true),
+		 InlineData("esdb://localhost", true, false),
+		 InlineData("esdb://localhost", false, true),
+		 InlineData("esdb://localhost/?tls=true", null, true),
+		 InlineData("esdb://localhost/?tls=true", true, false),
+		 InlineData("esdb://localhost/?tls=true", false, true),
+		 InlineData("esdb://localhost/?tls=false", null, false),
+		 InlineData("esdb://localhost/?tls=false", true, false),
+		 InlineData("esdb://localhost/?tls=false", false, true),
+		 InlineData("esdb://localhost1,localhost2,localhost3", null, true),
+		 InlineData("esdb://localhost1,localhost2,localhost3", true, true),
+		 InlineData("esdb://localhost1,localhost2,localhost3", false, true),
+		 InlineData("esdb://localhost1,localhost2,localhost3/?tls=true", null, true),
+		 InlineData("esdb://localhost1,localhost2,localhost3/?tls=true", true, true),
+		 InlineData("esdb://localhost1,localhost2,localhost3/?tls=true", false, true),
+		 InlineData("esdb://localhost1,localhost2,localhost3/?tls=false", null, false),
+		 InlineData("esdb://localhost1,localhost2,localhost3/?tls=false", true, false),
+		 InlineData("esdb://localhost1,localhost2,localhost3/?tls=false", false, false),
+		]
+		public void allow_tls_override_for_single_node(string connectionString, bool? insecureOverride, bool expectedUseTls) {
+			var result = EventStoreClientSettings.Create(connectionString);
+			var settings = result.ConnectivitySettings;
+
+			if (insecureOverride.HasValue) {
+				settings.Address = new UriBuilder {
+					Scheme = insecureOverride.Value ? "hTTp" : "HttpS",
+				}.Uri;
+			}
+
+			var expectedScheme = expectedUseTls ? "https" : "http";
+			Assert.Equal(expectedUseTls, !settings.Insecure);
+			Assert.Equal(expectedScheme, result.ConnectivitySettings.Address.Scheme);
 		}
 
 		private static string GetConnectionString(EventStoreClientSettings settings,
