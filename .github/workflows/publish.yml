@@ -152,12 +152,12 @@ jobs:
         if: github.event_name == 'push'
         run: |
           dotnet tool restore
-          find . -name "*.nupkg" | xargs -n1 dotnet tool run gpr -- push --api-key=${{ secrets.github_token }}
+          find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.github_token }} --source https://nuget.pkg.github.com/EventStore/index.json --skip-duplicate
       - name: Dotnet Push to Nuget.org
         shell: bash
         if: contains(steps.get_version.outputs.branch, 'v')
         run: |
           dotnet nuget list source
           dotnet tool restore
-          find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.nuget_key }} --source https://api.nuget.org/v3/index.json
+          find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.nuget_key }} --skip-duplicate
     
