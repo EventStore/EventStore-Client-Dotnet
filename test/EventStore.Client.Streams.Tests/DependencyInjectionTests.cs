@@ -13,9 +13,37 @@ namespace EventStore.Client {
 				.GetRequiredService<EventStoreClient>();
 
 		[Fact]
+		public void RegisterWithServiceProvider() =>
+			new ServiceCollection()
+				.AddEventStoreClient(provider => { })
+				.BuildServiceProvider()
+				.GetRequiredService<EventStoreClient>();
+
+		[Fact]
 		public void RegisterSimple() =>
 			new ServiceCollection()
 				.AddEventStoreClient(new Uri("https://localhost:1234"))
+				.BuildServiceProvider()
+				.GetRequiredService<EventStoreClient>();
+
+		[Fact]
+		public void RegisterSimpleWithServiceProvider() =>
+			new ServiceCollection()
+				.AddEventStoreClient(provider => new Uri("https://localhost:1234"))
+				.BuildServiceProvider()
+				.GetRequiredService<EventStoreClient>();
+
+		[Fact]
+		public void RegisterWithAction() =>
+			new ServiceCollection()
+				.AddEventStoreClient(settings => { })
+				.BuildServiceProvider()
+				.GetRequiredService<EventStoreClient>();
+
+		[Fact]
+		public void RegisterWithActionAndServiceProvider() =>
+			new ServiceCollection()
+				.AddEventStoreClient(provider => settings => { })
 				.BuildServiceProvider()
 				.GetRequiredService<EventStoreClient>();
 
