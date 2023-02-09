@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+## [23.0.0] - 2023-02-08
+
+### Added
+- Allow channels to open extra connections if they reach the max streams per connection limit (i.e. too may concurrent grpc calls- 100 by default) [EventStore-Client-Dotnet#21q8](https://github.com/EventStore/EventStore-Client-Dotnet/pull/218)
+- Correct the error message when deleting a stream using gRPC. [EventStore-Client-Dotnet#221](https://github.com/EventStore/EventStore-Client-Dotnet/pull/221)
+- Support `List()` over gRPC for listing persistent subscriptions [EventStore-Client-Dotnet#180](https://github.com/EventStore/EventStore-Client-Dotnet/pull/180)
+- Support `ReplayParked()` over gRPC for replaying parked messages [EventStore-Client-Dotnet#180](https://github.com/EventStore/EventStore-Client-Dotnet/pull/180)
+- Support `GetInfo()` over gRPC for returning details of a persistent subscription [EventStore-Client-Dotnet#180](https://github.com/EventStore/EventStore-Client-Dotnet/pull/180)
+- Target `net6.0` [EventStore-Client-Dotnet#204](https://github.com/EventStore/EventStore-Client-Dotnet/pull/204)
+- Target `net7.0` [EventStore-Client-Dotnet#230](https://github.com/EventStore/EventStore-Client-Dotnet/pull/230)
+
+### Changed
+- Removed `Timeout` from `EventStoreOperationOptions` and moved it to an explicit `deadline` parameter on all operations except for subscriptions. Consequently, `configureOperationOptions` callback has been removed for most operations. [EventStore-Client-Dotnet#194](https://github.com/EventStore/EventStore-Client-Dotnet/pull/194)
+
+### Fixed
+- Incorrect error message when deleting a stream using gRPC [EventStore-Client-Dotnet#221](https://github.com/EventStore/EventStore-Client-Dotnet/pull/221) 
+- Dispose the gRPC call underlying a Read if the read is only partially consumed [EventStore-Client-Dotnet#234](https://github.com/EventStore/EventStore-Client-Dotnet/pull/234)
+- Support `RestartSubsystem()` over gRPC for restarting the persistent subscription subsystem [EventStore-Client-Dotnet#180](https://github.com/EventStore/EventStore-Client-Dotnet/pull/180)
+- Remove the exception that logs an error when the subscription is cancelled [EventStore-Client-Dotnet#209](https://github.com/EventStore/EventStore-Client-Dotnet/pull/209)
+
+### Removed
+- Drop support for `netcoreapp3.1` [EventStore-Client-Dotnet#204](https://github.com/EventStore/EventStore-Client-Dotnet/pull/204)
+
 ## [22.0.0]
 
 ### Fixed
@@ -10,6 +35,7 @@ All notable changes to this project will be documented in this file.
 - Send correct writeCheckpoint option when disabling/aborting a projection [EventStore-Client-DotNet#116](https://github.com/EventStore/EventStore-Client-Dotnet/pull/116)
 - Force Rediscovery Only when Lost Connection [EventStore-Client-DotNet#195](https://github.com/EventStore/EventStore-Client-Dotnet/pull/195)
 - Align Persistent Subscription Names [EventStore-Client-DotNet#198](https://github.com/EventStore/EventStore-Client-Dotnet/pull/198)
+- Trigger rediscovery when failing to send a message on a streaming call [EventStore-Client-DotNet#222](https://github.com/EventStore/EventStore-Client-Dotnet/pull/222)
 
 ### Removed
 - Remove autoAck from Persistent Subscriptions [EventStore-Client-DotNet#175](https://github.com/EventStore/EventStore-Client-Dotnet/pull/175)
