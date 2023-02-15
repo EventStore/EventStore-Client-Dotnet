@@ -13,35 +13,42 @@ namespace EventStore.Client {
 				.GetRequiredService<EventStoreClient>();
 
 		[Fact]
-		public void RegisterWithServiceProvider() =>
+		public void RegisterWithConnectionString() =>
 			new ServiceCollection()
-				.AddEventStoreClient(provider => { })
+				.AddEventStoreClient("esdb://localhost:2113?tls=false")
 				.BuildServiceProvider()
 				.GetRequiredService<EventStoreClient>();
 
 		[Fact]
-		public void RegisterSimple() =>
+		public void RegisterWithConnectionStringFactory() =>
+			new ServiceCollection()
+				.AddEventStoreClient(connectionStringFactory: provider => "esdb://localhost:2113?tls=false")
+				.BuildServiceProvider()
+				.GetRequiredService<EventStoreClient>();
+
+		[Fact]
+		public void RegisterWithUri() =>
 			new ServiceCollection()
 				.AddEventStoreClient(new Uri("https://localhost:1234"))
 				.BuildServiceProvider()
 				.GetRequiredService<EventStoreClient>();
 
 		[Fact]
-		public void RegisterSimpleWithServiceProvider() =>
+		public void RegisterWithUriFactory() =>
 			new ServiceCollection()
 				.AddEventStoreClient(provider => new Uri("https://localhost:1234"))
 				.BuildServiceProvider()
 				.GetRequiredService<EventStoreClient>();
 
 		[Fact]
-		public void RegisterWithAction() =>
+		public void RegisterWithSettings() =>
 			new ServiceCollection()
 				.AddEventStoreClient(settings => { })
 				.BuildServiceProvider()
 				.GetRequiredService<EventStoreClient>();
 
 		[Fact]
-		public void RegisterWithActionAndServiceProvider() =>
+		public void RegisterWithSettingsFactory() =>
 			new ServiceCollection()
 				.AddEventStoreClient(provider => settings => { })
 				.BuildServiceProvider()
