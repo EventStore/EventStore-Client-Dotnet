@@ -138,7 +138,8 @@ jobs:
       - name: Dotnet Pack
         shell: bash
         run: |
-          dotnet pack /p:Version=${{ steps.get_version.outputs.version }} --configuration=Release --output=./packages \
+          dotnet pack /p:Version=${{ steps.get_version.outputs.version }} --configuration=Release \
+            /p:PublishDir=./packages
             /p:NoWarn=NU5105 \
             /p:RepositoryUrl=https://github.com/EventStore/EventStore-Client-Dotnet \
             /p:RepositoryType=git
