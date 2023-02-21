@@ -160,16 +160,20 @@ namespace EventStore.Client {
 		private async Task CreateInternalAsync(string streamName, string groupName, IEventFilter? eventFilter,
 			PersistentSubscriptionSettings settings, TimeSpan? deadline, UserCredentials? userCredentials,
 			CancellationToken cancellationToken) {
-			if (streamName == null) {
+			if (streamName is null) {
 				throw new ArgumentNullException(nameof(streamName));
 			}
 
-			if (groupName == null) {
+			if (groupName is null) {
 				throw new ArgumentNullException(nameof(groupName));
 			}
 
-			if (settings == null) {
+			if (settings is null) {
 				throw new ArgumentNullException(nameof(settings));
+			}
+
+			if (settings.ConsumerStrategyName is null) {
+				throw new ArgumentNullException(nameof(settings.ConsumerStrategyName));
 			}
 
 			if (streamName != SystemStreams.AllStream && settings.StartFrom != null &&
@@ -189,8 +193,8 @@ namespace EventStore.Client {
 					$"Filters are only supported when subscribing to {SystemStreams.AllStream}");
 			}
 
-			if (!NamedConsumerStrategyToCreateProto.Keys.Contains(settings.ConsumerStrategyName)) {
-				throw new NotSupportedException(
+			if (!NamedConsumerStrategyToCreateProto.ContainsKey(settings.ConsumerStrategyName)) {
+				throw new ArgumentException(
 					"The specified consumer strategy is not supported, specify one of the SystemConsumerStrategies");
 			}
 
@@ -198,7 +202,7 @@ namespace EventStore.Client {
 
 			if (streamName == SystemStreams.AllStream &&
 			    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
-				throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
+				throw new InvalidOperationException("The server does not support persistent subscriptions to $all.");
 			}
 
 			using var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(

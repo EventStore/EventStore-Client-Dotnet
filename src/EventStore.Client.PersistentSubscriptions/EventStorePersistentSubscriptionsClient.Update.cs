@@ -74,26 +74,30 @@ namespace EventStore.Client {
 		public async Task UpdateToStreamAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			if (streamName == null) {
+			if (streamName is null) {
 				throw new ArgumentNullException(nameof(streamName));
 			}
 
-			if (groupName == null) {
+			if (groupName is null) {
 				throw new ArgumentNullException(nameof(groupName));
 			}
 
-			if (settings == null) {
+			if (settings is null) {
 				throw new ArgumentNullException(nameof(settings));
 			}
 
-			if (streamName != SystemStreams.AllStream && settings.StartFrom != null &&
-			    !(settings.StartFrom is StreamPosition)) {
+			if (settings.ConsumerStrategyName is null) {
+				throw new ArgumentNullException(nameof(settings.ConsumerStrategyName));
+			}
+
+			if (streamName != SystemStreams.AllStream && settings.StartFrom is not null &&
+			    settings.StartFrom is not StreamPosition) {
 				throw new ArgumentException(
 					$"{nameof(settings.StartFrom)} must be of type '{nameof(StreamPosition)}' when subscribing to a stream");
 			}
 
-			if (streamName == SystemStreams.AllStream && settings.StartFrom != null &&
-			    !(settings.StartFrom is Position)) {
+			if (streamName == SystemStreams.AllStream && settings.StartFrom is not null &&
+			    settings.StartFrom is not Position) {
 				throw new ArgumentException(
 					$"{nameof(settings.StartFrom)} must be of type '{nameof(Position)}' when subscribing to {SystemStreams.AllStream}");
 			}
@@ -102,7 +106,7 @@ namespace EventStore.Client {
 
 			if (streamName == SystemStreams.AllStream &&
 			    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
-				throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
+				throw new InvalidOperationException("The server does not support persistent subscriptions to $all.");
 			}
 
 			using var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(channelInfo.CallInvoker)
