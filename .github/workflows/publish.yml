@@ -138,6 +138,7 @@ jobs:
       - name: Dotnet Pack
         shell: bash
         run: |
+          mkdir -p packages
           dotnet pack /p:Version=${{ steps.get_version.outputs.version }} --configuration=Release \
             /p:PublishDir=./packages \
             /p:NoWarn=NU5105 \
