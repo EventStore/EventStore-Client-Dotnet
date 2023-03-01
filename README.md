@@ -5,6 +5,20 @@ EventStoreDB is the open-source, functional database with Complex Event Processi
 This is the repository for the .NET client for EventStoreDB version 20+ and uses gRPC as the communication protocol.
 If you're looking for the TCP client library (legacy), check the [EventStoreDB-Client-Dotnet-Legacy](https://github.com/EventStore/EventStoreDB-Client-Dotnet-Legacy) repo.
 
+## Installation
+
+Reference the nuget package(s) for the API that you would like to call
+
+[Streams](https://www.nuget.org/packages/EventStore.Client.Grpc.Streams)
+
+[Operations](https://www.nuget.org/packages/EventStore.Client.Grpc.Operations)
+
+[Persistent Subscriptions](https://www.nuget.org/packages/EventStore.Client.Grpc.PersistentSubscriptions)
+
+[Projection Management](https://www.nuget.org/packages/EventStore.Client.Grpc.ProjectionManagement)
+
+[User Management](https://www.nuget.org/packages/EventStore.Client.Grpc.UserManagement)
+
 ## Support
 
 Information on support and commercial tools such as LDAP authentication can be found here: [Event Store Support](https://eventstore.com/support/).
