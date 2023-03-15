@@ -161,5 +161,5 @@ jobs:
         run: |
           dotnet nuget list source
           dotnet tool restore
-          find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.nuget_key }} --skip-duplicate
+          find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.nuget_key }} --source https://api.nuget.org/v3/index.json --skip-duplicate
     
