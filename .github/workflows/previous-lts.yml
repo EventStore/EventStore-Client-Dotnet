@@ -12,4 +12,4 @@ jobs:
   test:
     uses: ./.github/workflows/base.yml
     with:
-      docker-tag: lts
+      docker-tag: previous-lts
