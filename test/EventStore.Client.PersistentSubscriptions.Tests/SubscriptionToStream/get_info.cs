@@ -142,6 +142,9 @@ namespace EventStore.Client.SubscriptionToStream {
 		}
 		
 		public class Fixture : EventStoreClientFixture {
+			public Fixture () : base(noDefaultCredentials: true) {
+			}
+			
 			protected override Task Given() =>
 				Client.CreateToStreamAsync(
 					groupName: GroupName,
@@ -174,7 +177,7 @@ namespace EventStore.Client.SubscriptionToStream {
 				for (int i = 0; i < 15; i++) {
 					await StreamsClient.AppendToStreamAsync(StreamName, StreamState.Any, new [] {
 						new EventData(Uuid.NewUuid(), "test-event", ReadOnlyMemory<byte>.Empty)
-					});
+					}, userCredentials: TestCredentials.Root);
 				}
 				
 				await tcs.Task;

@@ -20,6 +20,9 @@ namespace EventStore.Client.SubscriptionToAll {
 		}
 
 		public class Fixture : EventStoreClientFixture {
+			public Fixture () : base(noDefaultCredentials: true){
+			}
+			
 			protected override Task Given() => Task.CompletedTask;
 			protected override Task When() => Task.CompletedTask;
 		}

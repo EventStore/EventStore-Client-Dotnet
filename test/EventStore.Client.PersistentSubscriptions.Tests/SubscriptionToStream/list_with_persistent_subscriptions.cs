@@ -56,7 +56,7 @@ namespace EventStore.Client.SubscriptionToStream {
 		}
 
 		public class Fixture : EventStoreClientFixture {
-			public Fixture () : base(skipPSWarmUp: true) {
+			public Fixture () : base(skipPSWarmUp: true, noDefaultCredentials: true) {
 			}
 			
 			protected override async Task Given() {

@@ -19,7 +19,7 @@ namespace EventStore.Client.Security {
 
 		public EventStoreUserManagementClient UserManagementClient { get; }
 
-		protected SecurityFixture() {
+		protected SecurityFixture() : base(noDefaultCredentials: true) {
 			UserManagementClient = new EventStoreUserManagementClient(Settings);
 		}
 

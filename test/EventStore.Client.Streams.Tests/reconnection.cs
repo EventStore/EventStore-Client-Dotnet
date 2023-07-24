@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -64,7 +65,9 @@ namespace EventStore.Client {
 				try {
 					var sub = await _fixture.Client.SubscribeToStreamAsync(
 						streamName,
-						FromStream.After(receivedEvents[^1].OriginalEventNumber),
+						receivedEvents.Any()
+							? FromStream.After(receivedEvents[^1].OriginalEventNumber)
+							: FromStream.Start,
 						EventAppeared,
 						subscriptionDropped: SubscriptionDropped);
 					resubscribed.SetResult(sub);

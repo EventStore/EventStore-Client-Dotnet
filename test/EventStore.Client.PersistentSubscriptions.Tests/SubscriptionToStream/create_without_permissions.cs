@@ -12,6 +12,9 @@ namespace EventStore.Client.SubscriptionToStream {
 		private readonly Fixture _fixture;
 
 		public class Fixture : EventStoreClientFixture {
+			public Fixture () : base(noDefaultCredentials: true){
+			}
+			
 			protected override Task Given() => Task.CompletedTask;
 			protected override Task When() => Task.CompletedTask;
 		}

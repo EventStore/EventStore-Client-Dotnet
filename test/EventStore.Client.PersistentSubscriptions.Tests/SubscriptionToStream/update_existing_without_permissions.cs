@@ -20,8 +20,12 @@ namespace EventStore.Client.SubscriptionToStream {
 		}
 
 		public class Fixture : EventStoreClientFixture {
+			public Fixture () : base(noDefaultCredentials: true){
+			}
+			
 			protected override async Task Given() {
-				await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, CreateTestEvents());
+				await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, CreateTestEvents(),
+					userCredentials: TestCredentials.Root);
 				await Client.CreateToStreamAsync(Stream, Group, new PersistentSubscriptionSettings(),
 					userCredentials: TestCredentials.Root);
 			}

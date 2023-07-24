@@ -119,7 +119,7 @@ namespace EventStore.Client.Security
 		}
 
 
-		[Fact]
+		[AnonymousAccess.Fact]
 		public async Task operations_on_system_stream_with_acl_set_to_all_succeed_for_not_authenticated_user() {
 			await _fixture.AppendStream(SecurityFixture.SystemAllStream);
 			await _fixture.ReadEvent(SecurityFixture.SystemAllStream);

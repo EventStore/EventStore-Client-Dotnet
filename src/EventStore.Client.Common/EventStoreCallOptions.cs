@@ -12,6 +12,10 @@ namespace EventStore.Client {
 			Create(settings, deadline, userCredentials, cancellationToken);
 
 		// deadline falls back to connection DefaultDeadline
+		public static CallOptions CreateNonStreaming(EventStoreClientSettings settings,
+			CancellationToken cancellationToken) => Create(settings, settings.DefaultDeadline,
+			settings.DefaultCredentials, cancellationToken);
+		
 		public static CallOptions CreateNonStreaming(EventStoreClientSettings settings, TimeSpan? deadline,
 			UserCredentials? userCredentials, CancellationToken cancellationToken) => Create(settings,
 			deadline ?? settings.DefaultDeadline, userCredentials, cancellationToken);
@@ -28,10 +32,10 @@ namespace EventStore.Client {
 						: bool.FalseString
 				}
 			},
-			credentials: (settings.DefaultCredentials ?? userCredentials) == null
+			credentials: (userCredentials ?? settings.DefaultCredentials) == null
 				? null
 				: CallCredentials.FromInterceptor(async (_, metadata) => {
-					var credentials = settings.DefaultCredentials ?? userCredentials;
+					var credentials = userCredentials ?? settings.DefaultCredentials;
 
 					var authorizationHeader = await settings.OperationOptions
 						.GetAuthenticationHeaderValue(credentials!, CancellationToken.None)

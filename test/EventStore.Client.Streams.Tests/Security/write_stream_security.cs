@@ -52,7 +52,7 @@ namespace EventStore.Client.Security {
 		}
 
 
-		[Fact]
+		[AnonymousAccess.Fact]
 		public async Task writing_to_no_acl_stream_succeeds_when_no_credentials_are_passed() {
 			await _fixture.AppendStream(SecurityFixture.NoAclStream);
 		}
@@ -73,9 +73,8 @@ namespace EventStore.Client.Security {
 		public async Task writing_to_no_acl_stream_succeeds_when_any_admin_user_credentials_are_passed() {
 			await _fixture.AppendStream(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestAdmin);
 		}
-
-
-		[Fact]
+		
+		[AnonymousAccess.Fact]
 		public async Task writing_to_all_access_normal_stream_succeeds_when_no_credentials_are_passed() {
 			await _fixture.AppendStream(SecurityFixture.NormalAllStream);
 		}

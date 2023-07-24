@@ -12,7 +12,7 @@ namespace EventStore.Client {
 			ChannelCache channelCache) {
 			_inner = settings.ConnectivitySettings.IsSingleNode
 				? new SingleNodeChannelSelector(settings, channelCache)
-				: new GossipChannelSelector(settings, channelCache, new GrpcGossipClient());
+				: new GossipChannelSelector(settings, channelCache, new GrpcGossipClient(settings));
 		}
 
 		public Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken) =>

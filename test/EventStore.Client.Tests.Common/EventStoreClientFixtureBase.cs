@@ -21,8 +21,8 @@ namespace EventStore.Client {
 	public abstract class EventStoreClientFixtureBase : IAsyncLifetime {
 		public const string TestEventType = "-";
 
-		private const string ConnectionStringSingle = "esdb://localhost:2113/?tlsVerifyCert=false";
-		private const string ConnectionStringCluster = "esdb://localhost:2113,localhost:2112,localhost:2111?tls=true&tlsVerifyCert=false";
+		private const string ConnectionStringSingle = "esdb://admin:changeit@localhost:2113/?tlsVerifyCert=false";
+		private const string ConnectionStringCluster = "esdb://admin:changeit@localhost:2113,localhost:2112,localhost:2111?tls=true&tlsVerifyCert=false";
 
 		private static readonly Subject<LogEvent> LogEventSubject = new Subject<LogEvent>();
 
@@ -50,13 +50,17 @@ namespace EventStore.Client {
 		}
 
 		protected EventStoreClientFixtureBase(EventStoreClientSettings? clientSettings,
-			IDictionary<string, string>? env = null) {
+			IDictionary<string, string>? env = null, bool noDefaultCredentials = false) {
 			_disposables = new List<IDisposable>();
 			ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
 
 			var connectionString = GlobalEnvironment.UseCluster ? ConnectionStringCluster : ConnectionStringSingle;
 			Settings = clientSettings ?? EventStoreClientSettings.Create(connectionString);
 
+			if (noDefaultCredentials) {
+				Settings.DefaultCredentials = null;
+			}
+			
 			Settings.DefaultDeadline = Debugger.IsAttached
 				? new TimeSpan?()
 				: TimeSpan.FromSeconds(30);

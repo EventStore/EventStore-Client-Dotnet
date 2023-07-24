@@ -41,7 +41,7 @@ namespace EventStore.Client.Security {
 		}
 
 
-		[Fact]
+		[AnonymousAccess.Fact]
 		public async Task reading_no_acl_stream_meta_succeeds_when_no_credentials_are_passed() {
 			await _fixture.ReadMeta(SecurityFixture.NoAclStream);
 		}
@@ -62,9 +62,8 @@ namespace EventStore.Client.Security {
 		public async Task reading_no_acl_stream_meta_succeeds_when_admin_user_credentials_are_passed() {
 			await _fixture.ReadMeta(SecurityFixture.NoAclStream, userCredentials: TestCredentials.TestAdmin);
 		}
-
-
-		[Fact]
+		
+		[AnonymousAccess.Fact]
 		public async Task reading_all_access_normal_stream_meta_succeeds_when_no_credentials_are_passed() {
 			await _fixture.ReadMeta(SecurityFixture.NormalAllStream);
 		}

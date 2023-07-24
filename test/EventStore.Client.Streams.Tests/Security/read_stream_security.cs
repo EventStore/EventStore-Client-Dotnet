@@ -61,7 +61,7 @@ namespace EventStore.Client.Security {
 		}
 
 
-		[Fact]
+		[AnonymousAccess.Fact]
 		public async Task reading_no_acl_stream_succeeds_when_no_credentials_are_passed() {
 			await _fixture.AppendStream(SecurityFixture.NoAclStream);
 
@@ -101,7 +101,7 @@ namespace EventStore.Client.Security {
 		}
 
 
-		[Fact]
+		[AnonymousAccess.Fact]
 		public async Task reading_all_access_normal_stream_succeeds_when_no_credentials_are_passed() {
 			await _fixture.AppendStream(SecurityFixture.NormalAllStream);
 			await _fixture.ReadEvent(SecurityFixture.NormalAllStream);

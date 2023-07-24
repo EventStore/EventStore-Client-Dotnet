@@ -21,12 +21,16 @@ namespace EventStore.Client.Security {
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.AppendStream("usr-stream", TestCredentials.TestUser2));
 			await _fixture.AppendStream("usr-stream", userCredentials: TestCredentials.TestAdmin);
 
-			await _fixture.DeleteStream("usr-stream1");
 			await _fixture.DeleteStream("usr-stream2", userCredentials: TestCredentials.TestUser1);
 			await _fixture.DeleteStream("usr-stream3", TestCredentials.TestUser2);
 			await _fixture.DeleteStream("usr-stream4", userCredentials: TestCredentials.TestAdmin);
 		}
 
+		[AnonymousAccess.Fact]
+		public async Task multiple_roles_are_handled_correctly_without_authentication() {
+			await _fixture.DeleteStream("usr-stream1");
+		}
+		
 
 		public class Fixture : SecurityFixture {
 			protected override Task When() {

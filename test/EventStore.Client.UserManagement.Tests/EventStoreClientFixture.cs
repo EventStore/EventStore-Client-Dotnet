@@ -4,7 +4,9 @@ namespace EventStore.Client {
 	public abstract class EventStoreClientFixture : EventStoreClientFixtureBase {
 		public EventStoreUserManagementClient Client { get; }
 		public EventStoreClient StreamsClient { get; }
-		protected EventStoreClientFixture(EventStoreClientSettings? settings = null) : base(settings) {
+		protected EventStoreClientFixture(EventStoreClientSettings? settings = null, bool noDefaultCredentials = false)
+			: base(settings, noDefaultCredentials: noDefaultCredentials) {
+			
 			Client = new EventStoreUserManagementClient(Settings);
 			StreamsClient = new EventStoreClient(Settings);
 		}

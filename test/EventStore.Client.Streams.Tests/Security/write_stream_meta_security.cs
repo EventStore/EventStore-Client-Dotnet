@@ -46,7 +46,7 @@ namespace EventStore.Client.Security {
 		}
 
 
-		[Fact]
+		[AnonymousAccess.Fact]
 		public async Task writing_meta_to_no_acl_stream_succeeds_when_no_credentials_are_passed() {
 			await _fixture.WriteMeta(SecurityFixture.NoAclStream);
 		}
@@ -70,7 +70,7 @@ namespace EventStore.Client.Security {
 		}
 
 
-		[Fact]
+		[AnonymousAccess.Fact]
 		public async Task writing_meta_to_all_access_normal_stream_succeeds_when_no_credentials_are_passed() {
 			await _fixture.WriteMeta(SecurityFixture.NormalAllStream, role: SystemRoles.All);
 		}
