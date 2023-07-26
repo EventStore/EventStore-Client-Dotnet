@@ -28,8 +28,8 @@ namespace EventStore.Client.Bugs {
 			.Select(i => new object[] {i});
 
 		[Theory, MemberData(nameof(TestCases))]
-		public async Task subscribe_to_stream(int iteration) {
-			var streamName = $"{_fixture.GetStreamName()}_{iteration}";
+		public async Task Callback_subscribe_to_stream(int iteration) {
+			var streamName = $"{_fixture.GetStreamName()}_{iteration}_{Guid.NewGuid()}";
 			var startFrom = FromStream.Start;
 			
 			async Task<StreamSubscription> Subscribe() => await _fixture.Client
@@ -46,8 +46,35 @@ namespace EventStore.Client.Bugs {
 		}
 
 		[Theory, MemberData(nameof(TestCases))]
-		public async Task subscribe_to_all(int iteration) {
-			var streamName = $"{_fixture.GetStreamName()}_{iteration}";
+		public async Task Iterator_subscribe_to_stream(int iteration) {
+			var streamName = $"{_fixture.GetStreamName()}_{iteration}_{Guid.NewGuid()}";
+			var startFrom = FromStream.Start;
+			
+			var subscriptionResult = _fixture.Client.SubscribeToStream(streamName, startFrom, resolveLinkTos: false);
+			
+			await AppendEvents(streamName);
+
+			await foreach (var message in subscriptionResult.Messages) {
+				if (message is not StreamMessage.Event @event) continue;
+				var e = @event.ResolvedEvent;
+				if (e.OriginalStreamId != streamName) {
+					continue;
+				}
+
+				if (_seen[e.Event.EventNumber]) {
+					throw new Exception($"Event {e.Event.EventNumber} was already seen");
+				}
+
+				_seen[e.Event.EventNumber] = true;
+				if (e.Event.EventType == "completed") {
+					break;
+				}
+			}
+		}
+
+		[Theory, MemberData(nameof(TestCases))]
+		public async Task Callback_subscribe_to_all(int iteration) {
+			var streamName = $"{_fixture.GetStreamName()}_{iteration}_{Guid.NewGuid()}";
 			var startFrom = FromAll.Start;
 			
 			async Task<StreamSubscription> Subscribe() => await _fixture.Client
@@ -62,10 +89,37 @@ namespace EventStore.Client.Bugs {
 
 			await _completed.Task.WithTimeout();
 		}
+		
+		[Theory, MemberData(nameof(TestCases))]
+		public async Task Iterator_subscribe_to_all(int iteration) {
+			var streamName = $"{_fixture.GetStreamName()}_{iteration}_{Guid.NewGuid()}";
+			var startFrom = FromAll.Start;
+			
+			var subscriptionResult = _fixture.Client.SubscribeToAll(startFrom, resolveLinkTos: false);
+			
+			await AppendEvents(streamName);
+
+			await foreach (var message in subscriptionResult.Messages) {
+				if (message is not StreamMessage.Event @event) continue;
+				var e = @event.ResolvedEvent;
+				if (e.OriginalStreamId != streamName) {
+					continue;
+				}
+
+				if (_seen[e.Event.EventNumber]) {
+					throw new Exception($"Event {e.Event.EventNumber} was already seen");
+				}
+
+				_seen[e.Event.EventNumber] = true;
+				if (e.Event.EventType == "completed") {
+					break;
+				}
+			}
+		}
 
 		[Theory, MemberData(nameof(TestCases))]
-		public async Task subscribe_to_all_filtered(int iteration) {
-			var streamName = $"{_fixture.GetStreamName()}_{iteration}";
+		public async Task Callback_subscribe_to_all_filtered(int iteration) {
+			var streamName = $"{_fixture.GetStreamName()}_{iteration}_{Guid.NewGuid()}";
 			var startFrom = FromAll.Start;
 
 			async Task<StreamSubscription> Subscribe() => await _fixture.Client
@@ -80,6 +134,35 @@ namespace EventStore.Client.Bugs {
 			await AppendEvents(streamName);
 
 			await _completed.Task.WithTimeout();
+		}
+		
+		[Theory, MemberData(nameof(TestCases))]
+		public async Task Iterator_subscribe_to_all_filtered(int iteration) {
+			var streamName = $"{_fixture.GetStreamName()}_{iteration}_{Guid.NewGuid()}";
+			var startFrom = FromAll.Start;
+
+			var subscriptionResult = _fixture.Client
+				.SubscribeToAll(startFrom, resolveLinkTos: false,
+					new SubscriptionFilterOptions(EventTypeFilter.ExcludeSystemEvents()));
+
+			await AppendEvents(streamName);
+
+			await foreach (var message in subscriptionResult.Messages) {
+				if (message is not StreamMessage.Event @event) continue;
+				var e = @event.ResolvedEvent;
+				if (e.OriginalStreamId != streamName) {
+					continue;
+				}
+
+				if (_seen[e.Event.EventNumber]) {
+					throw new Exception($"Event {e.Event.EventNumber} was already seen");
+				}
+
+				_seen[e.Event.EventNumber] = true;
+				if (e.Event.EventType == "completed") {
+					break;
+				}
+			}
 		}
 
 		private async Task AppendEvents(string streamName) {

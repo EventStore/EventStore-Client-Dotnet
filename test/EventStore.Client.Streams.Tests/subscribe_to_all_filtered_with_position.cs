@@ -18,7 +18,7 @@ namespace EventStore.Client {
 		public static IEnumerable<object?[]> FilterCases() => Filters.All.Select(filter => new object[] {filter});
 
 		[Theory, MemberData(nameof(FilterCases))]
-		public async Task reads_all_existing_events_and_keep_listening_to_new_ones(string filterName) {
+		public async Task Callback_reads_all_existing_events_and_keep_listening_to_new_ones(string filterName) {
 			var streamPrefix = _fixture.GetStreamName();
 			var (getFilter, prepareEvent) = Filters.GetFilter(filterName);
 
@@ -40,7 +40,7 @@ namespace EventStore.Client {
 			}
 
 			var writeResult = await _fixture.Client.AppendToStreamAsync("checkpoint",
-				StreamState.NoStream, _fixture.CreateTestEvents());
+				StreamState.Any, _fixture.CreateTestEvents());
 
 			await _fixture.Client.AppendToStreamAsync(Guid.NewGuid().ToString(), StreamState.NoStream,
 				_fixture.CreateTestEvents(256));
@@ -89,6 +89,75 @@ namespace EventStore.Client {
 				return Task.CompletedTask;
 			}
 		}
+		
+		[Theory, MemberData(nameof(FilterCases))]
+		public async Task Iterator_reads_all_existing_events_and_keep_listening_to_new_ones(string filterName) {
+			var streamPrefix = _fixture.GetStreamName();
+			var (getFilter, prepareEvent) = Filters.GetFilter(filterName);
+
+			var appeared = new TaskCompletionSource<bool>();
+			var dropped = new TaskCompletionSource<Exception?>();
+			var checkpointSeen = new TaskCompletionSource<bool>();
+			var filter = getFilter(streamPrefix);
+			var events = _fixture.CreateTestEvents(20).Select(e => prepareEvent(streamPrefix, e))
+				.ToArray();
+			var beforeEvents = events.Take(10);
+			var afterEvents = events.Skip(10);
+
+			using var enumerator = afterEvents.OfType<EventData>().GetEnumerator();
+			enumerator.MoveNext();
+
+			foreach (var e in beforeEvents) {
+				await _fixture.Client.AppendToStreamAsync($"{streamPrefix}_{Guid.NewGuid():n}",
+					StreamState.NoStream, new[] {e});
+			}
+
+			var writeResult = await _fixture.Client.AppendToStreamAsync("checkpoint",
+				StreamState.Any, _fixture.CreateTestEvents());
+
+			await _fixture.Client.AppendToStreamAsync(Guid.NewGuid().ToString(), StreamState.NoStream,
+				_fixture.CreateTestEvents(256));
+
+			var subscription = _fixture.Client.SubscribeToAll(FromAll.After(writeResult.LogPosition), false, new SubscriptionFilterOptions(filter, 4));
+			ReadMessages(subscription, EventAppeared, SubscriptionDropped, CheckpointReached);
+			
+			foreach (var e in afterEvents) {
+				await _fixture.Client.AppendToStreamAsync($"{streamPrefix}_{Guid.NewGuid():n}",
+					StreamState.NoStream, new[] {e});
+			}
+
+			await Task.WhenAll(appeared.Task, checkpointSeen.Task).WithTimeout();
+
+			Assert.False(dropped.Task.IsCompleted);
+
+			subscription.Dispose();
+
+			var ex = await dropped.Task.WithTimeout();
+			
+			Assert.Null(ex);
+
+			Task EventAppeared(ResolvedEvent e) {
+				try {
+					Assert.Equal(enumerator.Current.EventId, e.OriginalEvent.EventId);
+					if (!enumerator.MoveNext()) {
+						appeared.TrySetResult(true);
+					}
+				} catch (Exception ex) {
+					appeared.TrySetException(ex);
+					throw;
+				}
+
+				return Task.CompletedTask;
+			}
+
+			void SubscriptionDropped(Exception? ex) => dropped.SetResult(ex);
+
+			Task CheckpointReached(Position position) {
+				checkpointSeen.TrySetResult(true);
+
+				return Task.CompletedTask;
+			}
+		}
 
 		public Task InitializeAsync() => _fixture.InitializeAsync();
 
@@ -101,7 +170,33 @@ namespace EventStore.Client {
 				new StreamMetadata(acl: new StreamAcl(SystemRoles.All)), userCredentials: TestCredentials.Root);
 
 			protected override Task When() =>
-				Client.AppendToStreamAsync(FilteredOutStream, StreamState.NoStream, CreateTestEvents(10));
+				Client.AppendToStreamAsync(FilteredOutStream, StreamState.Any, CreateTestEvents(10));
+		}
+		
+		async void ReadMessages(EventStoreClient.SubscriptionResult subscription, Func<ResolvedEvent, Task> eventAppeared, Action<Exception?> subscriptionDropped, Func<Position, Task> checkpointReached) {
+			Exception? exception = null;
+			try {
+				await foreach (var message in subscription.Messages) {
+					if (message is StreamMessage.Event eventMessage) {
+						await eventAppeared(eventMessage.ResolvedEvent);
+					} else if (message is StreamMessage.SubscriptionMessage.Checkpoint checkpointMessage) {
+						await checkpointReached(checkpointMessage.Position);
+					}
+				}
+			} catch (Exception ex) {
+				exception = ex;
+			}
+
+			//allow some time for subscription cleanup and chance for exception to be raised
+			await Task.Delay(100);
+
+			try {
+				//subscription.SubscriptionState will throw exception if some problem occurred for the subscription
+				Assert.Equal(SubscriptionState.Disposed, subscription.SubscriptionState);
+				subscriptionDropped(exception);
+			} catch (Exception ex) {
+				subscriptionDropped(ex);
+			}
 		}
 	}
 }

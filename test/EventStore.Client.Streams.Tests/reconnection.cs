@@ -14,8 +14,8 @@ namespace EventStore.Client {
 		}
 
 		[Fact]
-		public async Task when_the_connection_is_lost() {
-			var streamName = _fixture.GetStreamName();
+		public async Task Callback_when_the_connection_is_lost() {
+			var streamName = $"{_fixture.GetStreamName()}_{Guid.NewGuid()}";
 			var eventCount = 512;
 			var receivedAllEvents = new TaskCompletionSource();
 			var serverRestarted = new TaskCompletionSource();

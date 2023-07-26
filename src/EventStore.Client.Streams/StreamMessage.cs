@@ -42,10 +42,43 @@ namespace EventStore.Client {
 		public record LastAllStreamPosition(Position Position) : StreamMessage;
 
 		/// <summary>
+		/// The base record of all subscription specific messages.
+		/// </summary>
+		public abstract record SubscriptionMessage : StreamMessage {
+			
+			/// <summary>
+			/// A <see cref="EventStore.Client.StreamMessage.SubscriptionMessage"/> that represents a subscription confirmation.
+			/// </summary>
+			public record SubscriptionConfirmation(string SubscriptionId) : SubscriptionMessage;
+
+			/// <summary>
+			/// A <see cref="EventStore.Client.StreamMessage.SubscriptionMessage"/> representing position reached in subscribed stream. This message will only be received when subscribing to $all stream
+			/// </summary>
+			public record Checkpoint(Position Position) : SubscriptionMessage;
+		}
+
+		/// <summary>
 		/// A <see cref="EventStore.Client.StreamMessage"/> that could not be identified, usually indicating a lower client compatibility level than the server supports.
 		/// </summary>
 		public record Unknown : StreamMessage {
 			internal static readonly Unknown Instance = new();
+		}
+
+		
+		/// <summary>
+		/// A test method that returns true if this message can be expected to be received when reading from stream; otherwise, this method returns false
+		/// </summary>
+		/// <returns></returns>
+		public bool IsStreamReadMessage() {
+			return this is not SubscriptionMessage && this is not Ok && this is not Unknown;
+		}
+		
+		/// <summary>
+		/// A test method that returns true if this message can be expected to be received when subscribing to a stream; otherwise, this method returns false
+		/// </summary>
+		/// <returns></returns>
+		public bool IsSubscriptionMessage() {
+			return this is SubscriptionMessage || this is NotFound || this is Event;
 		}
 	}
 }

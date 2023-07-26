@@ -7,7 +7,6 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
 using Grpc.Core;
-using static EventStore.Client.Streams.ReadResp;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
 
 namespace EventStore.Client {
@@ -321,18 +320,11 @@ namespace EventStore.Client {
 								}
 							}
 
-							await _channel.Writer.WriteAsync(response.ContentCase switch {
-								StreamNotFound => StreamMessage.NotFound.Instance,
-								Event => new StreamMessage.Event(ConvertToResolvedEvent(response.Event)),
-								ContentOneofCase.FirstStreamPosition => new StreamMessage.FirstStreamPosition(
-									new StreamPosition(response.FirstStreamPosition)),
-								ContentOneofCase.LastStreamPosition => new StreamMessage.LastStreamPosition(
-									new StreamPosition(response.LastStreamPosition)),
-								LastAllStreamPosition => new StreamMessage.LastAllStreamPosition(
-									new Position(response.LastAllStreamPosition.CommitPosition,
-										response.LastAllStreamPosition.PreparePosition)),
-								_ => StreamMessage.Unknown.Instance
-							}, linkedCancellationToken).ConfigureAwait(false);
+							var messageToWrite = ConvertResponseToMessage(response);
+							messageToWrite = messageToWrite.IsStreamReadMessage() ? messageToWrite : StreamMessage.Unknown.Instance;
+							await _channel.Writer
+								.WriteAsync(messageToWrite, linkedCancellationToken)
+								.ConfigureAwait(false);
 						}
 
 						_channel.Writer.Complete();
@@ -411,6 +403,24 @@ namespace EventStore.Client {
 					new Position(response.Checkpoint.CommitPosition, response.Checkpoint.PreparePosition),
 					default),
 				_ => null
+			};
+
+		private static StreamMessage ConvertResponseToMessage(ReadResp response) =>
+			response.ContentCase switch {
+				Checkpoint => new StreamMessage.SubscriptionMessage.Checkpoint(
+					new Position(response.Checkpoint.CommitPosition, response.Checkpoint.PreparePosition)),
+				Confirmation => new StreamMessage.SubscriptionMessage.SubscriptionConfirmation(response.Confirmation
+					.SubscriptionId),
+				Event => new StreamMessage.Event(ConvertToResolvedEvent(response.Event)),
+				FirstStreamPosition => new StreamMessage.FirstStreamPosition(
+					new StreamPosition(response.FirstStreamPosition)),
+				LastAllStreamPosition => new StreamMessage.LastAllStreamPosition(
+					new Position(response.LastAllStreamPosition.CommitPosition,
+						response.LastAllStreamPosition.PreparePosition)),
+				LastStreamPosition => new StreamMessage.LastStreamPosition(
+					new StreamPosition(response.LastStreamPosition)),
+				StreamNotFound => StreamMessage.NotFound.Instance,
+				_ => StreamMessage.Unknown.Instance
 			};
 
 		private static ResolvedEvent ConvertToResolvedEvent(ReadResp.Types.ReadEvent readEvent) =>
