@@ -55,6 +55,13 @@ namespace EventStore.Client {
 			/// A <see cref="EventStore.Client.StreamMessage.SubscriptionMessage"/> representing position reached in subscribed stream. This message will only be received when subscribing to $all stream
 			/// </summary>
 			public record Checkpoint(Position Position) : SubscriptionMessage;
+
+			/// <summary>
+			/// A <see cref="EventStore.Client.StreamMessage.SubscriptionMessage"/> representing client has reached live stream position
+			/// </summary>
+			public record CaughtUp : SubscriptionMessage {
+				internal static readonly CaughtUp Instance = new();
+			}
 		}
 
 		/// <summary>

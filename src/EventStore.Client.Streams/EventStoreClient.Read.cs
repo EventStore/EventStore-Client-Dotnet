@@ -420,6 +420,7 @@ namespace EventStore.Client {
 				LastStreamPosition => new StreamMessage.LastStreamPosition(
 					new StreamPosition(response.LastStreamPosition)),
 				StreamNotFound => StreamMessage.NotFound.Instance,
+				CaughtUp => StreamMessage.SubscriptionMessage.CaughtUp.Instance,
 				_ => StreamMessage.Unknown.Instance
 			};
 
