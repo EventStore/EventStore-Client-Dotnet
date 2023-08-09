@@ -1,0 +1,15 @@
+name: "Dispatch"
+
+on:
+    workflow_dispatch:
+        inputs:
+            version:
+                description: "Docker tag version"
+                required: true
+                type: string
+
+jobs:
+    test:
+        uses: ./.github/workflows/base.yml
+        with:
+            docker-tag: ${{ inputs.version }}
