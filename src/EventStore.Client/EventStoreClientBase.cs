@@ -115,6 +115,7 @@ namespace EventStore.Client {
 			_cts.Cancel();
 			_cts.Dispose();
 			_channelCache.Dispose();
+			_channelInfoProvider.Dispose();
 			
 			if (_httpFallback.IsValueCreated) {
 				_httpFallback.Value.Dispose();
@@ -126,6 +127,7 @@ namespace EventStore.Client {
 			_cts.Cancel();
 			_cts.Dispose();
 			await _channelCache.DisposeAsync().ConfigureAwait(false);
+			_channelInfoProvider.Dispose();
 
 			if (_httpFallback.IsValueCreated) {
 				_httpFallback.Value.Dispose();

@@ -7,6 +7,32 @@ using Xunit;
 namespace EventStore.Client {
 	public class SharingProviderTests {
 		[Fact]
+		public async Task CanBeDisposed() {
+			var sut = new SharingProvider<bool, bool>(
+				factory: async (_, _) => true,
+				factoryRetryDelay: TimeSpan.FromSeconds(0),
+				initialInput: true);
+
+			Assert.True(await sut.CurrentAsync);
+			
+			sut.Dispose();
+
+			await Assert.ThrowsAsync<ObjectDisposedException>(async () => await sut.CurrentAsync);
+		}
+		
+		[Fact]
+		public async Task CanBeDisposedWhenNeverSuccessfullyCompleted() {
+			var sut = new SharingProvider<bool, int>(
+				factory: async (_, _) => throw new Exception("Just some failure"),
+				factoryRetryDelay: TimeSpan.FromSeconds(0),
+				initialInput: true);
+
+			sut.Dispose();
+
+			await Assert.ThrowsAsync<ObjectDisposedException>(async () => await sut.CurrentAsync);
+		}
+		
+		[Fact]
 		public async Task CanGetCurrent() {
 			var sut = new SharingProvider<int, int>(
 				factory: async (x, _) => x + 1,
@@ -27,7 +53,7 @@ namespace EventStore.Client {
 			sut.Reset();
 			Assert.Equal(1, await sut.CurrentAsync);
 		}
-
+		
 		[Fact]
 		public async Task CanReturnBroken() {
 			Action<bool>? onBroken = null;
