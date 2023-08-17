@@ -31,11 +31,12 @@ namespace EventStore.Client {
 	//
 	// This class is thread safe.
 
-	internal class SharingProvider<TInput, TOutput> : SharingProvider {
+	internal class SharingProvider<TInput, TOutput> : SharingProvider, IDisposable {
 		private readonly Func<TInput, Action<TInput>, Task<TOutput>> _factory;
 		private readonly TimeSpan _factoryRetryDelay;
 		private readonly TInput _initialInput;
 		private TaskCompletionSource<TOutput> _currentBox;
+		private bool _disposed;
 
 		public SharingProvider(
 			Func<TInput, Action<TInput>, Task<TOutput>> factory,
@@ -83,6 +84,12 @@ namespace EventStore.Client {
 		}
 
 		private async Task FillBoxAsync(TaskCompletionSource<TOutput> box, TInput input) {
+			if (_disposed) {
+				Log.LogDebug("{type} will not be produced, factory is closed!", typeof(TOutput).Name);
+				box.TrySetException(new ObjectDisposedException(GetType().ToString()));
+				return;
+			}
+			
 			try {
 				Log.LogDebug("{type} being produced...", typeof(TOutput).Name);
 				var item = await _factory(input, x => OnBroken(box, x)).ConfigureAwait(false);
@@ -95,6 +102,10 @@ namespace EventStore.Client {
 				box.TrySetException(ex);
 				OnBroken(box, _initialInput);
 			}
+		}
+
+		public void Dispose() {
+			_disposed = true;
 		}
 	}
 }
