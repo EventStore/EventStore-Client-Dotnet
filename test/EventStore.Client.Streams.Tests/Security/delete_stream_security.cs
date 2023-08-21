@@ -16,7 +16,7 @@ namespace EventStore.Client.Security {
 			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.DeleteStream(SecurityFixture.AllStream, userCredentials: TestCredentials.TestAdmin));
 		}
 
-		[Fact]
+		[AnonymousAccess.Fact]
 		public async Task deleting_normal_no_acl_stream_with_no_user_is_allowed() {
 			var streamId = await _fixture.CreateStreamWithMeta(new StreamMetadata());
 			await _fixture.DeleteStream(streamId);
@@ -89,7 +89,7 @@ namespace EventStore.Client.Security {
 		}
 
 
-		[Fact]
+		[AnonymousAccess.Fact]
 		public async Task deleting_normal_all_stream_with_no_user_is_allowed() {
 			var streamId =
 				await _fixture.CreateStreamWithMeta(
@@ -188,7 +188,7 @@ namespace EventStore.Client.Security {
 		}
 
 
-		[Fact]
+		[AnonymousAccess.Fact]
 		public async Task deleting_system_all_stream_with_no_user_is_allowed() {
 			var streamId = await _fixture.CreateStreamWithMeta(streamId: $"${_fixture.GetStreamName()}",
 				metadata: new StreamMetadata(acl: new StreamAcl(deleteRole: SystemRoles.All)));

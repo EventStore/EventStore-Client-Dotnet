@@ -16,6 +16,9 @@ namespace EventStore.Client.SubscriptionToAll {
 			}).WithTimeout();
 
 		public class Fixture : EventStoreClientFixture {
+			public Fixture () : base(noDefaultCredentials: true){
+			}
+			
 			protected override Task Given() =>
 				Client.CreateToAllAsync(
 					"agroupname55",

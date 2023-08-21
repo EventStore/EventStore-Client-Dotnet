@@ -5,7 +5,9 @@ namespace EventStore.Client {
 	public abstract class EventStoreClientFixture : EventStoreClientFixtureBase {
 		public EventStoreClient Client { get; }
 		protected EventStoreClientFixture(EventStoreClientSettings? settings = null,
-			Dictionary<string, string>? env = null) : base(settings, env) {
+			Dictionary<string, string>? env = null, bool noDefaultCredentials = false)
+			: base(settings, env, noDefaultCredentials) {
+			
 			Client = new EventStoreClient(Settings);
 		}
 

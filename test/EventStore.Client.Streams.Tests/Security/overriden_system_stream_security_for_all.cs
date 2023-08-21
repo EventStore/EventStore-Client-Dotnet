@@ -35,7 +35,7 @@ namespace EventStore.Client.Security {
 			await _fixture.DeleteStream(stream, userCredentials: TestCredentials.TestUser1);
 		}
 
-		[Fact]
+		[AnonymousAccess.Fact]
 		public async Task operations_on_system_stream_fail_for_anonymous_user() {
 			var stream = $"${_fixture.GetStreamName()}";
 			await _fixture.AppendStream(stream);

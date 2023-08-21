@@ -6,11 +6,17 @@ using Grpc.Core;
 
 namespace EventStore.Client {
 	internal class GrpcGossipClient : IGossipClient {
-		public async ValueTask<ClusterMessages.ClusterInfo> GetAsync(ChannelBase channel,
-			CancellationToken cancellationToken) {
-			var client = new Gossip.Gossip.GossipClient(channel);
+		private readonly EventStoreClientSettings _settings;
 
-			using var call = client.ReadAsync(new Empty(), cancellationToken: cancellationToken);
+		public GrpcGossipClient(EventStoreClientSettings settings) {
+			_settings = settings;
+		}
+
+		public async ValueTask<ClusterMessages.ClusterInfo> GetAsync(ChannelBase channel, CancellationToken ct) {
+			var client = new Gossip.Gossip.GossipClient(channel);
+			using var call = client.ReadAsync(
+				new Empty(),
+				EventStoreCallOptions.CreateNonStreaming(_settings, ct));
 			var result = await call.ResponseAsync.ConfigureAwait(false);
 
 			return new(result.Members.Select(x =>

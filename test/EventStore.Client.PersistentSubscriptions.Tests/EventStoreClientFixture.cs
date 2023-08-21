@@ -8,7 +8,9 @@ namespace EventStore.Client {
 		public EventStoreClient StreamsClient { get; }
 		public EventStoreUserManagementClient UserManagementClient { get; }
 
-		protected EventStoreClientFixture(EventStoreClientSettings? settings = null, bool skipPSWarmUp=false) : base(settings) {
+		protected EventStoreClientFixture(EventStoreClientSettings? settings = null, bool skipPSWarmUp=false, bool noDefaultCredentials=false)
+			: base(settings, noDefaultCredentials: noDefaultCredentials){
+
 			_skipPsWarmUp = skipPSWarmUp;
 			
 			Client = new EventStorePersistentSubscriptionsClient(Settings);

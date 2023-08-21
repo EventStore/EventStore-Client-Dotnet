@@ -60,6 +60,10 @@ namespace EventStore.Client {
 		}
 
 		public class Fixture : EventStoreClientFixture {
+			// always run scavenge against physical database
+			public Fixture () : base(runInMemory: false) {
+			}
+			
 			protected override Task Given() => Task.CompletedTask;
 			protected override Task When() => Task.CompletedTask;
 		}

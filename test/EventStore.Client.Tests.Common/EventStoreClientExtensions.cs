@@ -26,7 +26,7 @@ namespace EventStore.Client {
 
 				// the read from leader above is not enough to guarantee the next write goes to leader
 				await self.AppendToStreamAsync($"warmup", StreamState.Any, Enumerable.Empty<EventData>(),
-					cancellationToken: cancellationToken);
+					userCredentials: TestCredentials.Root, cancellationToken: cancellationToken);
 			});
 		}
 

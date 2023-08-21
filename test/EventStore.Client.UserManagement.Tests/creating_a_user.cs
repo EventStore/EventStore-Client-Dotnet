@@ -78,6 +78,9 @@ namespace EventStore.Client {
 		}
 
 		public class Fixture : EventStoreClientFixture {
+			public Fixture () : base(noDefaultCredentials: true){
+			}
+			
 			protected override Task Given() => Task.CompletedTask;
 			protected override Task When() => Task.CompletedTask;
 		}

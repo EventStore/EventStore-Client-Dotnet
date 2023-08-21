@@ -20,6 +20,9 @@ namespace EventStore.Client.SubscriptionToAll {
 		}
 
 		public class Fixture : EventStoreClientFixture {
+			public Fixture () : base(noDefaultCredentials: true){
+			}
+			
 			protected override async Task Given() {
 				await Client.CreateToAllAsync(Group, new PersistentSubscriptionSettings(),
 					userCredentials: TestCredentials.Root);

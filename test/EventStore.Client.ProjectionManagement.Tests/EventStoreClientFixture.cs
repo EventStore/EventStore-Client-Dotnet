@@ -9,11 +9,11 @@ namespace EventStore.Client {
 		public EventStoreClient StreamsClient { get; }
 		public EventStoreProjectionManagementClient Client { get; }
 
-		protected EventStoreClientFixture(EventStoreClientSettings? settings = null) : base(settings,
-			new Dictionary<string, string> {
+		protected EventStoreClientFixture(EventStoreClientSettings? settings = null, bool noDefaultCredentials = false) :
+			base(settings, new Dictionary<string, string> {
 				["EVENTSTORE_RUN_PROJECTIONS"] = "ALL",
 				["EVENTSTORE_START_STANDARD_PROJECTIONS"] = "True"
-			}) {
+			}, noDefaultCredentials) {
 			Client = new EventStoreProjectionManagementClient(Settings);
 			UserManagementClient = new EventStoreUserManagementClient(Settings);
 			StreamsClient = new EventStoreClient(Settings);

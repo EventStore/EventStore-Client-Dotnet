@@ -60,11 +60,13 @@ namespace EventStore.Client {
 			var env = new Dictionary<string, string> {
 				["EVENTSTORE_DB_LOG_FORMAT"] = GlobalEnvironment.DbLogFormat,
 				["EVENTSTORE_MEM_DB"] = "true",
+				["EVENTSTORE_CHUNK_SIZE"] = (1024 * 1024).ToString(),
 				["EVENTSTORE_CERTIFICATE_FILE"] = "/etc/eventstore/certs/node/node.crt",
 				["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"] = "/etc/eventstore/certs/node/node.key",
 				["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"] = "/etc/eventstore/certs/ca",
 				["EVENTSTORE_LOG_LEVEL"] = "Verbose",
 				["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"] = "10000",
+				["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"] = "10000",
 				["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"] = "True"
 			};
 			foreach (var (key, value) in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {

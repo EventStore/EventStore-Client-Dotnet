@@ -79,13 +79,10 @@ namespace EventStore.Client.Security {
 				_fixture.AppendStream("user-w-restricted", TestCredentials.TestUser2));
 			await _fixture.AppendStream("user-w-restricted", userCredentials: TestCredentials.TestAdmin);
 
-			await _fixture.AppendStream("user-w-all");
 			await _fixture.AppendStream("user-w-all", userCredentials: TestCredentials.TestUser1);
 			await _fixture.AppendStream("user-w-all", TestCredentials.TestUser2);
 			await _fixture.AppendStream("user-w-all", userCredentials: TestCredentials.TestAdmin);
 
-
-			await _fixture.ReadEvent("user-no-acl");
 			await _fixture.ReadEvent("user-no-acl", userCredentials: TestCredentials.TestUser1);
 			await _fixture.ReadEvent("user-no-acl", TestCredentials.TestUser2);
 			await _fixture.ReadEvent("user-no-acl", userCredentials: TestCredentials.TestAdmin);
@@ -96,6 +93,15 @@ namespace EventStore.Client.Security {
 			await Assert.ThrowsAsync<AccessDeniedException>(() =>
 				_fixture.ReadEvent("user-r-restricted", TestCredentials.TestUser2));
 			await _fixture.ReadEvent("user-r-restricted", userCredentials: TestCredentials.TestAdmin);
+		}
+
+		[AnonymousAccess.Fact]
+		public async Task acl_inheritance_is_working_properly_on_user_streams_when_not_authenticated() {
+			await _fixture.AppendStream("user-w-all");
+			
+			// make sure the stream exists before trying to read it without authentication
+			await _fixture.AppendStream("user-no-acl", userCredentials: TestCredentials.TestAdmin);
+			await _fixture.ReadEvent("user-no-acl");
 		}
 
 		[Fact]
@@ -125,7 +131,6 @@ namespace EventStore.Client.Security {
 				_fixture.AppendStream("$sys-w-restricted", TestCredentials.TestUser2));
 			await _fixture.AppendStream("$sys-w-restricted", userCredentials: TestCredentials.TestAdmin);
 
-			await _fixture.AppendStream("$sys-w-all");
 			await _fixture.AppendStream("$sys-w-all", userCredentials: TestCredentials.TestUser1);
 			await _fixture.AppendStream("$sys-w-all", TestCredentials.TestUser2);
 			await _fixture.AppendStream("$sys-w-all", userCredentials: TestCredentials.TestAdmin);
@@ -136,6 +141,11 @@ namespace EventStore.Client.Security {
 			await Assert.ThrowsAsync<AccessDeniedException>(() =>
 				_fixture.ReadEvent("$sys-no-acl", TestCredentials.TestUser2));
 			await _fixture.ReadEvent("$sys-no-acl", userCredentials: TestCredentials.TestAdmin);
+		}
+
+		[AnonymousAccess.Fact]
+		public async Task acl_inheritance_is_working_properly_on_system_streams_when_not_authenticated() {
+			await _fixture.AppendStream("$sys-w-all");
 		}
 	}
 }

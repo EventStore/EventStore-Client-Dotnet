@@ -59,6 +59,9 @@ namespace EventStore.Client.SubscriptionToStream {
 		}
 		
 		public class Fixture : EventStoreClientFixture {
+			public Fixture () : base(noDefaultCredentials: true) {
+			}
+			
 			protected override Task Given() =>
 				Client.CreateToStreamAsync(
 					StreamName,
