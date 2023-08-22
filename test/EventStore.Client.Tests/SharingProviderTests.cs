@@ -8,7 +8,7 @@ namespace EventStore.Client {
 	public class SharingProviderTests {
 		[Fact]
 		public async Task CanGetCurrent() {
-			var sut = new SharingProvider<int, int>(
+			using var sut = new SharingProvider<int, int>(
 				factory: async (x, _) => x + 1,
 				factoryRetryDelay: TimeSpan.FromSeconds(0),
 				initialInput: 5);
@@ -18,7 +18,7 @@ namespace EventStore.Client {
 		[Fact]
 		public async Task CanReset() {
 			var count = 0;
-			var sut = new SharingProvider<bool, int>(
+			using var sut = new SharingProvider<bool, int>(
 				factory: async (_, _) => count++,
 				factoryRetryDelay: TimeSpan.FromSeconds(0),
 				initialInput: true);
@@ -27,12 +27,12 @@ namespace EventStore.Client {
 			sut.Reset();
 			Assert.Equal(1, await sut.CurrentAsync);
 		}
-
+		
 		[Fact]
 		public async Task CanReturnBroken() {
 			Action<bool>? onBroken = null;
 			var count = 0;
-			var sut = new SharingProvider<bool, int>(
+			using var sut = new SharingProvider<bool, int>(
 				factory: async (_, f) => {
 					onBroken = f;
 					return count++;
@@ -53,7 +53,7 @@ namespace EventStore.Client {
 		public async Task CanReturnSameBoxTwice() {
 			Action<bool>? onBroken = null;
 			var count = 0;
-			var sut = new SharingProvider<bool, int>(
+			using var sut = new SharingProvider<bool, int>(
 				factory: async (_, f) => {
 					onBroken = f;
 					return count++;
@@ -77,7 +77,7 @@ namespace EventStore.Client {
 			var trigger = new SemaphoreSlim(0);
 			Action<bool>? onBroken = null;
 			var count = 0;
-			var sut = new SharingProvider<bool, int>(
+			using var sut = new SharingProvider<bool, int>(
 				factory: async (_, f) => {
 					onBroken = f;
 					count++;
@@ -113,7 +113,7 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task FactoryCanThrow() {
-			var sut = new SharingProvider<int, int>(
+			using var sut = new SharingProvider<int, int>(
 				factory: (x, _) => throw new Exception($"input {x}"),
 				factoryRetryDelay: TimeSpan.FromSeconds(0),
 				initialInput: 0);
@@ -131,7 +131,7 @@ namespace EventStore.Client {
 		// the factory has to indicate failure by throwing.
 		[Fact]
 		public async Task FactoryCanCallOnBrokenSynchronously() {
-			var sut = new SharingProvider<int, int>(
+			using var sut = new SharingProvider<int, int>(
 				factory: async (x, onBroken) => {
 					if (x == 0)
 						onBroken(5);
@@ -146,7 +146,7 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task FactoryCanCallOnBrokenSynchronouslyAndThrow() {
-			var sut = new SharingProvider<int, int>(
+			using var sut = new SharingProvider<int, int>(
 				factory: async (x, onBroken) => {
 					if (x == 0) {
 						onBroken(5);
@@ -162,6 +162,31 @@ namespace EventStore.Client {
 			});
 
 			Assert.Equal("input 0", ex.Message);
+		}
+		
+		[Fact]
+		public async Task StopsAfterBeingDisposed() {
+			Action<bool>? onBroken = null;
+			var count = 0;
+			using var sut = new SharingProvider<bool, int>(
+				factory: async (_, f) => {
+					onBroken = f;
+					return count++;
+				},
+				factoryRetryDelay: TimeSpan.FromSeconds(0),
+				initialInput: true);
+
+			Assert.Equal(0, await sut.CurrentAsync);
+			Assert.Equal(1, count);
+
+			sut.Dispose();
+
+			// return the box
+			onBroken?.Invoke(true);
+
+			// the factory method isn't called any more
+			await Assert.ThrowsAsync<ObjectDisposedException>(async () => await sut.CurrentAsync);
+			Assert.Equal(1, count);
 		}
 
 		[Fact]
@@ -192,7 +217,7 @@ namespace EventStore.Client {
 				}
 			}
 
-			var sut = new SharingProvider<int, int>(Factory, TimeSpan.FromSeconds(0), 0);
+			using var sut = new SharingProvider<int, int>(Factory, TimeSpan.FromSeconds(0), 0);
 
 			// got an item (0)
 			completeConstruction.Release();

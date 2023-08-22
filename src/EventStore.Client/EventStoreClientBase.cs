@@ -112,6 +112,7 @@ namespace EventStore.Client {
 
 		/// <inheritdoc />
 		public virtual void Dispose() {
+			_channelInfoProvider.Dispose();
 			_cts.Cancel();
 			_cts.Dispose();
 			_channelCache.Dispose();
@@ -123,6 +124,7 @@ namespace EventStore.Client {
 
 		/// <inheritdoc />
 		public virtual async ValueTask DisposeAsync() {
+			_channelInfoProvider.Dispose();
 			_cts.Cancel();
 			_cts.Dispose();
 			await _channelCache.DisposeAsync().ConfigureAwait(false);
