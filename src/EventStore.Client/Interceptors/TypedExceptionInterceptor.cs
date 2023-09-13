@@ -108,9 +108,12 @@ namespace EventStore.Client.Interceptors {
 			public async Task<bool> MoveNext(CancellationToken cancellationToken) {
 				try {
 					return await _inner.MoveNext(cancellationToken).ConfigureAwait(false);
-				} catch (Exception) {
-					throw new InvalidPositionException();
-				}
+				} 
+				catch (RpcException ex) {
+					if (ex.StatusCode.ToString().Equals("Unknown"))
+						throw new InvalidPositionException();
+					throw ConvertRpcException(ex, _exceptionMap);
+				} 
 			}
 
 			public TResponse Current => _inner.Current;
