@@ -164,7 +164,7 @@ namespace EventStore.Client {
 		/// <returns>true if the value was converted successfully; otherwise, false.</returns>
 		public static bool TryParse(string value, out Position? position) {
 			position = null;
-			var parts = value.Split("/");
+			var parts = value.Split('/');
 
 			if (parts.Length != 2) {
 				return false;
@@ -184,7 +184,7 @@ namespace EventStore.Client {
 			static bool TryParsePosition(string expectedPrefix, string v, out ulong p) {
 				p = 0;
 				
-				var prts = v.Split(":");
+				var prts = v.Split(':');
 				if (prts.Length != 2) {
 					return false;
 				}

@@ -39,7 +39,11 @@ namespace EventStore.Client {
 			
 			var httpResult = await HttpSendAsync(request, onNotFound, deadline, cancellationToken).ConfigureAwait(false);
 			
+#if NET
 			var json = await httpResult.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+#else
+			var json = await httpResult.Content.ReadAsStringAsync().ConfigureAwait(false);
+#endif
 
 			var result = JsonSerializer.Deserialize<T>(json, _jsonSettings);
 			if (result == null) {
