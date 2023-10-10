@@ -35,6 +35,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "generators", "generators", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Tests.SourceGenerators", "generators\EventStore.Tests.SourceGenerators\EventStore.Tests.SourceGenerators.csproj", "{5912BD08-DA99-49B7-A2C0-C1BA42D209CB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client.Authorization", "src\EventStore.Client.Authorization\EventStore.Client.Authorization.csproj", "{A10D3AC8-DEC5-4E37-A5A4-3A07671265DD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -96,6 +98,10 @@ Global
 		{5912BD08-DA99-49B7-A2C0-C1BA42D209CB}.Debug|x64.Build.0 = Debug|Any CPU
 		{5912BD08-DA99-49B7-A2C0-C1BA42D209CB}.Release|x64.ActiveCfg = Release|Any CPU
 		{5912BD08-DA99-49B7-A2C0-C1BA42D209CB}.Release|x64.Build.0 = Release|Any CPU
+		{A10D3AC8-DEC5-4E37-A5A4-3A07671265DD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A10D3AC8-DEC5-4E37-A5A4-3A07671265DD}.Debug|x64.Build.0 = Debug|Any CPU
+		{A10D3AC8-DEC5-4E37-A5A4-3A07671265DD}.Release|x64.ActiveCfg = Release|Any CPU
+		{A10D3AC8-DEC5-4E37-A5A4-3A07671265DD}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{D3744A86-DD35-4104-AAEE-84B79062C4A2} = {EA59C1CB-16DA-4F68-AF8A-642A969B4CF8}
@@ -111,5 +117,6 @@ Global
 		{6CEB731F-72E1-461F-A6B3-54DBF3FD786C} = {C51F2C69-45A9-4D0D-A708-4FC319D5D340}
 		{22634CEE-4F7B-4679-A48D-38A2A8580ECA} = {C51F2C69-45A9-4D0D-A708-4FC319D5D340}
 		{5912BD08-DA99-49B7-A2C0-C1BA42D209CB} = {57BAB29D-F8A8-47C7-B426-89A1929ADD70}
+		{A10D3AC8-DEC5-4E37-A5A4-3A07671265DD} = {EA59C1CB-16DA-4F68-AF8A-642A969B4CF8}
 	EndGlobalSection
 EndGlobal
