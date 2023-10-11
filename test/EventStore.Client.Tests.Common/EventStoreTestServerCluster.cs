@@ -25,11 +25,19 @@ namespace EventStore.Client {
 
 			_eventStoreCluster = BuildCluster(envOverrides);
 
+#if NET
 			_httpClient = new HttpClient(new SocketsHttpHandler {
 				SslOptions = {RemoteCertificateValidationCallback = delegate { return true; }}
 			}) {
 				BaseAddress = address,
 			};
+#else
+			_httpClient = new HttpClient(new WinHttpHandler {
+				ServerCertificateValidationCallback =  delegate { return true; }
+			}) {
+				BaseAddress = address,
+			};
+#endif
 		}
 
 		private ICompositeService BuildCluster(IDictionary<string, string>? envOverrides = null) {

@@ -1,3 +1,4 @@
+#if NET
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
@@ -88,3 +89,4 @@ namespace EventStore.Client {
 		}
 	}
 }
+#endif

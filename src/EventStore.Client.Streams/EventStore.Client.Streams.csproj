@@ -5,10 +5,9 @@
 	</PropertyGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
 		<PackageReference Include="System.Threading.Channels" Version="7.0.0"/>
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
 	</ItemGroup>
 	<ItemGroup>
-	  <Compile Include="..\EventStore.Client\Shims\IsExternalInit.cs">
-	    <Link>IsExternalInit.cs</Link>
-	  </Compile>
+		<InternalsVisibleTo Include="EventStore.Client.Streams.Tests"/>
 	</ItemGroup>
 </Project>

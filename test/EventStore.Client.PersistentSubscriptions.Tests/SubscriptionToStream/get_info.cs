@@ -152,22 +152,20 @@ namespace EventStore.Client.SubscriptionToStream {
 			protected override async Task When() {
 				var counter = 0;
 				var tcs = new TaskCompletionSource();
-				
 				await Client.SubscribeToStreamAsync(
 					StreamName,
 					GroupName,
 					eventAppeared: (s, e, r, ct) => {
 						counter++;
 						
-						if (counter == 1) {
-							s.Nack(PersistentSubscriptionNakEventAction.Park, "Test", e);
-						}
-						
-						if (counter > 10) {
-							tcs.TrySetResult();
-						}
-						
-						return Task.CompletedTask;
+						switch (counter) {
+                            case 1: s.Nack(PersistentSubscriptionNakEventAction.Park, "Test", e);
+                                break;
+                            case > 10: tcs.TrySetResult();
+                                break;
+                        }
+
+                        return Task.CompletedTask;
 					},
 					userCredentials: TestCredentials.Root);
 

@@ -1,3 +1,4 @@
+#if !NET
 using System.Runtime.CompilerServices;
 
 namespace System;
@@ -10,7 +11,7 @@ namespace System;
 /// int lastElement = someArray[^1]; // lastElement = 5
 /// </code>
 /// </remarks>
-public readonly struct Index : IEquatable<Index>
+internal readonly struct Index : IEquatable<Index>
 {
     private readonly int _value;
 
@@ -127,3 +128,4 @@ public readonly struct Index : IEquatable<Index>
     /// <summary>Converts the value of the current Index object to its equivalent string representation.</summary>
     public override string ToString() => IsFromEnd ? $"^{((uint)Value)}" : ((uint)Value).ToString();
 }
+#endif

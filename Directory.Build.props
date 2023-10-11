@@ -1,6 +1,6 @@
 <Project>
 	<PropertyGroup>
-		<TargetFrameworks>net5.0;net6.0;net7.0;net48</TargetFrameworks>
+		<TargetFrameworks>net6.0;net7.0;net48</TargetFrameworks>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<Nullable>enable</Nullable>
 		<NullableContextOptions>enable</NullableContextOptions>
@@ -12,8 +12,8 @@
 		<OutputPath>$(MSBuildThisFileDirectory)\bin\$(Configuration)\$(MSBuildProjectName)\</OutputPath>
 		<RootNamespace>EventStore.Client</RootNamespace>
 		<UseLinkBase>true</UseLinkBase>
-		<GrpcPackageVersion>2.49.0</GrpcPackageVersion>
-		<GrpcToolsPackageVersion>2.50.0</GrpcToolsPackageVersion>
+		<GrpcPackageVersion>2.57.0</GrpcPackageVersion>
+		<GrpcToolsPackageVersion>2.58.0</GrpcToolsPackageVersion>
 	</PropertyGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
 		<Reference Include="System.Net.Http"/>

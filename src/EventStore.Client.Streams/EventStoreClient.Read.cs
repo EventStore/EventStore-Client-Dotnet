@@ -87,7 +87,7 @@ namespace EventStore.Client {
 						}
 
 						try {
-							await foreach (var message in _channel.Reader.ReadAllAsync().ConfigureAwait(false)) {
+							await foreach (var message in ReadAllAsync(_channel.Reader).ConfigureAwait(false)) {
 								if (message is StreamMessage.LastAllStreamPosition(var position)) {
 									LastPosition = position;
 								}
@@ -151,7 +151,7 @@ namespace EventStore.Client {
 				CancellationToken cancellationToken = default) {
 
 				try {
-					await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
+					await foreach (var message in ReadAllAsync(_channel.Reader, cancellationToken).ConfigureAwait(false)) {
 						if (message is not StreamMessage.Event e) {
 							continue;
 						}
@@ -250,7 +250,7 @@ namespace EventStore.Client {
 						}
 
 						try {
-							await foreach (var message in _channel.Reader.ReadAllAsync().ConfigureAwait(false)) {
+							await foreach (var message in ReadAllAsync(_channel.Reader).ConfigureAwait(false)) {
 								switch (message) {
 									case StreamMessage.FirstStreamPosition(var streamPosition):
 										FirstStreamPosition = streamPosition;
@@ -348,7 +348,7 @@ namespace EventStore.Client {
 				CancellationToken cancellationToken = default) {
 
 				try {
-					await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
+					await foreach (var message in ReadAllAsync(_channel.Reader, cancellationToken).ConfigureAwait(false)) {
 						if (message is StreamMessage.NotFound) {
 							throw new StreamNotFoundException(StreamName);
 						}

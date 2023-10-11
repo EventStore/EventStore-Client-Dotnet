@@ -103,12 +103,12 @@ namespace EventStore.Client {
 			Assert.Equal(expected, result, EventStoreClientSettingsEqualityComparer.Instance);
 		}
 
-#if !GRPC_CORE
 		[Theory, InlineData(false), InlineData(true)]
 		public void tls_verify_cert(bool tlsVerifyCert) {
 			var connectionString = $"esdb://localhost:2113/?tlsVerifyCert={tlsVerifyCert}";
 			var result = EventStoreClientSettings.Create(connectionString);
 			using var handler = result.CreateHttpMessageHandler?.Invoke();
+#if NET
 			var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
 			if (!tlsVerifyCert) {
 				Assert.NotNull(socketsHandler.SslOptions.RemoteCertificateValidationCallback);
@@ -117,9 +117,17 @@ namespace EventStore.Client {
 			} else {
 				Assert.Null(socketsHandler.SslOptions.RemoteCertificateValidationCallback);
 			}
-		}
-
+#else
+			var socketsHandler = Assert.IsType<WinHttpHandler>(handler);
+			if (!tlsVerifyCert) {
+				Assert.NotNull(socketsHandler.ServerCertificateValidationCallback);
+				Assert.True(socketsHandler.ServerCertificateValidationCallback!.Invoke(null!, default!,
+					default!, default));
+			} else {
+				Assert.Null(socketsHandler.ServerCertificateValidationCallback);
+			}
 #endif
+		}
 
 		[Fact]
 		public void infinite_grpc_timeouts() {
@@ -130,9 +138,15 @@ namespace EventStore.Client {
 			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveTimeout);
 
 			using var handler = result.CreateHttpMessageHandler?.Invoke();
+#if NET
 			var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
 			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingTimeout);
 			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingDelay);
+#else
+			var winHttpHandler = Assert.IsType<WinHttpHandler>(handler);
+			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, winHttpHandler.TcpKeepAliveTime);
+			Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, winHttpHandler.TcpKeepAliveInterval);
+#endif
 		}
 
 		[Fact]
@@ -327,16 +341,20 @@ namespace EventStore.Client {
 					settings.DefaultDeadline.Value.TotalMilliseconds.ToString());
 			}
 
-#if !GRPC_CORE
 			if (settings.CreateHttpMessageHandler != null) {
 				using var handler = settings.CreateHttpMessageHandler.Invoke();
+#if NET
 				if (handler is SocketsHttpHandler socketsHttpHandler &&
 				    socketsHttpHandler.SslOptions.RemoteCertificateValidationCallback != null) {
 					pairs.Add("tlsVerifyCert", "false");
 				}
-			}
+#else
+				if (handler is WinHttpHandler winHttpHandler &&
+				    winHttpHandler.ServerCertificateValidationCallback != null) {
+					pairs.Add("tlsVerifyCert", "false");
+				}
 #endif
-
+			}
 
 			return string.Join("&", pairs.Select(pair => $"{getKey?.Invoke(pair.Key) ?? pair.Key}={pair.Value}"));
 		}

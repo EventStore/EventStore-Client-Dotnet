@@ -5,4 +5,7 @@
 		<ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
 		<ProjectReference Include="..\..\src\EventStore.Client.UserManagement\EventStore.Client.UserManagement.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Compile Remove="..\..\src\EventStore.Client.Common\Shims\**" />
+	</ItemGroup>
 </Project>

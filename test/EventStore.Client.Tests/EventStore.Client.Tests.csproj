@@ -5,12 +5,10 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Remove="..\EventStore.Client.Tests.Common\*.cs" />
+		<Compile Remove="..\..\src\EventStore.Client.Common\Shims\**" />
 	</ItemGroup>
 	<ItemGroup>
 		<Protobuf Include="..\..\src\EventStore.Client.Common\protos\serverfeatures.proto" ProtoCompile="false" ProtoRoot="..\..\src\EventStore.Client.Common\protos" GrpcServices="Server" />
-	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="5.0.17" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="6.0.11" />
@@ -18,11 +16,13 @@
 	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="7.0.0" />
 	</ItemGroup>
-	<ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' != 'net48'">
 		<PackageReference Include="Grpc.AspNetCore" Version="$(GrpcPackageVersion)" />
-		<PackageReference Include="Grpc.Tools" Version="$(GrpcToolsPackageVersion)">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-		</PackageReference>
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+		<PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Grpc.Tools" Version="$(GrpcToolsPackageVersion)" PrivateAssets="All"/>
 	</ItemGroup>
 </Project>

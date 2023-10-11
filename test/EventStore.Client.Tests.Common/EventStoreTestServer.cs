@@ -51,13 +51,21 @@ namespace EventStore.Client {
 			_hostCertificatePath = hostCertificatePath;
 			VerifyCertificatesExist();
 
+#if NET
 			_httpClient = new HttpClient(new SocketsHttpHandler {
 				SslOptions = {RemoteCertificateValidationCallback = delegate { return true; }}
 			}) {
 				BaseAddress = address,
 			};
+#else
+			_httpClient = new HttpClient(new WinHttpHandler {
+				ServerCertificateValidationCallback = delegate { return true; }
+			}) {
+				BaseAddress = address,
+			};
+#endif
 
-			var env = new Dictionary<string, string> {
+            var env = new Dictionary<string, string> {
 				["EVENTSTORE_DB_LOG_FORMAT"] = GlobalEnvironment.DbLogFormat,
 				["EVENTSTORE_MEM_DB"] = "true",
 				["EVENTSTORE_CERTIFICATE_FILE"] = "/etc/eventstore/certs/node/node.crt",
@@ -67,8 +75,8 @@ namespace EventStore.Client {
 				["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"] = "10000",
 				["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"] = "True"
 			};
-			foreach (var (key, value) in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
-				env[key] = value;
+			foreach (var val in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
+				env[val.Key] = val.Value;
 			}
 
 			_eventStore = new Builder()

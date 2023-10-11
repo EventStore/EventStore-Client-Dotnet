@@ -1,3 +1,4 @@
+#if !NET
 using System.Runtime.CompilerServices;
 
 namespace System;
@@ -11,7 +12,7 @@ namespace System;
 /// int[] subArray2 = someArray[1..^0]; // { 2, 3, 4, 5 }
 /// </code>
 /// </remarks>
-public readonly struct Range : IEquatable<Range>
+internal readonly struct Range : IEquatable<Range>
 {
     /// <summary>Represent the inclusive start index of the Range.</summary>
     public Index Start { get; }
@@ -62,7 +63,6 @@ public readonly struct Range : IEquatable<Range>
     /// We validate the range is inside the length scope though.
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [CLSCompliant(false)]
     public (int Offset, int Length) GetOffsetAndLength(int length)
     {
         int start = Start.GetOffset(length);
@@ -76,3 +76,4 @@ public readonly struct Range : IEquatable<Range>
         return (start, end - start);
     }
 }
+#endif

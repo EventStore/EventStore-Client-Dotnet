@@ -28,10 +28,10 @@ namespace EventStore.Client {
 				[DbLogFormatName] = DbLogFormat,
 			};
 
-			foreach (var (key, value) in overrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
-				if (key.StartsWith("EVENTSTORE") && !_sharedEnv.Contains(key))
-					throw new Exception($"Add {key} to shared.env and _sharedEnv to pass it to the cluster containers");
-				env[key] = value;
+			foreach (var @override in overrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
+				if (@override.Key.StartsWith("EVENTSTORE") && !_sharedEnv.Contains(@override.Key))
+					throw new Exception($"Add {@override.Key} to shared.env and _sharedEnv to pass it to the cluster containers");
+				env[@override.Key] = @override.Value;
 			}
 			return env;
 		}
