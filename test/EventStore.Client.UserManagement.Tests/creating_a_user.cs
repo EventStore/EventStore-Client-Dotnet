@@ -1,88 +1,114 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Bogus;
+using Shouldly;
 using Xunit;
 
-namespace EventStore.Client {
-	public class creating_a_user : IClassFixture<creating_a_user.Fixture> {
-		private readonly Fixture _fixture;
+namespace EventStore.Client; 
 
-		public creating_a_user(Fixture fixture) {
-			_fixture = fixture;
-		}
+class TestUserInfo {
+	public string LoginName { get; set; } = null!;
+	public string FullName { get; set; } = null!;
+	public string[] Groups { get; set; } = null!;
+	public string Password { get; set; } = null!;
+}
 
-		public static IEnumerable<object?[]> NullInputCases() {
-			var loginName = "ouro";
-			var fullName = "greg";
-			var groups = new[] { "foo", "bar" };
-			var password = "foofoofoo";
+sealed class TestUserInfoFaker : Faker<TestUserInfo> {
+	static readonly TestUserInfoFaker _instance = new();
 
-			yield return new object?[] { null, fullName, groups, password, nameof(loginName) };
-			yield return new object?[] { loginName, null, groups, password, nameof(fullName) };
-			yield return new object?[] { loginName, fullName, null, password, nameof(groups) };
-			yield return new object?[] { loginName, fullName, groups, null, nameof(password) };
-		}
+	TestUserInfoFaker() {
+		RuleFor(o => o.LoginName, f => f.Person.UserName);
+		RuleFor(o => o.FullName, f => f.Person.FullName);
+		RuleFor(o => o.Groups, f => new[] { f.Lorem.Word(), f.Lorem.Word() });
+		RuleFor(o => o.Password, () => PasswordGenerator.GeneratePassword());
+	}
 
-		[Theory, MemberData(nameof(NullInputCases))]
-		public async Task with_null_input_throws(string loginName, string fullName, string[] groups, string password,
-			string paramName) {
-			var ex = await Assert.ThrowsAsync<ArgumentNullException>(
-				() => _fixture.Client.CreateUserAsync(loginName, fullName, groups, password,
-					userCredentials: TestCredentials.Root));
-			Assert.Equal(paramName, ex.ParamName);
-		}
+	public static TestUserInfo New() => _instance.Generate();
+}
 
-		public static IEnumerable<object?[]> EmptyInputCases() {
-			var loginName = "ouro";
-			var fullName = "greg";
-			var groups = new[] { "foo", "bar" };
-			var password = "foofoofoo";
+public class creating_a_user : IClassFixture<SimpleFixture> {
+	public creating_a_user(SimpleFixture fixture) => Fixture = fixture;
 
-			yield return new object?[] { string.Empty, fullName, groups, password, nameof(loginName) };
-			yield return new object?[] { loginName, string.Empty, groups, password, nameof(fullName) };
-			yield return new object?[] { loginName, fullName, groups, string.Empty, nameof(password) };
-		}
+	SimpleFixture Fixture { get; }
 
-		[Theory, MemberData(nameof(EmptyInputCases))]
-		public async Task with_empty_input_throws(string loginName, string fullName, string[] groups, string password,
-			string paramName) {
-			var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-				() => _fixture.Client.CreateUserAsync(loginName, fullName, groups, password,
-					userCredentials: TestCredentials.Root));
-			Assert.Equal(paramName, ex.ParamName);
-		}
+	public static IEnumerable<object?[]> NullInputCases() {
+		yield return new object?[] { null, TestUserInfoFaker.New().FullName, TestUserInfoFaker.New().Groups, TestUserInfoFaker.New().Password, "loginName" };
+		yield return new object?[] { TestUserInfoFaker.New().LoginName, null, TestUserInfoFaker.New().Groups, TestUserInfoFaker.New().Password, "fullName" };
+		yield return new object?[] { TestUserInfoFaker.New().LoginName, TestUserInfoFaker.New().FullName, null, TestUserInfoFaker.New().Password, "groups" };
+		yield return new object?[] { TestUserInfoFaker.New().LoginName, TestUserInfoFaker.New().FullName, TestUserInfoFaker.New().Groups, null, "password" };
+	}
 
-		[Theory, ClassData(typeof(InvalidCredentialsCases))]
-		public async Task with_user_with_insufficient_credentials_throws(string loginName,
-			UserCredentials userCredentials) {
-			if (userCredentials == null)
-				await Assert.ThrowsAsync<AccessDeniedException>(
-					() => _fixture.Client.CreateUserAsync(loginName, "Full Name", new[] { "foo", "bar" },
-						"password"));
-			else
-				await Assert.ThrowsAsync<NotAuthenticatedException>(
-					() => _fixture.Client.CreateUserAsync(loginName, "Full Name", new[] { "foo", "bar" },
-						"password", userCredentials: userCredentials));
-		}
+	[Theory, MemberData(nameof(NullInputCases))]
+	public async Task with_null_input_throws(string loginName, string fullName, string[] groups, string password, string paramName) {
+		var ex = await Fixture.Client
+			.CreateUserAsync(loginName, fullName, groups, password, userCredentials: TestCredentials.Root)
+			.ShouldThrowAsync<ArgumentNullException>();
+	
+		ex.ParamName.ShouldBe(paramName);
+	}
 
-		[Fact]
-		public async Task can_be_read() {
-			var loginName = Guid.NewGuid().ToString();
-			await _fixture.Client.CreateUserAsync(loginName, "Full Name", new[] { "foo", "bar" }, "password",
-				userCredentials: TestCredentials.Root);
+	public static IEnumerable<object?[]> EmptyInputCases() {
+		yield return new object?[] { string.Empty, TestUserInfoFaker.New().FullName, TestUserInfoFaker.New().Groups, TestUserInfoFaker.New().Password, "loginName" };
+		yield return new object?[] { TestUserInfoFaker.New().LoginName, string.Empty, TestUserInfoFaker.New().Groups, TestUserInfoFaker.New().Password, "fullName" };
+		yield return new object?[] { TestUserInfoFaker.New().LoginName, TestUserInfoFaker.New().FullName, TestUserInfoFaker.New().Groups, string.Empty, "password" };
+	}
 
-			var details = await _fixture.Client.GetUserAsync(loginName, userCredentials: TestCredentials.Root);
+	[Theory, MemberData(nameof(EmptyInputCases))]
+	public async Task with_empty_input_throws(string loginName, string fullName, string[] groups, string password, string paramName) {
+		var ex = await Fixture.Client
+			.CreateUserAsync(loginName, fullName, groups, password, userCredentials: TestCredentials.Root)
+			.ShouldThrowAsync<ArgumentOutOfRangeException>();
 
-			Assert.Equal(new UserDetails(loginName, "Full Name", new[] { "foo", "bar" }, false, details.DateLastUpdated),
-				details);
-		}
+		ex.ParamName.ShouldBe(paramName);
+	}
+	
+	[Fact]
+	public async Task with_password_containing_ascii_chars() {
+		var user = TestUserInfoFaker.New();
+	
+		await Fixture.Client
+			.CreateUserAsync(user.LoginName, user.FullName, user.Groups, user.Password, userCredentials: TestCredentials.Root)
+			.ShouldNotThrowAsync();
+	}
+	
+	[Theory, ClassData(typeof(InvalidCredentialsCases))]
+	public async Task with_user_with_insufficient_credentials_throws(string loginName, UserCredentials? userCredentials) {
+		if (userCredentials == null)
+			await Fixture.Client
+				.CreateUserAsync(loginName, "Full Name", new[] { "foo", "bar" }, "password")
+				.ShouldThrowAsync<AccessDeniedException>();
+		else
+			await Fixture.Client
+				.CreateUserAsync(loginName, "Full Name", new[] { "foo", "bar" }, "password", userCredentials: userCredentials)
+				.ShouldThrowAsync<NotAuthenticatedException>();
+	}
 
-		public class Fixture : EventStoreClientFixture {
-			public Fixture () : base(noDefaultCredentials: true){
-			}
-			
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
+	[Fact]
+	public async Task can_be_read() {
+		var user = TestUserInfoFaker.New();
+
+		await Fixture.Client.CreateUserAsync(
+			user.LoginName, 
+			user.FullName, 
+			user.Groups, 
+			user.Password, 
+			userCredentials: TestCredentials.Root
+		).ShouldNotThrowAsync();
+
+		var actualDetails = await Fixture.Client.GetUserAsync(
+			user.LoginName, 
+			userCredentials: TestCredentials.Root
+		);
+
+		var expectedUserDetails = new UserDetails(
+			user.LoginName, 
+			user.FullName, 
+			user.Groups, 
+			false,
+			actualDetails.DateLastUpdated
+		);
+		
+		actualDetails.ShouldBeEquivalentTo(expectedUserDetails);
 	}
 }

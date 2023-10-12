@@ -30,6 +30,8 @@ namespace EventStore.Client {
 		public IEventStoreTestServer TestServer { get; }
 		protected EventStoreClientSettings Settings { get; }
 
+		public Bogus.Faker Faker { get; } = new();
+		
 		static EventStoreClientFixtureBase() {
 			ConfigureLogging();
 		}

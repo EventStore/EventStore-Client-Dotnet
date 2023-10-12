@@ -9,6 +9,13 @@ insert_final_newline = true
 indent_style = tab
 indent_size = 4
 
+# ReSharper properties
+resharper_csharp_empty_block_style = together
+resharper_csharp_space_before_empty_method_parentheses = true
+
+# Microsoft .NET properties
+dotnet_separate_import_directive_groups = false
+
 # C# files
 [*.cs]
 # New line preferences

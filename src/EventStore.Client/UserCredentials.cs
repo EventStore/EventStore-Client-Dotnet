@@ -1,6 +1,7 @@
-using System;
 using System.Net.Http.Headers;
-using System.Text;
+
+using static System.Convert;
+using static System.Text.Encoding;
 
 namespace EventStore.Client {
 	/// <summary>
@@ -24,18 +25,17 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="username"></param>
 		/// <param name="password"></param>
-		public UserCredentials(string username, string password) : this(new AuthenticationHeaderValue(
-			Constants.Headers.BasicScheme,
-			Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}")))) {
+		public UserCredentials(string username, string password) : this(
+			new AuthenticationHeaderValue(
+				Constants.Headers.BasicScheme,
+				ToBase64String(UTF8.GetBytes($"{username}:{password}")))) {
 		}
 
 		/// <summary>
 		/// Constructs a new <see cref="UserCredentials"/>.
 		/// </summary>
 		/// <param name="authToken"></param>
-		public UserCredentials(string authToken) : this(new AuthenticationHeaderValue(Constants.Headers.BearerScheme,
-			authToken)) {
-		}
+		public UserCredentials(string authToken) : this(new AuthenticationHeaderValue(Constants.Headers.BearerScheme, authToken)) { }
 
 		private UserCredentials(AuthenticationHeaderValue authorization) => _authorization = authorization;
 
@@ -50,7 +50,7 @@ namespace EventStore.Client {
 				return false;
 			}
 
-			var parts = Encoding.ASCII.GetString(Convert.FromBase64String(_authorization.Parameter)).Split(':');
+			var parts = UTF8.GetString(FromBase64String(_authorization.Parameter)).Split(':');
 			if (parts.Length <= index) {
 				return false;
 			}
