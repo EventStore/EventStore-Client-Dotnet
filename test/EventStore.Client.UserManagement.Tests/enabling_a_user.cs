@@ -1,14 +1,13 @@
 using System;
 using System.Threading.Tasks;
-using Xunit;
+using EventStore.Tests.Fixtures;
 
 namespace EventStore.Client {
-	public class enabling_a_user : IClassFixture<enabling_a_user.Fixture> {
-		private readonly Fixture _fixture;
+	public class enabling_a_user : IClassFixture<NoCredentialsEventStoreIntegrationFixture> {
+		readonly NoCredentialsEventStoreIntegrationFixture _fixture;
 
-		public enabling_a_user(Fixture fixture) {
+		public enabling_a_user(NoCredentialsEventStoreIntegrationFixture fixture) =>
 			_fixture = fixture;
-		}
 
 		[Fact]
 		public async Task with_null_input_throws() {
@@ -55,14 +54,6 @@ namespace EventStore.Client {
 				"password", userCredentials: TestCredentials.Root);
 
 			await _fixture.Client.EnableUserAsync(loginName, userCredentials: TestCredentials.Root);
-		}
-
-		public class Fixture : EventStoreClientFixture {
-			public Fixture () : base(noDefaultCredentials: true){
-			}
-			
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
 		}
 	}
 }

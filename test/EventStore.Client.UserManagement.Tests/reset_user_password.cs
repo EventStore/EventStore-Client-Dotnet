@@ -1,15 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Xunit;
+using EventStore.Tests.Fixtures;
 
 namespace EventStore.Client {
-	public class resetting_user_password : IClassFixture<resetting_user_password.Fixture> {
-		private readonly Fixture _fixture;
+	public class resetting_user_password : IClassFixture<NoCredentialsEventStoreIntegrationFixture> {
+		readonly NoCredentialsEventStoreIntegrationFixture _fixture;
 
-		public resetting_user_password(Fixture fixture) {
-			_fixture = fixture;
-		}
+		public resetting_user_password(NoCredentialsEventStoreIntegrationFixture fixture) => _fixture = fixture;
 
 		public static IEnumerable<object?[]> NullInputCases() {
 			var loginName = "ouro";
@@ -78,14 +76,6 @@ namespace EventStore.Client {
 			await Assert.ThrowsAsync<AccessDeniedException>(
 				() => _fixture.Client.ResetPasswordAsync(loginName, "newPassword",
 					userCredentials: new UserCredentials(loginName, "password")));
-		}
-
-		public class Fixture : EventStoreClientFixture {
-			public Fixture () : base(noDefaultCredentials: true){
-			}
-			
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
 		}
 	}
 }

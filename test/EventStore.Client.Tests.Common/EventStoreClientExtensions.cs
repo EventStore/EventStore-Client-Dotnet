@@ -30,13 +30,6 @@ namespace EventStore.Client {
 			});
 		}
 
-		public static async Task WarmUpAsync(this EventStoreUserManagementClient self) {
-			await self.WarmUpWith(async cancellationToken => {
-				await self.ListAllAsync(userCredentials: TestCredentials.Root, cancellationToken: cancellationToken)
-					.ToArrayAsync(cancellationToken);
-			});
-		}
-
 		// This executes `warmup` with some somewhat subtle retry logic:
 		//     execute the `warmup`.
 		//     if it succeeds we are done.

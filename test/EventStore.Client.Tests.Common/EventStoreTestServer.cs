@@ -80,6 +80,8 @@ namespace EventStore.Client {
 				.WithName(ContainerName)
 				.MountVolume(_hostCertificatePath, "/etc/eventstore/certs", MountType.ReadOnly)
 				.ExposePort(2113, 2113)
+				.WaitForHealthy(TimeSpan.FromSeconds(30))
+				.ReuseIfExists()
 				//.KeepContainer()
 				//.KeepRunning()
 				.Build();

@@ -32,10 +32,22 @@
 		<ProjectReference Include="..\..\generators\EventStore.Tests.SourceGenerators\EventStore.Tests.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
 	</ItemGroup>
 	<ItemGroup Condition="$(MSBuildProjectName) != 'EventStore.Client.IntegrationTests'">
-		<Compile Include="..\EventStore.Client.Tests.Common\*.cs"/>
 		<Content
 			Include="..\EventStore.Client.Tests.Common\docker-compose.yml;
 					 ..\EventStore.Client.Tests.Common\shared.env;"
 			CopyToOutputDirectory="Always"/>
+	</ItemGroup>
+	
+<!--	<ItemGroup>-->
+<!--		<Content Include="..\..\certs\**\*">-->
+<!--			<Link>certs\%(RecursiveDir)/%(FileName)%(Extension)</Link>-->
+<!--			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>-->
+<!--		</Content>-->
+<!--	</ItemGroup>-->
+	
+	<ItemGroup>
+		<Using Include="Bogus"/>
+		<Using Include="Shouldly"/>
+		<Using Include="Xunit"/>
 	</ItemGroup>
 </Project>

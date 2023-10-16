@@ -1,16 +1,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Xunit;
+using EventStore.Tests.Fixtures;
 
 namespace EventStore.Client {
 	[Trait("Category", "Network")]
-	public class append_to_stream : IClassFixture<append_to_stream.Fixture> {
-		private readonly Fixture _fixture;
+	public class append_to_stream : IClassFixture<EventStoreClientIntegrationFixture> {
+		readonly EventStoreClientIntegrationFixture _fixture;
 
-		public append_to_stream(Fixture fixture) {
+		public append_to_stream(EventStoreClientIntegrationFixture fixture) =>
 			_fixture = fixture;
-		}
 
 		public static IEnumerable<object?[]> ExpectedVersionCreateStreamTestCases() {
 			yield return new object?[] {StreamState.Any};
@@ -373,9 +372,5 @@ namespace EventStore.Client {
 			Assert.Equal(ConditionalWriteResult.StreamDeleted, result);
 		}
 
-		public class Fixture : EventStoreClientFixture {
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
 	}
 }

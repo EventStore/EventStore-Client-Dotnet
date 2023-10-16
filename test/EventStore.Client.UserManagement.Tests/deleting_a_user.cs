@@ -1,14 +1,12 @@
 using System;
 using System.Threading.Tasks;
-using Xunit;
+using EventStore.Tests.Fixtures;
 
 namespace EventStore.Client {
-	public class deleting_a_user : IClassFixture<deleting_a_user.Fixture> {
-		private readonly Fixture _fixture;
+	public class deleting_a_user : IClassFixture<NoCredentialsEventStoreIntegrationFixture> {
+		readonly NoCredentialsEventStoreIntegrationFixture _fixture;
 
-		public deleting_a_user(Fixture fixture) {
-			_fixture = fixture;
-		}
+		public deleting_a_user(NoCredentialsEventStoreIntegrationFixture fixture) => _fixture = fixture;
 
 		[Fact]
 		public async Task with_null_input_throws() {
@@ -63,14 +61,6 @@ namespace EventStore.Client {
 				() => _fixture.Client.DeleteUserAsync(loginName, userCredentials: TestCredentials.Root));
 
 			Assert.Equal(loginName, ex.LoginName);
-		}
-
-		public class Fixture : EventStoreClientFixture {
-			public Fixture () : base(noDefaultCredentials: true){
-			}
-			
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
 		}
 	}
 }

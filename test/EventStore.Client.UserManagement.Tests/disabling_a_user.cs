@@ -1,12 +1,12 @@
 using System;
 using System.Threading.Tasks;
-using Xunit;
+using EventStore.Tests.Fixtures;
 
 namespace EventStore.Client {
-	public class disabling_a_user : IClassFixture<disabling_a_user.Fixture> {
-		private readonly Fixture _fixture;
+	public class disabling_a_user : IClassFixture<NoCredentialsEventStoreIntegrationFixture> {
+		private readonly NoCredentialsEventStoreIntegrationFixture _fixture;
 
-		public disabling_a_user(Fixture fixture) {
+		public disabling_a_user(NoCredentialsEventStoreIntegrationFixture fixture) {
 			_fixture = fixture;
 		}
 
@@ -55,14 +55,6 @@ namespace EventStore.Client {
 				"password", userCredentials: TestCredentials.Root);
 
 			await _fixture.Client.DisableUserAsync(loginName, userCredentials: TestCredentials.Root);
-		}
-
-		public class Fixture : EventStoreClientFixture {
-			public Fixture () : base(noDefaultCredentials: true){
-			}
-			
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
 		}
 	}
 }

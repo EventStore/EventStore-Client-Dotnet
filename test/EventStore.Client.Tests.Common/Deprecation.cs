@@ -2,8 +2,8 @@
 
 namespace EventStore.Client;
 
-internal class Deprecation {
-	internal class FactAttribute : Xunit.FactAttribute {
+public class Deprecation {
+	public class FactAttribute : Xunit.FactAttribute {
 		private readonly Version _legacySince;
 		private readonly string _skipMessage;
 
@@ -20,7 +20,7 @@ internal class Deprecation {
 		}
 	}
 
-	internal class TheoryAttribute : Xunit.TheoryAttribute {
+	public class TheoryAttribute : Xunit.TheoryAttribute {
 		private readonly Version _legacySince;
 		private readonly string _skipMessage;
 

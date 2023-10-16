@@ -2,6 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<ItemGroup>
 	  <ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />
+		<ProjectReference Include="..\EventStore.Client.Tests.Common\EventStore.Client.Tests.Common.csproj"/>
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Remove="..\EventStore.Client.Tests.Common\*.cs" />

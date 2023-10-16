@@ -1,15 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Shouldly;
-using Xunit;
+using EventStore.Tests.Fixtures;
 
 namespace EventStore.Client; 
 
-public class changing_user_password : IClassFixture<SimpleFixture> {
-	public changing_user_password(SimpleFixture fixture) => Fixture = fixture;
+public class changing_user_password : IClassFixture<NoCredentialsEventStoreIntegrationFixture> {
+	public changing_user_password(NoCredentialsEventStoreIntegrationFixture fixture) => Fixture = fixture;
 
-	SimpleFixture Fixture { get; }
+	NoCredentialsEventStoreIntegrationFixture Fixture { get; }
 	
 	public static IEnumerable<object?[]> NullInputCases() {
 		yield return new object?[] { null, TestUserInfoFaker.New().Password, TestUserInfoFaker.New().Password, "loginName"};

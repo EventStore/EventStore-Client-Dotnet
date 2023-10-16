@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Bogus;
-using Shouldly;
-using Xunit;
+using EventStore.Tests.Fixtures;
 
 namespace EventStore.Client; 
 
@@ -27,11 +25,18 @@ sealed class TestUserInfoFaker : Faker<TestUserInfo> {
 	public static TestUserInfo New() => _instance.Generate();
 }
 
-public class creating_a_user : IClassFixture<SimpleFixture> {
-	public creating_a_user(SimpleFixture fixture) => Fixture = fixture;
+// public class NoCredentialsEventStoreIntegrationFixture : EventStoreIntegrationFixture {
+// 	protected override IntegrationFixtureOptions Configure(IntegrationFixtureOptions options) {
+// 		options.ClientSettings.DefaultCredentials = null;
+// 		return options;
+// 	}
+// }
 
-	SimpleFixture Fixture { get; }
+public class creating_a_user : IClassFixture<NoCredentialsEventStoreIntegrationFixture> {
+	public creating_a_user(NoCredentialsEventStoreIntegrationFixture fixture) => Fixture = fixture;
 
+	NoCredentialsEventStoreIntegrationFixture Fixture { get; }
+	
 	public static IEnumerable<object?[]> NullInputCases() {
 		yield return new object?[] { null, TestUserInfoFaker.New().FullName, TestUserInfoFaker.New().Groups, TestUserInfoFaker.New().Password, "loginName" };
 		yield return new object?[] { TestUserInfoFaker.New().LoginName, null, TestUserInfoFaker.New().Groups, TestUserInfoFaker.New().Password, "fullName" };
@@ -66,7 +71,9 @@ public class creating_a_user : IClassFixture<SimpleFixture> {
 	[Fact]
 	public async Task with_password_containing_ascii_chars() {
 		var user = TestUserInfoFaker.New();
-	
+
+		// await Fixture.Client.WarmUpAsync();
+		//
 		await Fixture.Client
 			.CreateUserAsync(user.LoginName, user.FullName, user.Groups, user.Password, userCredentials: TestCredentials.Root)
 			.ShouldNotThrowAsync();

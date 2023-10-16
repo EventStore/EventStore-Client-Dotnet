@@ -1,8 +1,8 @@
 using System;
 
 namespace EventStore.Client {
-	internal class Regression {
-		internal class FactAttribute : Xunit.FactAttribute {
+	public class Regression {
+		public class FactAttribute : Xunit.FactAttribute {
 			private readonly int _major;
 			private readonly string _skipMessage;
 
@@ -19,7 +19,7 @@ namespace EventStore.Client {
 			}
 		}
 
-		internal class TheoryAttribute : Xunit.TheoryAttribute {
+		public class TheoryAttribute : Xunit.TheoryAttribute {
 			private readonly int _major;
 			private readonly string _skipMessage;
 

@@ -1,9 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace EventStore.Client {
 	public static class GlobalEnvironment {
+		static string UseClusterName => "ES_USE_CLUSTER";
+		static string UseExternalServerName => "ES_USE_EXTERNAL_SERVER";
+		static string ContainerRegistry => "ghcr.io/eventstore/eventstore";
+		static string ImageTagName => "ES_DOCKER_TAG";
+		static string ImageTagDefault => "ci"; // e.g. "21.10.1-focal";
+		static string DbLogFormatName => "EVENTSTORE_DB_LOG_FORMAT";
+		static string DbLogFormatDefault => "V2";
+		
 		static GlobalEnvironment() {
 			var useClusterEnvVar = Environment.GetEnvironmentVariable(UseClusterName);
 			if (bool.TryParse(useClusterEnvVar, out var useCluster)) {
@@ -14,10 +23,15 @@ namespace EventStore.Client {
 			if (bool.TryParse(useExternalServerEnvVar, out var useExternalServer)) {
 				UseExternalServer = useExternalServer;
 			}
+
+			HostCertificateDirectory = new(Path.Combine(ProjectDir.Current, "..", "..", UseCluster ? "certs-cluster" : "certs"));
 		}
 
-		public static bool UseCluster { get; } = false;
-		public static bool UseExternalServer { get; } = false;
+		public static DirectoryInfo HostCertificateDirectory { get; }
+
+		public static bool UseCluster { get; }
+		public static bool UseExternalServer { get; }
+		
 		public static string DockerImage => $"{ContainerRegistry}:{ImageTag}";
 		public static string ImageTag => GetEnvironmentVariable(ImageTagName, ImageTagDefault);
 		public static string DbLogFormat => GetEnvironmentVariable(DbLogFormatName, DbLogFormatDefault);
@@ -45,14 +59,6 @@ namespace EventStore.Client {
 			"EVENTSTORE_RUN_PROJECTIONS",
 			"EVENTSTORE_START_STANDARD_PROJECTIONS",
 		};
-
-		static string UseClusterName => "ES_USE_CLUSTER";
-		static string UseExternalServerName => "ES_USE_EXTERNAL_SERVER";
-		private static string ContainerRegistry => "ghcr.io/eventstore/eventstore";
-		static string ImageTagName => "ES_DOCKER_TAG";
-		static string ImageTagDefault => "ci"; // e.g. "21.10.1-focal";
-		static string DbLogFormatName => "EVENTSTORE_DB_LOG_FORMAT";
-		static string DbLogFormatDefault => "V2";
 
 		static string GetEnvironmentVariable(string name, string def) {
 			var x = Environment.GetEnvironmentVariable(name);
