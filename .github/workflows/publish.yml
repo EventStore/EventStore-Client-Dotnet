@@ -19,7 +19,9 @@ jobs:
         exclude:
           - framework: net48
             os: ubuntu-latest
-          - framework: [ net6.0, net7.0 ]
+          - framework: net6.0
+            os: windows-latest
+          - framework: net7.0
             os: windows-latest
     runs-on: ${{ matrix.os }}
     name: scan-vulnerabilities/${{ matrix.os }}/${{ matrix.framework }}
@@ -89,7 +91,9 @@ jobs:
         exclude:
           - framework: net48
             os: ubuntu-latest
-          - framework: [ net6.0, net7.0 ]
+          - framework: net6.0
+            os: windows-latest
+          - framework: net7.0
             os: windows-latest
     runs-on: ${{ matrix.os }}
     name: test/EventStore.Client/${{ matrix.os }}/${{ matrix.framework }}
