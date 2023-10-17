@@ -10,16 +10,19 @@ namespace EventStore.Tests.Fixtures;
 
 public class EventStoreClientIntegrationFixture : EventStoreIntegrationFixture {
 	public EventStoreClient Client { get; private set; } = null!;
+	public EventStoreClient Streams { get; private set; } = null!;
+	public EventStoreOperationsClient Operations { get; private set; } = null!;
+	public EventStoreUserManagementClient Users { get; private set; } = null!;
+	public EventStoreProjectionManagementClient Projections { get; private set; } = null!;
+	public EventStorePersistentSubscriptionsClient PersistentSubscriptions { get; private set; } = null!;
 
 	protected override async Task OnInitialized() {
-		Client = new EventStoreClient(Options.ClientSettings);
-
-
-		//var Streams = new EventStoreStreamsClient(Options.ClientSettings);
-		var Operations              = new EventStoreOperationsClient(Options.ClientSettings);
-		var Users                   = new EventStoreUserManagementClient(Options.ClientSettings);
-		var Projections             = new EventStoreProjectionManagementClient(Options.ClientSettings);
-		var PersistentSubscriptions = new EventStorePersistentSubscriptionsClient(Options.ClientSettings);
+		Client                  = new EventStoreClient(Options.ClientSettings);
+		Streams                 = new EventStoreClient(Options.ClientSettings);
+		Operations              = new EventStoreOperationsClient(Options.ClientSettings);
+		Users                   = new EventStoreUserManagementClient(Options.ClientSettings);
+		Projections             = new EventStoreProjectionManagementClient(Options.ClientSettings);
+		PersistentSubscriptions = new EventStorePersistentSubscriptionsClient(Options.ClientSettings);
 		
 		await Client.WarmUpAsync();
 

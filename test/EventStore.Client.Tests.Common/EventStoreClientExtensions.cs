@@ -29,7 +29,6 @@ public static class EventStoreClientExtensions {
 			}
 		}
 	}
-
 	
 	public static Task WarmUpAsync(this EventStoreClient client) =>
 		client.WarmUpWith(async ct => {

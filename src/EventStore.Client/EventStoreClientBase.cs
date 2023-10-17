@@ -94,6 +94,12 @@ namespace EventStore.Client {
 			_channelInfoProvider.Reset();
 		}
 
+		/// <summary>
+		/// only exists so that we can manually trigger rediscovery in the tests (by reflection)
+		/// in cases where the server doesn't yet let the client know that it needs to.
+		/// see EventStoreClientExtensions.WarmUpWith.
+		/// note if rediscovery is already in progress it will continue, not restart.
+		/// </summary>
 		internal Task RediscoverAsync() {
 			_channelInfoProvider.Reset();
 			return Task.CompletedTask;
