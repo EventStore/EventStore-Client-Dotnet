@@ -13,10 +13,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [net5.0, net6.0, net7.0]
-        os: [ubuntu-latest]
+        framework: [net4.8, net6.0, net7.0]
+        os: [ubuntu-latest, windows-latest]
         test: [Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement]
         configuration: [release]
+        exclude:
+          - framework: net4.8
+            os: ubuntu-latest
     runs-on: ${{ matrix.os }}
     name: EventStore.Client.${{ matrix.test }}/${{ matrix.os }}/${{ matrix.framework }}/${{ inputs.docker-tag }}
     steps:
@@ -33,7 +36,7 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            5.0.x
+            4.8.x
             6.0.x
             7.0.x
       - name: Compile
