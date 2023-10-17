@@ -30,12 +30,7 @@ jobs:
         with:
           dotnet-version: |
             6.0.x
-            7.0.x
-      - name: Install Mono
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mono-complete	  
+            7.0.x  
       - name: Compile
         shell: bash
         run: |
