@@ -25,7 +25,6 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            4.8.1
             6.0.x
             7.0.x
       - name: Scan for Vulnerabilities
@@ -62,7 +61,6 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            4.8.1
             6.0.x
             7.0.x
       - name: Compile
@@ -94,7 +92,6 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            4.8.1
             6.0.x
             7.0.x
       - name: Compile
@@ -132,7 +129,6 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            4.8.1
             6.0.x
             7.0.x
       - name: Dotnet Pack
