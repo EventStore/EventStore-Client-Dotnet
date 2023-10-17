@@ -1,7 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <ProjectReference Include="..\..\src\EventStore.Client.Operations\EventStore.Client.Operations.csproj" />
+    <ProjectReference Include="..\..\src\EventStore.Client.PersistentSubscriptions\EventStore.Client.PersistentSubscriptions.csproj" />
+    <ProjectReference Include="..\..\src\EventStore.Client.ProjectionManagement\EventStore.Client.ProjectionManagement.csproj" />
     <ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
     <ProjectReference Include="..\..\src\EventStore.Client.UserManagement\EventStore.Client.UserManagement.csproj" />
     <ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
   </ItemGroup>
 </Project>

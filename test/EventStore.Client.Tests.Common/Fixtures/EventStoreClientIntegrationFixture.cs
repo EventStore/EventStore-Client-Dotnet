@@ -13,6 +13,14 @@ public class EventStoreClientIntegrationFixture : EventStoreIntegrationFixture {
 
 	protected override async Task OnInitialized() {
 		Client = new EventStoreClient(Options.ClientSettings);
+
+
+		//var Streams = new EventStoreStreamsClient(Options.ClientSettings);
+		var Operations              = new EventStoreOperationsClient(Options.ClientSettings);
+		var Users                   = new EventStoreUserManagementClient(Options.ClientSettings);
+		var Projections             = new EventStoreProjectionManagementClient(Options.ClientSettings);
+		var PersistentSubscriptions = new EventStorePersistentSubscriptionsClient(Options.ClientSettings);
+		
 		await Client.WarmUpAsync();
 
 		//TODO SS: in order to migrate/refactor code faster will keep Given() and When() apis for now

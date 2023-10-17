@@ -4,15 +4,14 @@ using System.Text.Json;
 namespace EventStore.Client {
 	public static class ReadOnlyMemoryExtensions {
 		public static Position ParsePosition(this ReadOnlyMemory<byte> json) {
-			var doc = JsonDocument.Parse(json);
+			using var doc = JsonDocument.Parse(json);
+			
 			var checkPoint = doc.RootElement.GetString();
-
-			if (checkPoint == null) {
+			if (checkPoint is null) {
 				throw new Exception("Unable to parse Position, data is missing!");
 			}
-
-			Position.TryParse(checkPoint, out var position);
-			if (position.HasValue) {
+			
+			if (Position.TryParse(checkPoint, out var position) && position.HasValue) {
 				return position.Value;
 			}
 			
@@ -20,10 +19,10 @@ namespace EventStore.Client {
 		}
 
 		public static StreamPosition ParseStreamPosition(this ReadOnlyMemory<byte> json) {
-			var doc = JsonDocument.Parse(json);
+			using var doc = JsonDocument.Parse(json);
+			
 			var checkPoint = doc.RootElement.GetString();
-
-			if (checkPoint == null) {
+			if (checkPoint is null) {
 				throw new Exception("Unable to parse Position, data is missing!");
 			}
 

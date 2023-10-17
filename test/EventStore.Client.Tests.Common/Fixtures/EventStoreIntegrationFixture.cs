@@ -74,8 +74,9 @@ public class EventStoreIntegrationFixture : IAsyncLifetime {
 	
 	static async Task<DirectoryInfo> EnsureCertificatesExist() {
 		//var hostCertificatePath = Path.Combine(ProjectDir.Current, "..", "..", GlobalEnvironment.UseCluster ? "certs-cluster" : "certs");
-		
-		var directory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "certs"));
+		//var directory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "certs"));
+
+		var directory = GlobalEnvironment.HostCertificateDirectory;
 
 		if (!directory.Exists) {
 			directory.Create();
@@ -176,9 +177,6 @@ public class EventStoreIntegrationFixture : IAsyncLifetime {
 			Value = (captureCorrelationId, captureId)
 		};
 
-		bool Filter(LogEvent logEvent) =>
-			callContextData.Value.Item2.Equals(captureId);
-
 		MessageTemplateTextFormatter formatter = new MessageTemplateTextFormatter(
 			"{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message}");
 
@@ -187,6 +185,7 @@ public class EventStoreIntegrationFixture : IAsyncLifetime {
 
 		var subscription = LogEventSubject.Where(Filter).Subscribe(logEvent => {
 			using var writer = new StringWriter();
+		
 			if (logEvent.Exception != null) {
 				formatterWithException.Format(logEvent, writer);
 			} else {
@@ -197,5 +196,9 @@ public class EventStoreIntegrationFixture : IAsyncLifetime {
 		});
 
 		Disposables.Add(subscription);
+		
+		return;
+
+		bool Filter(LogEvent logEvent) => callContextData.Value.Item2.Equals(captureId);
 	}
 }

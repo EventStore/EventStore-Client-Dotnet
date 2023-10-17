@@ -31,7 +31,7 @@
 		<None Include="..\..\ouro.png" Pack="true" PackagePath="\"/>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="4.0.0">
+		<PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="5.0.0.1">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -47,6 +47,9 @@
 	<ItemGroup>
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
 			<_Parameter1>$(ProjectName).Tests</_Parameter1>
+		</AssemblyAttribute>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+			<_Parameter1>$(ProjectName).Tests.Common</_Parameter1>
 		</AssemblyAttribute>
 	</ItemGroup>
 </Project>
