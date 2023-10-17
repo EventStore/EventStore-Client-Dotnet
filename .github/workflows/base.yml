@@ -20,6 +20,10 @@ jobs:
         exclude:
           - framework: net4.8
             os: ubuntu-latest
+          - framework: net6.0
+            os: windows-latest
+          - framework: net7.0
+            os: windows-latest
     runs-on: ${{ matrix.os }}
     name: EventStore.Client.${{ matrix.test }}/${{ matrix.os }}/${{ matrix.framework }}/${{ inputs.docker-tag }}
     steps:
@@ -36,7 +40,7 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            4.8.x
+            4.8.1
             6.0.x
             7.0.x
       - name: Compile
