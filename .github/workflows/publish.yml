@@ -95,6 +95,10 @@ jobs:
           dotnet-version: |
             6.0.x
             7.0.x
+      - name: Install Mono
+        shell: bash
+        run: |
+          apt-get install -y mono-complete	
       - name: Compile
         shell: bash
         run: |
