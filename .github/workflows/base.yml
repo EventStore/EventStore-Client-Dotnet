@@ -34,7 +34,8 @@ jobs:
       - name: Install Mono
         shell: bash
         run: |
-          apt-get install -y mono-complete	  
+          sudo apt-get update
+          sudo apt-get install -y mono-complete	  
       - name: Compile
         shell: bash
         run: |
