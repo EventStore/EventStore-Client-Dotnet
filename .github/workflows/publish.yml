@@ -44,12 +44,20 @@ jobs:
 
   build-samples:
     timeout-minutes: 5
-    name: build-samples/${{ matrix.framework }}
-    runs-on: ubuntu-latest
+    name: build-samples/${{ matrix.os }}/${{ matrix.framework }}
     strategy:
       fail-fast: false
       matrix:
         framework: [ net48, net6.0, net7.0 ]
+        os: [ ubuntu-latest, windows-2019 ]
+        exclude:
+            - framework: net48
+              os: ubuntu-latest
+            - framework: net6.0
+              os: windows-2019
+            - framework: net7.0
+              os: windows-2019
+    runs-on: ${{ matrix.os }}
     services:
       esdb:
         image: ghcr.io/eventstore/eventstore:lts
@@ -129,6 +137,12 @@ jobs:
         - shell: bash
           run: |
               git fetch --prune --unshallow
+        - name: Install dotnet SDKs
+          uses: actions/setup-dotnet@v3
+          with:
+              dotnet-version: |
+                  6.0.x
+                  7.0.x
         - name: Compile
           shell: bash
           run: |
