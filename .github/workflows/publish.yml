@@ -16,6 +16,13 @@ jobs:
       matrix:
         framework: [ net4.8, net6.0, net7.0 ]
         os: [ ubuntu-latest, windows-latest ]
+        exclude:
+          - framework: net4.8
+            os: ubuntu-latest
+          - framework: net6.0
+            os: windows-latest
+          - framework: net7.0
+            os: windows-latest
     runs-on: ${{ matrix.os }}
     name: scan-vulnerabilities/${{ matrix.os }}/${{ matrix.framework }}
     steps:
@@ -80,6 +87,13 @@ jobs:
         framework: [net4.8, net6.0, net7.0]
         os: [ubuntu-latest, windows-latest]
         configuration: [release]
+        exclude:
+          - framework: net4.8
+            os: ubuntu-latest
+          - framework: net6.0
+            os: windows-latest
+          - framework: net7.0
+            os: windows-latest
     runs-on: ${{ matrix.os }}
     name: test/EventStore.Client/${{ matrix.os }}/${{ matrix.framework }}
     steps:
