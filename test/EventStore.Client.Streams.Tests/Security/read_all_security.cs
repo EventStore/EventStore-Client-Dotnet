@@ -1,6 +1,3 @@
-using System.Threading.Tasks;
-using Xunit;
-
 namespace EventStore.Client.Security {
 	public class read_all_security : IClassFixture<read_all_security.Fixture> {
 		private readonly Fixture _fixture;

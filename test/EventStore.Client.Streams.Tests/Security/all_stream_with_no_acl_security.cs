@@ -1,6 +1,3 @@
-using System.Threading.Tasks;
-using Xunit;
-
 namespace EventStore.Client.Security {
 	public class all_stream_with_no_acl_security
 		: IClassFixture<all_stream_with_no_acl_security.Fixture> {

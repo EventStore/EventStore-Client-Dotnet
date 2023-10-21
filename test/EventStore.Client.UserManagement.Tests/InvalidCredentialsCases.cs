@@ -1,19 +1,13 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 
-namespace EventStore.Client {
-	public class InvalidCredentialsCases : IEnumerable<object?[]> {
-		public IEnumerator<object?[]> GetEnumerator() {
-			var loginName = Guid.NewGuid().ToString();
+namespace EventStore.Client.Tests; 
 
-			yield return new object?[] {loginName, null};
-			loginName = Guid.NewGuid().ToString();
-			yield return new object?[] {loginName, new UserCredentials(Guid.NewGuid().ToString(), "password")};
-			loginName = Guid.NewGuid().ToString();
-			yield return new object?[] {loginName, new UserCredentials(loginName, "wrong-password")};
-		}
+public class InvalidCredentialsCases : IEnumerable<object?[]> {
+    public IEnumerator<object?[]> GetEnumerator() {
+        yield return Fakers.Users.WithNoCredentials().WithResult(user => new object?[] { user, typeof(AccessDeniedException) });
+        yield return Fakers.Users.WithInvalidCredentials(wrongLoginName: false).WithResult(user => new object?[] { user, typeof(NotAuthenticatedException) });
+        yield return Fakers.Users.WithInvalidCredentials(wrongPassword: false).WithResult(user => new object?[] { user, typeof(NotAuthenticatedException) });
+    }
 
-		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-	}
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

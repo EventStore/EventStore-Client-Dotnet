@@ -1,6 +1,3 @@
-using System.Threading.Tasks;
-using Xunit;
-
 namespace EventStore.Client.Security {
 	public class multiple_role_security : IClassFixture<multiple_role_security.Fixture> {
 		private readonly Fixture _fixture;

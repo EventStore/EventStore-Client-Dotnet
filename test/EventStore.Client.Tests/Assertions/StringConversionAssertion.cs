@@ -1,50 +1,47 @@
-using System;
-using System.Linq;
 using System.Reflection;
 using AutoFixture.Idioms;
 using AutoFixture.Kernel;
-using Xunit;
 
 // ReSharper disable once CheckNamespace
-namespace EventStore.Client {
-	internal class StringConversionAssertion : IdiomaticAssertion {
-		private readonly ISpecimenBuilder _builder;
+namespace EventStore.Client; 
 
-		public StringConversionAssertion(ISpecimenBuilder builder) => _builder = builder;
+internal class StringConversionAssertion : IdiomaticAssertion {
+    private readonly ISpecimenBuilder _builder;
 
-		public override void Verify(Type type) {
-			var context = new SpecimenContext(_builder);
+    public StringConversionAssertion(ISpecimenBuilder builder) => _builder = builder;
 
-			var constructor = type.GetConstructor(new[] {typeof(string)});
+    public override void Verify(Type type) {
+        var context = new SpecimenContext(_builder);
 
-			if (constructor is null) {
-				return;
-			}
+        var constructor = type.GetConstructor(new[] {typeof(string)});
 
-			var value = (string)context.Resolve(typeof(string));
-			var instance = constructor.Invoke(new object[] {value});
-			var args =new[]{instance};
+        if (constructor is null) {
+            return;
+        }
 
-			var @explicit = type
-				.GetMethods(BindingFlags.Public | BindingFlags.Static)
-				.FirstOrDefault(m => m.Name == "op_Explicit" && m.ReturnType == typeof(string));
-			if (@explicit is not null) {
-				Assert.Equal(value, @explicit.Invoke(null, args));
-			}
+        var value    = (string)context.Resolve(typeof(string));
+        var instance = constructor.Invoke(new object[] {value});
+        var args     =new[]{instance};
 
-			var @implicit = type
-				.GetMethods(BindingFlags.Public | BindingFlags.Static)
-				.FirstOrDefault(m => m.Name == "op_Implicit" && m.ReturnType == typeof(string));
-			if (@implicit is not null) {
-				Assert.Equal(value, @implicit.Invoke(null, args));
-			}
+        var @explicit = type
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .FirstOrDefault(m => m.Name == "op_Explicit" && m.ReturnType == typeof(string));
+        if (@explicit is not null) {
+            Assert.Equal(value, @explicit.Invoke(null, args));
+        }
 
-			var toString = type
-				.GetMethods(BindingFlags.Public | BindingFlags.Public)
-				.FirstOrDefault(m => m.Name == "ToString" && m.ReturnType == typeof(string));
-			if (toString is not null) {
-				Assert.Equal(value, toString.Invoke(instance, null));
-			}
-		}
-	}
+        var @implicit = type
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .FirstOrDefault(m => m.Name == "op_Implicit" && m.ReturnType == typeof(string));
+        if (@implicit is not null) {
+            Assert.Equal(value, @implicit.Invoke(null, args));
+        }
+
+        var toString = type
+            .GetMethods(BindingFlags.Public | BindingFlags.Public)
+            .FirstOrDefault(m => m.Name == "ToString" && m.ReturnType == typeof(string));
+        if (toString is not null) {
+            Assert.Equal(value, toString.Invoke(instance, null));
+        }
+    }
 }

@@ -1,37 +1,35 @@
-using System.Threading.Tasks;
-using Xunit;
+namespace EventStore.Client; 
 
-namespace EventStore.Client {
-	public class @admin : IClassFixture<admin.Fixture> {
-		private readonly Fixture _fixture;
+public class @admin : IClassFixture<EventStoreClientsFixture> {
+    public admin(EventStoreClientsFixture fixture, ITestOutputHelper output) =>
+        Fixture = fixture.With(f => f.CaptureLogs(output));
 
-		public admin(Fixture fixture) {
-			_fixture = fixture;
-		}
+    EventStoreClientsFixture Fixture { get; }
+    
+    [Fact]
+    public async Task merge_indexes_does_not_throw() {
+        await Fixture.Operations
+            .MergeIndexesAsync(userCredentials: TestCredentials.Root)
+            .ShouldNotThrowAsync();
+    }
 
-		[Fact]
-		public async Task merge_indexes_does_not_throw() {
-			await _fixture.Client.MergeIndexesAsync(userCredentials: TestCredentials.Root);
-		}
+    [Fact]
+    public async Task merge_indexes_without_credentials_throws() {
+        await Fixture.Operations
+            .MergeIndexesAsync()
+            .ShouldThrowAsync<AccessDeniedException>();
+    }
 
-		[Fact]
-		public async Task merge_indexes_without_credentials_throws() {
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.Client.MergeIndexesAsync());
-		}
-		
-		[Fact]
-		public async Task restart_persistent_subscriptions_does_not_throw() {
-			await _fixture.Client.RestartPersistentSubscriptions(userCredentials:TestCredentials.Root);
-		}
+    [Fact]
+    public async Task restart_persistent_subscriptions_does_not_throw() =>
+        await Fixture.Operations
+            .RestartPersistentSubscriptions(userCredentials: TestCredentials.Root)
+            .ShouldNotThrowAsync();
 
-		[Fact]
-		public async Task restart_persistent_subscriptions_without_credentials_throws() {
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.Client.RestartPersistentSubscriptions());
-		}
-		
-		public class Fixture : EventStoreClientFixture {
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
-	}
+    [Fact]
+    public async Task restart_persistent_subscriptions_without_credentials_throws() {
+        await Fixture.Operations
+            .RestartPersistentSubscriptions()
+            .ShouldThrowAsync<AccessDeniedException>();
+    }
 }

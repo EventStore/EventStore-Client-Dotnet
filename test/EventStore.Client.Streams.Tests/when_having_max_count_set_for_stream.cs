@@ -1,7 +1,3 @@
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-
 namespace EventStore.Client {
 	[Trait("Category", "LongRunning")]
 	public class when_having_max_count_set_for_stream : IClassFixture<when_having_max_count_set_for_stream.Fixture> {

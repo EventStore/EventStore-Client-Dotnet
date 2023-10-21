@@ -1,21 +1,13 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
 using Serilog.Formatting.Display;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace EventStore.Client {
 	public abstract class EventStoreClientFixtureBase : IAsyncLifetime {

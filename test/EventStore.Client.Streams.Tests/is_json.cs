@@ -1,9 +1,5 @@
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EventStore.Client {
 	[Trait("Category", "Network"), Trait("Category", "LongRunning")]

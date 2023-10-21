@@ -1,78 +1,82 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
+﻿namespace EventStore.Client;
 
-namespace EventStore.Client {
-	public class AuthenticationTests : IClassFixture<AuthenticationTests.Fixture> {
-		private readonly Fixture _fixture;
-		private static readonly Dictionary<string, UserCredentials> _credentials =
-			new Dictionary<string, UserCredentials> {
-				{ nameof(TestCredentials.Root), TestCredentials.Root },
-				{ nameof(TestCredentials.TestUser1), TestCredentials.TestUser1 },
-			};
+public class AuthenticationTests : IClassFixture<EventStoreClientsFixture> {
+    public AuthenticationTests(EventStoreClientsFixture fixture, ITestOutputHelper output) =>
+        Fixture = fixture.With(f => f.CaptureLogs(output));
 
-		public AuthenticationTests(Fixture fixture) {
-			_fixture = fixture;
-		}
+    EventStoreClientsFixture Fixture { get; }
 
-		public static IEnumerable<object?[]> AuthenticationCases() {
-			var root = nameof(TestCredentials.Root);
-			var testUser = nameof(TestCredentials.TestUser1);
-			
-			var shouldFail = false;
-			var shouldSucceed = true;
-			
-			// no user credentials
-			yield return new object?[] {1, root,     null, shouldSucceed};
-			yield return new object?[] {2, testUser, null, shouldFail};
-			yield return new object?[] {3, null,     null, shouldFail};
-			
-			// unprivileged user credentials
-			yield return new object?[] {4, root,      testUser, shouldFail};
-			yield return new object?[] {5, testUser,  testUser, shouldFail};
-			yield return new object?[] {6, null,      testUser, shouldFail};
-			
-			// root user credentials
-			yield return new object?[] {7, root,     root, shouldSucceed};
-			yield return new object?[] {8, testUser, root, shouldSucceed};
-			yield return new object?[] {9, null,     root, shouldSucceed};
-		}
+    public enum CredentialsCase { None, TestUser, RootUser }
+    
+    public static IEnumerable<object?[]> InvalidAuthenticationCases() {
+        yield return new object?[] { 2, CredentialsCase.TestUser, CredentialsCase.None };
+        yield return new object?[] { 3, CredentialsCase.None, CredentialsCase.None };
+        yield return new object?[] { 4, CredentialsCase.RootUser, CredentialsCase.TestUser };
+        yield return new object?[] { 5, CredentialsCase.TestUser, CredentialsCase.TestUser };
+        yield return new object?[] { 6, CredentialsCase.None, CredentialsCase.TestUser };
+    }
+    
+    [Theory]
+    [MemberData(nameof(InvalidAuthenticationCases))]
+    public async Task system_call_with_invalid_credentials(int caseNr, CredentialsCase defaultCredentials, CredentialsCase actualCredentials) => 
+        await ExecuteTest(caseNr, defaultCredentials, actualCredentials, shouldThrow: true);
 
-		[Theory, MemberData(nameof(AuthenticationCases))]
-		public async Task system_call_with_credentials_combination(int caseNr, string? defaultUser, string? user, bool succeeds) {
+    public static IEnumerable<object?[]> ValidAuthenticationCases() {
+        yield return new object?[] { 1, CredentialsCase.RootUser, CredentialsCase.None };
+        yield return new object?[] { 7, CredentialsCase.RootUser, CredentialsCase.RootUser };
+        yield return new object?[] { 8, CredentialsCase.TestUser, CredentialsCase.RootUser };
+        yield return new object?[] { 9, CredentialsCase.None, CredentialsCase.RootUser };
+    }
+    
+    [Theory]
+    [MemberData(nameof(ValidAuthenticationCases))]
+    public async Task system_call_with_valid_credentials(int caseNr, CredentialsCase defaultCredentials, CredentialsCase actualCredentials) => 
+        await ExecuteTest(caseNr, defaultCredentials, actualCredentials, shouldThrow: false);
 
-			_fixture.Settings.DefaultCredentials = defaultUser != null ? _credentials[defaultUser] : null;
-			_fixture.Settings.ConnectionName = $"Authentication case #{caseNr} {defaultUser}";
-			
-			await using var client = new EventStoreOperationsClient(_fixture.Settings);
+    async Task ExecuteTest(int caseNr, CredentialsCase defaultCredentials, CredentialsCase actualCredentials, bool shouldThrow) {
+        var testUser = await Fixture.CreateTestUser();
 
-			var result = await Record.ExceptionAsync(() =>
-				client.SetNodePriorityAsync(1, userCredentials: user != null ? _credentials[user] : null));
-			
-			if (succeeds) {
-				Assert.Null(result);
-				return;
-			}
+        var defaultUserCredentials = GetCredentials(defaultCredentials);
+        var actualUserCredentials  = GetCredentials(actualCredentials);
 
-			Assert.NotNull(result);
-		}
-		
-		public class Fixture : EventStoreClientFixture {
-			protected override async Task Given() {
-				var userManagementClient = new EventStoreUserManagementClient(Settings);
-				await userManagementClient.WarmUpAsync();
+        var settings = Fixture.GetOptions().ClientSettings;
 
-				await userManagementClient.CreateUserWithRetry(
-					loginName: TestCredentials.TestUser1.Username!,
-					fullName: nameof(TestCredentials.TestUser1),
-					groups: Array.Empty<string>(),
-					password: TestCredentials.TestUser1.Password!,
-					userCredentials: TestCredentials.Root)
-					.WithTimeout(TimeSpan.FromMilliseconds(1000));				
-			}
-			
-			protected override Task When() => Task.CompletedTask;
-		}
-	}
+        // var settings = new EventStoreClientSettings {
+        //     Interceptors             = ogSettings.Interceptors,
+        //     ConnectionName           = $"Authentication case #{caseNr} {defaultCredentials}",
+        //     CreateHttpMessageHandler = ogSettings.CreateHttpMessageHandler,
+        //     LoggerFactory            = ogSettings.LoggerFactory,
+        //     ChannelCredentials       = ogSettings.ChannelCredentials,
+        //     OperationOptions         = ogSettings.OperationOptions,
+        //     ConnectivitySettings     = ogSettings.ConnectivitySettings,
+        //     DefaultCredentials       = defaultUserCredentials,
+        //     DefaultDeadline          = ogSettings.DefaultDeadline
+        // };
+
+        settings.DefaultCredentials = defaultUserCredentials;
+        settings.ConnectionName     = $"Authentication case #{caseNr} {defaultCredentials}";
+
+        await using var operations = new EventStoreOperationsClient(settings);
+
+        if (shouldThrow) {
+            await operations
+                .SetNodePriorityAsync(1, userCredentials: actualUserCredentials)
+                .ShouldThrowAsync<AccessDeniedException>();
+        }
+        else {
+            await operations
+                .SetNodePriorityAsync(1, userCredentials: actualUserCredentials)
+                .ShouldNotThrowAsync();
+        }
+
+        return;
+
+        UserCredentials? GetCredentials(CredentialsCase credentialsCase) =>
+            credentialsCase switch {
+                CredentialsCase.None     => null,
+                CredentialsCase.TestUser => testUser.Credentials,
+                CredentialsCase.RootUser => TestCredentials.Root,
+                _                        => throw new ArgumentOutOfRangeException(nameof(credentialsCase), credentialsCase, null)
+            };
+    }
 }

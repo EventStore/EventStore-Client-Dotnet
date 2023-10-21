@@ -1,7 +1,4 @@
-using System;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 
 namespace EventStore.Client.Security {
 	public abstract class SecurityFixture : EventStoreClientFixture {
@@ -26,7 +23,7 @@ namespace EventStore.Client.Security {
 		protected override async Task OnServerUpAsync() {
 			await base.OnServerUpAsync();
 
-			await UserManagementClient.WarmUpAsync();
+			await UserManagementClient.WarmUp();
 
 			await UserManagementClient.CreateUserWithRetry(TestCredentials.TestUser1.Username!,
 				nameof(TestCredentials.TestUser1), Array.Empty<string>(), TestCredentials.TestUser1.Password!,

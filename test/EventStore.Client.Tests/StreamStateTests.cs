@@ -1,59 +1,55 @@
-using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Threading;
 using AutoFixture;
-using Xunit;
 
-namespace EventStore.Client {
-	public class StreamStateTests : ValueObjectTests<StreamState> {
-		public StreamStateTests() : base(new ScenarioFixture()) {
-		}
+namespace EventStore.Client; 
 
-		public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
-			yield return new object?[] {0};
-			yield return new object?[] {int.MaxValue};
-			yield return new object?[] {-3};
-		}
+public class StreamStateTests : ValueObjectTests<StreamState> {
+    public StreamStateTests() : base(new ScenarioFixture()) {
+    }
 
-		[Theory, MemberData(nameof(ArgumentOutOfRangeTestCases))]
-		public void ArgumentOutOfRange(int value) {
-			var ex = Assert.Throws<ArgumentOutOfRangeException>(() => new StreamState(value));
-			Assert.Equal(nameof(value), ex.ParamName);
-		}
+    public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
+        yield return new object?[] {0};
+        yield return new object?[] {int.MaxValue};
+        yield return new object?[] {-3};
+    }
 
-		[Fact]
-		public void ExplicitConversionExpectedResult() {
-			const int expected = 1;
-			var actual = (int)new StreamState(expected);
-			Assert.Equal(expected, actual);
-		}
+    [Theory, MemberData(nameof(ArgumentOutOfRangeTestCases))]
+    public void ArgumentOutOfRange(int value) {
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() => new StreamState(value));
+        Assert.Equal(nameof(value), ex.ParamName);
+    }
 
-		[Fact]
-		public void ImplicitConversionExpectedResult() {
-			const int expected = 1;
-			Assert.Equal(expected, new StreamState(expected));
-		}
+    [Fact]
+    public void ExplicitConversionExpectedResult() {
+        const int expected = 1;
+        var       actual   = (int)new StreamState(expected);
+        Assert.Equal(expected, actual);
+    }
 
-		public static IEnumerable<object?[]> ToStringTestCases() {
-			yield return new object?[] {StreamState.Any, nameof(StreamState.Any)};
-			yield return new object?[] {StreamState.NoStream, nameof(StreamState.NoStream)};
-			yield return new object?[] {StreamState.StreamExists, nameof(StreamState.StreamExists)};
-		}
+    [Fact]
+    public void ImplicitConversionExpectedResult() {
+        const int expected = 1;
+        Assert.Equal(expected, new StreamState(expected));
+    }
 
-		[Theory, MemberData(nameof(ToStringTestCases))]
-		public void ToStringExpectedResult(StreamState sut, string expected) {
-			Assert.Equal(expected, sut.ToString());
-		}
+    public static IEnumerable<object?[]> ToStringTestCases() {
+        yield return new object?[] {StreamState.Any, nameof(StreamState.Any)};
+        yield return new object?[] {StreamState.NoStream, nameof(StreamState.NoStream)};
+        yield return new object?[] {StreamState.StreamExists, nameof(StreamState.StreamExists)};
+    }
 
-		private class ScenarioFixture : Fixture {
-			private static int RefCount;
+    [Theory, MemberData(nameof(ToStringTestCases))]
+    public void ToStringExpectedResult(StreamState sut, string expected) {
+        Assert.Equal(expected, sut.ToString());
+    }
 
-			private static readonly StreamState[] Instances = Array.ConvertAll(typeof(StreamState)
-				.GetFields(BindingFlags.Public | BindingFlags.Static), fi => (StreamState)fi.GetValue(null)!);
+    private class ScenarioFixture : Fixture {
+        private static int RefCount;
 
-			public ScenarioFixture() => Customize<StreamState>(composer =>
-				composer.FromFactory(() => Instances[Interlocked.Increment(ref RefCount) % Instances.Length]));
-		}
-	}
+        private static readonly StreamState[] Instances = Array.ConvertAll(typeof(StreamState)
+                                                                               .GetFields(BindingFlags.Public | BindingFlags.Static), fi => (StreamState)fi.GetValue(null)!);
+
+        public ScenarioFixture() => Customize<StreamState>(composer =>
+                                                               composer.FromFactory(() => Instances[Interlocked.Increment(ref RefCount) % Instances.Length]));
+    }
 }

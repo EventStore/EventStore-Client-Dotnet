@@ -1,7 +1,5 @@
-using System;
 using Grpc.Core.Interceptors;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace EventStore.Client {
 	public class DependencyInjectionTests {

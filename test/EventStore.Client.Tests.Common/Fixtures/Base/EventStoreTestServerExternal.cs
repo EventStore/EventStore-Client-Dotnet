@@ -1,7 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-
-namespace EventStore.Client {
+﻿namespace EventStore.Client {
 	public class EventStoreTestServerExternal : IEventStoreTestServer {
 		public Task StartAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 		public void Stop() { }

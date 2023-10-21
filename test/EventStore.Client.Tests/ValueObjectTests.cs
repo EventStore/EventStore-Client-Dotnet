@@ -1,17 +1,15 @@
-using System;
 using AutoFixture;
-using Xunit;
 
-namespace EventStore.Client {
-	public abstract class ValueObjectTests<T> {
-		protected readonly Fixture _fixture;
+namespace EventStore.Client; 
 
-		protected ValueObjectTests(Fixture fixture) => _fixture = fixture;
+public abstract class ValueObjectTests<T> {
+    protected readonly Fixture _fixture;
 
-		[Fact]
-		public void ValueObjectIsWellBehaved() => _fixture.Create<ValueObjectAssertion>().Verify(typeof(T));
+    protected ValueObjectTests(Fixture fixture) => _fixture = fixture;
 
-		[Fact]
-		public void ValueObjectIsEquatable() => Assert.IsAssignableFrom<IEquatable<T>>(_fixture.Create<T>());
-	}
+    [Fact]
+    public void ValueObjectIsWellBehaved() => _fixture.Create<ValueObjectAssertion>().Verify(typeof(T));
+
+    [Fact]
+    public void ValueObjectIsEquatable() => Assert.IsAssignableFrom<IEquatable<T>>(_fixture.Create<T>());
 }

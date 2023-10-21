@@ -1,6 +1,3 @@
-using System.Threading.Tasks;
-using Xunit;
-
 namespace EventStore.Client.Security
 {
 	public class system_stream_security : IClassFixture<system_stream_security.Fixture> {

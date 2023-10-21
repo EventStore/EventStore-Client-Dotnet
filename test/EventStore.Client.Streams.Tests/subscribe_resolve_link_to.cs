@@ -1,11 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
-using Xunit.Abstractions;
-
 namespace EventStore.Client {
 	public class subscribe_resolve_link_to : IAsyncLifetime {
 		private readonly Fixture _fixture;

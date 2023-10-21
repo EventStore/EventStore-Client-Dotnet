@@ -1,6 +1,3 @@
-using System.Threading.Tasks;
-using Xunit;
-
 namespace EventStore.Client.Bugs {
 	public class Issue_104 : IClassFixture<Issue_104.Fixture> {
 		private readonly Fixture _fixture;

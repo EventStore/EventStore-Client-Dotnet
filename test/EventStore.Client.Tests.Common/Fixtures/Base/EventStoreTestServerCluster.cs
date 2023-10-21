@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Net;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Common;
 using Ductus.FluentDocker.Services;
@@ -33,11 +27,15 @@ namespace EventStore.Client {
 		}
 
 		private ICompositeService BuildCluster(IDictionary<string, string>? envOverrides = null) {
-			var env = GlobalEnvironment.EnvironmentVariables(envOverrides);
+			var env = GlobalEnvironment
+                .GetEnvironmentVariables(envOverrides)
+                .Select(pair => $"{pair.Key}={pair.Value}")
+                .ToArray();
+            
 			return new Builder()
 				.UseContainer()
 				.UseCompose()
-				.WithEnvironment(env.Select(pair => $"{pair.Key}={pair.Value}").ToArray())
+				.WithEnvironment(env)
 				.FromFile("docker-compose.yml")
 				.ForceRecreate()
 				.RemoveOrphans()

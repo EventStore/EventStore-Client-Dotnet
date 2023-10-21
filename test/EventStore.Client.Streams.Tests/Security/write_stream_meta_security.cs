@@ -1,6 +1,3 @@
-using System.Threading.Tasks;
-using Xunit;
-
 namespace EventStore.Client.Security {
 	public class write_stream_meta_security : IClassFixture<write_stream_meta_security.Fixture> {
 		private readonly Fixture _fixture;

@@ -1,77 +1,73 @@
-using System;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core;
-using Xunit;
 
-namespace EventStore.Client {
-	public class GossipChannelSelectorTests {
-		[Fact]
-		public async Task ExplicitlySettingEndPointChangesChannels() {
-			var firstId = Uuid.NewUuid();
-			var secondId = Uuid.NewUuid();
+namespace EventStore.Client; 
 
-			var firstSelection = new DnsEndPoint(firstId.ToString(), 2113);
-			var secondSelection = new DnsEndPoint(secondId.ToString(), 2113);
+public class GossipChannelSelectorTests {
+    [Fact]
+    public async Task ExplicitlySettingEndPointChangesChannels() {
+        var firstId  = Uuid.NewUuid();
+        var secondId = Uuid.NewUuid();
 
-			var settings = new EventStoreClientSettings {
-				ConnectivitySettings = {
-					DnsGossipSeeds = new[] {firstSelection, secondSelection},
-					Insecure = true
-				}
-			};
+        var firstSelection  = new DnsEndPoint(firstId.ToString(), 2113);
+        var secondSelection = new DnsEndPoint(secondId.ToString(), 2113);
 
-			await using var channelCache = new ChannelCache(settings);
-			var sut = new GossipChannelSelector(settings, channelCache, new FakeGossipClient(
-					new ClusterMessages.ClusterInfo(
-						new ClusterMessages.MemberInfo[] {
-							new(firstId, ClusterMessages.VNodeState.Leader, true, firstSelection),
-							new(secondId, ClusterMessages.VNodeState.Follower, true, secondSelection),
-						})));
+        var settings = new EventStoreClientSettings {
+            ConnectivitySettings = {
+                DnsGossipSeeds = new[] {firstSelection, secondSelection},
+                Insecure       = true
+            }
+        };
 
-			var channel = await sut.SelectChannelAsync(cancellationToken: default);
-			Assert.Equal($"{firstSelection.Host}:{firstSelection.Port}", channel.Target);
+        await using var channelCache = new ChannelCache(settings);
+        var sut = new GossipChannelSelector(settings, channelCache, new FakeGossipClient(
+                                                new ClusterMessages.ClusterInfo(
+                                                    new ClusterMessages.MemberInfo[] {
+                                                        new(firstId, ClusterMessages.VNodeState.Leader, true, firstSelection),
+                                                        new(secondId, ClusterMessages.VNodeState.Follower, true, secondSelection),
+                                                    })));
 
-			channel = sut.SelectChannel(secondSelection);
-			Assert.Equal($"{secondSelection.Host}:{secondSelection.Port}", channel.Target);
-		}
+        var channel = await sut.SelectChannelAsync(cancellationToken: default);
+        Assert.Equal($"{firstSelection.Host}:{firstSelection.Port}", channel.Target);
 
-		[Fact]
-		public async Task ThrowsWhenDiscoveryFails() {
-			var settings = new EventStoreClientSettings {
-				ConnectivitySettings = {
-					IpGossipSeeds = new[] {new IPEndPoint(IPAddress.Loopback, 2113)},
-					Insecure = true,
-					MaxDiscoverAttempts = 3
-				}
-			};
+        channel = sut.SelectChannel(secondSelection);
+        Assert.Equal($"{secondSelection.Host}:{secondSelection.Port}", channel.Target);
+    }
 
-			await using var channelCache = new ChannelCache(settings);
-			var sut = new GossipChannelSelector(settings, channelCache, new BadGossipClient());
+    [Fact]
+    public async Task ThrowsWhenDiscoveryFails() {
+        var settings = new EventStoreClientSettings {
+            ConnectivitySettings = {
+                IpGossipSeeds       = new[] {new IPEndPoint(IPAddress.Loopback, 2113)},
+                Insecure            = true,
+                MaxDiscoverAttempts = 3
+            }
+        };
 
-			var ex = await Assert.ThrowsAsync<DiscoveryException>(async () =>
-				await sut.SelectChannelAsync(cancellationToken: default).ConfigureAwait(false));
+        await using var channelCache = new ChannelCache(settings);
+        var             sut          = new GossipChannelSelector(settings, channelCache, new BadGossipClient());
 
-			Assert.Equal(3, ex.MaxDiscoverAttempts);
-		}
+        var ex = await Assert.ThrowsAsync<DiscoveryException>(async () =>
+                                                                  await sut.SelectChannelAsync(cancellationToken: default).ConfigureAwait(false));
 
-		private class FakeGossipClient : IGossipClient {
-			private readonly ClusterMessages.ClusterInfo _clusterInfo;
+        Assert.Equal(3, ex.MaxDiscoverAttempts);
+    }
 
-			public FakeGossipClient(ClusterMessages.ClusterInfo clusterInfo) {
-				_clusterInfo = clusterInfo;
-			}
+    private class FakeGossipClient : IGossipClient {
+        private readonly ClusterMessages.ClusterInfo _clusterInfo;
 
-			public ValueTask<ClusterMessages.ClusterInfo> GetAsync(ChannelBase channel,
-				CancellationToken cancellationToken) => new(_clusterInfo);
-		}
+        public FakeGossipClient(ClusterMessages.ClusterInfo clusterInfo) {
+            _clusterInfo = clusterInfo;
+        }
 
-		private class BadGossipClient : IGossipClient {
-			public ValueTask<ClusterMessages.ClusterInfo> GetAsync(ChannelBase channel,
-				CancellationToken cancellationToken) {
-				throw new NotSupportedException();
-			}
-		}
-	}
+        public ValueTask<ClusterMessages.ClusterInfo> GetAsync(ChannelBase channel,
+                                                               CancellationToken cancellationToken) => new(_clusterInfo);
+    }
+
+    private class BadGossipClient : IGossipClient {
+        public ValueTask<ClusterMessages.ClusterInfo> GetAsync(ChannelBase channel,
+                                                               CancellationToken cancellationToken) {
+            throw new NotSupportedException();
+        }
+    }
 }

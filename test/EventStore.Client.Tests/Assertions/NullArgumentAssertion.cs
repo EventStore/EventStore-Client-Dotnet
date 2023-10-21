@@ -1,46 +1,43 @@
-using System;
-using System.Linq;
 using System.Reflection;
 using AutoFixture.Idioms;
 using AutoFixture.Kernel;
-using Xunit;
 
 // ReSharper disable once CheckNamespace
-namespace EventStore.Client {
-	internal class NullArgumentAssertion : IdiomaticAssertion {
-		private readonly ISpecimenBuilder _builder;
+namespace EventStore.Client; 
 
-		public NullArgumentAssertion(ISpecimenBuilder builder) => _builder = builder;
+internal class NullArgumentAssertion : IdiomaticAssertion {
+    private readonly ISpecimenBuilder _builder;
 
-		public override void Verify(Type type) {
-			var context = new SpecimenContext(_builder);
+    public NullArgumentAssertion(ISpecimenBuilder builder) => _builder = builder;
 
-			Assert.All(type.GetConstructors(), constructor => {
-				var parameters = constructor.GetParameters();
+    public override void Verify(Type type) {
+        var context = new SpecimenContext(_builder);
 
-				Assert.All(parameters.Where(p => p.ParameterType.IsClass ||
-				                                 p.ParameterType == typeof(string) ||
-				                                 p.ParameterType.IsGenericType &&
-				                                 p.ParameterType.GetGenericArguments().FirstOrDefault() ==
-				                                 typeof(Nullable<>)), p => {
-					var args = new object[parameters.Length];
+        Assert.All(type.GetConstructors(), constructor => {
+            var parameters = constructor.GetParameters();
 
-					for (var i = 0; i < args.Length; i++) {
-						if (i != p.Position) {
-							args[i] = context.Resolve(p.ParameterType);
-						}
-					}
+            Assert.All(parameters.Where(p => p.ParameterType.IsClass ||
+                                             p.ParameterType == typeof(string) ||
+                                             p.ParameterType.IsGenericType &&
+                                             p.ParameterType.GetGenericArguments().FirstOrDefault() ==
+                                             typeof(Nullable<>)), p => {
+                var args = new object[parameters.Length];
 
-					var ex = Assert.Throws<ArgumentNullException>(() => {
-						try {
-							constructor.Invoke(args);
-						} catch (TargetInvocationException ex) {
-							throw ex.InnerException!;
-						}
-					});
-					Assert.Equal(p.Name, ex.ParamName);
-				});
-			});
-		}
-	}
+                for (var i = 0; i < args.Length; i++) {
+                    if (i != p.Position) {
+                        args[i] = context.Resolve(p.ParameterType);
+                    }
+                }
+
+                var ex = Assert.Throws<ArgumentNullException>(() => {
+                    try {
+                        constructor.Invoke(args);
+                    } catch (TargetInvocationException ex) {
+                        throw ex.InnerException!;
+                    }
+                });
+                Assert.Equal(p.Name, ex.ParamName);
+            });
+        });
+    }
 }

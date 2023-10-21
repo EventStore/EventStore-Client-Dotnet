@@ -1,25 +1,25 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using static System.TimeSpan;
 
-namespace EventStore.Client; 
+namespace EventStore.Client.Tests; 
 
 public static class EventStoreClientExtensions {
-	public static Task WarmUpWith(this EventStoreClientBase client, Func<CancellationToken, Task> warmup) {
-		var delay   = Backoff.DecorrelatedJitterBackoffV2(medianFirstRetryDelay: FromMilliseconds(100), retryCount: 20, fastFirst: true);
-		var retry   = Policy.Handle<Exception>().WaitAndRetryAsync(delay);
-		var timeout = Policy.TimeoutAsync(FromSeconds(30), (_, __, ___) => client.RediscoverAsync());
-		var policy  = timeout.WrapAsync(retry);
+	public static Task TryExecute(this EventStoreClientBase client, Func<CancellationToken, Task> action) {
+        var delay = Backoff.DecorrelatedJitterBackoffV2(medianFirstRetryDelay: FromMilliseconds(100), retryCount: 100, fastFirst: true);
+        var retry = Policy.Handle<Exception>().WaitAndRetryAsync(delay);
+
+        var rediscoverTimeout = Policy.TimeoutAsync(FromSeconds(30), (_, __, ___) => client.RediscoverAsync());
+        var executionTimeout  = Policy.TimeoutAsync(FromSeconds(180));
+
+        var policy = executionTimeout
+            .WrapAsync(rediscoverTimeout.WrapAsync(retry));
 
 		return policy.ExecuteAsync(ct => Execute(ct), CancellationToken.None);
 
 		async Task Execute(CancellationToken ct) {
 			try {
-				await warmup(ct);
+				await action(ct);
 			} catch (Exception ex) when (ex is not OperationCanceledException) {
 				// grpc throws a rpcexception when you cancel the token (which we convert into
 				// invalid operation) - but polly expects operationcancelledexception or it wont
@@ -30,8 +30,8 @@ public static class EventStoreClientExtensions {
 		}
 	}
 	
-	public static Task WarmUpAsync(this EventStoreClient client) =>
-		client.WarmUpWith(async ct => {
+	public static Task WarmUp(this EventStoreClient client) =>
+		client.TryExecute(async ct => {
 			// if we can read from $users then we know that
 			// 1. the users exist
 			// 2. we are connected to leader if we require it
@@ -46,7 +46,7 @@ public static class EventStoreClientExtensions {
 				.ToArrayAsync(ct);
 
 			if (users.Length == 0)
-				throw new Exception("no users yet");
+				throw new ("System is not ready yet...");
 
 			// the read from leader above is not enough to guarantee the next write goes to leader
 			_ = await client.AppendToStreamAsync(
@@ -58,6 +58,63 @@ public static class EventStoreClientExtensions {
 			);
 		});
 
+    public static Task WarmUp(this EventStoreOperationsClient client) =>
+        client.TryExecute(
+            ct => client.RestartPersistentSubscriptions(
+                userCredentials: TestCredentials.Root,
+                cancellationToken: ct
+            )
+        );
+
+    public static Task WarmUp(this EventStorePersistentSubscriptionsClient client) =>
+        client.TryExecute(
+            ct => {
+                var id = Guid.NewGuid();
+                return client.CreateToStreamAsync(
+                    streamName: $"warmup-stream-{id}",
+                    groupName: $"warmup-group-{id}",
+                    settings: new(),
+                    userCredentials: TestCredentials.Root,
+                    cancellationToken: ct
+                );
+            }
+        );
+
+    public static Task WarmUp(this EventStoreProjectionManagementClient client) =>
+        client.TryExecute(
+            async ct => await client
+                .ListAllAsync(
+                    userCredentials: TestCredentials.Root, 
+                    cancellationToken: ct
+                )
+                .ToArrayAsync(ct)
+        );
+
+    public static Task WarmUp(this EventStoreUserManagementClient client) =>
+        client.TryExecute(
+            async ct => await client
+                .ListAllAsync(
+                    userCredentials: TestCredentials.Root, 
+                    cancellationToken: ct
+                )
+                .ToArrayAsync(ct)
+        );
+
+    public static Task CreateUserWithRetry(
+        this EventStoreUserManagementClient client, string loginName, string fullName, string[] groups, string password,
+        UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
+    ) =>
+        Policy.Handle<NotAuthenticatedException>()
+            .WaitAndRetryAsync(200, _ => FromMilliseconds(100))
+            .ExecuteAsync(
+                ct => client.CreateUserAsync(
+                    loginName, fullName, groups, password, 
+                    userCredentials: userCredentials, 
+                    cancellationToken: ct
+                ),
+                cancellationToken
+            );
+    
 	// // This executes `warmup` with some somewhat subtle retry logic:
 	// //     execute the `warmup`.
 	// //     if it succeeds we are done.

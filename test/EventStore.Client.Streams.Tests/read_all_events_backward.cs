@@ -1,8 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-
 namespace EventStore.Client {
 	[Trait("Category", "LongRunning")]
 	public class read_all_events_backward : IClassFixture<read_all_events_backward.Fixture> {

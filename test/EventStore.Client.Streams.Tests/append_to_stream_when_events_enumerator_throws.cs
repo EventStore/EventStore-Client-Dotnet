@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
-
 namespace EventStore.Client {
 	public class append_to_stream_when_events_enumerator_throws
 		: IClassFixture<append_to_stream_when_events_enumerator_throws.Fixture> {

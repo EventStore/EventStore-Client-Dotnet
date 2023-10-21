@@ -1,9 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
-using Xunit.Abstractions;
-
 namespace EventStore.Client {
 	[Trait("Category", "LongRunning")]
 	public class subscribe_to_stream_live : IClassFixture<subscribe_to_stream_live.Fixture> {

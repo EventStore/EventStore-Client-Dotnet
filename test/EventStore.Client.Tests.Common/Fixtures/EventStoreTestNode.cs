@@ -1,22 +1,19 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Model.Builders;
-using EventStore.Client;
+using EventStore.Client.Tests.FluentDocker;
 using Serilog.Extensions.Logging;
 
-namespace EventStore.Tests.Fixtures;
+namespace EventStore.Client.Tests;
 
-public class EsTestServer : TestContainer {
+public class EventStoreTestNode : TestContainerService {
 	const string ConnectionString = "esdb://admin:changeit@localhost:2113/?tlsVerifyCert=false";
 	
-	public EsTestServer(EsTestDbOptions? options = null) => Options =  options ?? DefaultOptions();
+	public EventStoreTestNode(EventStoreTestServiceOptions? options = null) => Options =  options ?? DefaultOptions();
 
-	protected EsTestDbOptions Options { get; }
+    EventStoreTestServiceOptions Options { get; }
 
-	public static EsTestDbOptions DefaultOptions() {
+	public static EventStoreTestServiceOptions DefaultOptions() {
 		var defaultSettings = EventStoreClientSettings.Create(ConnectionString);
 
 		defaultSettings.LoggerFactory = new SerilogLoggerFactory();
@@ -37,7 +34,7 @@ public class EsTestServer : TestContainer {
 			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"] = "True"
 		};
 		
-		return new(defaultSettings, defaultEnvironment, GlobalEnvironment.HostCertificateDirectory);
+		return new(defaultSettings, defaultEnvironment, GlobalEnvironment.CertificateDirectory);
 	}
 	
 	protected override ContainerBuilder Configure() {

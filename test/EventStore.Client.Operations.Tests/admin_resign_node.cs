@@ -1,27 +1,22 @@
-using System.Threading.Tasks;
-using Xunit;
+namespace EventStore.Client;
 
-namespace EventStore.Client {
-	public class admin_resign_node : IClassFixture<admin_resign_node.Fixture> {
-		private readonly Fixture _fixture;
+public class admin_resign_node : IClassFixture<EventStoreClientsFixture> {
+    public admin_resign_node(EventStoreClientsFixture fixture, ITestOutputHelper output) => 
+        Fixture = fixture.With(f => f.CaptureLogs(output));
 
-		public admin_resign_node(Fixture fixture) {
-			_fixture = fixture;
-		}
+    EventStoreClientsFixture Fixture { get; }
 
-		[Fact]
-		public async Task resign_node_does_not_throw() {
-			await _fixture.Client.ResignNodeAsync(userCredentials: TestCredentials.Root);
-		}
+    [Fact]
+    public async Task resign_node_does_not_throw() {
+        await Fixture.Operations
+            .ResignNodeAsync(userCredentials: TestCredentials.Root)
+            .ShouldNotThrowAsync();
+    }
 
-		[Fact]
-		public async Task resign_node_without_credentials_throws() {
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.Client.ResignNodeAsync());
-		}
-		
-		public class Fixture : EventStoreClientFixture {
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
-	}
+    [Fact]
+    public async Task resign_node_without_credentials_throws() {
+        await Fixture.Operations
+            .ResignNodeAsync()
+            .ShouldThrowAsync<AccessDeniedException>();
+    }
 }

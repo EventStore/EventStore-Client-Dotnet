@@ -1,8 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Grpc.Core;
-using Xunit;
+﻿using Grpc.Core;
 
 namespace EventStore.Client {
 	[Trait("Category", "Network")]

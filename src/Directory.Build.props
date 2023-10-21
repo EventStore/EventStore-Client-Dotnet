@@ -1,5 +1,11 @@
 <Project>
 	<Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"/>
+    <PropertyGroup>
+        <RootNamespace>EventStore.Client</RootNamespace>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
+        <DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
+    </PropertyGroup>
 	<PropertyGroup Condition="$(MSBuildProjectName) != 'EventStore.Client'">
 		<ESPackageIdSuffix>$(MSBuildProjectName.Remove(0,18))</ESPackageIdSuffix>
 		<ESProto>$(ESPackageIdSuffix.ToLower()).proto</ESProto>
@@ -31,7 +37,7 @@
 		<None Include="..\..\ouro.png" Pack="true" PackagePath="\"/>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="5.0.0.1">
+		<PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="4.0.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -42,7 +48,7 @@
 		<PackageReference Include="MinVer" Version="3.0.0" PrivateAssets="All" />
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="../EventStore.Client.Common/**/*.cs"/>
+		<Compile Include="../EventStore.Client.Common/**/*.cs" Link="Common\%(RecursiveDir)/%(FileName)%(Extension)"/>
 	</ItemGroup>
 	<ItemGroup>
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">

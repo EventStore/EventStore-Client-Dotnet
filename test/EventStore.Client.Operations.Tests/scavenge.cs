@@ -1,71 +1,76 @@
-using System;
-using System.Threading.Tasks;
-using Xunit;
+namespace EventStore.Client;
 
-namespace EventStore.Client {
-	public class @scavenge : IClassFixture<scavenge.Fixture> {
-		private readonly Fixture _fixture;
+public class @scavenge : IClassFixture<EventStoreClientsFixture> {
+    public scavenge(EventStoreClientsFixture fixture, ITestOutputHelper output) {
+        Fixture = fixture.With(f => f.CaptureLogs(output));
+        // runInMemory: false
+    }
 
-		public scavenge(Fixture fixture) {
-			_fixture = fixture;
-		}
+    EventStoreClientsFixture Fixture { get; }
 
-		[Fact]
-		public async Task start() {
-			var result = await _fixture.Client.StartScavengeAsync(userCredentials: TestCredentials.Root);
-			Assert.Equal(DatabaseScavengeResult.Started(result.ScavengeId), result);
-		}
+    [Fact]
+    public async Task start() {
+        var result = await Fixture.Operations.StartScavengeAsync(userCredentials: TestCredentials.Root);
+        
+        result.ShouldBe(DatabaseScavengeResult.Started(result.ScavengeId));
+    }
 
-		[Fact]
-		public async Task start_without_credentials_throws() {
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.Client.StartScavengeAsync());
-		}
+    [Fact]
+    public async Task start_without_credentials_throws() {
+        await Fixture.Operations
+            .StartScavengeAsync()
+            .ShouldThrowAsync<AccessDeniedException>();
+    }
 
-		[Theory, InlineData(0), InlineData(-1), InlineData(int.MinValue)]
-		public async Task start_with_thread_count_le_one_throws(int threadCount) {
-			var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
-				_fixture.Client.StartScavengeAsync(
-					threadCount: threadCount));
-			Assert.Equal(nameof(threadCount), ex.ParamName);
-		}
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(int.MinValue)]
+    public async Task start_with_thread_count_le_one_throws(int threadCount) {
+        var ex = await Fixture.Operations
+            .StartScavengeAsync(threadCount)
+            .ShouldThrowAsync<ArgumentOutOfRangeException>();
 
-		[Theory, InlineData(-1), InlineData(-2), InlineData(int.MinValue)]
-		public async Task start_with_start_from_chunk_lt_zero_throws(int startFromChunk) {
-			var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
-				_fixture.Client.StartScavengeAsync(
-					startFromChunk: startFromChunk));
-			Assert.Equal(nameof(startFromChunk), ex.ParamName);
-		}
+        ex.ParamName.ShouldBe(nameof(threadCount));
+    }
 
-		[Fact(Skip = "Scavenge on an empty database finishes too quickly")]
-		public async Task stop() {
-			var startResult = await _fixture.Client.StartScavengeAsync(userCredentials: TestCredentials.Root);
-			var stopResult = await _fixture.Client
-				.StopScavengeAsync(startResult.ScavengeId, userCredentials: TestCredentials.Root);
-			Assert.Equal(DatabaseScavengeResult.Stopped(startResult.ScavengeId), stopResult);
-		}
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(-2)]
+    [InlineData(int.MinValue)]
+    public async Task start_with_start_from_chunk_lt_zero_throws(int startFromChunk) {
+        var ex = await Fixture.Operations
+            .StartScavengeAsync(startFromChunk: startFromChunk)
+            .ShouldThrowAsync<ArgumentOutOfRangeException>();
 
-		[Fact]
-		public async Task stop_when_no_scavenge_is_running() {
-			var scavengeId = Guid.NewGuid().ToString();
-			var ex = await Assert.ThrowsAsync<ScavengeNotFoundException>(() =>
-				_fixture.Client.StopScavengeAsync(scavengeId, userCredentials: TestCredentials.Root));
-			Assert.Null(ex.ScavengeId);
-		}
+        ex.ParamName.ShouldBe(nameof(startFromChunk));
+    }
 
-		[Fact]
-		public async Task stop_without_credentials_throws() {
-			await Assert.ThrowsAsync<AccessDeniedException>(() =>
-				_fixture.Client.StopScavengeAsync(Guid.NewGuid().ToString()));
-		}
+    [Fact(Skip = "Scavenge on an empty database finishes too quickly")]
+    public async Task stop() {
+        var startResult = await Fixture.Operations
+            .StartScavengeAsync(userCredentials: TestCredentials.Root);
+        
+        var stopResult = await Fixture.Operations
+            .StopScavengeAsync(startResult.ScavengeId, userCredentials: TestCredentials.Root);
 
-		public class Fixture : EventStoreClientFixture {
-			// always run scavenge against physical database
-			public Fixture () : base(runInMemory: false) {
-			}
-			
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
-	}
+        stopResult.ShouldBe(DatabaseScavengeResult.Stopped(startResult.ScavengeId));
+    }
+
+    [Fact]
+    public async Task stop_when_no_scavenge_is_running() {
+        var scavengeId = Guid.NewGuid().ToString();
+        
+        var ex = await Fixture.Operations
+            .StopScavengeAsync(scavengeId, userCredentials: TestCredentials.Root)
+            .ShouldThrowAsync<ScavengeNotFoundException>();
+
+        ex.ScavengeId.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task stop_without_credentials_throws() =>
+        await Fixture.Operations
+            .StopScavengeAsync(Guid.NewGuid().ToString())
+            .ShouldThrowAsync<AccessDeniedException>();
 }

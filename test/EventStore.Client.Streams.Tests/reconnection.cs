@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core;
-using Xunit;
 
 namespace EventStore.Client {
 	public class @reconnection : IClassFixture<reconnection.Fixture> {

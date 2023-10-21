@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace EventStore.Client {
 	public static class TestEventExtensions {
 		public static IEnumerable<EventRecord> AsResolvedTestEvents(this IEnumerable<ResolvedEvent> events) {

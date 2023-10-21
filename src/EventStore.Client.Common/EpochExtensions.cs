@@ -1,5 +1,3 @@
-using System;
-
 namespace EventStore.Client {
 	internal static class EpochExtensions {
 		private static readonly DateTime UnixEpoch = DateTime.UnixEpoch;

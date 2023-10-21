@@ -1,27 +1,14 @@
-using System.Threading.Tasks;
-using Xunit;
+namespace EventStore.Client;
 
-namespace EventStore.Client {
-	public class admin_shutdown_node : IClassFixture<admin_shutdown_node.Fixture> {
-		private readonly Fixture _fixture;
+public class admin_shutdown_node : IClassFixture<EventStoreClientsFixture> {
+    public admin_shutdown_node(EventStoreClientsFixture fixture, ITestOutputHelper output) =>
+        Fixture = fixture.With(f => f.CaptureLogs(output));
 
-		public admin_shutdown_node(Fixture fixture) {
-			_fixture = fixture;
-		}
+    EventStoreClientsFixture Fixture { get; }
 
-		[Fact]
-		public async Task shutdown_does_not_throw() {
-			await _fixture.Client.ShutdownAsync(userCredentials: TestCredentials.Root);
-		}
+    [Fact]
+    public async Task shutdown_does_not_throw() => await Fixture.Operations.ShutdownAsync(userCredentials: TestCredentials.Root);
 
-		[Fact]
-		public async Task shutdown_without_credentials_throws() {
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.Client.ShutdownAsync());
-		}
-
-		public class Fixture : EventStoreClientFixture {
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
-	}
+    [Fact]
+    public async Task shutdown_without_credentials_throws() => await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.Operations.ShutdownAsync());
 }

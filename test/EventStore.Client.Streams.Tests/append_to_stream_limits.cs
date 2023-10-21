@@ -1,7 +1,3 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
-
 namespace EventStore.Client {
 	public class append_to_stream_limits : IClassFixture<append_to_stream_limits.Fixture> {
 		private readonly Fixture _fixture;

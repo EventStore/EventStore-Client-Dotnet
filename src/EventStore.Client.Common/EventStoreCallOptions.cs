@@ -1,5 +1,3 @@
-using System;
-using System.Threading;
 using Grpc.Core;
 using Timeout_ = System.Threading.Timeout;
 

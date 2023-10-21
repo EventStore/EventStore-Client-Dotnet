@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace EventStore.Client;
+﻿namespace EventStore.Client;
 
 public class AnonymousAccess {
 	private static readonly Version LegacySince = new Version(23, 6);

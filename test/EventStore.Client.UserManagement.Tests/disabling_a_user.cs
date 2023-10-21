@@ -1,60 +1,60 @@
-using System;
-using System.Threading.Tasks;
-using EventStore.Tests.Fixtures;
+namespace EventStore.Client.Tests; 
 
-namespace EventStore.Client {
-	public class disabling_a_user : IClassFixture<NoCredentialsEventStoreIntegrationFixture> {
-		private readonly NoCredentialsEventStoreIntegrationFixture _fixture;
+public class disabling_a_user : IClassFixture<EventStoreInsecureClientsFixture> {
+    public disabling_a_user(EventStoreInsecureClientsFixture fixture, ITestOutputHelper output) =>
+        Fixture = fixture.With(f => f.CaptureLogs(output));
 
-		public disabling_a_user(NoCredentialsEventStoreIntegrationFixture fixture) {
-			_fixture = fixture;
-		}
+    EventStoreInsecureClientsFixture Fixture { get; }
 
-		[Fact]
-		public async Task with_null_input_throws() {
-			var ex = await Assert.ThrowsAsync<ArgumentNullException>(
-				() => _fixture.Client.EnableUserAsync(null!,
-					userCredentials: TestCredentials.Root));
-			Assert.Equal("loginName", ex.ParamName);
-		}
+    [Fact]
+    public async Task with_null_input_throws() {
+        var ex = await Fixture.Users
+            .EnableUserAsync(null!, userCredentials: TestCredentials.Root)
+            .ShouldThrowAsync<ArgumentNullException>();
 
-		[Fact]
-		public async Task with_empty_input_throws() {
-			var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-				() => _fixture.Client.EnableUserAsync(string.Empty,
-					userCredentials: TestCredentials.Root));
-			Assert.Equal("loginName", ex.ParamName);
-		}
+        ex.ParamName.ShouldBe("loginName");
+    }
 
-		[Theory, ClassData(typeof(InvalidCredentialsCases))]
-		public async Task with_user_with_insufficient_credentials_throws(string loginName,
-			UserCredentials userCredentials) {
-			await _fixture.Client.CreateUserAsync(loginName, "Full Name", new[] {"foo", "bar"},
-				"password", userCredentials: TestCredentials.Root);
-			if (userCredentials == null)
-				await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.Client.DisableUserAsync(loginName));
-			else
-				await Assert.ThrowsAsync<NotAuthenticatedException>(
-					() => _fixture.Client.DisableUserAsync(loginName, userCredentials: userCredentials));
-		}
+    [Fact]
+    public async Task with_empty_input_throws() {
+        var ex = await Fixture.Users
+            .EnableUserAsync(string.Empty, userCredentials: TestCredentials.Root)
+            .ShouldThrowAsync<ArgumentOutOfRangeException>();
 
-		[Fact]
-		public async Task that_was_disabled() {
-			var loginName = Guid.NewGuid().ToString();
-			await _fixture.Client.CreateUserAsync(loginName, "Full Name", new[] {"foo", "bar"},
-				"password", userCredentials: TestCredentials.Root);
+        ex.ParamName.ShouldBe("loginName");
+    }
 
-			await _fixture.Client.DisableUserAsync(loginName, userCredentials: TestCredentials.Root);
-			await _fixture.Client.DisableUserAsync(loginName, userCredentials: TestCredentials.Root);
-		}
+    [Theory, ClassData(typeof(InvalidCredentialsCases))]
+    public async Task with_user_with_insufficient_credentials_throws(TestUser user, Type expectedException) {
+        await Fixture.Users.CreateUserAsync(
+            user.LoginName, user.FullName, user.Groups,
+            user.Password, userCredentials: TestCredentials.Root
+        );
 
-		[Fact]
-		public async Task that_is_enabled() {
-			var loginName = Guid.NewGuid().ToString();
-			await _fixture.Client.CreateUserAsync(loginName, "Full Name", new[] {"foo", "bar"},
-				"password", userCredentials: TestCredentials.Root);
+        await Fixture.Users
+            .DisableUserAsync(user.LoginName, userCredentials: user.Credentials)
+            .ShouldThrowAsync(expectedException);
+    }
 
-			await _fixture.Client.DisableUserAsync(loginName, userCredentials: TestCredentials.Root);
-		}
-	}
+    [Fact]
+    public async Task that_was_disabled() {
+        var user = await Fixture.CreateTestUser();
+
+        await Fixture.Users
+            .DisableUserAsync(user.LoginName, userCredentials: TestCredentials.Root)
+            .ShouldNotThrowAsync();
+
+        await Fixture.Users
+            .DisableUserAsync(user.LoginName, userCredentials: TestCredentials.Root)
+            .ShouldNotThrowAsync();
+    }
+
+    [Fact]
+    public async Task that_is_enabled() {
+        var user = await Fixture.CreateTestUser();
+
+        await Fixture.Users
+            .DisableUserAsync(user.LoginName, userCredentials: TestCredentials.Root)
+            .ShouldNotThrowAsync();
+    }
 }

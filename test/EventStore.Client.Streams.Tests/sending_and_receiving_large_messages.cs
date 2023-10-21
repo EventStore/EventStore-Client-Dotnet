@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Grpc.Core;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace EventStore.Client {
 	public class sending_and_receiving_large_messages : IClassFixture<sending_and_receiving_large_messages.Fixture> {

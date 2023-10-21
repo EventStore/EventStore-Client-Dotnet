@@ -1,8 +1,4 @@
-using System;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EventStore.Client {
 	public abstract class read_events_linked_to_deleted_stream {

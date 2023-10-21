@@ -4,26 +4,6 @@
 		<Description>The GRPC client API for managing users in Event Store. Get the open source or commercial versions of Event Store server from https://eventstore.com/</Description>
 	</PropertyGroup>
 	<ItemGroup>
-	  <Folder Include="Infrastructure\" />
-	</ItemGroup>
-	<ItemGroup>
-	  <Compile Update="..\EventStore.Client.Common\AsyncStreamReaderExtensions.cs">
-	    <Link>Infrastructure\AsyncStreamReaderExtensions.cs</Link>
-	  </Compile>
-	  <Compile Update="..\EventStore.Client.Common\Constants.cs">
-	    <Link>Infrastructure\Constants.cs</Link>
-	  </Compile>
-	  <Compile Update="..\EventStore.Client.Common\EpochExtensions.cs">
-	    <Link>Infrastructure\EpochExtensions.cs</Link>
-	  </Compile>
-	  <Compile Update="..\EventStore.Client.Common\EventStoreCallOptions.cs">
-	    <Link>Infrastructure\EventStoreCallOptions.cs</Link>
-	  </Compile>
-	  <Compile Update="..\EventStore.Client.Common\MetadataExtensions.cs">
-	    <Link>Infrastructure\MetadataExtensions.cs</Link>
-	  </Compile>
-	</ItemGroup>
-	<ItemGroup>
 	  <None Remove="EventStore.Client.UserManagement.csproj.DotSettings" />
 	</ItemGroup>
 </Project>

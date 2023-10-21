@@ -1,11 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
-using Xunit.Abstractions;
-
 namespace EventStore.Client {
 	public class subscribe_to_all_filtered : IAsyncLifetime {
 		private readonly Fixture _fixture;

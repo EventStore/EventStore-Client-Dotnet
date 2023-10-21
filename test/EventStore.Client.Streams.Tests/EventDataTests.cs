@@ -1,6 +1,3 @@
-using System;
-using Xunit;
-
 namespace EventStore.Client {
 	public class EventDataTests {
 		[Fact]

@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Polly;
-using Xunit;
 
 namespace EventStore.Client {
 	[Trait("Category", "Network")]

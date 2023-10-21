@@ -1,7 +1,4 @@
-﻿using System.Threading.Tasks;
-using Xunit;
-
-namespace EventStore.Client.SubscriptionToStream;
+﻿namespace EventStore.Client.SubscriptionToStream;
 
 public class list_without_persistent_subscriptions : IClassFixture<list_without_persistent_subscriptions.Fixture> {
 	private readonly Fixture _fixture;

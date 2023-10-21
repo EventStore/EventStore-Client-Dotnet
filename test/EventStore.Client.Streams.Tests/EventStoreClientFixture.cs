@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 namespace EventStore.Client {
 	public abstract class EventStoreClientFixture : EventStoreClientFixtureBase {
 		public EventStoreClient Client { get; }
@@ -12,7 +9,7 @@ namespace EventStore.Client {
 		}
 
 		protected override async Task OnServerUpAsync() {
-			await Client.WarmUpAsync();
+			await Client.WarmUp();
 		}
 
 		public override async Task DisposeAsync() {

@@ -1,6 +1,3 @@
-using System.Threading.Tasks;
-using Xunit;
-
 namespace EventStore.Client.Security {
 	public class stream_security_inheritance : IClassFixture<stream_security_inheritance.Fixture> {
 		private readonly Fixture _fixture;

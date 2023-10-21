@@ -1,12 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 	<ItemGroup>
-	  <ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />
+<!--	  <ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />-->
 		<ProjectReference Include="..\EventStore.Client.Tests.Common\EventStore.Client.Tests.Common.csproj"/>
 	</ItemGroup>
-	<ItemGroup>
-		<Compile Remove="..\EventStore.Client.Tests.Common\*.cs" />
-	</ItemGroup>
+<!--	<ItemGroup>-->
+<!--		<Compile Remove="..\EventStore.Client.Tests.Common\*.cs" />-->
+<!--	</ItemGroup>-->
 	<ItemGroup>
 		<Protobuf Include="..\..\src\EventStore.Client.Common\protos\serverfeatures.proto" ProtoCompile="false" ProtoRoot="..\..\src\EventStore.Client.Common\protos" GrpcServices="Server" />
 	</ItemGroup>
@@ -17,8 +17,11 @@
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="6.0.11" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="7.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="7.0.12" />
 	</ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.0-rc.2.23480.2"/>
+    </ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Grpc.AspNetCore" Version="$(GrpcPackageVersion)" />
 		<PackageReference Include="Grpc.Tools" Version="$(GrpcToolsPackageVersion)">

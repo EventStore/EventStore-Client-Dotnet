@@ -1,29 +1,29 @@
 using Grpc.Core;
 
-namespace EventStore.Client {
-	internal static class MetadataExtensions {
-		public static bool TryGetValue(this Metadata metadata, string key, out string? value) {
-			value = default;
+namespace EventStore.Client; 
 
-			foreach (var entry in metadata) {
-				if (entry.Key != key) {
-					continue;
-				}
-				value = entry.Value;
-				return true;
-			}
+internal static class MetadataExtensions {
+    public static bool TryGetValue(this Metadata metadata, string key, out string? value) {
+        value = default;
 
-			return false;
-		}
+        foreach (var entry in metadata) {
+            if (entry.Key != key) {
+                continue;
+            }
+            value = entry.Value;
+            return true;
+        }
 
-		public static StreamRevision GetStreamRevision(this Metadata metadata, string key)
-			=> metadata.TryGetValue(key, out var s) && ulong.TryParse(s, out var value)
-				? new StreamRevision(value)
-				: StreamRevision.None;
+        return false;
+    }
 
-		public static int GetIntValueOrDefault(this Metadata metadata, string key)
-			=> metadata.TryGetValue(key, out var s) && int.TryParse(s, out var value)
-				? value
-				: default;
-	}
+    public static StreamRevision GetStreamRevision(this Metadata metadata, string key)
+        => metadata.TryGetValue(key, out var s) && ulong.TryParse(s, out var value)
+            ? new StreamRevision(value)
+            : StreamRevision.None;
+
+    public static int GetIntValueOrDefault(this Metadata metadata, string key)
+        => metadata.TryGetValue(key, out var s) && int.TryParse(s, out var value)
+            ? value
+            : default;
 }

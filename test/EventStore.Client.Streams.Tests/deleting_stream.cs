@@ -1,7 +1,3 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
-
 namespace EventStore.Client {
 	[Trait("Category", "Network")]
 	public class deleting_stream : IClassFixture<deleting_stream.Fixture> {

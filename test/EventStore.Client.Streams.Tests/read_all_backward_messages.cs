@@ -1,7 +1,3 @@
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-
 namespace EventStore.Client {
 	[Trait("Category", "Network")]
 	public class read_all_backward_messages : IClassFixture<read_all_backward_messages.Fixture> {
