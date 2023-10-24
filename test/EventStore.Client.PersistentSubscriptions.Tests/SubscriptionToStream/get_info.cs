@@ -1,40 +1,42 @@
-namespace EventStore.Client.SubscriptionToStream; 
+namespace EventStore.Client.SubscriptionToStream;
 
 public class get_info : IClassFixture<get_info.Fixture> {
-    private readonly Fixture _fixture;
-    private const    string  GroupName  = nameof(get_info);
-    private const    string  StreamName = nameof(get_info);
-    private static readonly PersistentSubscriptionSettings _settings = new(
-        resolveLinkTos: true,
-        startFrom: StreamPosition.Start,
-        extraStatistics: true,
-        messageTimeout: TimeSpan.FromSeconds(9),
-        maxRetryCount: 11,
-        liveBufferSize: 303,
-        readBatchSize: 30,
-        historyBufferSize: 909,
-        checkPointAfter: TimeSpan.FromSeconds(1),
-        checkPointLowerBound: 1,
-        checkPointUpperBound: 1,
-        maxSubscriberCount: 500,
-        consumerStrategyName: SystemConsumerStrategies.RoundRobin
+    const string GroupName  = nameof(get_info);
+    const string StreamName = nameof(get_info);
+
+    static readonly PersistentSubscriptionSettings _settings = new(
+        true,
+        StreamPosition.Start,
+        true,
+        TimeSpan.FromSeconds(9),
+        11,
+        303,
+        30,
+        909,
+        TimeSpan.FromSeconds(1),
+        1,
+        1,
+        500,
+        SystemConsumerStrategies.RoundRobin
     );
 
-    public get_info(Fixture fixture) {
-        _fixture = fixture;
-    }
+    readonly Fixture _fixture;
+
+    public get_info(Fixture fixture) => _fixture = fixture;
 
     public static IEnumerable<object[]> AllowedUsers() {
-        yield return new object[] {TestCredentials.Root};
-        yield return new object[] {TestCredentials.TestUser1};
+        yield return new object[] { TestCredentials.Root };
+        yield return new object[] { TestCredentials.TestUser1 };
     }
-		
-    [Theory, MemberData(nameof(AllowedUsers))]
+
+    [Theory]
+    [MemberData(nameof(AllowedUsers))]
     public async Task returns_expected_result(UserCredentials credentials) {
         var result = await _fixture.Client.GetInfoToStreamAsync(
             StreamName,
             GroupName,
-            userCredentials: credentials);
+            userCredentials: credentials
+        );
 
         Assert.Equal(StreamName, result.EventSource);
         Assert.Equal(GroupName, result.GroupName);
@@ -65,7 +67,7 @@ public class get_info : IClassFixture<get_info.Fixture> {
         Assert.True(connection.InFlightMessages >= 0);
         Assert.NotNull(connection.ExtraStatistics);
         Assert.NotEmpty(connection.ExtraStatistics);
-			
+
         AssertKeyAndValue(connection.ExtraStatistics, PersistentSubscriptionExtraStatistic.Highest);
         AssertKeyAndValue(connection.ExtraStatistics, PersistentSubscriptionExtraStatistic.Mean);
         AssertKeyAndValue(connection.ExtraStatistics, PersistentSubscriptionExtraStatistic.Median);
@@ -80,7 +82,7 @@ public class get_info : IClassFixture<get_info.Fixture> {
         AssertKeyAndValue(connection.ExtraStatistics, PersistentSubscriptionExtraStatistic.NinetyNinePercent);
         AssertKeyAndValue(connection.ExtraStatistics, PersistentSubscriptionExtraStatistic.NinetyNinePointFivePercent);
         AssertKeyAndValue(connection.ExtraStatistics, PersistentSubscriptionExtraStatistic.NinetyNinePointNinePercent);
-			
+
         Assert.NotNull(result.Settings);
         Assert.Equal(_settings.StartFrom, result.Settings!.StartFrom);
         Assert.Equal(_settings.ResolveLinkTos, result.Settings!.ResolveLinkTos);
@@ -98,89 +100,99 @@ public class get_info : IClassFixture<get_info.Fixture> {
     }
 
     [Fact]
-    public async Task throws_when_given_non_existing_subscription() {
-        await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(async () => {
-            await _fixture.Client.GetInfoToStreamAsync(
-                streamName: "NonExisting",
-                groupName: "NonExisting",
-                userCredentials: TestCredentials.Root);
-        });
-    }
-		
+    public async Task throws_when_given_non_existing_subscription() =>
+        await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
+            async () => {
+                await _fixture.Client.GetInfoToStreamAsync(
+                    "NonExisting",
+                    "NonExisting",
+                    userCredentials: TestCredentials.Root
+                );
+            }
+        );
+
     [Fact(Skip = "Unable to produce same behavior with HTTP fallback!")]
-    public async Task throws_with_non_existing_user() {
-        await Assert.ThrowsAsync<NotAuthenticatedException>(async () => {
-            await _fixture.Client.GetInfoToStreamAsync(
-                streamName: "NonExisting",
-                groupName: "NonExisting",
-                userCredentials: TestCredentials.TestBadUser);
-        });
-    }
-		
+    public async Task throws_with_non_existing_user() =>
+        await Assert.ThrowsAsync<NotAuthenticatedException>(
+            async () => {
+                await _fixture.Client.GetInfoToStreamAsync(
+                    "NonExisting",
+                    "NonExisting",
+                    userCredentials: TestCredentials.TestBadUser
+                );
+            }
+        );
+
     [Fact]
-    public async Task throws_with_no_credentials() {
-        await Assert.ThrowsAsync<AccessDeniedException>(async () => {
-            await _fixture.Client.GetInfoToStreamAsync(
-                streamName: "NonExisting",
-                groupName: "NonExisting");
-        });
-    }
-		
+    public async Task throws_with_no_credentials() =>
+        await Assert.ThrowsAsync<AccessDeniedException>(
+            async () => {
+                await _fixture.Client.GetInfoToStreamAsync(
+                    "NonExisting",
+                    "NonExisting"
+                );
+            }
+        );
+
     [Fact]
     public async Task returns_result_for_normal_user() {
         var result = await _fixture.Client.GetInfoToStreamAsync(
             StreamName,
             GroupName,
-            userCredentials: TestCredentials.TestUser1);
-			
+            userCredentials: TestCredentials.TestUser1
+        );
+
         Assert.NotNull(result);
     }
-		
+
+    void AssertKeyAndValue(IDictionary<string, long> items, string key) {
+        Assert.True(items.ContainsKey(key));
+        Assert.True(items[key] > 0);
+    }
+
     public class Fixture : EventStoreClientFixture {
-        public Fixture () : base(noDefaultCredentials: true) {
-        }
-			
+        public Fixture() : base(noDefaultCredentials: true) { }
+
         protected override Task Given() =>
             Client.CreateToStreamAsync(
                 groupName: GroupName,
                 streamName: StreamName,
                 settings: _settings,
-                userCredentials: TestCredentials.Root);
+                userCredentials: TestCredentials.Root
+            );
 
         protected override async Task When() {
             var counter = 0;
             var tcs     = new TaskCompletionSource();
-				
+
             await Client.SubscribeToStreamAsync(
                 StreamName,
                 GroupName,
-                eventAppeared: (s, e, r, ct) => {
+                (s, e, r, ct) => {
                     counter++;
-						
-                    if (counter == 1) {
+
+                    if (counter == 1)
                         s.Nack(PersistentSubscriptionNakEventAction.Park, "Test", e);
-                    }
-						
-                    if (counter > 10) {
+
+                    if (counter > 10)
                         tcs.TrySetResult();
-                    }
-						
+
                     return Task.CompletedTask;
                 },
-                userCredentials: TestCredentials.Root);
+                userCredentials: TestCredentials.Root
+            );
 
-            for (int i = 0; i < 15; i++) {
-                await StreamsClient.AppendToStreamAsync(StreamName, StreamState.Any, new [] {
-                    new EventData(Uuid.NewUuid(), "test-event", ReadOnlyMemory<byte>.Empty)
-                }, userCredentials: TestCredentials.Root);
-            }
-				
+            for (var i = 0; i < 15; i++)
+                await StreamsClient.AppendToStreamAsync(
+                    StreamName,
+                    StreamState.Any,
+                    new[] {
+                        new EventData(Uuid.NewUuid(), "test-event", ReadOnlyMemory<byte>.Empty)
+                    },
+                    userCredentials: TestCredentials.Root
+                );
+
             await tcs.Task;
         }
-    }
-		
-    private void AssertKeyAndValue(IDictionary<string, long> items, string key) {
-        Assert.True(items.ContainsKey(key));
-        Assert.True(items[key] > 0);
     }
 }

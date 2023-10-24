@@ -1,25 +1,18 @@
-namespace EventStore.Client.SubscriptionToAll; 
+namespace EventStore.Client.SubscriptionToAll;
 
 public class deleting_without_permissions
     : IClassFixture<deleting_without_permissions.Fixture> {
-    private readonly Fixture _fixture;
+    readonly Fixture _fixture;
 
-
-    public deleting_without_permissions(Fixture fixture) {
-        _fixture = fixture;
-    }
+    public deleting_without_permissions(Fixture fixture) => _fixture = fixture;
 
     [SupportsPSToAll.Fact]
-    public async Task the_delete_fails_with_access_denied() {
-        await Assert.ThrowsAsync<AccessDeniedException>(
-            () => _fixture.Client.DeleteToAllAsync(
-                Guid.NewGuid().ToString()));
-    }
+    public async Task the_delete_fails_with_access_denied() =>
+        await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.Client.DeleteToAllAsync(Guid.NewGuid().ToString()));
 
     public class Fixture : EventStoreClientFixture {
-        public Fixture () : base(noDefaultCredentials: true){
-        }
-			
+        public Fixture() : base(noDefaultCredentials: true) { }
+
         protected override Task Given() => Task.CompletedTask;
         protected override Task When()  => Task.CompletedTask;
     }

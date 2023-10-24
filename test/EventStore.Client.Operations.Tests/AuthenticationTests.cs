@@ -1,10 +1,7 @@
 ﻿namespace EventStore.Client;
 
-public class AuthenticationTests : IClassFixture<EventStoreClientsFixture> {
-    public AuthenticationTests(EventStoreClientsFixture fixture, ITestOutputHelper output) =>
-        Fixture = fixture.With(f => f.CaptureLogs(output));
-
-    EventStoreClientsFixture Fixture { get; }
+public class AuthenticationTests : EventStoreFixture {
+    public AuthenticationTests(ITestOutputHelper output) : base(output) { }
 
     public enum CredentialsCase { None, TestUser, RootUser }
     
@@ -39,19 +36,7 @@ public class AuthenticationTests : IClassFixture<EventStoreClientsFixture> {
         var defaultUserCredentials = GetCredentials(defaultCredentials);
         var actualUserCredentials  = GetCredentials(actualCredentials);
 
-        var settings = Fixture.GetOptions().ClientSettings;
-
-        // var settings = new EventStoreClientSettings {
-        //     Interceptors             = ogSettings.Interceptors,
-        //     ConnectionName           = $"Authentication case #{caseNr} {defaultCredentials}",
-        //     CreateHttpMessageHandler = ogSettings.CreateHttpMessageHandler,
-        //     LoggerFactory            = ogSettings.LoggerFactory,
-        //     ChannelCredentials       = ogSettings.ChannelCredentials,
-        //     OperationOptions         = ogSettings.OperationOptions,
-        //     ConnectivitySettings     = ogSettings.ConnectivitySettings,
-        //     DefaultCredentials       = defaultUserCredentials,
-        //     DefaultDeadline          = ogSettings.DefaultDeadline
-        // };
+        var settings = Fixture.ClientSettings;
 
         settings.DefaultCredentials = defaultUserCredentials;
         settings.ConnectionName     = $"Authentication case #{caseNr} {defaultCredentials}";

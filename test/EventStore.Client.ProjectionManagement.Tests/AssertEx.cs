@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using Xunit.Sdk;
 
-namespace EventStore.Client; 
+namespace EventStore.Client;
 
 public static class AssertEx {
     /// <summary>
@@ -16,25 +16,29 @@ public static class AssertEx {
     /// <param name="msg">A message to display if the condition is not satisfied.</param>
     /// <param name="yieldThread">If true, the thread relinquishes the remainder of its time
     /// slice to any thread of equal priority that is ready to run.</param>
-    public static async Task IsOrBecomesTrue(Func<Task<bool>> func, TimeSpan? timeout = null,
-                                             string msg = "AssertEx.IsOrBecomesTrue() timed out", bool yieldThread = false,
-                                             [CallerMemberName] string memberName = "",
-                                             [CallerFilePath] string sourceFilePath = "",
-                                             [CallerLineNumber] int sourceLineNumber = 0) {
-
+    public static async Task IsOrBecomesTrue(
+        Func<Task<bool>> func, TimeSpan? timeout = null,
+        string msg = "AssertEx.IsOrBecomesTrue() timed out", bool yieldThread = false,
+        [CallerMemberName]
+        string memberName = "",
+        [CallerFilePath]
+        string sourceFilePath = "",
+        [CallerLineNumber]
+        int sourceLineNumber = 0
+    ) {
         if (await IsOrBecomesTrueImpl(func, timeout, yieldThread))
             return;
 
         throw new XunitException($"{msg} in {memberName} {sourceFilePath}:{sourceLineNumber}");
     }
-		
+
     private static async Task<bool> IsOrBecomesTrueImpl(
         Func<Task<bool>> func,
         TimeSpan? timeout = null,
-        bool yieldThread = false) {
-			
+        bool yieldThread = false
+    ) {
         if (await func()) {
-            return true; 
+            return true;
         }
 
         var expire = DateTime.UtcNow + (timeout ?? TimeSpan.FromMilliseconds(1000));
@@ -46,11 +50,11 @@ public static class AssertEx {
             }
 
             while (!spin.NextSpinWillYield) {
-                spin.SpinOnce(); 
+                spin.SpinOnce();
             }
 
             if (await func()) {
-                return true; 
+                return true;
             }
 
             spin = new SpinWait();

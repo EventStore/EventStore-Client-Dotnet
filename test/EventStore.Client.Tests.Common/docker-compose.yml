@@ -27,7 +27,18 @@ services:
       - "${ES_CERTS_CLUSTER}:/tmp/certs"
     depends_on:
       - volumes-provisioner
- 
+  
+  seq:
+    image: datalust/seq:latest
+    container_name: seq
+    environment:
+      ACCEPT_EULA: Y
+    ports:
+      - "5341:80"
+    depends_on:
+      - volumes-provisioner
+      - cert-gen
+        
   esdb-node1:
     image: ghcr.io/eventstore/eventstore:${ES_DOCKER_TAG}
     container_name: esdb-node1

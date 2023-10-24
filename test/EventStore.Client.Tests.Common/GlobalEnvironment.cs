@@ -24,6 +24,8 @@ public static class GlobalEnvironment {
         if (bool.TryParse(useClusterEnvVar, out var useCluster)) {
             UseCluster = useCluster;
         }
+
+        //UseCluster = false;
         
         var useExternalServerEnvVar = Environment.GetEnvironmentVariable(UseExternalServerEnvKey);
         if (bool.TryParse(useExternalServerEnvVar, out var useExternalServer)) {
@@ -63,9 +65,4 @@ public static class GlobalEnvironment {
         
         return env;
     }
-    //
-    // public static string[] GetEnvironment(IDictionary<string, string>? overrides = null) =>
-    //     GetEnvironmentVariables(overrides)
-    //         .Select(pair => $"{pair.Key}={pair.Value}")
-    //         .ToArray();
 }

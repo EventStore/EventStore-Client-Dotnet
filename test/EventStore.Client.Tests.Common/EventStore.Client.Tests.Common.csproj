@@ -11,7 +11,18 @@
     <ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
+      <PackageReference Include="JetBrains.Annotations" Version="2023.2.0"/>
+      <PackageReference Include="Ductus.FluentDocker" Version="2.10.59"/>
+      <PackageReference Include="Polly" Version="8.0.0"/>
+      <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1"/>
+      <PackageReference Include="Serilog" Version="3.0.1"/>
+      <PackageReference Include="Serilog.AspNetCore" Version="7.0.0"/>
+      <PackageReference Include="Serilog.Sinks.Observable" Version="2.0.2"/>
+      <PackageReference Include="Serilog.Sinks.Seq" Version="5.2.3"/>
+      <PackageReference Include="Serilog.Enrichers.Environment" Version="2.3.0"/>
+      <PackageReference Include="Serilog.Settings.Configuration" Version="7.0.1" />
+      <PackageReference Include="System.Net.Http" Version="4.3.4"/>
+      <PackageReference Include="System.Reactive" Version="6.0.0"/>
   </ItemGroup>
   <ItemGroup>
     <None Remove="EventStore.Client.Tests.Common.csproj.DotSettings" />
@@ -22,6 +33,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update=".env">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="docker-compose.single.yml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

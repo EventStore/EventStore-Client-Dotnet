@@ -1,10 +1,7 @@
 namespace EventStore.Client.Tests;
 
-public class creating_a_user : IClassFixture<EventStoreInsecureClientsFixture> {
-    public creating_a_user(EventStoreInsecureClientsFixture fixture, ITestOutputHelper output) =>
-        Fixture = fixture.With(f => f.CaptureLogs(output));
-
-	EventStoreInsecureClientsFixture Fixture { get; }
+public class creating_a_user : EventStoreFixture {
+    public creating_a_user(ITestOutputHelper output) : base(output) { }
 	
 	public static IEnumerable<object?[]> NullInputCases() {
         yield return Fakers.Users.Generate().WithResult(x => new object?[] { null, x.FullName, x.Groups, x.Password, "loginName" });

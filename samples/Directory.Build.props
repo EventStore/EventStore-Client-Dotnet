@@ -1,8 +1,9 @@
 <Project>
-	<PropertyGroup>
-		<Nullable>enable</Nullable>
-		<NullableContextOptions>enable</NullableContextOptions>
-		<OutputType>Exe</OutputType>
-		<TargetFrameworks>net6.0;net7.0</TargetFrameworks>
-	</PropertyGroup>
+    <PropertyGroup>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <NullableContextOptions>enable</NullableContextOptions>
+        <ImplicitUsings>true</ImplicitUsings>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
 </Project>

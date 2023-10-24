@@ -1,10 +1,7 @@
 namespace EventStore.Client.Tests; 
 
-public class listing_users : IClassFixture<EventStoreInsecureClientsFixture> {
-    public listing_users(EventStoreInsecureClientsFixture fixture, ITestOutputHelper output) =>
-        Fixture = fixture.With(f => f.CaptureLogs(output));
-
-    EventStoreInsecureClientsFixture Fixture { get; }
+public class listing_users : EventStoreFixture {
+    public listing_users(ITestOutputHelper output) : base(output) { }
 
     [Fact]
     public async Task returns_all_created_users() {

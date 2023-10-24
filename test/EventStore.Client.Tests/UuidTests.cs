@@ -1,6 +1,6 @@
 using AutoFixture;
 
-namespace EventStore.Client; 
+namespace EventStore.Client;
 
 public class UuidTests : ValueObjectTests<Uuid> {
     public UuidTests() : base(new ScenarioFixture()) { }
@@ -59,7 +59,7 @@ public class UuidTests : ValueObjectTests<Uuid> {
         Assert.Equal(expected, sut);
     }
 
-    private static long GetRandomInt64() {
+    static long GetRandomInt64() {
         var buffer = new byte[sizeof(long)];
 
         new Random().NextBytes(buffer);
@@ -67,7 +67,7 @@ public class UuidTests : ValueObjectTests<Uuid> {
         return BitConverter.ToInt64(buffer, 0);
     }
 
-    private class ScenarioFixture : Fixture {
+    class ScenarioFixture : Fixture {
         public ScenarioFixture() => Customize<Uuid>(composer => composer.FromFactory<Guid>(Uuid.FromGuid));
     }
 }

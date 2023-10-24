@@ -1,10 +1,7 @@
 namespace EventStore.Client.Tests; 
 
-public class enabling_a_user : IClassFixture<EventStoreInsecureClientsFixture> {
-    public enabling_a_user(EventStoreInsecureClientsFixture fixture, ITestOutputHelper output) =>
-        Fixture = fixture.With(f => f.CaptureLogs(output));
-
-    EventStoreInsecureClientsFixture Fixture { get; }
+public class enabling_a_user : EventStoreFixture {
+    public enabling_a_user(ITestOutputHelper output) : base(output) { }
     
     [Fact]
     public async Task with_null_input_throws() {

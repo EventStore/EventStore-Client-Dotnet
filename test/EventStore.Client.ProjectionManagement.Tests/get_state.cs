@@ -1,4 +1,4 @@
-namespace EventStore.Client; 
+namespace EventStore.Client;
 
 public class get_state : IClassFixture<get_state.Fixture> {
     private readonly Fixture _fixture;
@@ -10,14 +10,16 @@ public class get_state : IClassFixture<get_state.Fixture> {
     [Fact]
     public async Task returns_expected_result() {
         Result? result = null;
-			
-        await AssertEx.IsOrBecomesTrue(async () => {
-            result = await _fixture.Client
-                .GetStateAsync<Result>(nameof(get_state), userCredentials: TestCredentials.TestUser1);
 
-            return result.Count > 0;
-        });
-			
+        await AssertEx.IsOrBecomesTrue(
+            async () => {
+                result = await _fixture.Client
+                    .GetStateAsync<Result>(nameof(get_state), userCredentials: TestCredentials.TestUser1);
+
+                return result.Count > 0;
+            }
+        );
+
         Assert.NotNull(result);
         Assert.Equal(1, result!.Count);
     }
@@ -34,10 +36,18 @@ fromStream('{nameof(get_state)}').when({{
 }});
 ";
 
-        protected override Task Given() => Client.CreateContinuousAsync(nameof(get_state),
-                                                                        Projection, userCredentials: TestCredentials.Root);
+        protected override Task Given() =>
+            Client.CreateContinuousAsync(
+                nameof(get_state),
+                Projection,
+                userCredentials: TestCredentials.Root
+            );
 
-        protected override Task When() => StreamsClient.AppendToStreamAsync(nameof(get_state), StreamState.NoStream,
-                                                                            CreateTestEvents());
+        protected override Task When() =>
+            StreamsClient.AppendToStreamAsync(
+                nameof(get_state),
+                StreamState.NoStream,
+                CreateTestEvents()
+            );
     }
 }

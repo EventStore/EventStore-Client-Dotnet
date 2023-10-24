@@ -1,10 +1,7 @@
 namespace EventStore.Client.Tests; 
 
-public class resetting_user_password : IClassFixture<EventStoreInsecureClientsFixture> {
-    public resetting_user_password(EventStoreInsecureClientsFixture fixture, ITestOutputHelper output) =>
-        Fixture = fixture.With(f => f.CaptureLogs(output));
-
-    EventStoreInsecureClientsFixture Fixture { get; }
+public class resetting_user_password : EventStoreFixture {
+    public resetting_user_password(ITestOutputHelper output) : base(output) { }
 
     public static IEnumerable<object?[]> NullInputCases() {
         var loginName   = "ouro";

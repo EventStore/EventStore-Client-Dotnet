@@ -1,11 +1,9 @@
-namespace EventStore.Client; 
+namespace EventStore.Client;
 
 public class @enable : IClassFixture<enable.Fixture> {
-    private readonly Fixture _fixture;
+    readonly Fixture _fixture;
 
-    public enable(Fixture fixture) {
-        _fixture = fixture;
-    }
+    public enable(Fixture fixture) => _fixture = fixture;
 
     [Fact]
     public async Task status_is_running() {
@@ -17,8 +15,8 @@ public class @enable : IClassFixture<enable.Fixture> {
     }
 
     public class Fixture : EventStoreClientFixture {
+        protected override bool RunStandardProjections => false;
         protected override Task Given()                => Task.CompletedTask;
         protected override Task When()                 => Task.CompletedTask;
-        protected override bool RunStandardProjections => false;
     }
 }

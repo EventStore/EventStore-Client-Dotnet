@@ -1,104 +1,83 @@
+using Ductus.FluentDocker;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Common;
 using Ductus.FluentDocker.Services;
+using Serilog;
 
 namespace EventStore.Client.Tests.FluentDocker;
-
-// public interface ITestService : IDisposable {
-//     void Start();
-//     void Stop();
-// }
-//
-// public abstract class TestService<TService, TBuilder> : ITestService where TService : IService where TBuilder : BaseBuilder<TService>  {
-//     protected TService Service { get; private set; } = default!;
-//
-//     public void Start() {
-//         try {
-//             var builder = Configure();
-//             Service = builder.Build();
-//             Service.Start();
-//         }
-//         catch(Exception ex) {
-//             throw new FluentDockerException($"Failed to start service {Service.Name}", ex);
-//         }
-//
-//         try {
-//             OnServiceStarted();
-//         }
-//         catch (Exception ex) {
-//             throw new($"{nameof(OnServiceStarted)} execution error", ex);
-//         }
-//     }
-//
-//     public void Stop() {
-//         try {
-//             OnServiceStop();
-//         }
-//         catch (Exception ex) {
-//             throw new($"{nameof(OnServiceStop)} execution error", ex);
-//         }
-//         
-//         try {
-//             Service.Stop();
-//         }
-//         catch (Exception ex) {
-//             throw new FluentDockerException($"Failed to stop service {Service.Name}", ex);
-//         }
-//     }
-//
-//     public void Dispose() {
-//         Stop();
-//         
-//         try {
-//             if (Service.State != ServiceRunningState.Unknown) {
-//                 Service.Dispose();    
-//             }
-//         }
-//         catch(Exception ex) {
-//             throw new FluentDockerException($"Failed to dispose of service {Service.Name}", ex);
-//         }
-//     }
-//
-//     protected abstract TBuilder Configure();
-//
-//     protected virtual Task OnServiceStarted() => Task.CompletedTask;
-//     protected virtual Task OnServiceStop()    => Task.CompletedTask;
-// }
-
 
 public interface ITestService : IAsyncDisposable {
     Task Start();
     Task Stop();
 }
 
-public abstract class TestService<TService, TBuilder> : ITestService where TService : IService where TBuilder : BaseBuilder<TService> {
-    protected TService Service { get; private set; } = default!;
+/// <summary>
+/// Required to prevent multiple services from starting at the same time.
+/// This avoids failures on creating the networks they are attached to.
+/// </summary>
+sealed class TestServiceGatekeeper {
+    static readonly SemaphoreSlim Semaphore = new(1, 1);
 
-    public async Task Start() {
-        try {
-            var builder = Configure();
-            Service = builder.Build();
-        }
-        catch (Exception ex) {
-            throw new FluentDockerException($"Failed to configure service {Service.Name}", ex);
-        }
+    public static Task Wait() => Semaphore.WaitAsync();
+    public static void Next() => Semaphore.Release();
+}
+
+public abstract class TestService<TService, TBuilder> : ITestService where TService : IService where TBuilder : BaseBuilder<TService> {
+    ILogger Logger { get; }
+
+    public TestService() {
+        Logger = Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, GetType().Name);
+    }
+    
+    protected TService Service { get; private set; } = default!;
+    
+    INetworkService? Network { get; set; } = null!;
+    
+    public virtual async Task Start() {
+        Logger.Information("Starting container service...");
+        
+        await TestServiceGatekeeper.Wait();
         
         try {
-            Service.Start();
-        }
-        catch (Exception ex) {
-            throw new FluentDockerException($"Failed to start service {Service.Name}", ex);
-        }
+            var builder = Configure();
 
-        try {
-            await OnServiceStarted();
+            Service = builder.Build();
+
+            // for some reason fluent docker does not always create the network
+            // before the service is started, so we do it manually here
+            if (Service is IContainerService service) {
+                var cfg = service.GetConfiguration(true);
+
+                Network = Fd
+                    .UseNetwork(cfg.Name)
+                    .IsInternal()
+                    .Build()
+                    .Attach(service, true);
+                
+                Logger.Information("Created network {Network}", Network.Name);
+            }
+
+            try {
+                Service.Start();
+                Logger.Information("Container service started");
+            }
+            catch (Exception ex) {
+                throw new FluentDockerException("Failed to start service", ex);
+            }
+
+            try {
+                await OnServiceStarted();
+            }
+            catch (Exception ex) {
+                throw new FluentDockerException($"{nameof(OnServiceStarted)} execution error", ex);
+            }
         }
-        catch (Exception ex) {
-            throw new FluentDockerException($"{nameof(OnServiceStarted)} execution error", ex);
+        finally {
+            TestServiceGatekeeper.Next();
         }
     }
 
-    public async Task Stop() {
+    public virtual async Task Stop() {
         try {
             await OnServiceStop();
         }
@@ -110,18 +89,20 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
             Service.Stop();
         }
         catch (Exception ex) {
-            throw new FluentDockerException($"Failed to stop service {Service.Name}", ex);
+            throw new FluentDockerException("Failed to stop service", ex);
         }
     }
 
-    public ValueTask DisposeAsync() {
+    public virtual ValueTask DisposeAsync() {
         try {
+            Network?.Dispose();
+            
             if (Service.State != ServiceRunningState.Unknown) {
                 Service.Dispose();
             }
         }
         catch (Exception ex) {
-            throw new FluentDockerException($"Failed to dispose of service {Service.Name}", ex);
+            throw new FluentDockerException("Failed to dispose of service", ex);
         }
         
         return ValueTask.CompletedTask;
@@ -132,9 +113,3 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
     protected virtual Task OnServiceStarted() => Task.CompletedTask;
     protected virtual Task OnServiceStop()    => Task.CompletedTask;
 }
-
-
-public abstract class TestCompositeService : TestService<ICompositeService, CompositeBuilder> { }
-
-public abstract class TestContainerService : TestService<IContainerService, ContainerBuilder> { }
-

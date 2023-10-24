@@ -1,7 +1,7 @@
 using System.Net;
 using Grpc.Core;
 
-namespace EventStore.Client; 
+namespace EventStore.Client;
 
 public class GossipChannelSelectorTests {
     [Fact]
@@ -14,18 +14,37 @@ public class GossipChannelSelectorTests {
 
         var settings = new EventStoreClientSettings {
             ConnectivitySettings = {
-                DnsGossipSeeds = new[] {firstSelection, secondSelection},
-                Insecure       = true
+                DnsGossipSeeds = new[] {
+                    firstSelection,
+                    secondSelection
+                },
+                Insecure = true
             }
         };
 
         await using var channelCache = new ChannelCache(settings);
-        var sut = new GossipChannelSelector(settings, channelCache, new FakeGossipClient(
-                                                new ClusterMessages.ClusterInfo(
-                                                    new ClusterMessages.MemberInfo[] {
-                                                        new(firstId, ClusterMessages.VNodeState.Leader, true, firstSelection),
-                                                        new(secondId, ClusterMessages.VNodeState.Follower, true, secondSelection),
-                                                    })));
+        var sut = new GossipChannelSelector(
+            settings,
+            channelCache,
+            new FakeGossipClient(
+                new ClusterMessages.ClusterInfo(
+                    new ClusterMessages.MemberInfo[] {
+                        new(
+                            firstId,
+                            ClusterMessages.VNodeState.Leader,
+                            true,
+                            firstSelection
+                        ),
+                        new(
+                            secondId,
+                            ClusterMessages.VNodeState.Follower,
+                            true,
+                            secondSelection
+                        ),
+                    }
+                )
+            )
+        );
 
         var channel = await sut.SelectChannelAsync(cancellationToken: default);
         Assert.Equal($"{firstSelection.Host}:{firstSelection.Port}", channel.Target);
@@ -38,17 +57,21 @@ public class GossipChannelSelectorTests {
     public async Task ThrowsWhenDiscoveryFails() {
         var settings = new EventStoreClientSettings {
             ConnectivitySettings = {
-                IpGossipSeeds       = new[] {new IPEndPoint(IPAddress.Loopback, 2113)},
+                IpGossipSeeds = new[] {
+                    new IPEndPoint(IPAddress.Loopback, 2113)
+                },
                 Insecure            = true,
                 MaxDiscoverAttempts = 3
             }
         };
 
         await using var channelCache = new ChannelCache(settings);
-        var             sut          = new GossipChannelSelector(settings, channelCache, new BadGossipClient());
 
-        var ex = await Assert.ThrowsAsync<DiscoveryException>(async () =>
-                                                                  await sut.SelectChannelAsync(cancellationToken: default).ConfigureAwait(false));
+        var sut = new GossipChannelSelector(settings, channelCache, new BadGossipClient());
+
+        var ex = await Assert.ThrowsAsync<DiscoveryException>(
+            async () => await sut.SelectChannelAsync(cancellationToken: default).ConfigureAwait(false)
+        );
 
         Assert.Equal(3, ex.MaxDiscoverAttempts);
     }
@@ -60,13 +83,18 @@ public class GossipChannelSelectorTests {
             _clusterInfo = clusterInfo;
         }
 
-        public ValueTask<ClusterMessages.ClusterInfo> GetAsync(ChannelBase channel,
-                                                               CancellationToken cancellationToken) => new(_clusterInfo);
+        public ValueTask<ClusterMessages.ClusterInfo> GetAsync(
+            ChannelBase channel,
+            CancellationToken cancellationToken
+        ) =>
+            new(_clusterInfo);
     }
 
     private class BadGossipClient : IGossipClient {
-        public ValueTask<ClusterMessages.ClusterInfo> GetAsync(ChannelBase channel,
-                                                               CancellationToken cancellationToken) {
+        public ValueTask<ClusterMessages.ClusterInfo> GetAsync(
+            ChannelBase channel,
+            CancellationToken cancellationToken
+        ) {
             throw new NotSupportedException();
         }
     }

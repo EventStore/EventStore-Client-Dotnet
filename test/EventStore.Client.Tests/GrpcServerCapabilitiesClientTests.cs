@@ -6,11 +6,11 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace EventStore.Client; 
+namespace EventStore.Client;
 
 public class GrpcServerCapabilitiesClientTests {
     public static IEnumerable<object?[]> ExpectedResultsCases() {
-        yield return new object?[] {new SupportedMethods(), new ServerCapabilities()};
+        yield return new object?[] { new SupportedMethods(), new ServerCapabilities() };
         yield return new object?[] {
             new SupportedMethods {
                 Methods = {
@@ -20,20 +20,24 @@ public class GrpcServerCapabilitiesClientTests {
                     }
                 }
             },
-            new ServerCapabilities(SupportsBatchAppend: true)
+            new ServerCapabilities(true)
         };
+
         yield return new object?[] {
             new SupportedMethods {
                 Methods = {
                     new SupportedMethod {
                         ServiceName = "event_store.client.persistent_subscriptions.persistentsubscriptions",
                         MethodName  = "read",
-                        Features    = { "all" }
+                        Features = {
+                            "all"
+                        }
                     }
                 }
             },
             new ServerCapabilities(SupportsPersistentSubscriptionsToAll: true)
         };
+
         yield return new object?[] {
             new SupportedMethods {
                 Methods = {
@@ -47,41 +51,50 @@ public class GrpcServerCapabilitiesClientTests {
         };
     }
 
-    [Theory, MemberData(nameof(ExpectedResultsCases))]
-    internal async Task GetAsyncReturnsExpectedResults(SupportedMethods supportedMethods,
-                                                       ServerCapabilities expected) {
-        using var kestrel = new TestServer(new WebHostBuilder()
-                                               .ConfigureServices(services => services
-                                                                      .AddRouting()
-                                                                      .AddGrpc().Services
-                                                                      .AddSingleton(new FakeServerFeatures(supportedMethods)))
-                                               .Configure(app => app
-                                                              .UseRouting()
-                                                              .UseEndpoints(ep => ep.MapGrpcService<FakeServerFeatures>())));
-        var sut = new GrpcServerCapabilitiesClient(new EventStoreClientSettings());
+    [Theory]
+    [MemberData(nameof(ExpectedResultsCases))]
+    internal async Task GetAsyncReturnsExpectedResults(
+        SupportedMethods supportedMethods,
+        ServerCapabilities expected
+    ) {
+        using var kestrel = new TestServer(
+            new WebHostBuilder()
+                .ConfigureServices(
+                    services => services
+                        .AddRouting()
+                        .AddGrpc().Services
+                        .AddSingleton(new FakeServerFeatures(supportedMethods))
+                )
+                .Configure(
+                    app => app
+                        .UseRouting()
+                        .UseEndpoints(ep => ep.MapGrpcService<FakeServerFeatures>())
+                )
+        );
+
+        var sut = new GrpcServerCapabilitiesClient(new());
 
         var actual =
             await sut.GetAsync(
                 ChannelFactory
                     .CreateChannel(
-                        new EventStoreClientSettings {
+                        new() {
                             CreateHttpMessageHandler = kestrel.CreateHandler
                         },
-                        new DnsEndPoint("localhost", 80))
+                        new DnsEndPoint("localhost", 80)
+                    )
                     .CreateCallInvoker(),
-                cancellationToken: default);
+                default
+            );
 
         Assert.Equal(expected, actual);
     }
 
-    private class FakeServerFeatures : ServerFeatures.ServerFeatures.ServerFeaturesBase {
-        private readonly SupportedMethods _supportedMethods;
+    class FakeServerFeatures : ServerFeatures.ServerFeatures.ServerFeaturesBase {
+        readonly SupportedMethods _supportedMethods;
 
-        public FakeServerFeatures(SupportedMethods supportedMethods) {
-            _supportedMethods = supportedMethods;
-        }
+        public FakeServerFeatures(SupportedMethods supportedMethods) => _supportedMethods = supportedMethods;
 
-        public override Task<SupportedMethods> GetSupportedMethods(Empty request, ServerCallContext context) =>
-            Task.FromResult(_supportedMethods);
+        public override Task<SupportedMethods> GetSupportedMethods(Empty request, ServerCallContext context) => Task.FromResult(_supportedMethods);
     }
 }

@@ -119,14 +119,15 @@ public class ConnectionStringTests {
 
     [Fact]
     public void infinite_grpc_timeouts() {
-        var result =
-            EventStoreClientSettings.Create("esdb://localhost:2113?keepAliveInterval=-1&keepAliveTimeout=-1");
+        var result = EventStoreClientSettings.Create("esdb://localhost:2113?keepAliveInterval=-1&keepAliveTimeout=-1");
 
         Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveInterval);
         Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveTimeout);
 
-        using var handler        = result.CreateHttpMessageHandler?.Invoke();
-        var       socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
+        using var handler = result.CreateHttpMessageHandler?.Invoke();
+
+        var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
+        
         Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingTimeout);
         Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingDelay);
     }
@@ -218,28 +219,54 @@ public class ConnectionStringTests {
         var settings = EventStoreClientSettings.Create("esdb://hostname:4321/");
 
         Assert.Null(settings.ConnectionName);
-        Assert.Equal(EventStoreClientConnectivitySettings.Default.Address.Scheme,
-                     settings.ConnectivitySettings.Address.Scheme);
-        Assert.Equal(EventStoreClientConnectivitySettings.Default.DiscoveryInterval.TotalMilliseconds,
-                     settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds);
+        Assert.Equal(
+            EventStoreClientConnectivitySettings.Default.Address.Scheme,
+            settings.ConnectivitySettings.Address.Scheme
+        );
+
+        Assert.Equal(
+            EventStoreClientConnectivitySettings.Default.DiscoveryInterval.TotalMilliseconds,
+            settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds
+        );
+
         Assert.Null(EventStoreClientConnectivitySettings.Default.DnsGossipSeeds);
         Assert.Empty(EventStoreClientConnectivitySettings.Default.GossipSeeds);
-        Assert.Equal(EventStoreClientConnectivitySettings.Default.GossipTimeout.TotalMilliseconds,
-                     settings.ConnectivitySettings.GossipTimeout.TotalMilliseconds);
+        Assert.Equal(
+            EventStoreClientConnectivitySettings.Default.GossipTimeout.TotalMilliseconds,
+            settings.ConnectivitySettings.GossipTimeout.TotalMilliseconds
+        );
+
         Assert.Null(EventStoreClientConnectivitySettings.Default.IpGossipSeeds);
-        Assert.Equal(EventStoreClientConnectivitySettings.Default.MaxDiscoverAttempts,
-                     settings.ConnectivitySettings.MaxDiscoverAttempts);
-        Assert.Equal(EventStoreClientConnectivitySettings.Default.NodePreference,
-                     settings.ConnectivitySettings.NodePreference);
-        Assert.Equal(EventStoreClientConnectivitySettings.Default.Insecure,
-                     settings.ConnectivitySettings.Insecure);
+        Assert.Equal(
+            EventStoreClientConnectivitySettings.Default.MaxDiscoverAttempts,
+            settings.ConnectivitySettings.MaxDiscoverAttempts
+        );
+
+        Assert.Equal(
+            EventStoreClientConnectivitySettings.Default.NodePreference,
+            settings.ConnectivitySettings.NodePreference
+        );
+
+        Assert.Equal(
+            EventStoreClientConnectivitySettings.Default.Insecure,
+            settings.ConnectivitySettings.Insecure
+        );
+
         Assert.Equal(TimeSpan.FromSeconds(10), settings.DefaultDeadline);
-        Assert.Equal(EventStoreClientOperationOptions.Default.ThrowOnAppendFailure,
-                     settings.OperationOptions.ThrowOnAppendFailure);
-        Assert.Equal(EventStoreClientConnectivitySettings.Default.KeepAliveInterval,
-                     settings.ConnectivitySettings.KeepAliveInterval);
-        Assert.Equal(EventStoreClientConnectivitySettings.Default.KeepAliveTimeout,
-                     settings.ConnectivitySettings.KeepAliveTimeout);
+        Assert.Equal(
+            EventStoreClientOperationOptions.Default.ThrowOnAppendFailure,
+            settings.OperationOptions.ThrowOnAppendFailure
+        );
+
+        Assert.Equal(
+            EventStoreClientConnectivitySettings.Default.KeepAliveInterval,
+            settings.ConnectivitySettings.KeepAliveInterval
+        );
+
+        Assert.Equal(
+            EventStoreClientConnectivitySettings.Default.KeepAliveTimeout,
+            settings.ConnectivitySettings.KeepAliveTimeout
+        );
     }
 		
     [Theory,
@@ -291,22 +318,22 @@ public class ConnectionStringTests {
         Assert.Equal(expectedScheme, result.ConnectivitySettings.Address.Scheme);
     }
 
-    private static string GetConnectionString(EventStoreClientSettings settings,
-                                              Func<string, string>? getKey = default)
+    static string GetConnectionString(EventStoreClientSettings settings,
+                                      Func<string, string>? getKey = default)
         => $"{GetScheme(settings)}{GetAuthority(settings)}?{GetKeyValuePairs(settings, getKey)}";
 
-    private static string GetScheme(EventStoreClientSettings settings) => settings.ConnectivitySettings.IsSingleNode
+    static string GetScheme(EventStoreClientSettings settings) => settings.ConnectivitySettings.IsSingleNode
         ? "esdb://"
         : "esdb+discover://";
 
-    private static string GetAuthority(EventStoreClientSettings settings) =>
+    static string GetAuthority(EventStoreClientSettings settings) =>
         settings.ConnectivitySettings.IsSingleNode
             ? $"{settings.ConnectivitySettings.Address.Host}:{settings.ConnectivitySettings.Address.Port}"
             : string.Join(",",
                           settings.ConnectivitySettings.GossipSeeds.Select(x => $"{x.GetHost()}:{x.GetPort()}"));
 
-    private static string GetKeyValuePairs(EventStoreClientSettings settings,
-                                           Func<string, string>? getKey = default) {
+    static string GetKeyValuePairs(EventStoreClientSettings settings,
+                                   Func<string, string>? getKey = default) {
         var pairs = new Dictionary<string, string?> {
             ["tls"]                 = (!settings.ConnectivitySettings.Insecure).ToString(),
             ["connectionName"]      = settings.ConnectionName,
@@ -337,7 +364,7 @@ public class ConnectionStringTests {
         return string.Join("&", pairs.Select(pair => $"{getKey?.Invoke(pair.Key) ?? pair.Key}={pair.Value}"));
     }
 
-    private class EventStoreClientSettingsEqualityComparer : IEqualityComparer<EventStoreClientSettings> {
+    class EventStoreClientSettingsEqualityComparer : IEqualityComparer<EventStoreClientSettings> {
         public static readonly EventStoreClientSettingsEqualityComparer Instance =
             new EventStoreClientSettingsEqualityComparer();
 
@@ -361,7 +388,7 @@ public class ConnectionStringTests {
             .Combine(EventStoreClientOperationOptionsEqualityComparer.Instance.GetHashCode(obj.OperationOptions));
     }
 
-    private class EventStoreClientConnectivitySettingsEqualityComparer
+    class EventStoreClientConnectivitySettingsEqualityComparer
         : IEqualityComparer<EventStoreClientConnectivitySettings> {
         public static readonly EventStoreClientConnectivitySettingsEqualityComparer Instance = new();
 
@@ -394,7 +421,7 @@ public class ConnectionStringTests {
                     .Combine(obj.Insecure), (hashcode, endpoint) => hashcode.Combine(endpoint.GetHashCode()));
     }
 
-    private class EventStoreClientOperationOptionsEqualityComparer
+    class EventStoreClientOperationOptionsEqualityComparer
         : IEqualityComparer<EventStoreClientOperationOptions> {
         public static readonly EventStoreClientOperationOptionsEqualityComparer Instance = new();
 

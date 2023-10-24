@@ -1,11 +1,9 @@
-namespace EventStore.Client; 
+namespace EventStore.Client;
 
 public class get_status : IClassFixture<get_status.Fixture> {
-    private readonly Fixture _fixture;
+    readonly Fixture _fixture;
 
-    public get_status(Fixture fixture) {
-        _fixture = fixture;
-    }
+    public get_status(Fixture fixture) => _fixture = fixture;
 
     [Fact]
     public async Task returns_expected_result() {

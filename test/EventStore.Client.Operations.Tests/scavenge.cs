@@ -1,13 +1,8 @@
 namespace EventStore.Client;
 
-public class @scavenge : IClassFixture<EventStoreClientsFixture> {
-    public scavenge(EventStoreClientsFixture fixture, ITestOutputHelper output) {
-        Fixture = fixture.With(f => f.CaptureLogs(output));
-        // runInMemory: false
-    }
-
-    EventStoreClientsFixture Fixture { get; }
-
+public class @scavenge : EventStoreFixture {
+    public scavenge(ITestOutputHelper output) : base(output, x => x.RunInMemory(false)) { }
+    
     [Fact]
     public async Task start() {
         var result = await Fixture.Operations.StartScavengeAsync(userCredentials: TestCredentials.Root);

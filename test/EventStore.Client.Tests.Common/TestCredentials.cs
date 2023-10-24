@@ -1,4 +1,4 @@
-namespace EventStore.Client; 
+namespace EventStore.Client.Tests; 
 
 public static class TestCredentials {
     public static readonly UserCredentials Root        = new("admin", "changeit");

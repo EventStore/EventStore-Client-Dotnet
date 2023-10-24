@@ -57,5 +57,8 @@
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
 			<_Parameter1>$(ProjectName).Tests.Common</_Parameter1>
 		</AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>EventStore.Client</_Parameter1>
+        </AssemblyAttribute>
 	</ItemGroup>
 </Project>

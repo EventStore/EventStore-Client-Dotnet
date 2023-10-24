@@ -1,38 +1,36 @@
-namespace EventStore.Client.SubscriptionToAll; 
+namespace EventStore.Client.SubscriptionToAll;
 
 public class get_info : IClassFixture<get_info.Fixture> {
-    private readonly Fixture _fixture;
-    private const    string  GroupName = nameof(get_info);
-    private static readonly PersistentSubscriptionSettings _settings = new(
-        resolveLinkTos: true,
-        startFrom: Position.Start,
-        extraStatistics: true,
-        messageTimeout: TimeSpan.FromSeconds(9),
-        maxRetryCount: 11,
-        liveBufferSize: 303,
-        readBatchSize: 30,
-        historyBufferSize: 909,
-        checkPointAfter: TimeSpan.FromSeconds(1),
-        checkPointLowerBound: 1,
-        checkPointUpperBound: 1,
-        maxSubscriberCount: 500,
-        consumerStrategyName: SystemConsumerStrategies.Pinned
+    const string GroupName = nameof(get_info);
+
+    static readonly PersistentSubscriptionSettings _settings = new(
+        true,
+        Position.Start,
+        true,
+        TimeSpan.FromSeconds(9),
+        11,
+        303,
+        30,
+        909,
+        TimeSpan.FromSeconds(1),
+        1,
+        1,
+        500,
+        SystemConsumerStrategies.Pinned
     );
-		
-    public get_info(Fixture fixture) {
-        _fixture = fixture;
-    }
+
+    readonly Fixture _fixture;
+
+    public get_info(Fixture fixture) => _fixture = fixture;
 
     [Fact]
     public async Task throws_when_not_supported() {
-        if (SupportsPSToAll.No) {
-				
-            await Assert.ThrowsAsync<NotSupportedException>(async () => {
-                await _fixture.Client.GetInfoToAllAsync(GroupName, userCredentials: TestCredentials.Root);
-            });
-        }
+        if (SupportsPSToAll.No)
+            await Assert.ThrowsAsync<NotSupportedException>(
+                async () => { await _fixture.Client.GetInfoToAllAsync(GroupName, userCredentials: TestCredentials.Root); }
+            );
     }
-		
+
     [SupportsPSToAll.Fact]
     public async Task returns_expected_result() {
         var result = await _fixture.Client.GetInfoToAllAsync(GroupName, userCredentials: TestCredentials.Root);
@@ -40,7 +38,7 @@ public class get_info : IClassFixture<get_info.Fixture> {
         Assert.Equal("$all", result.EventSource);
         Assert.Equal(GroupName, result.GroupName);
         Assert.Equal("Live", result.Status);
-			
+
         Assert.NotNull(_settings.StartFrom);
         Assert.True(result.Stats.TotalItems > 0);
         Assert.True(result.Stats.OutstandingMessagesCount > 0);
@@ -67,7 +65,7 @@ public class get_info : IClassFixture<get_info.Fixture> {
         Assert.True(connection.InFlightMessages >= 0);
         Assert.NotNull(connection.ExtraStatistics);
         Assert.NotEmpty(connection.ExtraStatistics);
-			
+
         AssertKeyAndValue(connection.ExtraStatistics, PersistentSubscriptionExtraStatistic.Highest);
         AssertKeyAndValue(connection.ExtraStatistics, PersistentSubscriptionExtraStatistic.Mean);
         AssertKeyAndValue(connection.ExtraStatistics, PersistentSubscriptionExtraStatistic.Median);
@@ -82,7 +80,7 @@ public class get_info : IClassFixture<get_info.Fixture> {
         AssertKeyAndValue(connection.ExtraStatistics, PersistentSubscriptionExtraStatistic.NinetyNinePercent);
         AssertKeyAndValue(connection.ExtraStatistics, PersistentSubscriptionExtraStatistic.NinetyNinePointFivePercent);
         AssertKeyAndValue(connection.ExtraStatistics, PersistentSubscriptionExtraStatistic.NinetyNinePointNinePercent);
-			
+
         Assert.NotNull(result.Settings);
         Assert.Equal(_settings.StartFrom, result.Settings!.StartFrom);
         Assert.Equal(_settings.ResolveLinkTos, result.Settings!.ResolveLinkTos);
@@ -98,87 +96,86 @@ public class get_info : IClassFixture<get_info.Fixture> {
         Assert.Equal(_settings.MaxSubscriberCount, result.Settings!.MaxSubscriberCount);
         Assert.Equal(_settings.ConsumerStrategyName, result.Settings!.ConsumerStrategyName);
     }
-		
-    [SupportsPSToAll.Fact]
-    public async Task throws_with_non_existing_subscription() {
-        await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(async () => {
-            await _fixture.Client.GetInfoToAllAsync(
-                groupName: "NonExisting",
-                userCredentials: TestCredentials.Root);
-        });
-    }
 
     [SupportsPSToAll.Fact]
-    public async Task throws_with_no_credentials() {
-        await Assert.ThrowsAsync<AccessDeniedException>(async () => {
-            await _fixture.Client.GetInfoToAllAsync("NonExisting");
-        });
-    }
-		
+    public async Task throws_with_non_existing_subscription() =>
+        await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
+            async () => {
+                await _fixture.Client.GetInfoToAllAsync(
+                    "NonExisting",
+                    userCredentials: TestCredentials.Root
+                );
+            }
+        );
+
     [SupportsPSToAll.Fact]
-    public async Task throws_with_non_existing_user() {
-        await Assert.ThrowsAsync<NotAuthenticatedException>(async () => {
-            await _fixture.Client.GetInfoToAllAsync(
-                groupName: "NonExisting",
-                userCredentials: TestCredentials.TestBadUser);
-        });
-    }
-		
+    public async Task throws_with_no_credentials() =>
+        await Assert.ThrowsAsync<AccessDeniedException>(async () => { await _fixture.Client.GetInfoToAllAsync("NonExisting"); });
+
+    [SupportsPSToAll.Fact]
+    public async Task throws_with_non_existing_user() =>
+        await Assert.ThrowsAsync<NotAuthenticatedException>(
+            async () => {
+                await _fixture.Client.GetInfoToAllAsync(
+                    "NonExisting",
+                    userCredentials: TestCredentials.TestBadUser
+                );
+            }
+        );
+
     [SupportsPSToAll.Fact]
     public async Task returns_result_with_normal_user_credentials() {
         var result = await _fixture.Client.GetInfoToAllAsync(
-            groupName: GroupName,
-            userCredentials: TestCredentials.TestUser1);
-			
+            GroupName,
+            userCredentials: TestCredentials.TestUser1
+        );
+
         Assert.Equal("$all", result.EventSource);
     }
-		
+
+    void AssertKeyAndValue(IDictionary<string, long> items, string key) {
+        Assert.True(items.ContainsKey(key));
+        Assert.True(items[key] > 0);
+    }
+
     public class Fixture : EventStoreClientFixture {
-        public Fixture () : base(noDefaultCredentials: true){
-        }
-			
+        public Fixture() : base(noDefaultCredentials: true) { }
+
         protected override async Task Given() {
-            if (SupportsPSToAll.No) {
+            if (SupportsPSToAll.No)
                 return;
-            }
-				
+
             await Client.CreateToAllAsync(
-                groupName: GroupName,
-                settings: _settings,
-                userCredentials: TestCredentials.Root);
+                GroupName,
+                _settings,
+                userCredentials: TestCredentials.Root
+            );
         }
 
         protected override async Task When() {
-            if (SupportsPSToAll.No) {
+            if (SupportsPSToAll.No)
                 return;
-            }
 
             var counter = 0;
             var tcs     = new TaskCompletionSource();
 
             await Client.SubscribeToAllAsync(
                 GroupName,
-                eventAppeared: (s, e, r, ct) => {
+                (s, e, r, ct) => {
                     counter++;
-						
-                    if (counter == 1) {
+
+                    if (counter == 1)
                         s.Nack(PersistentSubscriptionNakEventAction.Park, "Test", e);
-                    }
-						
-                    if (counter > 10) {
+
+                    if (counter > 10)
                         tcs.TrySetResult();
-                    }
-						
+
                     return Task.CompletedTask;
                 },
-                userCredentials: TestCredentials.Root);
+                userCredentials: TestCredentials.Root
+            );
 
             await tcs.Task;
         }
-    }
-		
-    private void AssertKeyAndValue(IDictionary<string, long> items, string key) {
-        Assert.True(items.ContainsKey(key));
-        Assert.True(items[key] > 0);
     }
 }

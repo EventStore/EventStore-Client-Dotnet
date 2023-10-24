@@ -3,7 +3,7 @@
 namespace EventStore.Client; 
 
 public class NodeSelectorTests {
-    private static readonly ClusterMessages.VNodeState[] _notAllowedStates = {
+    static readonly ClusterMessages.VNodeState[] NotAllowedStates = {
         ClusterMessages.VNodeState.Manager,
         ClusterMessages.VNodeState.ShuttingDown,
         ClusterMessages.VNodeState.Shutdown,
@@ -19,7 +19,7 @@ public class NodeSelectorTests {
     };
 
     public static IEnumerable<object?[]> InvalidStatesCases() {
-        foreach (var state in _notAllowedStates) {
+        foreach (var state in NotAllowedStates) {
             var allowedNodeId = Uuid.NewUuid();
             var allowedNode   = new DnsEndPoint(allowedNodeId.ToString(), 2113);
 
@@ -73,11 +73,11 @@ public class NodeSelectorTests {
         };
 
         var sut = new NodeSelector(settings);
-        var selectedNode = sut.SelectNode(new ClusterMessages.ClusterInfo(
-                                              new ClusterMessages.MemberInfo[] {
-                                                  new(allowedNodeId, ClusterMessages.VNodeState.Follower, true, allowedNode),
-                                                  new(notAllowedNodeId, ClusterMessages.VNodeState.Leader, false, notAllowedNode),
-                                              }));
+        
+        var selectedNode = sut.SelectNode(new ClusterMessages.ClusterInfo(new ClusterMessages.MemberInfo[] {
+            new(allowedNodeId, ClusterMessages.VNodeState.Follower, true, allowedNode),
+            new(notAllowedNodeId, ClusterMessages.VNodeState.Leader, false, notAllowedNode),
+        }));
 
         Assert.Equal(allowedNode.Host, selectedNode.Host);
         Assert.Equal(allowedNode.Port, selectedNode.Port);
@@ -97,12 +97,12 @@ public class NodeSelectorTests {
 
         var sut = new NodeSelector(settings);
         var selectedNode = sut.SelectNode(new ClusterMessages.ClusterInfo(
-                                              new ClusterMessages.MemberInfo[] {
-                                                  new(Uuid.NewUuid(), ClusterMessages.VNodeState.Follower, false, new DnsEndPoint("follower1", 2113)),
-                                                  new(Uuid.NewUuid(), ClusterMessages.VNodeState.Leader, true, new DnsEndPoint("leader", 2113)),
-                                                  new(Uuid.NewUuid(), ClusterMessages.VNodeState.Follower, true, new DnsEndPoint("follower2", 2113)),
-                                                  new(Uuid.NewUuid(), ClusterMessages.VNodeState.ReadOnlyReplica, true, new DnsEndPoint("readOnlyReplica", 2113)),
-                                              }));
+            new ClusterMessages.MemberInfo[] {
+            new(Uuid.NewUuid(), ClusterMessages.VNodeState.Follower, false, new DnsEndPoint("follower1", 2113)),
+            new(Uuid.NewUuid(), ClusterMessages.VNodeState.Leader, true, new DnsEndPoint("leader", 2113)),
+            new(Uuid.NewUuid(), ClusterMessages.VNodeState.Follower, true, new DnsEndPoint("follower2", 2113)),
+            new(Uuid.NewUuid(), ClusterMessages.VNodeState.ReadOnlyReplica, true, new DnsEndPoint("readOnlyReplica", 2113)),
+        }));
 
         if (expectedHost == "any")
             return;

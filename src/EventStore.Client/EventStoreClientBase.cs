@@ -82,22 +82,11 @@ namespace EventStore.Client {
 		/// Gets the current channel info.
 		protected async ValueTask<ChannelInfo> GetChannelInfo(CancellationToken cancellationToken) =>
 			await _channelInfoProvider.CurrentAsync.WithCancellation(cancellationToken).ConfigureAwait(false);
-
-
-		/// <summary>
-		/// only exists so that we can manually trigger rediscovery in the tests (by reflection)
-		/// in cases where the server doesn't yet let the client know that it needs to.
-		/// see EventStoreClientExtensions.WarmUpWith.
-		/// note if rediscovery is already in progress it will continue, not restart.
-		/// </summary>
-		internal void Rediscover() {
-			_channelInfoProvider.Reset();
-		}
+        
 
 		/// <summary>
-		/// only exists so that we can manually trigger rediscovery in the tests (by reflection)
+		/// Only exists so that we can manually trigger rediscovery in the tests
 		/// in cases where the server doesn't yet let the client know that it needs to.
-		/// see EventStoreClientExtensions.WarmUpWith.
 		/// note if rediscovery is already in progress it will continue, not restart.
 		/// </summary>
 		internal Task RediscoverAsync() {

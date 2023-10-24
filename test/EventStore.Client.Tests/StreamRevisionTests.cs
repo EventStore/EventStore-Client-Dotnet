@@ -1,19 +1,18 @@
 using AutoFixture;
 
-namespace EventStore.Client; 
+namespace EventStore.Client;
 
 public class StreamRevisionTests : ValueObjectTests<StreamRevision> {
     public StreamRevisionTests() : base(new ScenarioFixture()) { }
 
     [Fact]
-    public void IsComparable() =>
-        Assert.IsAssignableFrom<IComparable<StreamRevision>>(_fixture.Create<StreamRevision>());
+    public void IsComparable() => Assert.IsAssignableFrom<IComparable<StreamRevision>>(_fixture.Create<StreamRevision>());
 
     [Fact]
     public void AdditionOperator() {
         var sut = new StreamRevision(0);
-        Assert.Equal(new StreamRevision(1), sut + 1);
-        Assert.Equal(new StreamRevision(1), 1 + sut);
+        Assert.Equal(new(1), sut + 1);
+        Assert.Equal(new(1), 1 + sut);
     }
 
     [Fact]
@@ -23,10 +22,11 @@ public class StreamRevisionTests : ValueObjectTests<StreamRevision> {
     }
 
     public static IEnumerable<object?[]> AdditionOutOfBoundsCases() {
-        yield return new object?[] {new StreamRevision(long.MaxValue), long.MaxValue + 2UL};
+        yield return new object?[] { new StreamRevision(long.MaxValue), long.MaxValue + 2UL };
     }
 
-    [Theory, MemberData(nameof(AdditionOutOfBoundsCases))]
+    [Theory]
+    [MemberData(nameof(AdditionOutOfBoundsCases))]
     public void AdditionOutOfBoundsThrows(StreamRevision streamRevision, ulong operand) {
         Assert.Throws<OverflowException>(() => streamRevision + operand);
         Assert.Throws<OverflowException>(() => operand + streamRevision);
@@ -35,71 +35,80 @@ public class StreamRevisionTests : ValueObjectTests<StreamRevision> {
     [Fact]
     public void SubtractionOperator() {
         var sut = new StreamRevision(1);
-        Assert.Equal(new StreamRevision(0), sut - 1);
-        Assert.Equal(new StreamRevision(0), 1 - sut);
+        Assert.Equal(new(0), sut - 1);
+        Assert.Equal(new(0), 1 - sut);
     }
 
     public static IEnumerable<object?[]> SubtractionOutOfBoundsCases() {
-        yield return new object?[] {new StreamRevision(1), 2};
-        yield return new object?[] {new StreamRevision(0), 1};
+        yield return new object?[] { new StreamRevision(1), 2 };
+        yield return new object?[] { new StreamRevision(0), 1 };
     }
 
-    [Theory, MemberData(nameof(SubtractionOutOfBoundsCases))]
+    [Theory]
+    [MemberData(nameof(SubtractionOutOfBoundsCases))]
     public void SubtractionOutOfBoundsThrows(StreamRevision streamRevision, ulong operand) {
         Assert.Throws<OverflowException>(() => streamRevision - operand);
         Assert.Throws<OverflowException>(() => (ulong)streamRevision - new StreamRevision(operand));
     }
 
     public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
-        yield return new object?[] {long.MaxValue + 1UL};
-        yield return new object?[] {ulong.MaxValue - 1UL};
+        yield return new object?[] { long.MaxValue + 1UL };
+        yield return new object?[] { ulong.MaxValue - 1UL };
     }
 
-    [Theory, MemberData(nameof(ArgumentOutOfRangeTestCases))]
+    [Theory]
+    [MemberData(nameof(ArgumentOutOfRangeTestCases))]
     public void ArgumentOutOfRange(ulong value) {
         var ex = Assert.Throws<ArgumentOutOfRangeException>(() => new StreamRevision(value));
         Assert.Equal(nameof(value), ex.ParamName);
     }
 
     [Fact]
-    public void FromStreamPositionEndThrows() {
+    public void FromStreamPositionEndThrows() => 
         Assert.Throws<ArgumentOutOfRangeException>(() => StreamRevision.FromStreamPosition(StreamPosition.End));
-    }
 
     [Fact]
     public void FromStreamPositionReturnsExpectedResult() {
         var result = StreamRevision.FromStreamPosition(StreamPosition.Start);
 
-        Assert.Equal(new StreamRevision(0), result);
+        Assert.Equal(new(0), result);
     }
 
     [Fact]
     public void ExplicitConversionToUInt64ReturnsExpectedResult() {
-        const ulong value  = 0UL;
-        var         actual = (ulong)new StreamRevision(value);
+        const ulong value = 0UL;
+
+        var actual = (ulong)new StreamRevision(value);
+
         Assert.Equal(value, actual);
     }
 
     [Fact]
     public void ImplicitConversionToUInt64ReturnsExpectedResult() {
-        const ulong value  = 0UL;
-        ulong       actual = new StreamRevision(value);
+        const ulong value = 0UL;
+
+        ulong actual = new StreamRevision(value);
+
         Assert.Equal(value, actual);
     }
 
     [Fact]
     public void ExplicitConversionToStreamRevisionReturnsExpectedResult() {
-        const ulong value    = 0UL;
-        var         expected = new StreamRevision(value);
-        var         actual   = (StreamRevision)value;
+        const ulong value = 0UL;
+
+        var expected = new StreamRevision(value);
+        var actual   = (StreamRevision)value;
+
         Assert.Equal(expected, actual);
     }
 
     [Fact]
     public void ImplicitConversionToStreamRevisionReturnsExpectedResult() {
-        const ulong    value    = 0UL;
-        var            expected = new StreamRevision(value);
-        StreamRevision actual   = value;
+        const ulong value = 0UL;
+
+        var expected = new StreamRevision(value);
+
+        StreamRevision actual = value;
         Assert.Equal(expected, actual);
     }
 
@@ -117,9 +126,7 @@ public class StreamRevisionTests : ValueObjectTests<StreamRevision> {
         Assert.Equal(expected, new StreamRevision(expected).ToUInt64());
     }
 
-    private class ScenarioFixture : Fixture {
-        public ScenarioFixture() {
-            Customize<StreamRevision>(composer => composer.FromFactory<ulong>(value => new StreamRevision(value)));
-        }
+    class ScenarioFixture : Fixture {
+        public ScenarioFixture() => Customize<StreamRevision>(composer => composer.FromFactory<ulong>(value => new(value)));
     }
 }

@@ -1,10 +1,7 @@
 namespace EventStore.Client.Tests; 
 
-public class getting_current_user : IClassFixture<EventStoreClientsFixture> {
-    public getting_current_user(EventStoreClientsFixture fixture, ITestOutputHelper output) => 
-        Fixture = fixture.With(f => f.CaptureLogs(output));
-
-    EventStoreClientsFixture Fixture { get; }
+public class getting_current_user : EventStoreFixture {
+    public getting_current_user(ITestOutputHelper output) : base(output) { }
         
     [Fact]
     public async Task returns_the_current_user() {

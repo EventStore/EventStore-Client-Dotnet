@@ -3,8 +3,7 @@ using AutoFixture;
 namespace EventStore.Client; 
 
 public class FromAllTests : ValueObjectTests<FromAll> {
-    public FromAllTests() : base(new ScenarioFixture()) {
-    }
+    public FromAllTests() : base(new ScenarioFixture()) { }
 
     [Fact]
     public void IsComparable() =>
@@ -35,15 +34,16 @@ public class FromAllTests : ValueObjectTests<FromAll> {
     [Fact]
     public void ToUInt64ReturnsExpectedResults() {
         var position = _fixture.Create<Position>();
-        Assert.Equal((position.CommitPosition, position.PreparePosition),
-                     FromAll.After(position).ToUInt64());
+        Assert.Equal(
+            (position.CommitPosition, position.PreparePosition),
+            FromAll.After(position).ToUInt64()
+        );
     }
 
-    private class ScenarioFixture : Fixture {
+    class ScenarioFixture : Fixture {
         public ScenarioFixture() {
             Customize<Position>(composer => composer.FromFactory<ulong>(value => new Position(value, value)));
-            Customize<FromAll>(composter =>
-                                   composter.FromFactory<Position>(FromAll.After));
+            Customize<FromAll>(composter => composter.FromFactory<Position>(FromAll.After));
         }
     }
 }

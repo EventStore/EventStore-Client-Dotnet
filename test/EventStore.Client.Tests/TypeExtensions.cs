@@ -1,8 +1,8 @@
 using System.Reflection;
 
-namespace EventStore.Client; 
+namespace EventStore.Client;
 
-internal static class TypeExtensions {
+static class TypeExtensions {
     public static bool InvokeEqualityOperator(this Type type, object? left, object? right) =>
         type.InvokeOperator("Equality", left, right);
 
@@ -37,7 +37,7 @@ internal static class TypeExtensions {
     public static bool ImplementsIComparable(this Type type) =>
         type.GetInterfaces().Length > 0 && type.GetInterfaces().Any(t => t == typeof(IComparable));
 
-    private static bool InvokeOperator(this Type type, string name, object? left, object? right) {
+    static bool InvokeOperator(this Type type, string name, object? left, object? right) {
         var op = type.GetMethod($"op_{name}", BindingFlags.Public | BindingFlags.Static);
         if (op == null) {
             throw new Exception($"The type {type} did not implement op_{name}.");

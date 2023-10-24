@@ -1,20 +1,19 @@
-namespace EventStore.Client.SubscriptionToStream; 
+namespace EventStore.Client.SubscriptionToStream;
 
 public class list_with_persistent_subscriptions : IClassFixture<list_with_persistent_subscriptions.Fixture> {
-    private readonly Fixture _fixture;
-    private const    int     AllStreamSubscriptionCount = 4;
-    private const    int     StreamSubscriptionCount    = 3;
-    private const    string  GroupName                  = nameof(list_with_persistent_subscriptions);
-    private const    string  StreamName                 = nameof(list_with_persistent_subscriptions);
+    const    int     AllStreamSubscriptionCount = 4;
+    const    int     StreamSubscriptionCount    = 3;
+    const    string  GroupName                  = nameof(list_with_persistent_subscriptions);
+    const    string  StreamName                 = nameof(list_with_persistent_subscriptions);
+    readonly Fixture _fixture;
 
-    public list_with_persistent_subscriptions(Fixture fixture) {
-        _fixture = fixture;
-    }
+    public list_with_persistent_subscriptions(Fixture fixture) => _fixture = fixture;
 
-    private int TotalSubscriptionCount => SupportsPSToAll.No
-        ? StreamSubscriptionCount
-        : AllStreamSubscriptionCount + StreamSubscriptionCount;
-		
+    int TotalSubscriptionCount =>
+        SupportsPSToAll.No
+            ? StreamSubscriptionCount
+            : AllStreamSubscriptionCount + StreamSubscriptionCount;
+
     [Fact]
     public async Task returns_subscriptions_to_stream() {
         var result = (await _fixture.Client.ListToStreamAsync(StreamName, userCredentials: TestCredentials.Root)).ToList();
@@ -29,23 +28,26 @@ public class list_with_persistent_subscriptions : IClassFixture<list_with_persis
     }
 
     [Fact]
-    public async Task throws_for_non_existing() {
-        await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(async () =>
-                                                                              await _fixture.Client.ListToStreamAsync("NonExistingStream", userCredentials: TestCredentials.Root));
-    }
+    public async Task throws_for_non_existing() =>
+        await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
+            async () =>
+                await _fixture.Client.ListToStreamAsync("NonExistingStream", userCredentials: TestCredentials.Root)
+        );
 
     [Fact]
-    public async Task throws_with_no_credentials() {
-        await Assert.ThrowsAsync<AccessDeniedException>(async () =>
-                                                            await _fixture.Client.ListToStreamAsync("NonExistingStream"));
-    }
-		
+    public async Task throws_with_no_credentials() =>
+        await Assert.ThrowsAsync<AccessDeniedException>(
+            async () =>
+                await _fixture.Client.ListToStreamAsync("NonExistingStream")
+        );
+
     [Fact]
-    public async Task throws_with_non_existing_user() {
-        await Assert.ThrowsAsync<NotAuthenticatedException>(async () =>
-                                                                await _fixture.Client.ListAllAsync(userCredentials: TestCredentials.TestBadUser));
-    }
-		
+    public async Task throws_with_non_existing_user() =>
+        await Assert.ThrowsAsync<NotAuthenticatedException>(
+            async () =>
+                await _fixture.Client.ListAllAsync(userCredentials: TestCredentials.TestBadUser)
+        );
+
     [Fact]
     public async Task returns_result_with_normal_user_credentials() {
         var result = await _fixture.Client.ListAllAsync(userCredentials: TestCredentials.TestUser1);
@@ -53,30 +55,28 @@ public class list_with_persistent_subscriptions : IClassFixture<list_with_persis
     }
 
     public class Fixture : EventStoreClientFixture {
-        public Fixture () : base(skipPSWarmUp: true, noDefaultCredentials: true) {
-        }
-			
+        public Fixture() : base(skipPSWarmUp: true, noDefaultCredentials: true) { }
+
         protected override async Task Given() {
-            for (int i = 0; i < StreamSubscriptionCount; i++) {
+            for (var i = 0; i < StreamSubscriptionCount; i++)
                 await Client.CreateToStreamAsync(
                     StreamName,
                     GroupName + i,
-                    new PersistentSubscriptionSettings(),
-                    userCredentials: TestCredentials.Root);
-            }
+                    new(),
+                    userCredentials: TestCredentials.Root
+                );
 
-            if (SupportsPSToAll.No) {
+            if (SupportsPSToAll.No)
                 return;
-            }
-				
-            for (int i = 0; i < AllStreamSubscriptionCount; i++) {
+
+            for (var i = 0; i < AllStreamSubscriptionCount; i++)
                 await Client.CreateToAllAsync(
                     GroupName + i,
-                    new PersistentSubscriptionSettings(),
-                    userCredentials: TestCredentials.Root);
-            }
+                    new(),
+                    userCredentials: TestCredentials.Root
+                );
         }
-			
+
         protected override Task When() => Task.CompletedTask;
     }
 }

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Ductus.FluentDocker.Builders;
 using EventStore.Client.Tests.FluentDocker;
 using Serilog.Extensions.Logging;
@@ -8,17 +7,18 @@ namespace EventStore.Client.Tests;
 public class EventStoreTestCluster : TestCompositeService {
 	const string ConnectionString = "esdb://localhost:2113,localhost:2112,localhost:2111?tls=true&tlsVerifyCert=false";
 
-	public EventStoreTestCluster(EventStoreTestServiceOptions? options = null) => Options = options ?? DefaultOptions();
+	public EventStoreTestCluster(EventStoreFixtureOptions? options = null) =>
+        Options = options ?? DefaultOptions();
 
-    EventStoreTestServiceOptions Options { get; }
+    EventStoreFixtureOptions Options { get; }
 
-	public static EventStoreTestServiceOptions DefaultOptions() {
+	public static EventStoreFixtureOptions DefaultOptions() {
 		var defaultSettings = EventStoreClientSettings.Create(ConnectionString);
 
-		defaultSettings.LoggerFactory = new SerilogLoggerFactory();
-		defaultSettings.DefaultDeadline = Debugger.IsAttached ? new TimeSpan?() : TimeSpan.FromSeconds(30);
+		defaultSettings.LoggerFactory                            = new SerilogLoggerFactory();
+        defaultSettings.DefaultDeadline                          = new TimeSpan?(); //Debugger.IsAttached ? new TimeSpan?() : TimeSpan.FromSeconds(180);
 		defaultSettings.ConnectivitySettings.MaxDiscoverAttempts = 20;
-		defaultSettings.ConnectivitySettings.DiscoveryInterval = TimeSpan.FromSeconds(1);
+		defaultSettings.ConnectivitySettings.DiscoveryInterval   = TimeSpan.FromSeconds(1);
         
         // ES_CERTS_CLUSTER = ./certs-cluster
         

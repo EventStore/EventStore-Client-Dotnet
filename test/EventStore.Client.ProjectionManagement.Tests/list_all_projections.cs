@@ -1,11 +1,9 @@
-namespace EventStore.Client; 
+namespace EventStore.Client;
 
 public class list_all_projections : IClassFixture<list_all_projections.Fixture> {
-    private readonly Fixture _fixture;
+    readonly Fixture _fixture;
 
-    public list_all_projections(Fixture fixture) {
-        _fixture = fixture;
-    }
+    public list_all_projections(Fixture fixture) => _fixture = fixture;
 
     [Fact]
     public async Task returns_expected_result() {

@@ -1,10 +1,8 @@
 namespace EventStore.Client.Tests; 
 
-public class deleting_a_user : IClassFixture<EventStoreInsecureClientsFixture> {
-    public deleting_a_user(EventStoreInsecureClientsFixture fixture, ITestOutputHelper output) =>
-        Fixture = fixture.With(f => f.CaptureLogs(output));
-
-    EventStoreInsecureClientsFixture Fixture { get; }
+public class deleting_a_user : EventStoreFixture {
+    public deleting_a_user(ITestOutputHelper output) 
+        : base(output, x => x.WithoutDefaultCredentials()) { }
         
     [Fact]
     public async Task with_null_input_throws() {

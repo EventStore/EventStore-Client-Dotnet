@@ -1,11 +1,9 @@
-namespace EventStore.Client; 
+namespace EventStore.Client;
 
 public class @disable : IClassFixture<disable.Fixture> {
-    private readonly Fixture _fixture;
+    readonly Fixture _fixture;
 
-    public disable(Fixture fixture) {
-        _fixture = fixture;
-    }
+    public disable(Fixture fixture) => _fixture = fixture;
 
     [Fact]
     public async Task status_is_stopped() {
@@ -13,8 +11,7 @@ public class @disable : IClassFixture<disable.Fixture> {
         await _fixture.Client.DisableAsync(name, userCredentials: TestCredentials.Root);
         var result = await _fixture.Client.GetStatusAsync(name, userCredentials: TestCredentials.Root);
         Assert.NotNull(result);
-        Assert.Contains(new[] {"Aborted/Stopped", "Stopped"}, x => x == result!.Status);
-
+        Assert.Contains(new[] { "Aborted/Stopped", "Stopped" }, x => x == result!.Status);
     }
 
     public class Fixture : EventStoreClientFixture {

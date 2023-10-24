@@ -1,13 +1,16 @@
 ﻿#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-namespace EventStore.Client; 
+
+namespace EventStore.Client;
 
 public class SharingProviderTests {
     [Fact]
     public async Task CanGetCurrent() {
         using var sut = new SharingProvider<int, int>(
-            factory: async (x, _) => x + 1,
-            factoryRetryDelay: TimeSpan.FromSeconds(0),
-            initialInput: 5);
+            async (x, _) => x + 1,
+            TimeSpan.FromSeconds(0),
+            5
+        );
+
         Assert.Equal(6, await sut.CurrentAsync);
     }
 
@@ -15,26 +18,28 @@ public class SharingProviderTests {
     public async Task CanReset() {
         var count = 0;
         using var sut = new SharingProvider<bool, int>(
-            factory: async (_, _) => count++,
-            factoryRetryDelay: TimeSpan.FromSeconds(0),
-            initialInput: true);
+            async (_, _) => count++,
+            TimeSpan.FromSeconds(0),
+            true
+        );
 
         Assert.Equal(0, await sut.CurrentAsync);
         sut.Reset();
         Assert.Equal(1, await sut.CurrentAsync);
     }
-		
+
     [Fact]
     public async Task CanReturnBroken() {
         Action<bool>? onBroken = null;
         var           count    = 0;
         using var sut = new SharingProvider<bool, int>(
-            factory: async (_, f) => {
+            async (_, f) => {
                 onBroken = f;
                 return count++;
             },
-            factoryRetryDelay: TimeSpan.FromSeconds(0),
-            initialInput: true);
+            TimeSpan.FromSeconds(0),
+            true
+        );
 
         Assert.Equal(0, await sut.CurrentAsync);
 
@@ -50,12 +55,13 @@ public class SharingProviderTests {
         Action<bool>? onBroken = null;
         var           count    = 0;
         using var sut = new SharingProvider<bool, int>(
-            factory: async (_, f) => {
+            async (_, f) => {
                 onBroken = f;
                 return count++;
             },
-            factoryRetryDelay: TimeSpan.FromSeconds(0),
-            initialInput: true);
+            TimeSpan.FromSeconds(0),
+            true
+        );
 
         Assert.Equal(0, await sut.CurrentAsync);
 
@@ -74,15 +80,15 @@ public class SharingProviderTests {
         Action<bool>? onBroken = null;
         var           count    = 0;
         using var sut = new SharingProvider<bool, int>(
-            factory: async (_, f) => {
+            async (_, f) => {
                 onBroken = f;
                 count++;
                 await trigger.WaitAsync();
                 return count;
             },
-            factoryRetryDelay: TimeSpan.FromSeconds(0),
-            initialInput: true);
-
+            TimeSpan.FromSeconds(0),
+            true
+        );
 
         var currentTask = sut.CurrentAsync;
 
@@ -110,14 +116,13 @@ public class SharingProviderTests {
     [Fact]
     public async Task FactoryCanThrow() {
         using var sut = new SharingProvider<int, int>(
-            factory: (x, _) => throw new Exception($"input {x}"),
-            factoryRetryDelay: TimeSpan.FromSeconds(0),
-            initialInput: 0);
+            (x, _) => throw new($"input {x}"),
+            TimeSpan.FromSeconds(0),
+            0
+        );
 
         // exception propagated to consumer
-        var ex = await Assert.ThrowsAsync<Exception>(async () => {
-            await sut.CurrentAsync;
-        });
+        var ex = await Assert.ThrowsAsync<Exception>(async () => { await sut.CurrentAsync; });
 
         Assert.Equal("input 0", ex.Message);
     }
@@ -128,13 +133,15 @@ public class SharingProviderTests {
     [Fact]
     public async Task FactoryCanCallOnBrokenSynchronously() {
         using var sut = new SharingProvider<int, int>(
-            factory: async (x, onBroken) => {
+            async (x, onBroken) => {
                 if (x == 0)
                     onBroken(5);
+
                 return x;
             },
-            factoryRetryDelay: TimeSpan.FromSeconds(0),
-            initialInput: 0);
+            TimeSpan.FromSeconds(0),
+            0
+        );
 
         // onBroken was called but it didn't do anything
         Assert.Equal(0, await sut.CurrentAsync);
@@ -143,34 +150,35 @@ public class SharingProviderTests {
     [Fact]
     public async Task FactoryCanCallOnBrokenSynchronouslyAndThrow() {
         using var sut = new SharingProvider<int, int>(
-            factory: async (x, onBroken) => {
+            async (x, onBroken) => {
                 if (x == 0) {
                     onBroken(5);
-                    throw new Exception($"input {x}");
+                    throw new($"input {x}");
                 }
+
                 return x;
             },
-            factoryRetryDelay: TimeSpan.FromSeconds(0),
-            initialInput: 0);
+            TimeSpan.FromSeconds(0),
+            0
+        );
 
-        var ex = await Assert.ThrowsAsync<Exception>(async () => {
-            await sut.CurrentAsync;
-        });
+        var ex = await Assert.ThrowsAsync<Exception>(async () => { await sut.CurrentAsync; });
 
         Assert.Equal("input 0", ex.Message);
     }
-		
+
     [Fact]
     public async Task StopsAfterBeingDisposed() {
         Action<bool>? onBroken = null;
         var           count    = 0;
         using var sut = new SharingProvider<bool, int>(
-            factory: async (_, f) => {
+            async (_, f) => {
                 onBroken = f;
                 return count++;
             },
-            factoryRetryDelay: TimeSpan.FromSeconds(0),
-            initialInput: true);
+            TimeSpan.FromSeconds(0),
+            true
+        );
 
         Assert.Equal(0, await sut.CurrentAsync);
         Assert.Equal(1, count);
@@ -200,15 +208,20 @@ public class SharingProviderTests {
             await completeConstruction.WaitAsync();
             try {
                 if (input == 2) {
-                    throw new Exception($"fail to create {input} in factory");
-                } else {
-                    _ = triggerFailure.WaitAsync().ContinueWith(t => {
-                        onBroken(input + 1);
-                        failed.Release();
-                    });
+                    throw new($"fail to create {input} in factory");
+                }
+                else {
+                    _ = triggerFailure.WaitAsync().ContinueWith(
+                        t => {
+                            onBroken(input + 1);
+                            failed.Release();
+                        }
+                    );
+
                     return input;
                 }
-            } finally {
+            }
+            finally {
                 constructionCompleted.Release();
             }
         }
@@ -236,9 +249,7 @@ public class SharingProviderTests {
         var t = sut.CurrentAsync;
         await constructionCompleted.WaitAsync();
         completeConstruction.Release();
-        var ex = await Assert.ThrowsAsync<Exception>(async () => {
-            await t;
-        });
+        var ex = await Assert.ThrowsAsync<Exception>(async () => { await t; });
         Assert.Equal("fail to create 2 in factory", ex.Message);
 
         // when the factory is allowed to produce another item (0), it does:

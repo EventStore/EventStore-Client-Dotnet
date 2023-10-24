@@ -1,11 +1,9 @@
-namespace EventStore.Client; 
+namespace EventStore.Client;
 
 public class list_one_time_projections : IClassFixture<list_one_time_projections.Fixture> {
-    private readonly Fixture _fixture;
+    readonly Fixture _fixture;
 
-    public list_one_time_projections(Fixture fixture) {
-        _fixture = fixture;
-    }
+    public list_one_time_projections(Fixture fixture) => _fixture = fixture;
 
     [Fact]
     public async Task returns_expected_result() {
@@ -18,8 +16,7 @@ public class list_one_time_projections : IClassFixture<list_one_time_projections
 
     public class Fixture : EventStoreClientFixture {
         protected override Task Given() =>
-            Client.CreateOneTimeAsync(
-                "fromAll().when({$init: function (state, ev) {return {};}});", userCredentials: TestCredentials.Root);
+            Client.CreateOneTimeAsync("fromAll().when({$init: function (state, ev) {return {};}});", userCredentials: TestCredentials.Root);
 
         protected override Task When() => Task.CompletedTask;
     }

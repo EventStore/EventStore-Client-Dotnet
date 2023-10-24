@@ -1,14 +1,12 @@
-namespace EventStore.Client.SubscriptionToStream; 
+namespace EventStore.Client.SubscriptionToStream;
 
 public class update_existing_with_subscribers
     : IClassFixture<update_existing_with_subscribers.Fixture> {
-    private const    string  Stream = nameof(update_existing_with_subscribers);
-    private const    string  Group  = "existing";
-    private readonly Fixture _fixture;
+    const    string  Stream = nameof(update_existing_with_subscribers);
+    const    string  Group  = "existing";
+    readonly Fixture _fixture;
 
-    public update_existing_with_subscribers(Fixture fixture) {
-        _fixture = fixture;
-    }
+    public update_existing_with_subscribers(Fixture fixture) => _fixture = fixture;
 
     [Fact]
     public async Task existing_subscriptions_are_dropped() {
@@ -20,25 +18,38 @@ public class update_existing_with_subscribers
     }
 
     public class Fixture : EventStoreClientFixture {
-        private readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception?)> _droppedSource;
-        public           Task<(SubscriptionDroppedReason, Exception?)>                 Dropped => _droppedSource.Task;
-        private          PersistentSubscription?                                       _subscription;
+        readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception?)> _droppedSource;
+        PersistentSubscription?                                                _subscription;
 
-        public Fixture() {
-            _droppedSource = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
-        }
+        public Fixture() => _droppedSource = new();
+
+        public Task<(SubscriptionDroppedReason, Exception?)> Dropped => _droppedSource.Task;
 
         protected override async Task Given() {
             await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, CreateTestEvents());
-            await Client.CreateToStreamAsync(Stream, Group, new PersistentSubscriptionSettings(),
-                                             userCredentials: TestCredentials.Root);
-            _subscription = await Client.SubscribeToStreamAsync(Stream, Group,
-                                                                delegate { return Task.CompletedTask; },
-                                                                (_, reason, ex) => _droppedSource.TrySetResult((reason, ex)), TestCredentials.Root);
+            await Client.CreateToStreamAsync(
+                Stream,
+                Group,
+                new(),
+                userCredentials: TestCredentials.Root
+            );
+
+            _subscription = await Client.SubscribeToStreamAsync(
+                Stream,
+                Group,
+                delegate { return Task.CompletedTask; },
+                (_, reason, ex) => _droppedSource.TrySetResult((reason, ex)),
+                TestCredentials.Root
+            );
         }
 
-        protected override Task When() => Client.UpdateToStreamAsync(Stream, Group,
-                                                                     new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
+        protected override Task When() =>
+            Client.UpdateToStreamAsync(
+                Stream,
+                Group,
+                new(),
+                userCredentials: TestCredentials.Root
+            );
 
         public override Task DisposeAsync() {
             _subscription?.Dispose();

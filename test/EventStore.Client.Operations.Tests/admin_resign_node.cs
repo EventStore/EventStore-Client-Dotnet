@@ -1,10 +1,7 @@
 namespace EventStore.Client;
 
-public class admin_resign_node : IClassFixture<EventStoreClientsFixture> {
-    public admin_resign_node(EventStoreClientsFixture fixture, ITestOutputHelper output) => 
-        Fixture = fixture.With(f => f.CaptureLogs(output));
-
-    EventStoreClientsFixture Fixture { get; }
+public class admin_resign_node : EventStoreFixture {
+    public admin_resign_node(ITestOutputHelper output) : base(output) { }
 
     [Fact]
     public async Task resign_node_does_not_throw() {

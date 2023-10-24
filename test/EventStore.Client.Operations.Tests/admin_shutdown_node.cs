@@ -1,10 +1,7 @@
 namespace EventStore.Client;
 
-public class admin_shutdown_node : IClassFixture<EventStoreClientsFixture> {
-    public admin_shutdown_node(EventStoreClientsFixture fixture, ITestOutputHelper output) =>
-        Fixture = fixture.With(f => f.CaptureLogs(output));
-
-    EventStoreClientsFixture Fixture { get; }
+public class admin_shutdown_node : EventStoreFixture {
+    public admin_shutdown_node(ITestOutputHelper output) : base(output) { }
 
     [Fact]
     public async Task shutdown_does_not_throw() => await Fixture.Operations.ShutdownAsync(userCredentials: TestCredentials.Root);

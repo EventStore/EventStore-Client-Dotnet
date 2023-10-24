@@ -4,9 +4,7 @@
         <RootNamespace>EventStore.Client.Tests</RootNamespace>
     </PropertyGroup>
 	<ItemGroup>
-<!--		<ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />-->
-<!--		<ProjectReference Include="..\..\src\EventStore.Client.UserManagement\EventStore.Client.UserManagement.csproj" />-->
-		<ProjectReference Include="..\EventStore.Client.Tests.Common\EventStore.Client.Tests.Common.csproj" />
+        <ProjectReference Include="..\EventStore.Client.Tests.Common\EventStore.Client.Tests.Common.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Remove="EventStore.Client.UserManagement.Tests.csproj.DotSettings" />

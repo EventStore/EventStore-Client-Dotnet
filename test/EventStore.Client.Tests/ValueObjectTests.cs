@@ -1,6 +1,6 @@
 using AutoFixture;
 
-namespace EventStore.Client; 
+namespace EventStore.Client;
 
 public abstract class ValueObjectTests<T> {
     protected readonly Fixture _fixture;
