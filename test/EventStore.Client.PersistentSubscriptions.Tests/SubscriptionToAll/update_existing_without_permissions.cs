@@ -1,31 +1,32 @@
-namespace EventStore.Client.SubscriptionToAll;
+namespace EventStore.Client.PersistentSubscriptions.Tests.SubscriptionToAll;
 
 public class update_existing_without_permissions
-    : IClassFixture<update_existing_without_permissions.Fixture> {
-    const    string  Group = "existing";
-    readonly Fixture _fixture;
+	: IClassFixture<update_existing_without_permissions.Fixture> {
+	const string Group = "existing";
 
-    public update_existing_without_permissions(Fixture fixture) => _fixture = fixture;
+	readonly Fixture _fixture;
 
-    [SupportsPSToAll.Fact]
-    public async Task the_completion_fails_with_access_denied() =>
-        await Assert.ThrowsAsync<AccessDeniedException>(
-            () => _fixture.Client.UpdateToAllAsync(
-                Group,
-                new()
-            )
-        );
+	public update_existing_without_permissions(Fixture fixture) => _fixture = fixture;
 
-    public class Fixture : EventStoreClientFixture {
-        public Fixture() : base(noDefaultCredentials: true) { }
+	[SupportsPSToAll.Fact]
+	public async Task the_completion_fails_with_access_denied() =>
+		await Assert.ThrowsAsync<AccessDeniedException>(
+			() => _fixture.Client.UpdateToAllAsync(
+				Group,
+				new()
+			)
+		);
 
-        protected override async Task Given() =>
-            await Client.CreateToAllAsync(
-                Group,
-                new(),
-                userCredentials: TestCredentials.Root
-            );
+	public class Fixture : EventStoreClientFixture {
+		public Fixture() : base(noDefaultCredentials: true) { }
 
-        protected override Task When() => Task.CompletedTask;
-    }
+		protected override async Task Given() =>
+			await Client.CreateToAllAsync(
+				Group,
+				new(),
+				userCredentials: TestCredentials.Root
+			);
+
+		protected override Task When() => Task.CompletedTask;
+	}
 }

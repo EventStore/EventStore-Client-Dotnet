@@ -1,24 +1,25 @@
-namespace EventStore.Client.SubscriptionToAll;
+namespace EventStore.Client.PersistentSubscriptions.Tests.SubscriptionToAll;
 
 public class update_non_existent
-    : IClassFixture<update_non_existent.Fixture> {
-    const    string  Group = "nonexistent";
-    readonly Fixture _fixture;
+	: IClassFixture<update_non_existent.Fixture> {
+	const string Group = "nonexistent";
 
-    public update_non_existent(Fixture fixture) => _fixture = fixture;
+	readonly Fixture _fixture;
 
-    [SupportsPSToAll.Fact]
-    public async Task the_completion_fails_with_not_found() =>
-        await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
-            () => _fixture.Client.UpdateToAllAsync(
-                Group,
-                new(),
-                userCredentials: TestCredentials.Root
-            )
-        );
+	public update_non_existent(Fixture fixture) => _fixture = fixture;
 
-    public class Fixture : EventStoreClientFixture {
-        protected override Task Given() => Task.CompletedTask;
-        protected override Task When()  => Task.CompletedTask;
-    }
+	[SupportsPSToAll.Fact]
+	public async Task the_completion_fails_with_not_found() =>
+		await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
+			() => _fixture.Client.UpdateToAllAsync(
+				Group,
+				new(),
+				userCredentials: TestCredentials.Root
+			)
+		);
+
+	public class Fixture : EventStoreClientFixture {
+		protected override Task Given() => Task.CompletedTask;
+		protected override Task When()  => Task.CompletedTask;
+	}
 }

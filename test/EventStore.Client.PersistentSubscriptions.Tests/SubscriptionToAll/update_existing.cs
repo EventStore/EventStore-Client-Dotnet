@@ -1,28 +1,28 @@
-namespace EventStore.Client.SubscriptionToAll;
+namespace EventStore.Client.PersistentSubscriptions.Tests.SubscriptionToAll;
 
-public class update_existing
-    : IClassFixture<update_existing.Fixture> {
-    const    string  Group = "existing";
-    readonly Fixture _fixture;
+public class update_existing : IClassFixture<update_existing.Fixture> {
+	const string Group = "existing";
 
-    public update_existing(Fixture fixture) => _fixture = fixture;
+	readonly Fixture _fixture;
 
-    [SupportsPSToAll.Fact]
-    public async Task the_completion_succeeds() =>
-        await _fixture.Client.UpdateToAllAsync(
-            Group,
-            new(),
-            userCredentials: TestCredentials.Root
-        );
+	public update_existing(Fixture fixture) => _fixture = fixture;
 
-    public class Fixture : EventStoreClientFixture {
-        protected override async Task Given() =>
-            await Client.CreateToAllAsync(
-                Group,
-                new(),
-                userCredentials: TestCredentials.Root
-            );
+	[SupportsPSToAll.Fact]
+	public async Task the_completion_succeeds() =>
+		await _fixture.Client.UpdateToAllAsync(
+			Group,
+			new(),
+			userCredentials: TestCredentials.Root
+		);
 
-        protected override Task When() => Task.CompletedTask;
-    }
+	public class Fixture : EventStoreClientFixture {
+		protected override async Task Given() =>
+			await Client.CreateToAllAsync(
+				Group,
+				new(),
+				userCredentials: TestCredentials.Root
+			);
+
+		protected override Task When() => Task.CompletedTask;
+	}
 }

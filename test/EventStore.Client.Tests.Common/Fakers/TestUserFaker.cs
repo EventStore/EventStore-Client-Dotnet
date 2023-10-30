@@ -8,6 +8,8 @@ public class TestUser {
     public string   FullName  { get; set; } = null!;
     public string[] Groups    { get; set; } = null!;
     public string   Password  { get; set; } = null!;
+
+    public override string ToString() => $"{LoginName} Credentials({Credentials?.Username ?? "null"})";
 }
 
 public sealed class TestUserFaker : Faker<TestUser> {
@@ -33,8 +35,8 @@ public sealed class TestUserFaker : Faker<TestUser> {
         Instance
             .FinishWith(
                 (f, x) => x.Credentials = new(
-                    wrongLoginName ? f.Person.Avatar : x.LoginName,
-                    wrongPassword ? PasswordGenerator.GeneratePassword() : x.Password
+                    wrongLoginName ? "wrong-username" : x.LoginName,
+                    wrongPassword ? "wrong-password" : x.Password
                 )
             )
             .Generate();

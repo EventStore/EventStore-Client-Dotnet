@@ -1,15 +1,15 @@
 using AutoFixture;
 
-namespace EventStore.Client;
+namespace EventStore.Client.Tests;
 
 public abstract class ValueObjectTests<T> {
-    protected readonly Fixture _fixture;
+	protected readonly Fixture _fixture;
 
-    protected ValueObjectTests(Fixture fixture) => _fixture = fixture;
+	protected ValueObjectTests(Fixture fixture) => _fixture = fixture;
 
-    [Fact]
-    public void ValueObjectIsWellBehaved() => _fixture.Create<ValueObjectAssertion>().Verify(typeof(T));
+	[Fact]
+	public void ValueObjectIsWellBehaved() => _fixture.Create<ValueObjectAssertion>().Verify(typeof(T));
 
-    [Fact]
-    public void ValueObjectIsEquatable() => Assert.IsAssignableFrom<IEquatable<T>>(_fixture.Create<T>());
+	[Fact]
+	public void ValueObjectIsEquatable() => Assert.IsAssignableFrom<IEquatable<T>>(_fixture.Create<T>());
 }

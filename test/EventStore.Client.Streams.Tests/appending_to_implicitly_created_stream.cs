@@ -1,267 +1,275 @@
-namespace EventStore.Client {
-	[Trait("Category", "LongRunning")]
-	public class appending_to_implicitly_created_stream
-		: IClassFixture<appending_to_implicitly_created_stream.Fixture> {
-		private readonly Fixture _fixture;
+namespace EventStore.Client.Streams.Tests; 
 
-		public appending_to_implicitly_created_stream(Fixture fixture) {
-			_fixture = fixture;
-		}
+[Trait("Category", "LongRunning")]
+public class appending_to_implicitly_created_stream
+	: IClassFixture<appending_to_implicitly_created_stream.Fixture> {
+	readonly Fixture _fixture;
 
-		[Fact]
-		public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0em1_idempotent() {
-			var stream = _fixture.GetStreamName();
+	public appending_to_implicitly_created_stream(Fixture fixture) => _fixture = fixture;
 
-			var events = _fixture.CreateTestEvents(6).ToArray();
+	[Fact]
+	public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0em1_idempotent() {
+		var stream = _fixture.GetStreamName();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(1));
+		var events = _fixture.CreateTestEvents(6).ToArray();
 
-			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(1));
 
-			Assert.Equal(events.Length, count);
-		}
+		var count = await _fixture.Client
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
 
-		[Fact]
-		public async Task sequence_0em1_1e0_2e1_3e2_4e3_4e4_0any_idempotent() {
-			var stream = _fixture.GetStreamName();
+		Assert.Equal(events.Length, count);
+	}
 
-			var events = _fixture.CreateTestEvents(6).ToArray();
+	[Fact]
+	public async Task sequence_0em1_1e0_2e1_3e2_4e3_4e4_0any_idempotent() {
+		var stream = _fixture.GetStreamName();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Take(1));
+		var events = _fixture.CreateTestEvents(6).ToArray();
 
-			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Take(1));
 
-			Assert.Equal(events.Length, count);
-		}
+		var count = await _fixture.Client
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
 
-		[Fact]
-		public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e5_non_idempotent() {
-			var stream = _fixture.GetStreamName();
+		Assert.Equal(events.Length, count);
+	}
 
-			var events = _fixture.CreateTestEvents(6).ToArray();
+	[Fact]
+	public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e5_non_idempotent() {
+		var stream = _fixture.GetStreamName();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(5), events.Take(1));
+		var events = _fixture.CreateTestEvents(6).ToArray();
 
-			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 2).CountAsync();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+		await _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(5), events.Take(1));
 
-			Assert.Equal(events.Length + 1, count);
-		}
-		
-		[Fact]
-		public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e6_throws_wev() {
-			var stream = _fixture.GetStreamName();
+		var count = await _fixture.Client
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 2).CountAsync();
 
-			var events = _fixture.CreateTestEvents(6).ToArray();
+		Assert.Equal(events.Length + 1, count);
+	}
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+	[Fact]
+	public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e6_throws_wev() {
+		var stream = _fixture.GetStreamName();
 
-			await Assert.ThrowsAsync<WrongExpectedVersionException>(
-				() => _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(6), events.Take(1)));
-		}
+		var events = _fixture.CreateTestEvents(6).ToArray();
 
-		[Fact]
-		public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e6_returns_wev() {
-			var stream = _fixture.GetStreamName();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-			var events = _fixture.CreateTestEvents(6).ToArray();
+		await Assert.ThrowsAsync<WrongExpectedVersionException>(() => _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(6), events.Take(1)));
+	}
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+	[Fact]
+	public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e6_returns_wev() {
+		var stream = _fixture.GetStreamName();
 
-			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(6), events.Take(1),
-				options => options.ThrowOnAppendFailure = false);
+		var events = _fixture.CreateTestEvents(6).ToArray();
 
-			Assert.IsType<WrongExpectedVersionResult>(writeResult);
-		}
-		
-		[Fact]
-		public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e4_throws_wev() {
-			var stream = _fixture.GetStreamName();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-			var events = _fixture.CreateTestEvents(6).ToArray();
+		var writeResult = await _fixture.Client.AppendToStreamAsync(
+			stream,
+			new StreamRevision(6),
+			events.Take(1),
+			options => options.ThrowOnAppendFailure = false
+		);
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+		Assert.IsType<WrongExpectedVersionResult>(writeResult);
+	}
 
-			await Assert.ThrowsAsync<WrongExpectedVersionException>(
-				() => _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(4), events.Take(1)));
-		}
+	[Fact]
+	public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e4_throws_wev() {
+		var stream = _fixture.GetStreamName();
 
-		[Fact]
-		public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e4_returns_wev() {
-			var stream = _fixture.GetStreamName();
+		var events = _fixture.CreateTestEvents(6).ToArray();
 
-			var events = _fixture.CreateTestEvents(6).ToArray();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+		await Assert.ThrowsAsync<WrongExpectedVersionException>(() => _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(4), events.Take(1)));
+	}
 
-			var writeResult = await _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(4), events.Take(1), 
-				options => options.ThrowOnAppendFailure = false);
+	[Fact]
+	public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e4_returns_wev() {
+		var stream = _fixture.GetStreamName();
 
-			Assert.IsType<WrongExpectedVersionResult>(writeResult);
-		}
+		var events = _fixture.CreateTestEvents(6).ToArray();
 
-		[Fact]
-		public async Task sequence_0em1_0e0_non_idempotent() {
-			var stream = _fixture.GetStreamName();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-			var events = _fixture.CreateTestEvents().ToArray();
+		var writeResult = await _fixture.Client.AppendToStreamAsync(
+			stream,
+			new StreamRevision(4),
+			events.Take(1),
+			options => options.ThrowOnAppendFailure = false
+		);
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(0), events.Take(1));
+		Assert.IsType<WrongExpectedVersionResult>(writeResult);
+	}
 
-			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 2).CountAsync();
+	[Fact]
+	public async Task sequence_0em1_0e0_non_idempotent() {
+		var stream = _fixture.GetStreamName();
 
-			Assert.Equal(events.Length + 1, count);
-		}
+		var events = _fixture.CreateTestEvents().ToArray();
 
-		[Fact]
-		public async Task sequence_0em1_0any_idempotent() {
-			var stream = _fixture.GetStreamName();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+		await _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(0), events.Take(1));
 
-			var events = _fixture.CreateTestEvents().ToArray();
+		var count = await _fixture.Client
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 2).CountAsync();
 
-			await Task.Delay(TimeSpan.FromSeconds(30));
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Take(1));
+		Assert.Equal(events.Length + 1, count);
+	}
 
-			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
+	[Fact]
+	public async Task sequence_0em1_0any_idempotent() {
+		var stream = _fixture.GetStreamName();
 
-			Assert.Equal(events.Length, count);
-		}
+		var events = _fixture.CreateTestEvents().ToArray();
 
-		[Fact]
-		public async Task sequence_0em1_0em1_idempotent() {
-			var stream = _fixture.GetStreamName();
+		await Task.Delay(TimeSpan.FromSeconds(30));
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Take(1));
 
-			var events = _fixture.CreateTestEvents().ToArray();
+		var count = await _fixture.Client
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(1));
+		Assert.Equal(events.Length, count);
+	}
 
-			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
+	[Fact]
+	public async Task sequence_0em1_0em1_idempotent() {
+		var stream = _fixture.GetStreamName();
 
-			Assert.Equal(events.Length, count);
-		}
+		var events = _fixture.CreateTestEvents().ToArray();
 
-		[Fact]
-		public async Task sequence_0em1_1e0_2e1_1any_1any_idempotent() {
-			var stream = _fixture.GetStreamName();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(1));
 
-			var events = _fixture.CreateTestEvents(3).ToArray();
+		var count = await _fixture.Client
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Skip(1).Take(1));
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Skip(1).Take(1));
+		Assert.Equal(events.Length, count);
+	}
 
-			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
+	[Fact]
+	public async Task sequence_0em1_1e0_2e1_1any_1any_idempotent() {
+		var stream = _fixture.GetStreamName();
 
-			Assert.Equal(events.Length, count);
-		}
+		var events = _fixture.CreateTestEvents(3).ToArray();
 
-		[Fact]
-		public async Task sequence_S_0em1_1em1_E_S_0em1_E_idempotent() {
-			var stream = _fixture.GetStreamName();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Skip(1).Take(1));
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Skip(1).Take(1));
 
-			var events = _fixture.CreateTestEvents(2).ToArray();
+		var count = await _fixture.Client
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(1));
+		Assert.Equal(events.Length, count);
+	}
 
-			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
+	[Fact]
+	public async Task sequence_S_0em1_1em1_E_S_0em1_E_idempotent() {
+		var stream = _fixture.GetStreamName();
 
-			Assert.Equal(events.Length, count);
-		}
+		var events = _fixture.CreateTestEvents(2).ToArray();
 
-		[Fact]
-		public async Task sequence_S_0em1_1em1_E_S_0any_E_idempotent() {
-			var stream = _fixture.GetStreamName();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(1));
 
-			var events = _fixture.CreateTestEvents(2).ToArray();
+		var count = await _fixture.Client
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Take(1));
+		Assert.Equal(events.Length, count);
+	}
 
-			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
+	[Fact]
+	public async Task sequence_S_0em1_1em1_E_S_0any_E_idempotent() {
+		var stream = _fixture.GetStreamName();
 
-			Assert.Equal(events.Length, count);
-		}
+		var events = _fixture.CreateTestEvents(2).ToArray();
 
-		[Fact]
-		public async Task sequence_S_0em1_1em1_E_S_1e0_E_idempotent() {
-			var stream = _fixture.GetStreamName();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Take(1));
 
-			var events = _fixture.CreateTestEvents(2).ToArray();
+		var count = await _fixture.Client
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+		Assert.Equal(events.Length, count);
+	}
 
-			await _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(0), events.Skip(1));
+	[Fact]
+	public async Task sequence_S_0em1_1em1_E_S_1e0_E_idempotent() {
+		var stream = _fixture.GetStreamName();
 
-			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
+		var events = _fixture.CreateTestEvents(2).ToArray();
 
-			Assert.Equal(events.Length, count);
-		}
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-		[Fact]
-		public async Task sequence_S_0em1_1em1_E_S_1any_E_idempotent() {
-			var stream = _fixture.GetStreamName();
+		await _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(0), events.Skip(1));
 
-			var events = _fixture.CreateTestEvents(2).ToArray();
+		var count = await _fixture.Client
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Skip(1).Take(1));
+		Assert.Equal(events.Length, count);
+	}
 
-			var count = await _fixture.Client
-				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
+	[Fact]
+	public async Task sequence_S_0em1_1em1_E_S_1any_E_idempotent() {
+		var stream = _fixture.GetStreamName();
 
-			Assert.Equal(events.Length, count);
-		}
-		
-		[Fact]
-		public async Task sequence_S_0em1_1em1_E_S_0em1_1em1_2em1_E_idempotancy_fail_throws() {
-			var stream = _fixture.GetStreamName();
+		var events = _fixture.CreateTestEvents(2).ToArray();
 
-			var events = _fixture.CreateTestEvents(3).ToArray();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events);
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, events.Skip(1).Take(1));
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(2));
+		var count = await _fixture.Client
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
 
-			await Assert.ThrowsAsync<WrongExpectedVersionException>(
-				() => _fixture.Client.AppendToStreamAsync(
-					stream,
-					StreamState.NoStream,
-					events));
-		}
+		Assert.Equal(events.Length, count);
+	}
 
-		[Fact]
-		public async Task sequence_S_0em1_1em1_E_S_0em1_1em1_2em1_E_idempotancy_fail_returns() {
-			var stream = _fixture.GetStreamName();
+	[Fact]
+	public async Task sequence_S_0em1_1em1_E_S_0em1_1em1_2em1_E_idempotancy_fail_throws() {
+		var stream = _fixture.GetStreamName();
 
-			var events = _fixture.CreateTestEvents(3).ToArray();
+		var events = _fixture.CreateTestEvents(3).ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(2));
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(2));
 
-			var writeResult = await _fixture.Client.AppendToStreamAsync(
+		await Assert.ThrowsAsync<WrongExpectedVersionException>(
+			() => _fixture.Client.AppendToStreamAsync(
 				stream,
 				StreamState.NoStream,
-				events, options => options.ThrowOnAppendFailure = false);
-			
-			Assert.IsType<WrongExpectedVersionResult>(writeResult);
-		}
+				events
+			)
+		);
+	}
 
-		public class Fixture : EventStoreClientFixture {
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
+	[Fact]
+	public async Task sequence_S_0em1_1em1_E_S_0em1_1em1_2em1_E_idempotancy_fail_returns() {
+		var stream = _fixture.GetStreamName();
+
+		var events = _fixture.CreateTestEvents(3).ToArray();
+
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(2));
+
+		var writeResult = await _fixture.Client.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			events,
+			options => options.ThrowOnAppendFailure = false
+		);
+
+		Assert.IsType<WrongExpectedVersionResult>(writeResult);
+	}
+
+	public class Fixture : EventStoreClientFixture {
+		protected override Task Given() => Task.CompletedTask;
+		protected override Task When()  => Task.CompletedTask;
 	}
 }

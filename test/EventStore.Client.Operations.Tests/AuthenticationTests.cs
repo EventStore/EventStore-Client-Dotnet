@@ -1,67 +1,67 @@
-﻿namespace EventStore.Client;
+﻿namespace EventStore.Client.Operations.Tests;
 
-public class AuthenticationTests : EventStoreFixture {
-    public AuthenticationTests(ITestOutputHelper output) : base(output) { }
+public class AuthenticationTests : IClassFixture<EventStoreFixture> {
+	public AuthenticationTests(ITestOutputHelper output, EventStoreFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-    public enum CredentialsCase { None, TestUser, RootUser }
-    
-    public static IEnumerable<object?[]> InvalidAuthenticationCases() {
-        yield return new object?[] { 2, CredentialsCase.TestUser, CredentialsCase.None };
-        yield return new object?[] { 3, CredentialsCase.None, CredentialsCase.None };
-        yield return new object?[] { 4, CredentialsCase.RootUser, CredentialsCase.TestUser };
-        yield return new object?[] { 5, CredentialsCase.TestUser, CredentialsCase.TestUser };
-        yield return new object?[] { 6, CredentialsCase.None, CredentialsCase.TestUser };
-    }
-    
-    [Theory]
-    [MemberData(nameof(InvalidAuthenticationCases))]
-    public async Task system_call_with_invalid_credentials(int caseNr, CredentialsCase defaultCredentials, CredentialsCase actualCredentials) => 
-        await ExecuteTest(caseNr, defaultCredentials, actualCredentials, shouldThrow: true);
+	EventStoreFixture Fixture { get; }
+	
+	public enum CredentialsCase { None, TestUser, RootUser }
 
-    public static IEnumerable<object?[]> ValidAuthenticationCases() {
-        yield return new object?[] { 1, CredentialsCase.RootUser, CredentialsCase.None };
-        yield return new object?[] { 7, CredentialsCase.RootUser, CredentialsCase.RootUser };
-        yield return new object?[] { 8, CredentialsCase.TestUser, CredentialsCase.RootUser };
-        yield return new object?[] { 9, CredentialsCase.None, CredentialsCase.RootUser };
-    }
-    
-    [Theory]
-    [MemberData(nameof(ValidAuthenticationCases))]
-    public async Task system_call_with_valid_credentials(int caseNr, CredentialsCase defaultCredentials, CredentialsCase actualCredentials) => 
-        await ExecuteTest(caseNr, defaultCredentials, actualCredentials, shouldThrow: false);
+	public static IEnumerable<object?[]> InvalidAuthenticationCases() {
+		yield return new object?[] { 2, CredentialsCase.TestUser, CredentialsCase.None };
+		yield return new object?[] { 3, CredentialsCase.None, CredentialsCase.None };
+		yield return new object?[] { 4, CredentialsCase.RootUser, CredentialsCase.TestUser };
+		yield return new object?[] { 5, CredentialsCase.TestUser, CredentialsCase.TestUser };
+		yield return new object?[] { 6, CredentialsCase.None, CredentialsCase.TestUser };
+	}
 
-    async Task ExecuteTest(int caseNr, CredentialsCase defaultCredentials, CredentialsCase actualCredentials, bool shouldThrow) {
-        var testUser = await Fixture.CreateTestUser();
+	[Theory]
+	[MemberData(nameof(InvalidAuthenticationCases))]
+	public async Task system_call_with_invalid_credentials(int caseNr, CredentialsCase defaultCredentials, CredentialsCase actualCredentials) =>
+		await ExecuteTest(caseNr, defaultCredentials, actualCredentials, true);
 
-        var defaultUserCredentials = GetCredentials(defaultCredentials);
-        var actualUserCredentials  = GetCredentials(actualCredentials);
+	public static IEnumerable<object?[]> ValidAuthenticationCases() {
+		yield return new object?[] { 1, CredentialsCase.RootUser, CredentialsCase.None };
+		yield return new object?[] { 7, CredentialsCase.RootUser, CredentialsCase.RootUser };
+		yield return new object?[] { 8, CredentialsCase.TestUser, CredentialsCase.RootUser };
+		yield return new object?[] { 9, CredentialsCase.None, CredentialsCase.RootUser };
+	}
 
-        var settings = Fixture.ClientSettings;
+	[Theory]
+	[MemberData(nameof(ValidAuthenticationCases))]
+	public async Task system_call_with_valid_credentials(int caseNr, CredentialsCase defaultCredentials, CredentialsCase actualCredentials) =>
+		await ExecuteTest(caseNr, defaultCredentials, actualCredentials, false);
 
-        settings.DefaultCredentials = defaultUserCredentials;
-        settings.ConnectionName     = $"Authentication case #{caseNr} {defaultCredentials}";
+	async Task ExecuteTest(int caseNr, CredentialsCase defaultCredentials, CredentialsCase actualCredentials, bool shouldThrow) {
+		var testUser = await Fixture.CreateTestUser();
 
-        await using var operations = new EventStoreOperationsClient(settings);
+		var defaultUserCredentials = GetCredentials(defaultCredentials);
+		var actualUserCredentials  = GetCredentials(actualCredentials);
 
-        if (shouldThrow) {
-            await operations
-                .SetNodePriorityAsync(1, userCredentials: actualUserCredentials)
-                .ShouldThrowAsync<AccessDeniedException>();
-        }
-        else {
-            await operations
-                .SetNodePriorityAsync(1, userCredentials: actualUserCredentials)
-                .ShouldNotThrowAsync();
-        }
+		var settings = Fixture.ClientSettings;
 
-        return;
+		settings.DefaultCredentials = defaultUserCredentials;
+		settings.ConnectionName     = $"Authentication case #{caseNr} {defaultCredentials}";
 
-        UserCredentials? GetCredentials(CredentialsCase credentialsCase) =>
-            credentialsCase switch {
-                CredentialsCase.None     => null,
-                CredentialsCase.TestUser => testUser.Credentials,
-                CredentialsCase.RootUser => TestCredentials.Root,
-                _                        => throw new ArgumentOutOfRangeException(nameof(credentialsCase), credentialsCase, null)
-            };
-    }
+		await using var operations = new EventStoreOperationsClient(settings);
+
+		if (shouldThrow)
+			await operations
+				.SetNodePriorityAsync(1, userCredentials: actualUserCredentials)
+				.ShouldThrowAsync<AccessDeniedException>();
+		else
+			await operations
+				.SetNodePriorityAsync(1, userCredentials: actualUserCredentials)
+				.ShouldNotThrowAsync();
+
+		return;
+
+		UserCredentials? GetCredentials(CredentialsCase credentialsCase) =>
+			credentialsCase switch {
+				CredentialsCase.None     => null,
+				CredentialsCase.TestUser => testUser.Credentials,
+				CredentialsCase.RootUser => TestCredentials.Root,
+				_                        => throw new ArgumentOutOfRangeException(nameof(credentialsCase), credentialsCase, null)
+			};
+	}
 }

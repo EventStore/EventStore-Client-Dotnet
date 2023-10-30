@@ -1,72 +1,80 @@
-namespace EventStore.Client.Tests; 
+namespace EventStore.Client.Tests;
 
-public class resetting_user_password : EventStoreFixture {
-    public resetting_user_password(ITestOutputHelper output) : base(output) { }
+public class resetting_user_password : IClassFixture<InsecureClientTestFixture> {
+	public resetting_user_password(ITestOutputHelper output, InsecureClientTestFixture fixture) => 
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-    public static IEnumerable<object?[]> NullInputCases() {
-        var loginName   = "ouro";
-        var newPassword = "foofoofoofoofoofoo";
+	InsecureClientTestFixture Fixture { get; }
+	
+	public static IEnumerable<object?[]> NullInputCases() {
+		yield return Fakers.Users.Generate().WithResult(x => new object?[] { null, x.Password, "loginName" });
+		yield return Fakers.Users.Generate().WithResult(x => new object?[] { x.LoginName, null, "newPassword" });
+	}
+	
+	[Theory]
+	[MemberData(nameof(NullInputCases))]
+	public async Task with_null_input_throws(string loginName, string newPassword, string paramName) {
+		var ex = await Fixture.Users
+			.ResetPasswordAsync(loginName, newPassword, userCredentials: TestCredentials.Root)
+			.ShouldThrowAsync<ArgumentNullException>();
 
-        yield return new object?[] {null, newPassword, nameof(loginName)};
-        yield return new object?[] {loginName, null, nameof(newPassword)};
-    }
+		ex.ParamName.ShouldBe(paramName);
+	}
+	
+	public static IEnumerable<object?[]> EmptyInputCases() {
+		yield return Fakers.Users.Generate().WithResult(x => new object?[] { string.Empty, x.Password, "loginName" });
+		yield return Fakers.Users.Generate().WithResult(x => new object?[] { x.LoginName, string.Empty, "newPassword" });
+	}
 
-    [Theory, MemberData(nameof(NullInputCases))]
-    public async Task with_null_input_throws(string loginName, string newPassword, string paramName) {
-        var ex = await Assert.ThrowsAsync<ArgumentNullException>(
-            () => Fixture.Users.ResetPasswordAsync(loginName, newPassword, userCredentials: TestCredentials.Root)
-        );
-        Assert.Equal(paramName, ex.ParamName);
-    }
+	[Theory]
+	[MemberData(nameof(EmptyInputCases))]
+	public async Task with_empty_input_throws(string loginName, string newPassword, string paramName) {
+		var ex = await Fixture.Users
+			.ResetPasswordAsync(loginName, newPassword, userCredentials: TestCredentials.Root)
+			.ShouldThrowAsync<ArgumentOutOfRangeException>();
 
-    public static IEnumerable<object?[]> EmptyInputCases() {
-        var loginName   = "ouro";
-        var newPassword = "foofoofoofoofoofoo";
+		ex.ParamName.ShouldBe(paramName);
+	}
 
-        yield return new object?[] {string.Empty, newPassword, nameof(loginName)};
-        yield return new object?[] {loginName, string.Empty, nameof(newPassword)};
-    }
+	[Theory]
+	[ClassData(typeof(InvalidCredentialsTestCases))]
+	public async Task with_user_with_insufficient_credentials_throws(InvalidCredentialsTestCase testCase) {
+		await Fixture.Users.CreateUserAsync(
+			testCase.User.LoginName,
+			testCase.User.FullName,
+			testCase.User.Groups,
+			testCase.User.Password,
+			userCredentials: TestCredentials.Root
+		);
 
-    [Theory, MemberData(nameof(EmptyInputCases))]
-    public async Task with_empty_input_throws(string loginName, string newPassword, string paramName) {
-        var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => Fixture.Users.ResetPasswordAsync(loginName, newPassword, userCredentials: TestCredentials.Root)
-        );
-        Assert.Equal(paramName, ex.ParamName);
-    }
+		await Fixture.Users
+			.ResetPasswordAsync(testCase.User.LoginName, "newPassword", userCredentials: testCase.User.Credentials)
+			.ShouldThrowAsync(testCase.ExpectedException);
+	}
 
-    [Theory, ClassData(typeof(InvalidCredentialsCases))]
-    public async Task with_user_with_insufficient_credentials_throws(TestUser user, Type expectedException) {
-        await Fixture.Users.CreateUserAsync(
-            user.LoginName, user.FullName, user.Groups,
-            user.Password, userCredentials: TestCredentials.Root
-        );
+	[Fact]
+	public async Task with_correct_credentials() {
+		var user = Fakers.Users.Generate();
 
-        await Fixture.Users
-            .ResetPasswordAsync(user.LoginName, "newPassword", userCredentials: user.Credentials)
-            .ShouldThrowAsync(expectedException);
-    }
+		await Fixture.Users.CreateUserAsync(
+			user.LoginName,
+			user.FullName,
+			user.Groups,
+			user.Password,
+			userCredentials: TestCredentials.Root
+		);
 
-    [Fact]
-    public async Task with_correct_credentials() {
-        var user = Fakers.Users.Generate();
+		await Fixture.Users
+			.ResetPasswordAsync(user.LoginName, "new-password", userCredentials: TestCredentials.Root)
+			.ShouldNotThrowAsync();
+	}
 
-        await Fixture.Users.CreateUserAsync(
-            user.LoginName, user.FullName, user.Groups,
-            user.Password, userCredentials: TestCredentials.Root
-        );
+	[Fact]
+	public async Task with_own_credentials_throws() {
+		var user = await Fixture.CreateTestUser();
 
-        await Fixture.Users
-            .ResetPasswordAsync(user.LoginName, "new-password", userCredentials: TestCredentials.Root)
-            .ShouldNotThrowAsync();
-    }
-
-    [Fact]
-    public async Task with_own_credentials_throws() {
-        var user = await Fixture.CreateTestUser();
-
-        await Fixture.Users
-            .ResetPasswordAsync(user.LoginName, "new-password", userCredentials: user.Credentials)
-            .ShouldThrowAsync<AccessDeniedException>();
-    }
+		await Fixture.Users
+			.ResetPasswordAsync(user.LoginName, "new-password", userCredentials: user.Credentials)
+			.ShouldThrowAsync<AccessDeniedException>();
+	}
 }

@@ -1,91 +1,88 @@
-namespace EventStore.Client {
-	[Trait("Category", "Network")]
-	public class deleting_stream : IClassFixture<deleting_stream.Fixture> {
-		private readonly Fixture _fixture;
+namespace EventStore.Client.Streams.Tests; 
 
-		public deleting_stream(Fixture fixture) {
-			_fixture = fixture;
-		}
+[Trait("Category", "Network")]
+public class deleting_stream : IClassFixture<deleting_stream.Fixture> {
+	readonly Fixture _fixture;
 
-		public static IEnumerable<object?[]> ExpectedStreamStateCases() {
-			yield return new object?[] {StreamState.Any, nameof(StreamState.Any)};
-			yield return new object?[] {StreamState.NoStream, nameof(StreamState.NoStream)};
-		}
+	public deleting_stream(Fixture fixture) => _fixture = fixture;
 
-		[Theory, MemberData(nameof(ExpectedStreamStateCases))]
-		public async Task hard_deleting_a_stream_that_does_not_exist_with_expected_version_does_not_throw(
-			StreamState expectedVersion, string name) {
-			var stream = $"{_fixture.GetStreamName()}_{name}";
+	public static IEnumerable<object?[]> ExpectedStreamStateCases() {
+		yield return new object?[] { StreamState.Any, nameof(StreamState.Any) };
+		yield return new object?[] { StreamState.NoStream, nameof(StreamState.NoStream) };
+	}
 
-			await _fixture.Client.TombstoneAsync(stream, expectedVersion);
-		}
+	[Theory]
+	[MemberData(nameof(ExpectedStreamStateCases))]
+	public async Task hard_deleting_a_stream_that_does_not_exist_with_expected_version_does_not_throw(StreamState expectedVersion, string name) {
+		var stream = $"{_fixture.GetStreamName()}_{name}";
 
-		[Regression.Fact(21, "fixed by")]
-		public async Task soft_deleting_a_stream_that_exists() {
-			var stream = _fixture.GetStreamName();
+		await _fixture.Client.TombstoneAsync(stream, expectedVersion);
+	}
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamRevision.None, _fixture.CreateTestEvents());
+	[Regression.Fact(21, "fixed by")]
+	public async Task soft_deleting_a_stream_that_exists() {
+		var stream = _fixture.GetStreamName();
 
-			await _fixture.Client.DeleteAsync(stream, StreamState.StreamExists);
-		}
+		await _fixture.Client.AppendToStreamAsync(stream, StreamRevision.None, _fixture.CreateTestEvents());
 
-		[Fact]
-		public async Task hard_deleting_a_stream_that_does_not_exist_with_wrong_expected_version_throws() {
-			var stream = _fixture.GetStreamName();
+		await _fixture.Client.DeleteAsync(stream, StreamState.StreamExists);
+	}
 
-			await Assert.ThrowsAsync<WrongExpectedVersionException>(
-				() => _fixture.Client.TombstoneAsync(stream, new StreamRevision(0)));
-		}
+	[Fact]
+	public async Task hard_deleting_a_stream_that_does_not_exist_with_wrong_expected_version_throws() {
+		var stream = _fixture.GetStreamName();
 
-		[Fact]
-		public async Task soft_deleting_a_stream_that_does_not_exist_with_wrong_expected_version_throws() {
-			var stream = _fixture.GetStreamName();
+		await Assert.ThrowsAsync<WrongExpectedVersionException>(() => _fixture.Client.TombstoneAsync(stream, new StreamRevision(0)));
+	}
 
-			await Assert.ThrowsAsync<WrongExpectedVersionException>(
-				() => _fixture.Client.DeleteAsync(stream, new StreamRevision(0)));
-		}
+	[Fact]
+	public async Task soft_deleting_a_stream_that_does_not_exist_with_wrong_expected_version_throws() {
+		var stream = _fixture.GetStreamName();
 
-		[Fact]
-		public async Task hard_deleting_a_stream_should_return_log_position() {
-			var stream = _fixture.GetStreamName();
+		await Assert.ThrowsAsync<WrongExpectedVersionException>(() => _fixture.Client.DeleteAsync(stream, new StreamRevision(0)));
+	}
 
-			var writeResult = await _fixture.Client.AppendToStreamAsync(
-				stream,
-				StreamState.NoStream,
-				_fixture.CreateTestEvents());
+	[Fact]
+	public async Task hard_deleting_a_stream_should_return_log_position() {
+		var stream = _fixture.GetStreamName();
 
-			var deleteResult = await _fixture.Client.TombstoneAsync(stream, writeResult.NextExpectedStreamRevision);
+		var writeResult = await _fixture.Client.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			_fixture.CreateTestEvents()
+		);
 
-			Assert.True(deleteResult.LogPosition > writeResult.LogPosition);
-		}
+		var deleteResult = await _fixture.Client.TombstoneAsync(stream, writeResult.NextExpectedStreamRevision);
 
-		[Fact]
-		public async Task soft_deleting_a_stream_should_return_log_position() {
-			var stream = _fixture.GetStreamName();
+		Assert.True(deleteResult.LogPosition > writeResult.LogPosition);
+	}
 
-			var writeResult = await _fixture.Client.AppendToStreamAsync(
-				stream,
-				StreamState.NoStream,
-				_fixture.CreateTestEvents());
+	[Fact]
+	public async Task soft_deleting_a_stream_should_return_log_position() {
+		var stream = _fixture.GetStreamName();
 
-			var deleteResult = await _fixture.Client.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+		var writeResult = await _fixture.Client.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			_fixture.CreateTestEvents()
+		);
 
-			Assert.True(deleteResult.LogPosition > writeResult.LogPosition);
-		}
+		var deleteResult = await _fixture.Client.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
-		[Fact]
-		public async Task hard_deleting_a_deleted_stream_should_throw() {
-			var stream = _fixture.GetStreamName();
+		Assert.True(deleteResult.LogPosition > writeResult.LogPosition);
+	}
 
-			await _fixture.Client.TombstoneAsync(stream, StreamState.NoStream);
+	[Fact]
+	public async Task hard_deleting_a_deleted_stream_should_throw() {
+		var stream = _fixture.GetStreamName();
 
-			await Assert.ThrowsAsync<StreamDeletedException>(
-				() => _fixture.Client.TombstoneAsync(stream, StreamState.NoStream));
-		}
+		await _fixture.Client.TombstoneAsync(stream, StreamState.NoStream);
 
-		public class Fixture : EventStoreClientFixture {
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
+		await Assert.ThrowsAsync<StreamDeletedException>(() => _fixture.Client.TombstoneAsync(stream, StreamState.NoStream));
+	}
+
+	public class Fixture : EventStoreClientFixture {
+		protected override Task Given() => Task.CompletedTask;
+		protected override Task When()  => Task.CompletedTask;
 	}
 }

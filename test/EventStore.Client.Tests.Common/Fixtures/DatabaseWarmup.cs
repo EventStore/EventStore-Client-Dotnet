@@ -14,21 +14,63 @@ static class DatabaseWarmup<T> where T : EventStoreClientBase {
     static readonly ILogger            Logger    = Log.ForContext(SourceContextPropertyName, typeof(T).Name);
     
     public static async Task TryExecuteOnce(T client, Func<CancellationToken, Task> action, CancellationToken cancellationToken = default) {
-        if (!Completed.CurrentValue) {
-            Logger.Information("*** Warming up... ***");
-            await Semaphore.WaitAsync(cancellationToken);
-            try {
-                await TryExecute(client, action, cancellationToken);
-                Completed.CompareExchange(true, false);
-                Logger.Information("*** Warmup completed ***");
-            }
-            catch (Exception ex) {
-                Logger.Warning(ex, "*** Warmup failed :: {Error} ***", ex.Message);
-            }
-            finally {
-                Semaphore.Release();
-            }
-        }
+	    await Semaphore.WaitAsync(cancellationToken);
+
+	    try {
+		    if (!Completed.EnsureCalledOnce()) {
+			    Logger.Warning("*** Warmup started ***");
+			    await TryExecute(client, action, cancellationToken);
+			    Logger.Warning("*** Warmup completed ***");
+		    }
+		    else {
+			    Logger.Information("*** Warmup skipped ***");
+		    }
+	    }
+	    catch (Exception ex) {
+		    if (Application.DebuggerIsAttached) {
+			    Logger.Warning(ex, "*** Warmup failed ***");    
+		    }
+		    else {
+			    Logger.Warning("*** Warmup failed ***");
+		    }
+	    }
+	    finally {
+		    Semaphore.Release();
+	    }
+	    
+	    // if (!Completed.EnsureCalledOnce()) {
+		   //  Logger.Warning("*** Warming up... ***");
+		   //  try {
+			  //   await TryExecute(client, action, cancellationToken);
+			  //   Logger.Warning("*** Warmup completed ***");
+		   //  }
+		   //  catch (Exception ex) {
+			  //   Logger.Warning(ex, "*** Warmup failed ***");
+		   //  }
+		   //  finally {
+			  //   Semaphore.Release();
+		   //  }
+	    // }
+	    // else {
+		   //  Logger.Information("*** Warmup already completed ***");
+	    // }
+	    
+	    
+	    // if (!Completed.CurrentValue) {
+        //     Logger.Information("*** Warming up... ***");
+        //     await Semaphore.WaitAsync(cancellationToken);
+        //     try {
+        //         await TryExecute(client, action, cancellationToken);
+        //         Completed.CompareExchange(true, false);
+        //         Logger.Information("*** Warmup completed ***");
+        //     }
+        //     catch (Exception ex) {
+        //         Logger.Warning(ex, "*** Warmup failed :: {Error} ***", ex.Message);
+        //     }
+        //     finally {
+        //         Semaphore.Release();
+        //     }
+        // }
     }
 
     static Task TryExecute(EventStoreClientBase client, Func<CancellationToken, Task> action, CancellationToken cancellationToken) {
@@ -43,7 +85,7 @@ static class DatabaseWarmup<T> where T : EventStoreClientBase {
         var rediscoverTimeout = Policy.TimeoutAsync(
             FromSeconds(30),
             async (_, _, _) => {
-                Logger.Warning("*** Triggering rediscovery... ***");
+                Logger.Warning("*** Triggering rediscovery ***");
                 await client.RediscoverAsync();
             }
         );

@@ -6,9 +6,10 @@ using Polly;
 
 namespace EventStore.Client; 
 
+// [Obsolete("Use EventStoreTestCluster instead.", false)]
 public class EventStoreTestServerCluster : IEventStoreTestServer {
-    private readonly ICompositeService _eventStoreCluster;
-    private readonly HttpClient        _httpClient;
+	readonly ICompositeService _eventStoreCluster;
+	readonly HttpClient        _httpClient;
 
     public EventStoreTestServerCluster(
         string hostCertificatePath,

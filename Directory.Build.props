@@ -7,7 +7,7 @@
         <NullableContextOptions>enable</NullableContextOptions>
         <ImplicitUsings>true</ImplicitUsings>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <LangVersion>11</LangVersion>
+        <LangVersion>preview</LangVersion>
 
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>

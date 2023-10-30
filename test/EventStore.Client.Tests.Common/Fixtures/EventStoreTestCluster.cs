@@ -1,39 +1,39 @@
 using Ductus.FluentDocker.Builders;
 using EventStore.Client.Tests.FluentDocker;
+using Serilog;
 using Serilog.Extensions.Logging;
 
 namespace EventStore.Client.Tests;
 
 public class EventStoreTestCluster : TestCompositeService {
-	const string ConnectionString = "esdb://localhost:2113,localhost:2112,localhost:2111?tls=true&tlsVerifyCert=false";
-
-	public EventStoreTestCluster(EventStoreFixtureOptions? options = null) =>
-        Options = options ?? DefaultOptions();
+	
+	public EventStoreTestCluster(EventStoreFixtureOptions options) => Options = options;
 
     EventStoreFixtureOptions Options { get; }
-
+    
 	public static EventStoreFixtureOptions DefaultOptions() {
-		var defaultSettings = EventStoreClientSettings.Create(ConnectionString);
+		const string connString = "esdb://localhost:2113,localhost:2112,localhost:2111?tls=true&tlsVerifyCert=false";
 
-		defaultSettings.LoggerFactory                            = new SerilogLoggerFactory();
-        defaultSettings.DefaultDeadline                          = new TimeSpan?(); //Debugger.IsAttached ? new TimeSpan?() : TimeSpan.FromSeconds(180);
-		defaultSettings.ConnectivitySettings.MaxDiscoverAttempts = 20;
-		defaultSettings.ConnectivitySettings.DiscoveryInterval   = TimeSpan.FromSeconds(1);
-        
-        // ES_CERTS_CLUSTER = ./certs-cluster
-        
-		var defaultEnvironment = GlobalEnvironment.GetEnvironmentVariables(
-            new Dictionary<string, string> {
-                ["ES_CERTS_CLUSTER"] = GlobalEnvironment.CertificateDirectory.FullName,
-                ["ES_DOCKER_TAG"] = "ci", 
-                //["ES_DOCKER_TAG"] = "latest"
-                ["EVENTSTORE_MEM_DB"] = "false",
-                ["EVENTSTORE_RUN_PROJECTIONS"]            = "ALL",
-                ["EVENTSTORE_START_STANDARD_PROJECTIONS"] = "True"
-            }
-        );
+		var defaultSettings = EventStoreClientSettings
+			.Create(connString)
+			.With(x => x.LoggerFactory = new SerilogLoggerFactory(Log.Logger))
+			.With(x => x.DefaultDeadline = Application.DebuggerIsAttached ? new TimeSpan?() : TimeSpan.FromSeconds(180))
+			.With(x => x.ConnectivitySettings.MaxDiscoverAttempts = 30)
+			.With(x => x.ConnectivitySettings.DiscoveryInterval = TimeSpan.FromSeconds(1));
 
-		return new(defaultSettings, defaultEnvironment, GlobalEnvironment.CertificateDirectory);
+		var defaultEnvironment = new Dictionary<string, string>(GlobalEnvironment.Variables) {
+			["ES_CERTS_CLUSTER"]                        = Path.Combine(Environment.CurrentDirectory, "certs-cluster"),
+			["EVENTSTORE_CLUSTER_SIZE"]                 = "3",
+			["EVENTSTORE_INT_TCP_PORT"]                 = "1112",
+			["EVENTSTORE_HTTP_PORT"]                    = "2113",
+			["EVENTSTORE_DISCOVER_VIA_DNS"]             = "false",
+			["EVENTSTORE_ENABLE_EXTERNAL_TCP"]          = "false",
+			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"] = "10000",
+			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]   = "10000",
+			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]    = "true" // why true?
+		}; 
+		
+		return new(defaultSettings, defaultEnvironment);
 	}
 	
 	protected override CompositeBuilder Configure() {

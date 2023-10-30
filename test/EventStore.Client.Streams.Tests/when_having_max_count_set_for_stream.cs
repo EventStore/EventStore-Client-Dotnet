@@ -1,131 +1,129 @@
-namespace EventStore.Client {
-	[Trait("Category", "LongRunning")]
-	public class when_having_max_count_set_for_stream : IClassFixture<when_having_max_count_set_for_stream.Fixture> {
-		private readonly Fixture _fixture;
+namespace EventStore.Client.Streams.Tests; 
 
-		public when_having_max_count_set_for_stream(Fixture fixture) {
-			_fixture = fixture;
-		}
+[Trait("Category", "LongRunning")]
+public class when_having_max_count_set_for_stream : IClassFixture<when_having_max_count_set_for_stream.Fixture> {
+	readonly Fixture _fixture;
 
-		[Fact]
-		public async Task read_stream_forwards_respects_max_count() {
-			var stream = _fixture.GetStreamName();
+	public when_having_max_count_set_for_stream(Fixture fixture) => _fixture = fixture;
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new StreamMetadata(3));
+	[Fact]
+	public async Task read_stream_forwards_respects_max_count() {
+		var stream = _fixture.GetStreamName();
 
-			var expected = _fixture.CreateTestEvents(5).ToArray();
+		await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new(3));
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, expected);
+		var expected = _fixture.CreateTestEvents(5).ToArray();
 
-			var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 100)
-				.Select(x => x.Event)
-				.ToArrayAsync();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
-			Assert.Equal(3, actual.Length);
-			Assert.True(EventDataComparer.Equal(expected.Skip(2).ToArray(), actual));
-		}
+		var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 100)
+			.Select(x => x.Event)
+			.ToArrayAsync();
 
-		[Fact]
-		public async Task read_stream_backwards_respects_max_count() {
-			var stream = _fixture.GetStreamName();
+		Assert.Equal(3, actual.Length);
+		Assert.True(EventDataComparer.Equal(expected.Skip(2).ToArray(), actual));
+	}
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new StreamMetadata(3));
+	[Fact]
+	public async Task read_stream_backwards_respects_max_count() {
+		var stream = _fixture.GetStreamName();
 
-			var expected = _fixture.CreateTestEvents(5).ToArray();
+		await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new(3));
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, expected);
+		var expected = _fixture.CreateTestEvents(5).ToArray();
 
-			var actual = await _fixture.Client.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100)
-				.Select(x => x.Event)
-				.ToArrayAsync();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
-			Assert.Equal(3, actual.Length);
-			Assert.True(EventDataComparer.Equal(expected.Skip(2).Reverse().ToArray(), actual));
-		}
+		var actual = await _fixture.Client.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100)
+			.Select(x => x.Event)
+			.ToArrayAsync();
 
-		[Fact]
-		public async Task after_setting_less_strict_max_count_read_stream_forward_reads_more_events() {
-			var stream = _fixture.GetStreamName();
+		Assert.Equal(3, actual.Length);
+		Assert.True(EventDataComparer.Equal(expected.Skip(2).Reverse().ToArray(), actual));
+	}
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new StreamMetadata(3));
+	[Fact]
+	public async Task after_setting_less_strict_max_count_read_stream_forward_reads_more_events() {
+		var stream = _fixture.GetStreamName();
 
-			var expected = _fixture.CreateTestEvents(5).ToArray();
+		await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new(3));
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, expected);
+		var expected = _fixture.CreateTestEvents(5).ToArray();
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(0), new StreamMetadata(4));
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
-			var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 100)
-				.Select(x => x.Event)
-				.ToArrayAsync();
+		await _fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(0), new(4));
 
-			Assert.Equal(4, actual.Length);
-			Assert.True(EventDataComparer.Equal(expected.Skip(1).ToArray(), actual));
-		}
+		var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 100)
+			.Select(x => x.Event)
+			.ToArrayAsync();
 
-		[Fact]
-		public async Task after_setting_more_strict_max_count_read_stream_forward_reads_less_events() {
-			var stream = _fixture.GetStreamName();
+		Assert.Equal(4, actual.Length);
+		Assert.True(EventDataComparer.Equal(expected.Skip(1).ToArray(), actual));
+	}
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new StreamMetadata(3));
+	[Fact]
+	public async Task after_setting_more_strict_max_count_read_stream_forward_reads_less_events() {
+		var stream = _fixture.GetStreamName();
 
-			var expected = _fixture.CreateTestEvents(5).ToArray();
+		await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new(3));
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, expected);
+		var expected = _fixture.CreateTestEvents(5).ToArray();
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(0), new StreamMetadata(2));
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
-			var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 100)
-				.Select(x => x.Event)
-				.ToArrayAsync();
+		await _fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(0), new(2));
 
-			Assert.Equal(2, actual.Length);
-			Assert.True(EventDataComparer.Equal(expected.Skip(3).ToArray(), actual));
-		}
+		var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 100)
+			.Select(x => x.Event)
+			.ToArrayAsync();
 
-		[Fact]
-		public async Task after_setting_less_strict_max_count_read_stream_backwards_reads_more_events() {
-			var stream = _fixture.GetStreamName();
+		Assert.Equal(2, actual.Length);
+		Assert.True(EventDataComparer.Equal(expected.Skip(3).ToArray(), actual));
+	}
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new StreamMetadata(3));
+	[Fact]
+	public async Task after_setting_less_strict_max_count_read_stream_backwards_reads_more_events() {
+		var stream = _fixture.GetStreamName();
 
-			var expected = _fixture.CreateTestEvents(5).ToArray();
+		await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new(3));
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, expected);
+		var expected = _fixture.CreateTestEvents(5).ToArray();
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(0), new StreamMetadata(4));
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
-			var actual = await _fixture.Client.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100)
-				.Select(x => x.Event)
-				.ToArrayAsync();
+		await _fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(0), new(4));
 
-			Assert.Equal(4, actual.Length);
-			Assert.True(EventDataComparer.Equal(expected.Skip(1).Reverse().ToArray(), actual));
-		}
+		var actual = await _fixture.Client.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100)
+			.Select(x => x.Event)
+			.ToArrayAsync();
 
-		[Fact]
-		public async Task after_setting_more_strict_max_count_read_stream_backwards_reads_less_events() {
-			var stream = _fixture.GetStreamName();
+		Assert.Equal(4, actual.Length);
+		Assert.True(EventDataComparer.Equal(expected.Skip(1).Reverse().ToArray(), actual));
+	}
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new StreamMetadata(3));
+	[Fact]
+	public async Task after_setting_more_strict_max_count_read_stream_backwards_reads_less_events() {
+		var stream = _fixture.GetStreamName();
 
-			var expected = _fixture.CreateTestEvents(5).ToArray();
+		await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new(3));
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, expected);
+		var expected = _fixture.CreateTestEvents(5).ToArray();
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(0), new StreamMetadata(2));
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
-			var actual = await _fixture.Client.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100)
-				.Select(x => x.Event)
-				.ToArrayAsync();
+		await _fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(0), new(2));
 
-			Assert.Equal(2, actual.Length);
-			Assert.True(EventDataComparer.Equal(expected.Skip(3).Reverse().ToArray(), actual));
-		}
+		var actual = await _fixture.Client.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100)
+			.Select(x => x.Event)
+			.ToArrayAsync();
 
-		public class Fixture : EventStoreClientFixture {
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
+		Assert.Equal(2, actual.Length);
+		Assert.True(EventDataComparer.Equal(expected.Skip(3).Reverse().ToArray(), actual));
+	}
+
+	public class Fixture : EventStoreClientFixture {
+		protected override Task Given() => Task.CompletedTask;
+		protected override Task When()  => Task.CompletedTask;
 	}
 }

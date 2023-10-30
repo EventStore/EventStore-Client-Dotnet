@@ -1,29 +1,31 @@
-namespace EventStore.Client {
-	[Trait("Category", "Network")]
-	public class read_all_backward_messages : IClassFixture<read_all_backward_messages.Fixture> {
-		private readonly Fixture _fixture;
+namespace EventStore.Client.Streams.Tests; 
 
-		public read_all_backward_messages(Fixture fixture) {
-			_fixture = fixture;
-		}
+[Trait("Category", "Network")]
+public class read_all_backward_messages : IClassFixture<read_all_backward_messages.Fixture> {
+	readonly Fixture _fixture;
 
-		[Fact]
-		public async Task stream_found() {
-			var events = _fixture.CreateTestEvents(32).ToArray();
+	public read_all_backward_messages(Fixture fixture) => _fixture = fixture;
 
-			var streamName = _fixture.GetStreamName();
+	[Fact]
+	public async Task stream_found() {
+		var events = _fixture.CreateTestEvents(32).ToArray();
 
-			await _fixture.Client.AppendToStreamAsync(streamName, StreamState.NoStream, events);
+		var streamName = _fixture.GetStreamName();
 
-			var result = await _fixture.Client.ReadAllAsync(Direction.Backwards, Position.End, 32,
-				userCredentials: TestCredentials.Root).Messages.ToArrayAsync();
+		await _fixture.Client.AppendToStreamAsync(streamName, StreamState.NoStream, events);
 
-			Assert.Equal(32, result.OfType<StreamMessage.Event>().Count());
-		}
+		var result = await _fixture.Client.ReadAllAsync(
+			Direction.Backwards,
+			Position.End,
+			32,
+			userCredentials: TestCredentials.Root
+		).Messages.ToArrayAsync();
 
-		public class Fixture : EventStoreClientFixture {
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
+		Assert.Equal(32, result.OfType<StreamMessage.Event>().Count());
+	}
+
+	public class Fixture : EventStoreClientFixture {
+		protected override Task Given() => Task.CompletedTask;
+		protected override Task When()  => Task.CompletedTask;
 	}
 }

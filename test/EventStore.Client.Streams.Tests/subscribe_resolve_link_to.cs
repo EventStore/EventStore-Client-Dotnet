@@ -1,195 +1,204 @@
-namespace EventStore.Client {
-	public class subscribe_resolve_link_to : IAsyncLifetime {
-		private readonly Fixture _fixture;
+namespace EventStore.Client.Streams.Tests; 
 
-		public subscribe_resolve_link_to(ITestOutputHelper outputHelper) {
-			_fixture = new Fixture();
-			_fixture.CaptureLogs(outputHelper);
-		}
+public class subscribe_resolve_link_to : IAsyncLifetime {
+	readonly Fixture _fixture;
 
-		[Fact]
-		public async Task stream_subscription() {
-			var stream = _fixture.GetStreamName();
+	public subscribe_resolve_link_to(ITestOutputHelper outputHelper) {
+		_fixture = new();
+		_fixture.CaptureLogs(outputHelper);
+	}
 
-			var events = _fixture.CreateTestEvents(20).ToArray();
+	public Task InitializeAsync() => _fixture.InitializeAsync();
+	public Task DisposeAsync()    => _fixture.DisposeAsync();
 
-			var appeared = new TaskCompletionSource<bool>();
-			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
+	[Fact]
+	public async Task stream_subscription() {
+		var stream = _fixture.GetStreamName();
 
-			var beforeEvents = events.Take(10);
-			var afterEvents = events.Skip(10);
+		var events = _fixture.CreateTestEvents(20).ToArray();
 
-			using var enumerator = events.AsEnumerable().GetEnumerator();
+		var appeared = new TaskCompletionSource<bool>();
+		var dropped  = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 
-			enumerator.MoveNext();
+		var beforeEvents = events.Take(10);
+		var afterEvents  = events.Skip(10);
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, beforeEvents)
-				.WithTimeout();
+		using var enumerator = events.AsEnumerable().GetEnumerator();
 
-			using var subscription = await _fixture.Client
-				.SubscribeToStreamAsync($"$et-{EventStoreClientFixtureBase.TestEventType}",
-					FromStream.Start, EventAppeared, true, SubscriptionDropped,
-					userCredentials: TestCredentials.Root)
-				.WithTimeout();
+		enumerator.MoveNext();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents)
-				.WithTimeout();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, beforeEvents)
+			.WithTimeout();
 
-			await appeared.Task.WithTimeout();
+		using var subscription = await _fixture.Client
+			.SubscribeToStreamAsync(
+				$"$et-{EventStoreClientFixtureBase.TestEventType}",
+				FromStream.Start,
+				EventAppeared,
+				true,
+				SubscriptionDropped,
+				TestCredentials.Root
+			)
+			.WithTimeout();
 
-			subscription.Dispose();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents)
+			.WithTimeout();
 
-			var (reason, ex) = await dropped.Task.WithTimeout();
+		await appeared.Task.WithTimeout();
 
-			Assert.Equal(SubscriptionDroppedReason.Disposed, reason);
-			Assert.Null(ex);
+		subscription.Dispose();
 
-			Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) {
-				try {
-					Assert.Equal(enumerator.Current.EventId, e.Event.EventId);
-					if (!enumerator.MoveNext()) {
-						appeared.TrySetResult(true);
-					}
-				} catch (Exception ex) {
-					appeared.TrySetException(ex);
-					throw;
-				}
+		var (reason, ex) = await dropped.Task.WithTimeout();
 
-				return Task.CompletedTask;
+		Assert.Equal(SubscriptionDroppedReason.Disposed, reason);
+		Assert.Null(ex);
+
+		Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) {
+			try {
+				Assert.Equal(enumerator.Current.EventId, e.Event.EventId);
+				if (!enumerator.MoveNext())
+					appeared.TrySetResult(true);
+			}
+			catch (Exception ex) {
+				appeared.TrySetException(ex);
+				throw;
 			}
 
-			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) =>
-				dropped.SetResult((reason, ex));
+			return Task.CompletedTask;
 		}
 
-		[Fact]
-		public async Task all_subscription() {
-			var stream = _fixture.GetStreamName();
+		void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) => dropped.SetResult((reason, ex));
+	}
 
-			var events = _fixture.CreateTestEvents(20).ToArray();
+	[Fact]
+	public async Task all_subscription() {
+		var stream = _fixture.GetStreamName();
 
-			var appeared = new TaskCompletionSource<bool>();
-			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
+		var events = _fixture.CreateTestEvents(20).ToArray();
 
-			var beforeEvents = events.Take(10);
-			var afterEvents = events.Skip(10);
+		var appeared = new TaskCompletionSource<bool>();
+		var dropped  = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 
-			using var enumerator = events.AsEnumerable().GetEnumerator();
+		var beforeEvents = events.Take(10);
+		var afterEvents  = events.Skip(10);
 
-			enumerator.MoveNext();
+		using var enumerator = events.AsEnumerable().GetEnumerator();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, beforeEvents)
-				.WithTimeout();
+		enumerator.MoveNext();
 
-			using var subscription = await _fixture.Client.SubscribeToAllAsync(FromAll.Start,
-					EventAppeared, true, SubscriptionDropped, userCredentials: TestCredentials.Root)
-				.WithTimeout();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, beforeEvents)
+			.WithTimeout();
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents).WithTimeout();
+		using var subscription = await _fixture.Client.SubscribeToAllAsync(
+				FromAll.Start,
+				EventAppeared,
+				true,
+				SubscriptionDropped,
+				userCredentials: TestCredentials.Root
+			)
+			.WithTimeout();
 
-			await appeared.Task.WithTimeout();
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents).WithTimeout();
 
-			subscription.Dispose();
+		await appeared.Task.WithTimeout();
 
-			var (reason, ex) = await dropped.Task.WithTimeout();
+		subscription.Dispose();
 
-			Assert.Equal(SubscriptionDroppedReason.Disposed, reason);
-			Assert.Null(ex);
+		var (reason, ex) = await dropped.Task.WithTimeout();
 
-			Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) {
-				if (e.OriginalEvent.EventStreamId != $"$et-{EventStoreClientFixtureBase.TestEventType}") {
-					return Task.CompletedTask;
-				}
+		Assert.Equal(SubscriptionDroppedReason.Disposed, reason);
+		Assert.Null(ex);
 
-				try {
-					Assert.Equal(enumerator.Current.EventId, e.Event.EventId);
-					if (!enumerator.MoveNext()) {
-						appeared.TrySetResult(true);
-					}
-				} catch (Exception ex) {
-					appeared.TrySetException(ex);
-					throw;
-				}
-
+		Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) {
+			if (e.OriginalEvent.EventStreamId != $"$et-{EventStoreClientFixtureBase.TestEventType}")
 				return Task.CompletedTask;
+
+			try {
+				Assert.Equal(enumerator.Current.EventId, e.Event.EventId);
+				if (!enumerator.MoveNext())
+					appeared.TrySetResult(true);
+			}
+			catch (Exception ex) {
+				appeared.TrySetException(ex);
+				throw;
 			}
 
-			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) =>
-				dropped.SetResult((reason, ex));
+			return Task.CompletedTask;
 		}
 
-		[Fact]
-		public async Task all_filtered_subscription() {
-			var stream = _fixture.GetStreamName();
+		void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) => dropped.SetResult((reason, ex));
+	}
 
-			var events = _fixture.CreateTestEvents(20).ToArray();
+	[Fact]
+	public async Task all_filtered_subscription() {
+		var stream = _fixture.GetStreamName();
 
-			var appeared = new TaskCompletionSource<bool>();
-			var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
+		var events = _fixture.CreateTestEvents(20).ToArray();
 
-			var beforeEvents = events.Take(10);
-			var afterEvents = events.Skip(10);
+		var appeared = new TaskCompletionSource<bool>();
+		var dropped  = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 
-			using var enumerator = events.AsEnumerable().GetEnumerator();
+		var beforeEvents = events.Take(10);
+		var afterEvents  = events.Skip(10);
 
-			enumerator.MoveNext();
+		using var enumerator = events.AsEnumerable().GetEnumerator();
 
-			var result = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, beforeEvents)
-				.WithTimeout();
+		enumerator.MoveNext();
 
-			using var subscription = await _fixture.Client.SubscribeToAllAsync(FromAll.Start,
-					EventAppeared, true, SubscriptionDropped,
-					new SubscriptionFilterOptions(
-						StreamFilter.Prefix($"$et-{EventStoreClientFixtureBase.TestEventType}")),
-					userCredentials: TestCredentials.Root)
-				.WithTimeout();
+		var result = await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, beforeEvents)
+			.WithTimeout();
 
-			result = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents)
-				.WithTimeout();
+		using var subscription = await _fixture.Client.SubscribeToAllAsync(
+				FromAll.Start,
+				EventAppeared,
+				true,
+				SubscriptionDropped,
+				new(StreamFilter.Prefix($"$et-{EventStoreClientFixtureBase.TestEventType}")),
+				TestCredentials.Root
+			)
+			.WithTimeout();
 
-			await appeared.Task.WithTimeout();
+		result = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, afterEvents)
+			.WithTimeout();
 
-			subscription.Dispose();
+		await appeared.Task.WithTimeout();
 
-			var (reason, ex) = await dropped.Task.WithTimeout();
+		subscription.Dispose();
 
-			Assert.Equal(SubscriptionDroppedReason.Disposed, reason);
-			Assert.Null(ex);
+		var (reason, ex) = await dropped.Task.WithTimeout();
 
-			Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) {
-				if (e.OriginalEvent.EventStreamId != $"$et-{EventStoreClientFixtureBase.TestEventType}") {
-					return Task.CompletedTask;
-				}
+		Assert.Equal(SubscriptionDroppedReason.Disposed, reason);
+		Assert.Null(ex);
 
-				try {
-					Assert.Equal(enumerator.Current.EventId, e.Event.EventId);
-					if (!enumerator.MoveNext()) {
-						appeared.TrySetResult(true);
-					}
-				} catch (Exception ex) {
-					appeared.TrySetException(ex);
-					throw;
-				}
-
+		Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) {
+			if (e.OriginalEvent.EventStreamId != $"$et-{EventStoreClientFixtureBase.TestEventType}")
 				return Task.CompletedTask;
+
+			try {
+				Assert.Equal(enumerator.Current.EventId, e.Event.EventId);
+				if (!enumerator.MoveNext())
+					appeared.TrySetResult(true);
+			}
+			catch (Exception ex) {
+				appeared.TrySetException(ex);
+				throw;
 			}
 
-			void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) =>
-				dropped.SetResult((reason, ex));
+			return Task.CompletedTask;
 		}
 
-		public class Fixture : EventStoreClientFixture {
-			public Fixture() : base(env: new Dictionary<string, string> {
-				["EVENTSTORE_RUN_PROJECTIONS"] = "All",
+		void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) => dropped.SetResult((reason, ex));
+	}
+
+	public class Fixture : EventStoreClientFixture {
+		public Fixture() : base(
+			env: new() {
+				["EVENTSTORE_RUN_PROJECTIONS"]            = "All",
 				["EVENTSTORE_START_STANDARD_PROJECTIONS"] = "True"
-			}) {
 			}
+		) { }
 
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
-
-		public Task InitializeAsync() => _fixture.InitializeAsync();
-		public Task DisposeAsync() => _fixture.DisposeAsync();
+		protected override Task Given() => Task.CompletedTask;
+		protected override Task When()  => Task.CompletedTask;
 	}
 }

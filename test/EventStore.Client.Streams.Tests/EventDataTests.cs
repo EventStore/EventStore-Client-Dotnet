@@ -1,23 +1,23 @@
-namespace EventStore.Client {
-	public class EventDataTests {
-		[Fact]
-		public void EmptyEventIdThrows() {
-			var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-				new EventData(Uuid.Empty, "-", Array.Empty<byte>()));
-			Assert.Equal("eventId", ex.ParamName);
-		}
+namespace EventStore.Client.Streams.Tests; 
 
-		[Fact]
-		public void MalformedContentTypeThrows() {
-			Assert.Throws<FormatException>(
-				() => new EventData(Uuid.NewUuid(), "-", Array.Empty<byte>(), contentType: "application"));
-		}
+public class EventDataTests {
+	[Fact]
+	public void EmptyEventIdThrows() {
+		var ex = Assert.Throws<ArgumentOutOfRangeException>(
+			() =>
+				new EventData(Uuid.Empty, "-", Array.Empty<byte>())
+		);
 
-		[Fact]
-		public void InvalidContentTypeThrows() {
-			var ex = Assert.Throws<ArgumentOutOfRangeException>(
-				() => new EventData(Uuid.NewUuid(), "-", Array.Empty<byte>(), contentType: "application/xml"));
-			Assert.Equal("contentType", ex.ParamName);
-		}
+		Assert.Equal("eventId", ex.ParamName);
+	}
+
+	[Fact]
+	public void MalformedContentTypeThrows() =>
+		Assert.Throws<FormatException>(() => new EventData(Uuid.NewUuid(), "-", Array.Empty<byte>(), contentType: "application"));
+
+	[Fact]
+	public void InvalidContentTypeThrows() {
+		var ex = Assert.Throws<ArgumentOutOfRangeException>(() => new EventData(Uuid.NewUuid(), "-", Array.Empty<byte>(), contentType: "application/xml"));
+		Assert.Equal("contentType", ex.ParamName);
 	}
 }

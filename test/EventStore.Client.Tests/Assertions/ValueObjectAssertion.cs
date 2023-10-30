@@ -5,12 +5,12 @@ using AutoFixture.Kernel;
 namespace EventStore.Client;
 
 class ValueObjectAssertion : CompositeIdiomaticAssertion {
-    public ValueObjectAssertion(ISpecimenBuilder builder) : base(CreateChildrenAssertions(builder)) { }
+	public ValueObjectAssertion(ISpecimenBuilder builder) : base(CreateChildrenAssertions(builder)) { }
 
-    static IEnumerable<IIdiomaticAssertion> CreateChildrenAssertions(ISpecimenBuilder builder) {
-        yield return new EqualityAssertion(builder);
-        yield return new ComparableAssertion(builder);
-        yield return new StringConversionAssertion(builder);
-        yield return new NullArgumentAssertion(builder);
-    }
+	static IEnumerable<IIdiomaticAssertion> CreateChildrenAssertions(ISpecimenBuilder builder) {
+		yield return new EqualityAssertion(builder);
+		yield return new ComparableAssertion(builder);
+		yield return new StringConversionAssertion(builder);
+		yield return new NullArgumentAssertion(builder);
+	}
 }

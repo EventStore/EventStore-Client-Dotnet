@@ -1,59 +1,61 @@
-namespace EventStore.Client.Tests; 
+namespace EventStore.Client.Tests;
 
-public class enabling_a_user : EventStoreFixture {
-    public enabling_a_user(ITestOutputHelper output) : base(output) { }
-    
-    [Fact]
-    public async Task with_null_input_throws() {
-        var ex = await Assert.ThrowsAsync<ArgumentNullException>(() => Fixture.Users.EnableUserAsync(null!, userCredentials: TestCredentials.Root));
-        Assert.Equal("loginName", ex.ParamName);
-    }
+public class enabling_a_user : IClassFixture<InsecureClientTestFixture> {
+	public enabling_a_user(ITestOutputHelper output, InsecureClientTestFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-    [Fact]
-    public async Task with_empty_input_throws() {
-        var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => Fixture.Users.EnableUserAsync(string.Empty, userCredentials: TestCredentials.Root)
-        );
+	InsecureClientTestFixture Fixture { get; }
 
-        Assert.Equal("loginName", ex.ParamName);
-    }
+	[Fact]
+	public async Task with_null_input_throws() {
+		var ex = await Fixture.Users
+			.EnableUserAsync(null!, userCredentials: TestCredentials.Root)
+			.ShouldThrowAsync<ArgumentNullException>();
 
-    [Theory, ClassData(typeof(InvalidCredentialsCases))]
-    public async Task with_user_with_insufficient_credentials_throws(TestUser user, Type expectedException) {
-        await Fixture.Users.CreateUserAsync(
-            user.LoginName, user.FullName, user.Groups,
-            user.Password, userCredentials: TestCredentials.Root
-        );
+		ex.ParamName.ShouldBe("loginName");
+	}
 
-        await Fixture.Users
-            .EnableUserAsync(user.LoginName, userCredentials: user.Credentials)
-            .ShouldThrowAsync(expectedException);
-    }
+	[Fact]
+	public async Task with_empty_input_throws() {
+		var ex = await Fixture.Users
+			.EnableUserAsync(string.Empty, userCredentials: TestCredentials.Root)
+			.ShouldThrowAsync<ArgumentOutOfRangeException>();
 
-    [Fact]
-    public async Task that_was_disabled() {
-        var loginName = Guid.NewGuid().ToString();
-        await Fixture.Users.CreateUserAsync(
-            loginName, "Full Name", new[] {
-                "foo",
-                "bar"
-            }, "password", userCredentials: TestCredentials.Root
-        );
+		ex.ParamName.ShouldBe("loginName");
+	}
+	
+	[Theory]
+	[ClassData(typeof(InvalidCredentialsTestCases))]
+	public async Task with_user_with_insufficient_credentials_throws(InvalidCredentialsTestCase testCase) {
+		await Fixture.Users.CreateUserAsync(
+			testCase.User.LoginName,
+			testCase.User.FullName,
+			testCase.User.Groups,
+			testCase.User.Password,
+			userCredentials: TestCredentials.Root
+		);
 
-        await Fixture.Users.DisableUserAsync(loginName, userCredentials: TestCredentials.Root);
-        await Fixture.Users.EnableUserAsync(loginName, userCredentials: TestCredentials.Root);
-    }
+		await Fixture.Users
+			.EnableUserAsync(testCase.User.LoginName, userCredentials: testCase.User.Credentials)
+			.ShouldThrowAsync(testCase.ExpectedException);
+	}
 
-    [Fact]
-    public async Task that_is_enabled() {
-        var loginName = Guid.NewGuid().ToString();
-        await Fixture.Users.CreateUserAsync(
-            loginName, "Full Name", new[] {
-                "foo",
-                "bar"
-            }, "password", userCredentials: TestCredentials.Root
-        );
+	[Fact]
+	public async Task that_was_disabled() {
+		var user = await Fixture.CreateTestUser();
+		
+		await Fixture.Users.DisableUserAsync(user.LoginName, userCredentials: TestCredentials.Root);
+		
+		await Fixture.Users
+			.EnableUserAsync(user.LoginName, userCredentials: TestCredentials.Root)
+			.ShouldNotThrowAsync();
+	}
 
-        await Fixture.Users.EnableUserAsync(loginName, userCredentials: TestCredentials.Root);
-    }
+	[Fact]
+	public async Task that_is_enabled() {
+		var user = await Fixture.CreateTestUser();
+		
+		await Fixture.Users
+			.EnableUserAsync(user.LoginName, userCredentials: TestCredentials.Root)
+			.ShouldNotThrowAsync();
+	}
 }

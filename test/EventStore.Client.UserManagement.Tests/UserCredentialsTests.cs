@@ -2,76 +2,75 @@ using System.Net.Http.Headers;
 using System.Text;
 using static System.Convert;
 
-namespace EventStore.Client.Tests; 
+namespace EventStore.Client.Tests;
 
 public class UserCredentialsTests {
-    static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(false);
+	const string JwtToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+	                      + "eyJzdWIiOiI5OSIsIm5hbWUiOiJKb2huIFdpY2siLCJpYXQiOjE1MTYyMzkwMjJ9."
+	                      + "MEdv44JIdlLh-GgqxOTZD7DHq28xJowhQFmDnT3NDIE";
 
-    static string EncodeCredentials(string username, string password) => 
-        ToBase64String(Utf8NoBom.GetBytes($"{username}:{password}"));
+	static readonly UTF8Encoding Utf8NoBom = new(false);
 
-    const string JwtToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
-                          + "eyJzdWIiOiI5OSIsIm5hbWUiOiJKb2huIFdpY2siLCJpYXQiOjE1MTYyMzkwMjJ9."
-                          + "MEdv44JIdlLh-GgqxOTZD7DHq28xJowhQFmDnT3NDIE";
+	static string EncodeCredentials(string username, string password) => ToBase64String(Utf8NoBom.GetBytes($"{username}:{password}"));
 
-    [Fact]
-    public void from_username_and_password() {
-        var user = Fakers.Users.Generate();
+	[Fact]
+	public void from_username_and_password() {
+		var user = Fakers.Users.Generate();
 
-        var value = new AuthenticationHeaderValue(
-            Constants.Headers.BasicScheme,
-            EncodeCredentials(user.LoginName, user.Password)
-        );
+		var value = new AuthenticationHeaderValue(
+			Constants.Headers.BasicScheme,
+			EncodeCredentials(user.LoginName, user.Password)
+		);
 
-        var basicAuthInfo = value.ToString();
+		var basicAuthInfo = value.ToString();
 
-        var credentials = new UserCredentials(user.LoginName, user.Password);
+		var credentials = new UserCredentials(user.LoginName, user.Password);
 
-        credentials.Username.ShouldBe(user.LoginName);
-        credentials.Password.ShouldBe(user.Password);
-        credentials.ToString().ShouldBe(basicAuthInfo);
-    }
+		credentials.Username.ShouldBe(user.LoginName);
+		credentials.Password.ShouldBe(user.Password);
+		credentials.ToString().ShouldBe(basicAuthInfo);
+	}
 
-    [Theory]
-    [InlineData("madison", "itwill:befine")]
-    [InlineData("admin", "changeit")]
-    public void from_authentication_header_with_basic_scheme(string username, string password) {
-        var value = new AuthenticationHeaderValue(
-            Constants.Headers.BasicScheme,
-            EncodeCredentials(username, password)
-        );
+	[Theory]
+	[InlineData("madison", "itwill:befine")]
+	[InlineData("admin", "changeit")]
+	public void from_authentication_header_with_basic_scheme(string username, string password) {
+		var value = new AuthenticationHeaderValue(
+			Constants.Headers.BasicScheme,
+			EncodeCredentials(username, password)
+		);
 
-        var basicAuthInfo = value.ToString();
-        
-        var credentials = new UserCredentials(value);
+		var basicAuthInfo = value.ToString();
 
-        credentials.Username.ShouldBe(username);
-        credentials.Password.ShouldBe(password);
-        credentials.ToString().ShouldBe(basicAuthInfo);
-    }
+		var credentials = new UserCredentials(value);
 
-    [Fact]
-    public void from_authentication_header_with_bearer_scheme() {
-        var value = new AuthenticationHeaderValue(
-            Constants.Headers.BearerScheme,
-            JwtToken
-        );
+		credentials.Username.ShouldBe(username);
+		credentials.Password.ShouldBe(password);
+		credentials.ToString().ShouldBe(basicAuthInfo);
+	}
 
-        var bearerToken = value.ToString();
+	[Fact]
+	public void from_authentication_header_with_bearer_scheme() {
+		var value = new AuthenticationHeaderValue(
+			Constants.Headers.BearerScheme,
+			JwtToken
+		);
 
-        var credentials = new UserCredentials(value);
+		var bearerToken = value.ToString();
 
-        credentials.Username.ShouldBeNull();
-        credentials.Password.ShouldBeNull();
-        credentials.ToString().ShouldBe(bearerToken);
-    }
+		var credentials = new UserCredentials(value);
 
-    [Fact]
-    public void from_bearer_token() {
-        var credentials = new UserCredentials(JwtToken);
+		credentials.Username.ShouldBeNull();
+		credentials.Password.ShouldBeNull();
+		credentials.ToString().ShouldBe(bearerToken);
+	}
 
-        credentials.Username.ShouldBeNull();
-        credentials.Password.ShouldBeNull();
-        credentials.ToString().ShouldBe($"Bearer {JwtToken}");
-    }
+	[Fact]
+	public void from_bearer_token() {
+		var credentials = new UserCredentials(JwtToken);
+
+		credentials.Username.ShouldBeNull();
+		credentials.Password.ShouldBeNull();
+		credentials.ToString().ShouldBe($"Bearer {JwtToken}");
+	}
 }

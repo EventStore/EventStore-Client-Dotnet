@@ -34,7 +34,7 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
     INetworkService? Network { get; set; } = null!;
     
     public virtual async Task Start() {
-        Logger.Information("Starting container service...");
+        Logger.Information("Container service starting");
         
         await TestServiceGatekeeper.Wait();
         
@@ -62,7 +62,7 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
                 Logger.Information("Container service started");
             }
             catch (Exception ex) {
-                throw new FluentDockerException("Failed to start service", ex);
+                throw new FluentDockerException("Failed to start container service", ex);
             }
 
             try {
@@ -89,7 +89,7 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
             Service.Stop();
         }
         catch (Exception ex) {
-            throw new FluentDockerException("Failed to stop service", ex);
+            throw new FluentDockerException("Failed to stop container service", ex);
         }
     }
 
@@ -102,7 +102,7 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
             }
         }
         catch (Exception ex) {
-            throw new FluentDockerException("Failed to dispose of service", ex);
+            throw new FluentDockerException("Failed to dispose of container service", ex);
         }
         
         return ValueTask.CompletedTask;
