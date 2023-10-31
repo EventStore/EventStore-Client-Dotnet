@@ -18,19 +18,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
     </ItemGroup>
-
-    <ItemGroup>
-        <CompilerVisibleProperty Include="RootNamespace"/>
-        <ProjectReference Include="..\..\generators\EventStore.Tests.SourceGenerators\EventStore.Tests.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
-    </ItemGroup>
-
-    <!--    <ItemGroup>-->
-    <!--        <Content Include="..\..\certs\**\*">-->
-    <!--            <Link>certs\%(RecursiveDir)/%(FileName)%(Extension)</Link>-->
-    <!--            <CopyToOutputDirectory>Always</CopyToOutputDirectory>-->
-    <!--        </Content>-->
-    <!--    </ItemGroup>-->
-
+    
     <ItemGroup>
         <Using Include="Bogus"/>
         <Using Include="Shouldly"/>
