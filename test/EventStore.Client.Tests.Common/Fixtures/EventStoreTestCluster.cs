@@ -5,13 +5,10 @@ using Serilog.Extensions.Logging;
 
 namespace EventStore.Client.Tests;
 
-public class EventStoreTestCluster : TestCompositeService {
-	
-	public EventStoreTestCluster(EventStoreFixtureOptions options) => Options = options;
+public class EventStoreTestCluster(EventStoreFixtureOptions options) : TestCompositeService {
+	EventStoreFixtureOptions Options { get; } = options;
 
-    EventStoreFixtureOptions Options { get; }
-    
-	public static EventStoreFixtureOptions DefaultOptions() {
+    public static EventStoreFixtureOptions DefaultOptions() {
 		const string connString = "esdb://localhost:2113,localhost:2112,localhost:2111?tls=true&tlsVerifyCert=false";
 
 		var defaultSettings = EventStoreClientSettings

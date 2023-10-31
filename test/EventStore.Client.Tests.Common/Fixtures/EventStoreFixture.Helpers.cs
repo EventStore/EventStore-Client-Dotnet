@@ -1,10 +1,15 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace EventStore.Client.Tests;
 
+[SuppressMessage("Performance", "CA1822:Mark members as static")]
 public partial class EventStoreFixture {
     const string TestEventType = "-";
+    
+    public T NewClient<T>(Action<EventStoreClientSettings> configure) where T : EventStoreClientBase, new() =>
+	    (T)Activator.CreateInstance(typeof(T), new object?[] { ClientSettings.With(configure) })!;
 
     public string GetStreamName([CallerMemberName] string? testMethod = null) =>
         $"{GetType().DeclaringType?.Name}.{testMethod ?? "unknown"}";

@@ -37,40 +37,6 @@ static class DatabaseWarmup<T> where T : EventStoreClientBase {
 	    finally {
 		    Semaphore.Release();
 	    }
-	    
-	    // if (!Completed.EnsureCalledOnce()) {
-		   //  Logger.Warning("*** Warming up... ***");
-		   //  try {
-			  //   await TryExecute(client, action, cancellationToken);
-			  //   Logger.Warning("*** Warmup completed ***");
-		   //  }
-		   //  catch (Exception ex) {
-			  //   Logger.Warning(ex, "*** Warmup failed ***");
-		   //  }
-		   //  finally {
-			  //   Semaphore.Release();
-		   //  }
-	    // }
-	    // else {
-		   //  Logger.Information("*** Warmup already completed ***");
-	    // }
-	    
-	    
-	    // if (!Completed.CurrentValue) {
-        //     Logger.Information("*** Warming up... ***");
-        //     await Semaphore.WaitAsync(cancellationToken);
-        //     try {
-        //         await TryExecute(client, action, cancellationToken);
-        //         Completed.CompareExchange(true, false);
-        //         Logger.Information("*** Warmup completed ***");
-        //     }
-        //     catch (Exception ex) {
-        //         Logger.Warning(ex, "*** Warmup failed :: {Error} ***", ex.Message);
-        //     }
-        //     finally {
-        //         Semaphore.Release();
-        //     }
-        // }
     }
 
     static Task TryExecute(EventStoreClientBase client, Func<CancellationToken, Task> action, CancellationToken cancellationToken) {

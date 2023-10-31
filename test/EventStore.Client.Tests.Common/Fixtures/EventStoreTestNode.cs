@@ -6,15 +6,11 @@ using Serilog.Extensions.Logging;
 
 namespace EventStore.Client.Tests;
 
-public class EventStoreTestNode : TestContainerService {
-	public EventStoreTestNode(EventStoreFixtureOptions? options = null) =>
-        Options =  options ?? DefaultOptions();
+public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : TestContainerService {
+	EventStoreFixtureOptions Options { get; } = options ?? DefaultOptions();
 
-    EventStoreFixtureOptions Options { get; }
-
-    static int _port = 2213;     
-    
-    static int NextPort() => Interlocked.Increment(ref _port);
+	static int _port = 2213;
+	static int NextPort() => Interlocked.Increment(ref _port);
     
 	public static EventStoreFixtureOptions DefaultOptions() {
 		const string connString = "esdb://admin:changeit@localhost:{port}/?tlsVerifyCert=false";
@@ -42,8 +38,9 @@ public class EventStoreTestNode : TestContainerService {
 	protected override ContainerBuilder Configure() {
 		var env = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
 
+		var port          = Options.ClientSettings.ConnectivitySettings.Address.Port;
 		var certsPath     = Path.Combine(Environment.CurrentDirectory, "certs");
-        var containerName = $"es-dotnet-test-{Guid.NewGuid().ToString()[30..]}";
+        var containerName = $"esbd-dotnet-test-{Guid.NewGuid().ToString()[30..]}-{port}";
 
         CertificatesManager.VerifyCertificatesExist(certsPath); // its ok... no really...
         
@@ -53,7 +50,7 @@ public class EventStoreTestNode : TestContainerService {
             .WithName(containerName)
             .WithEnvironment(env)
             .MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
-            .ExposePort(Options.ClientSettings.ConnectivitySettings.Address.Port, 2113)
+            .ExposePort(port, 2113)
             .WaitForHealthy(TimeSpan.FromSeconds(60));
     }
 }

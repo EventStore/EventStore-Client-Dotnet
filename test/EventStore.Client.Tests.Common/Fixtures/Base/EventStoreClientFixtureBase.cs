@@ -9,140 +9,141 @@ using Serilog.Events;
 using Serilog.Extensions.Logging;
 using Serilog.Formatting.Display;
 
-namespace EventStore.Client; 
+namespace EventStore.Client;
 
 public abstract class EventStoreClientFixtureBase : IAsyncLifetime {
-    public const string TestEventType = "-";
+	public const string TestEventType = "-";
 
-    private const string ConnectionStringSingle  = "esdb://admin:changeit@localhost:2113/?tlsVerifyCert=false";
-    private const string ConnectionStringCluster = "esdb://admin:changeit@localhost:2113,localhost:2112,localhost:2111?tls=true&tlsVerifyCert=false";
+	const string ConnectionStringSingle  = "esdb://admin:changeit@localhost:2113/?tlsVerifyCert=false";
+	const string ConnectionStringCluster = "esdb://admin:changeit@localhost:2113,localhost:2112,localhost:2111?tls=true&tlsVerifyCert=false";
 
-    private static readonly Subject<LogEvent> LogEventSubject = new Subject<LogEvent>();
+	static readonly Subject<LogEvent> LogEventSubject = new();
 
-    private readonly IList<IDisposable>       _disposables;
-    public           IEventStoreTestServer    TestServer { get; }
-    protected        EventStoreClientSettings Settings   { get; }
+	readonly IList<IDisposable> _disposables;
 
-    public Bogus.Faker Faker { get; } = new();
-		
-    static EventStoreClientFixtureBase() {
-        ConfigureLogging();
-    }
+	static EventStoreClientFixtureBase() => ConfigureLogging();
 
-    private static void ConfigureLogging() {
-        var loggerConfiguration = new LoggerConfiguration()
-            .Enrich.FromLogContext()
-            .MinimumLevel.Is(LogEventLevel.Verbose)
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-            .MinimumLevel.Override("Grpc", LogEventLevel.Verbose)
-            .WriteTo.Observers(observable => observable.Subscribe(LogEventSubject.OnNext))
-            .WriteTo.Seq("http://localhost:5341/", period: TimeSpan.FromMilliseconds(1));
-        Log.Logger = loggerConfiguration.CreateLogger();
+	protected EventStoreClientFixtureBase(
+		EventStoreClientSettings? clientSettings,
+		IDictionary<string, string>? env = null, bool noDefaultCredentials = false
+	) {
+		_disposables                                            = new List<IDisposable>();
+		ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+
+		var connectionString = GlobalEnvironment.UseCluster ? ConnectionStringCluster : ConnectionStringSingle;
+		Settings = clientSettings ?? EventStoreClientSettings.Create(connectionString);
+
+		if (noDefaultCredentials)
+			Settings.DefaultCredentials = null;
+
+		Settings.DefaultDeadline = Debugger.IsAttached
+			? new TimeSpan?()
+			: TimeSpan.FromSeconds(30);
+
+		var hostCertificatePath = Path.Combine(
+			Environment.CurrentDirectory,
+			GlobalEnvironment.UseCluster ? "certs-cluster" : "certs"
+		);
+
+		Settings.LoggerFactory ??= new SerilogLoggerFactory();
+
+		Settings.ConnectivitySettings.MaxDiscoverAttempts = 20;
+		Settings.ConnectivitySettings.DiscoveryInterval   = TimeSpan.FromSeconds(1);
+
+		if (GlobalEnvironment.UseExternalServer)
+			TestServer = new EventStoreTestServerExternal();
+		else
+			TestServer = GlobalEnvironment.UseCluster
+				? new EventStoreTestServerCluster(hostCertificatePath, Settings.ConnectivitySettings.Address, env)
+				: new EventStoreTestServer(hostCertificatePath, Settings.ConnectivitySettings.Address, env);
+	}
+
+	public    IEventStoreTestServer    TestServer { get; }
+	protected EventStoreClientSettings Settings   { get; }
+
+	public Faker Faker { get; } = new();
+
+	public virtual async Task InitializeAsync() {
+		await TestServer.StartAsync().WithTimeout(TimeSpan.FromMinutes(5));
+		await OnServerUpAsync().WithTimeout(TimeSpan.FromMinutes(5));
+		await Given().WithTimeout(TimeSpan.FromMinutes(5));
+		await When().WithTimeout(TimeSpan.FromMinutes(5));
+	}
+
+	public virtual Task DisposeAsync() {
+		foreach (var disposable in _disposables)
+			disposable.Dispose();
+
+		return TestServer.DisposeAsync().AsTask().WithTimeout(TimeSpan.FromMinutes(5));
+	}
+
+	static void ConfigureLogging() {
+		var loggerConfiguration = new LoggerConfiguration()
+			.Enrich.FromLogContext()
+			.MinimumLevel.Is(LogEventLevel.Verbose)
+			.MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+			.MinimumLevel.Override("Grpc", LogEventLevel.Verbose)
+			.WriteTo.Observers(observable => observable.Subscribe(LogEventSubject.OnNext))
+			.WriteTo.Seq("http://localhost:5341/", period: TimeSpan.FromMilliseconds(1));
+
+		Log.Logger = loggerConfiguration.CreateLogger();
 #if GRPC_CORE
 			GrpcEnvironment.SetLogger(new GrpcCoreSerilogLogger(Log.Logger.ForContext<GrpcCoreSerilogLogger>()));
 #endif
-        AppDomain.CurrentDomain.DomainUnload += (_, e) => Log.CloseAndFlush();
-    }
+		AppDomain.CurrentDomain.DomainUnload += (_, e) => Log.CloseAndFlush();
+	}
 
-    protected EventStoreClientFixtureBase(EventStoreClientSettings? clientSettings,
-                                          IDictionary<string, string>? env = null, bool noDefaultCredentials = false) {
-        _disposables                                            = new List<IDisposable>();
-        ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+	protected abstract Task OnServerUpAsync();
+	protected abstract Task Given();
+	protected abstract Task When();
 
-        var connectionString = GlobalEnvironment.UseCluster ? ConnectionStringCluster : ConnectionStringSingle;
-        Settings = clientSettings ?? EventStoreClientSettings.Create(connectionString);
+	public IEnumerable<EventData> CreateTestEvents(int count = 1, string? type = null, int metadataSize = 1) =>
+		Enumerable.Range(0, count).Select(index => CreateTestEvent(index, type ?? TestEventType, metadataSize));
 
-        if (noDefaultCredentials) {
-            Settings.DefaultCredentials = null;
-        }
-			
-        Settings.DefaultDeadline = Debugger.IsAttached
-            ? new TimeSpan?()
-            : TimeSpan.FromSeconds(30);
+	protected static EventData CreateTestEvent(int index) => CreateTestEvent(index, TestEventType, 1);
 
-        var hostCertificatePath = Path.Combine(ProjectDir.Current, "..", "..",
-            GlobalEnvironment.UseCluster ? "certs-cluster" : "certs");
+	protected static EventData CreateTestEvent(int index, string type, int metadataSize) =>
+		new(
+			Uuid.NewUuid(),
+			type,
+			Encoding.UTF8.GetBytes($@"{{""x"":{index}}}"),
+			Encoding.UTF8.GetBytes("\"" + new string('$', metadataSize) + "\"")
+		);
 
-        Settings.LoggerFactory ??= new SerilogLoggerFactory();
+	public string GetStreamName([CallerMemberName] string? testMethod = null) {
+		var type = GetType();
 
-        Settings.ConnectivitySettings.MaxDiscoverAttempts = 20;
-        Settings.ConnectivitySettings.DiscoveryInterval   = TimeSpan.FromSeconds(1);
+		return $"{type.DeclaringType?.Name}.{testMethod ?? "unknown"}";
+	}
 
-        if (GlobalEnvironment.UseExternalServer) {
-            TestServer = new EventStoreTestServerExternal();
-        } else {
-            TestServer = GlobalEnvironment.UseCluster
-                ? new EventStoreTestServerCluster(hostCertificatePath, Settings.ConnectivitySettings.Address, env) 
-                : new EventStoreTestServer(hostCertificatePath, Settings.ConnectivitySettings.Address, env);
-        }
-    }
+	public void CaptureLogs(ITestOutputHelper testOutputHelper) {
+		const string captureCorrelationId = nameof(captureCorrelationId);
 
-    protected abstract Task OnServerUpAsync();
-    protected abstract Task Given();
-    protected abstract Task When();
+		var captureId = Guid.NewGuid();
 
-    public IEnumerable<EventData> CreateTestEvents(int count = 1, string? type = null, int metadataSize = 1)
-        => Enumerable.Range(0, count).Select(index => CreateTestEvent(index, type ?? TestEventType, metadataSize));
+		var callContextData = new AsyncLocal<(string, Guid)> {
+			Value = (captureCorrelationId, captureId)
+		};
 
-    protected static EventData CreateTestEvent(int index) => CreateTestEvent(index, TestEventType, 1);
+		bool Filter(LogEvent logEvent) => callContextData.Value.Item2.Equals(captureId);
 
-    protected static EventData CreateTestEvent(int index, string type, int metadataSize)
-        => new EventData(
-            eventId: Uuid.NewUuid(),
-            type: type,
-            data: Encoding.UTF8.GetBytes($@"{{""x"":{index}}}"),
-            metadata: Encoding.UTF8.GetBytes("\"" + new string('$', metadataSize) + "\""));
+		var formatter = new MessageTemplateTextFormatter("{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message}");
 
-    public virtual async Task InitializeAsync() {
-        await TestServer.StartAsync().WithTimeout(TimeSpan.FromMinutes(5));
-        await OnServerUpAsync().WithTimeout(TimeSpan.FromMinutes(5));
-        await Given().WithTimeout(TimeSpan.FromMinutes(5));
-        await When().WithTimeout(TimeSpan.FromMinutes(5));
-    }
+		var formatterWithException =
+			new MessageTemplateTextFormatter("{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message}{NewLine}{Exception}");
 
-    public virtual Task DisposeAsync() {
-        foreach (var disposable in _disposables) {
-            disposable.Dispose();
-        }
+		var subscription = LogEventSubject.Where(Filter).Subscribe(
+			logEvent => {
+				using var writer = new StringWriter();
+				if (logEvent.Exception != null)
+					formatterWithException.Format(logEvent, writer);
+				else
+					formatter.Format(logEvent, writer);
 
-        return TestServer.DisposeAsync().AsTask().WithTimeout(TimeSpan.FromMinutes(5));
-    }
+				testOutputHelper.WriteLine(writer.ToString());
+			}
+		);
 
-    public string GetStreamName([CallerMemberName] string? testMethod = null) {
-        var type = GetType();
-
-        return $"{type.DeclaringType?.Name}.{testMethod ?? "unknown"}";
-    }
-
-    public void CaptureLogs(ITestOutputHelper testOutputHelper) {
-        const string captureCorrelationId = nameof(captureCorrelationId);
-
-        var captureId = Guid.NewGuid();
-
-        var callContextData = new AsyncLocal<(string, Guid)> {
-            Value = (captureCorrelationId, captureId)
-        };
-
-        bool Filter(LogEvent logEvent) => callContextData.Value.Item2.Equals(captureId);
-
-        MessageTemplateTextFormatter formatter = new MessageTemplateTextFormatter(
-            "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message}");
-
-        MessageTemplateTextFormatter formatterWithException =
-            new MessageTemplateTextFormatter(
-                "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message}{NewLine}{Exception}");
-
-        var subscription = LogEventSubject.Where(Filter).Subscribe(logEvent => {
-            using var writer = new StringWriter();
-            if (logEvent.Exception != null) {
-                formatterWithException.Format(logEvent, writer);
-            } else {
-                formatter.Format(logEvent, writer);
-            }
-
-            testOutputHelper.WriteLine(writer.ToString());
-        });
-
-        _disposables.Add(subscription);
-    }
+		_disposables.Add(subscription);
+	}
 }

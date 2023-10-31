@@ -13,28 +13,16 @@ static class Logging {
 	static readonly Subject<LogEvent>                       LogEventSubject = new();
 	static readonly ConcurrentDictionary<Guid, IDisposable> Subscriptions   = new();
 
-    static readonly MessageTemplateTextFormatter DefaultFormatter;
+	static readonly string                       DefaultTemplate;
+	static readonly MessageTemplateTextFormatter DefaultFormatter;
     
     static Logging() {
-	    DefaultFormatter = new("[{Timestamp:HH:mm:ss.fff} {Level:u3}] {TestRunId} ({ThreadId:000}) {SourceContext} {Message}{NewLine}{Exception}");
+	    DefaultTemplate  = "[{Timestamp:HH:mm:ss.fff} {Level:u3}] ({ThreadId:000}) {SourceContext} {Message}{NewLine}{Exception}";
+	    DefaultFormatter = new(DefaultTemplate);
 	    
 	    Log.Logger = new LoggerConfiguration()
-	        .Enrich.WithProperty(Serilog.Core.Constants.SourceContextPropertyName, "EventStore.Client.Tests")
-            .Enrich.FromLogContext()
-	        .Enrich.WithThreadId()
-            .MinimumLevel.Is(LogEventLevel.Verbose)
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-	        .MinimumLevel.Override("Grpc", LogEventLevel.Verbose)
-	        //.MinimumLevel.Override("EventStore.Client.SharingProvider", LogEventLevel.Information)
+		    .ReadFrom.Configuration(Application.Configuration)
             .WriteTo.Observers(x => x.Subscribe(LogEventSubject.OnNext))
-	        .WriteTo.Logger(
-		        logger => logger.WriteTo.Console(
-			        theme: AnsiConsoleTheme.Literate, 
-			        outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {TestRunId} ({ThreadId:000}) {SourceContext} {Message}{NewLine}{Exception}", 
-			        applyThemeToRedirectedOutput: true
-			    )
-	        )
-            .WriteTo.Seq("http://localhost:5341/", period: TimeSpan.FromMilliseconds(1))
 	        .CreateLogger();
 	    
         #if GRPC_CORE
@@ -48,6 +36,9 @@ static class Logging {
 
     public static void Initialize() { } // triggers static ctor
 
+    /// <summary>
+    ///   Captures logs for the duration of the test run.
+    /// </summary>
 	static Guid CaptureLogs(Action<string> write, Guid testRunId = default) {
 	    if (testRunId == default)
 		    testRunId = Guid.NewGuid();
@@ -57,19 +48,20 @@ static class Logging {
 
 	    var subscription = LogEventSubject
 		    .Where(_ => callContextData.Value.Equals(testRunId))
-		    .Subscribe(
-			    logEvent => {
-				    logEvent.AddOrUpdateProperty(testRunIdProperty);
-				    using var writer = new StringWriter();
-				    DefaultFormatter.Format(logEvent, writer);
-				    write(writer.ToString().Trim());
-			    }
-		    );
+		    .Subscribe(WriteLogEvent());
 	    
 	    Subscriptions.TryAdd(testRunId, subscription);
 
 	    return testRunId;
-    }
+
+	    Action<LogEvent> WriteLogEvent() =>
+		    logEvent => {
+			    logEvent.AddOrUpdateProperty(testRunIdProperty);
+			    using var writer = new StringWriter();
+			    DefaultFormatter.Format(logEvent, writer);
+			    write(writer.ToString().Trim());
+		    };
+	}
     
     public static Guid CaptureLogs(ITestOutputHelper outputHelper, Guid testRunId = default) => 
 	    CaptureLogs(outputHelper.WriteLine, testRunId);

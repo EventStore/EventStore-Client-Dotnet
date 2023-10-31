@@ -19,7 +19,6 @@
         <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1"/>
         <PackageReference Include="Serilog" Version="3.0.1"/>
         <PackageReference Include="Serilog.AspNetCore" Version="7.0.0"/>
-        <PackageReference Include="Serilog.Enrichers.Environment" Version="2.3.0"/>
         <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0"/>
         <PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0"/>
         <PackageReference Include="Serilog.Settings.Configuration" Version="7.0.1"/>
@@ -46,11 +45,11 @@
         <None Update=".env">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
-        <None Update="docker-compose.single.yml">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
         <None Update="xunit.runner.json">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="appsettings.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 
