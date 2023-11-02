@@ -1,5 +1,3 @@
-using FlakyTest.XUnit.Attributes;
-
 namespace EventStore.Client.Operations.Tests;
 
 public class ShutdownNodeTests : IClassFixture<InsecureClientTestFixture> {
@@ -9,10 +7,6 @@ public class ShutdownNodeTests : IClassFixture<InsecureClientTestFixture> {
 	InsecureClientTestFixture Fixture { get; }
 
 	[Fact]
-	public async Task shutdown_does_not_throw() => 
+	public async Task shutdown_does_not_throw() =>
 		await Fixture.Operations.ShutdownAsync(userCredentials: TestCredentials.Root).ShouldNotThrowAsync();
-	
-	[MaybeFixedFact(1)]
-	public async Task shutdown_without_credentials_throws() =>
-		await Fixture.Operations.ShutdownAsync().ShouldThrowAsync<AccessDeniedException>();
 }

@@ -112,11 +112,11 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	}
 
 	public async Task InitializeAsync() {
-		await Service.Start().ShouldNotThrowAsync();
+		await Service.Start();
 
 		await WarmUp();
 
-		await OnSetup().ShouldNotThrowAsync("Failed to run OnSetup!");
+		await OnSetup();
 	}
 	
 	public async Task DisposeAsync() {

@@ -1,7 +1,7 @@
 namespace EventStore.Client.Operations.Tests;
 
-public class @admin : IClassFixture<InsecureClientTestFixture> {
-	public admin(ITestOutputHelper output, InsecureClientTestFixture fixture) =>
+public class MergeIndexesTests : IClassFixture<InsecureClientTestFixture> {
+	public MergeIndexesTests(ITestOutputHelper output, InsecureClientTestFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
 	InsecureClientTestFixture Fixture { get; }
