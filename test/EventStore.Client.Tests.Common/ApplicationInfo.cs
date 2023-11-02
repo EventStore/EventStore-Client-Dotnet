@@ -11,6 +11,9 @@ using static System.StringComparison;
 
 namespace EventStore.Client;
 
+/// <summary>
+/// Loads configuration and provides information about the application environment.
+/// </summary>
 public static class Application {
 	static Application() {
 		ForegroundColor = ConsoleColor.Magenta;
@@ -27,7 +30,9 @@ public static class Application {
 
 		Configuration = builder.Build();
 
-		WriteLine($"CONSOLE: {Environment} configuration loaded with {Configuration.AsEnumerable().Count()} entries from {builder.Sources.Count} sources.");
+		WriteLine($"CONSOLE: {Environment} configuration loaded "
+		        + $"with {Configuration.AsEnumerable().Count()} entries "
+		        + $"from {builder.Sources.Count} sources.");
 
 		IsDevelopment = IsEnvironment(Environments.Development);
 		IsStaging     = IsEnvironment(Environments.Staging);

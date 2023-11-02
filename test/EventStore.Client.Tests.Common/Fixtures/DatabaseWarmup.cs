@@ -13,18 +13,22 @@ static class DatabaseWarmup<T> where T : EventStoreClientBase {
     static readonly SemaphoreSlim      Semaphore = new(1, 1);
     static readonly ILogger            Logger    = Log.ForContext(SourceContextPropertyName, typeof(T).Name);
     
+    static DatabaseWarmup() {
+		AppDomain.CurrentDomain.DomainUnload += (_, _) => Completed.Set(false);
+	}
+    
     public static async Task TryExecuteOnce(T client, Func<CancellationToken, Task> action, CancellationToken cancellationToken = default) {
 	    await Semaphore.WaitAsync(cancellationToken);
 
 	    try {
-		    if (!Completed.EnsureCalledOnce()) {
+		    // if (!Completed.EnsureCalledOnce()) {
 			    Logger.Warning("*** Warmup started ***");
 			    await TryExecute(client, action, cancellationToken);
 			    Logger.Warning("*** Warmup completed ***");
-		    }
-		    else {
-			    Logger.Information("*** Warmup skipped ***");
-		    }
+		    // }
+		    // else {
+			   //  Logger.Information("*** Warmup skipped ***");
+		    // }
 	    }
 	    catch (Exception ex) {
 		    if (Application.DebuggerIsAttached) {

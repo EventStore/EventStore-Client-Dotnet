@@ -5,47 +5,43 @@ namespace EventStore.Client.Tests;
 
 public static class GlobalEnvironment {
 	static GlobalEnvironment() {
-		Variables = FromConfiguration(Application.Configuration);
+		EnsureDefaults(Application.Configuration);
 
-		UseCluster        = false; // Application.Configuration.GetValue("ES_USE_CLUSTER", false);
-		UseExternalServer = Application.Configuration.GetValue("ES_USE_EXTERNAL_SERVER", false);
-		DockerImage       = Variables["ES_DOCKER_IMAGE"];
-		DbLogFormat       = Variables["EVENTSTORE_DB_LOG_FORMAT"];
+		UseCluster        = Application.Configuration.GetValue<bool>("ES_USE_CLUSTER");
+		UseExternalServer = Application.Configuration.GetValue<bool>("ES_USE_EXTERNAL_SERVER");
+		DockerImage       = Application.Configuration.GetValue<string>("ES_DOCKER_IMAGE")!;
+		DbLogFormat       = Application.Configuration.GetValue<string>("EVENTSTORE_DB_LOG_FORMAT")!;
+
+		Variables = Application.Configuration.AsEnumerable()
+			.Where(x => x.Key.StartsWith("ES_") || x.Key.StartsWith("EVENTSTORE_"))
+			.OrderBy(x => x.Key)
+			.ToImmutableDictionary(x => x.Key, x => x.Value ?? string.Empty)!;
+
+		return;
+
+		static void EnsureDefaults(IConfiguration configuration) {
+			configuration.EnsureValue("ES_USE_CLUSTER", "false");
+			configuration.EnsureValue("ES_USE_EXTERNAL_SERVER", "false");
+
+			configuration.EnsureValue("ES_DOCKER_REGISTRY", "ghcr.io/eventstore/eventstore");
+			configuration.EnsureValue("ES_DOCKER_TAG", "ci");
+			configuration.EnsureValue("ES_DOCKER_IMAGE", $"{configuration["ES_DOCKER_REGISTRY"]}:{configuration["ES_DOCKER_TAG"]}");
+
+			configuration.EnsureValue("EVENTSTORE_MEM_DB", "false");
+			configuration.EnsureValue("EVENTSTORE_RUN_PROJECTIONS", "None");
+			configuration.EnsureValue("EVENTSTORE_START_STANDARD_PROJECTIONS", "false");
+			configuration.EnsureValue("EVENTSTORE_DB_LOG_FORMAT", "V2");
+			configuration.EnsureValue("EVENTSTORE_LOG_LEVEL", "Verbose");
+			configuration.EnsureValue("EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH", "/etc/eventstore/certs/ca");
+		}
 	}
 
-	public static ImmutableDictionary<string, string> Variables { get; }
+	public static ImmutableDictionary<string, string?> Variables { get; }
 
 	public static bool   UseCluster        { get; }
 	public static bool   UseExternalServer { get; }
 	public static string DockerImage       { get; }
 	public static string DbLogFormat       { get; }
-	
-	public static ImmutableDictionary<string, string> FromConfiguration(IConfiguration configuration) {
-		var env = configuration.AsEnumerable()
-			.Where(x => x.Key.StartsWith("ES_") || x.Key.StartsWith("EVENTSTORE_"))
-			.ToDictionary(x => x.Key, x => x.Value ?? string.Empty);
-
-		EnsureSet(env, "ES_USE_CLUSTER", "false");
-		EnsureSet(env, "ES_USE_EXTERNAL_SERVER", "false");
-		
-		EnsureSet(env, "ES_DOCKER_REGISTRY", "ghcr.io/eventstore/eventstore");
-		EnsureSet(env, "ES_DOCKER_TAG", "ci");
-		EnsureSet(env, "ES_DOCKER_IMAGE", $"{env["ES_DOCKER_REGISTRY"]}:{env["ES_DOCKER_TAG"]}");
-		
-		EnsureSet(env, "EVENTSTORE_MEM_DB", "false");
-		EnsureSet(env, "EVENTSTORE_RUN_PROJECTIONS", "None");
-		EnsureSet(env, "EVENTSTORE_START_STANDARD_PROJECTIONS", "false");
-		EnsureSet(env, "EVENTSTORE_DB_LOG_FORMAT", "V2");
-		EnsureSet(env, "EVENTSTORE_LOG_LEVEL", "Verbose");
-		EnsureSet(env, "EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH", "/etc/eventstore/certs/ca");
-		
-		return env.ToImmutableDictionary();
-		
-		static void EnsureSet(IDictionary<string, string> dic, string key, string value) {
-			if (!dic.TryGetValue(key, out var actualValue) || string.IsNullOrEmpty(actualValue))
-				dic[key] = value;
-		}
-	}
 	
 	#region . Obsolete .
 

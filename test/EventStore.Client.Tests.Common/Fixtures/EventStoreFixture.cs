@@ -4,7 +4,7 @@ using Serilog;
 
 namespace EventStore.Client.Tests;
 
-public record EventStoreFixtureOptions(EventStoreClientSettings ClientSettings, IDictionary<string, string> Environment) {
+public record EventStoreFixtureOptions(EventStoreClientSettings ClientSettings, IDictionary<string, string?> Environment) {
 	public EventStoreFixtureOptions RunInMemory(bool runInMemory = true) =>
 		this with { Environment = Environment.With(x => x["EVENTSTORE_MEM_DB"] = runInMemory.ToString()) };
 
@@ -39,7 +39,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	protected EventStoreFixture(ConfigureFixture configure) {
 		// TODO SS: should I verify the certificates exist here?
 		if (GlobalEnvironment.UseExternalServer) {
-			Options = new(new(), new Dictionary<string, string>());
+			Options = new(new(), new Dictionary<string, string?>());
 			Service = new TestBypassService();
 		}
 
@@ -87,11 +87,10 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 		var testRunId = Logging.CaptureLogs(outputHelper);
 		TestRuns.Add(testRunId);
 		Logger.Information(">>> Test Run {testRunId} {Operation} <<<", testRunId, "starting");
+		Service.ReportStatus();
 	}
 	
-	public async Task InitializeAsync() {
-		await Service.Start().ShouldNotThrowAsync();
-
+	async Task WarmUp() {
 		Logger.Information("*** !!! Warming up database !!! ***");
 
 		Users = new(ClientSettings);
@@ -110,11 +109,16 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 
 		Operations = new(ClientSettings);
 		await Operations.WarmUp().ShouldNotThrowAsync();
+	}
 
-		Logger.Information("Setup completed");
+	public async Task InitializeAsync() {
+		await Service.Start().ShouldNotThrowAsync();
+
+		await WarmUp();
 
 		await OnSetup().ShouldNotThrowAsync("Failed to run OnSetup!");
 	}
+	
 	public async Task DisposeAsync() {
 		try {
 			await OnTearDown();

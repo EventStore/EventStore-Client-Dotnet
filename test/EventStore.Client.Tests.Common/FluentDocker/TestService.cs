@@ -9,6 +9,8 @@ namespace EventStore.Client.Tests.FluentDocker;
 public interface ITestService : IAsyncDisposable {
     Task Start();
     Task Stop();
+
+    void ReportStatus();
 }
 
 /// <summary>
@@ -91,6 +93,27 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
         catch (Exception ex) {
             throw new FluentDockerException("Failed to stop container service", ex);
         }
+    }
+
+    public void ReportStatus() {
+	    if (Service is IContainerService containerService) {
+		    ReportContainerStatus(containerService);
+	    }
+
+	    if (Service is ICompositeService compose) {
+			foreach (var container in compose.Containers) {
+				ReportContainerStatus(container);
+			}
+		}
+
+	    return;
+
+	    void ReportContainerStatus(IContainerService service) {
+		    var cfg = service.GetConfiguration(true);
+		    Logger.Information("Container {Name} {State} Ports: {Ports}", service.Name, service.State, cfg.Config.ExposedPorts.Keys);
+	    }
+
+	    // var docker = Fd.Hosts().Discover().FirstOrDefault(x => x.IsNative || x.Name == "default")!;
     }
 
     public virtual ValueTask DisposeAsync() {

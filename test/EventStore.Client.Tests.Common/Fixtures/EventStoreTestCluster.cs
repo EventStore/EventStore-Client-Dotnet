@@ -18,7 +18,7 @@ public class EventStoreTestCluster(EventStoreFixtureOptions options) : TestCompo
 			.With(x => x.ConnectivitySettings.MaxDiscoverAttempts = 30)
 			.With(x => x.ConnectivitySettings.DiscoveryInterval = TimeSpan.FromSeconds(1));
 
-		var defaultEnvironment = new Dictionary<string, string>(GlobalEnvironment.Variables) {
+		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
 			["ES_CERTS_CLUSTER"]                        = Path.Combine(Environment.CurrentDirectory, "certs-cluster"),
 			["EVENTSTORE_CLUSTER_SIZE"]                 = "3",
 			["EVENTSTORE_INT_TCP_PORT"]                 = "1112",

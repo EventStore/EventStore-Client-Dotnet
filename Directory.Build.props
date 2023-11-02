@@ -9,7 +9,7 @@
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <LangVersion>preview</LangVersion>
 
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Configuration Condition=" '$(Configuration)' == '' ">full</Configuration>
         <DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
         <DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
 

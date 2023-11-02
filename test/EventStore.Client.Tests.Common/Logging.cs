@@ -4,7 +4,6 @@ using System.Reactive.Subjects;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Display;
-using Serilog.Sinks.SystemConsole.Themes;
 using Xunit.Sdk;
 
 namespace EventStore.Client.Tests;
