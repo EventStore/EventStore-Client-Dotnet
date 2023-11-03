@@ -9,11 +9,9 @@
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <LangVersion>preview</LangVersion>
 
-        <Configuration Condition=" '$(Configuration)' == '' ">full</Configuration>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
         <DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
-
-        <!--<OutputPath>$(MSBuildThisFileDirectory)\bin\$(Configuration)\$(MSBuildProjectName)\</OutputPath>-->
 
         <UseLinkBase>true</UseLinkBase>
         <GrpcPackageVersion>2.49.0</GrpcPackageVersion>

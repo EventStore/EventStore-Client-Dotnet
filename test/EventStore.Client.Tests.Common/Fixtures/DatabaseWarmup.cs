@@ -22,29 +22,31 @@ static class DatabaseWarmup<T> where T : EventStoreClientBase {
 	    fastFirst: false
     );
     
-    static DatabaseWarmup() {
-		AppDomain.CurrentDomain.DomainUnload += (_, _) => Completed.Set(false);
-    }
+    //  static DatabaseWarmup() {
+  		// AppDomain.CurrentDomain.DomainUnload += (_, _) => Completed.Set(false);
+    //  }
 
     public static async Task TryExecuteOnce(T client, Func<CancellationToken, Task> action, CancellationToken cancellationToken = default) {
-	    await Semaphore.WaitAsync(cancellationToken);
+	    await TryExecuteOld(client, action, cancellationToken);
 
-	    try {
-		    if (!Completed.EnsureCalledOnce()) {
-			    Logger.Warning("*** Warmup started ***");
-			    await TryExecute(client, action, cancellationToken);
-			    Logger.Warning("*** Warmup completed ***");
-		    }
-		    else {
-			    Logger.Information("*** Warmup skipped ***");
-		    }
-	    }
-	    finally {
-		    Semaphore.Release();
-	    }
+	    // await Semaphore.WaitAsync(cancellationToken);
+	    //
+	    // try {
+		   //  if (!Completed.EnsureCalledOnce()) {
+			  //   Logger.Warning("*** Warmup started ***");
+			  //   await TryExecuteOld(client, action, cancellationToken);
+			  //   Logger.Warning("*** Warmup completed ***");
+		   //  }
+		   //  else {
+			  //   Logger.Information("*** Warmup skipped ***");
+		   //  }
+	    // }
+	    // finally {
+		   //  Semaphore.Release();
+	    // }
     }
     
-    static Task TryExecute(EventStoreClientBase client, Func<CancellationToken, Task> action, CancellationToken cancellationToken) {
+    static async Task TryExecute(EventStoreClientBase client, Func<CancellationToken, Task> action, CancellationToken cancellationToken) {
         var retry = Policy
 	        .Handle<Exception>()
 	        .WaitAndRetryAsync(DefaultBackoffDelay);
@@ -66,7 +68,7 @@ static class DatabaseWarmup<T> where T : EventStoreClientBase {
 	        .TimeoutAsync(ExecutionTimeout)
             .WrapAsync(rediscover.WrapAsync(retry));
 
-        return policy.ExecuteAsync(async ct => {
+	    await policy.ExecuteAsync(async ct => {
             try {
                 await action(ct).ConfigureAwait(false);
             }
@@ -79,4 +81,57 @@ static class DatabaseWarmup<T> where T : EventStoreClientBase {
             }
         }, cancellationToken);
     }
+    
+    // This executes `warmup` with some somewhat subtle retry logic:
+	//     execute the `warmup`.
+	//     if it succeeds we are done.
+	//     if it throws an exception, wait a short time (100ms) and try again.
+	//     if it hangs
+	//         1. cancel it after a little while (backing off),
+	//         2. trigger rediscovery
+	//         3. try again.
+	//     eventually give up retrying.
+	public static Task TryExecuteOld(EventStoreClientBase client, Func<CancellationToken, Task> action, CancellationToken cancellationToken) {
+		const string retryCountKey = "retryCount";
+		
+		return Policy.Handle<Exception>()
+			.WaitAndRetryAsync(
+				retryCount: 200,
+				sleepDurationProvider: (retryCount, context) => {
+					context[retryCountKey] = retryCount;
+					return FromMilliseconds(100);
+				},
+				onRetry: (ex, slept, context) => { })
+			.WrapAsync(
+				Policy.TimeoutAsync(
+					timeoutProvider: context => {
+						// decide how long to allow for the call (including discovery if it is pending)
+						var retryCount = (int)context[retryCountKey];
+						var retryMs    = retryCount * 100;
+						retryMs = Math.Max(retryMs, 100); // wait at least
+						retryMs = Math.Min(retryMs, 2000); // wait at most
+						return FromMilliseconds(retryMs);
+					},
+					onTimeoutAsync: async (context, timeout, task, ex) => {
+						// timed out from the TimeoutPolicy, perhaps its broken. trigger rediscovery
+						// (if discovery is in progress it will continue, not restart)
+						await client.RediscoverAsync();
+					}))
+			.ExecuteAsync(
+				async (_, ct) => {
+					try {
+						await action(ct);
+					}
+					catch (Exception ex) when (ex is not OperationCanceledException) {
+						// grpc throws a rpcexception when you cancel the token (which we convert into
+						// invalid operation) - but polly expects operationcancelledexception or it wont
+						// call onTimeoutAsync. so raise that here.
+						ct.ThrowIfCancellationRequested();
+						throw;
+					}
+				},
+				contextData: new Dictionary<string, object> { { retryCountKey, 0 } },
+				cancellationToken
+			);
+	}
 }

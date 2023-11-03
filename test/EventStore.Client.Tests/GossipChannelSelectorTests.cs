@@ -69,7 +69,7 @@ public class GossipChannelSelectorTests {
 
 		var sut = new GossipChannelSelector(settings, channelCache, new BadGossipClient());
 
-		var ex = await Assert.ThrowsAsync<DiscoveryException>(async () => await sut.SelectChannelAsync(default).ConfigureAwait(false));
+		var ex = await Assert.ThrowsAsync<DiscoveryException>(async () => await sut.SelectChannelAsync(default));
 
 		Assert.Equal(3, ex.MaxDiscoverAttempts);
 	}

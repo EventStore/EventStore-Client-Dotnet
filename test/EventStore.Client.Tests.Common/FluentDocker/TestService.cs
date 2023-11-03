@@ -44,19 +44,19 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
 
 	        Service = builder.Build();
 
-	        // for some reason fluent docker does not always create the network
-	        // before the service is started, so we do it manually here
-	        if (Service is IContainerService service) {
-		        var cfg = service.GetConfiguration(true);
-	        
-		        Network = Fd
-			        .UseNetwork(cfg.Name)
-			        .IsInternal()
-			        .Build()
-			        .Attach(service, true);
-	        
-		        Logger.Information("Created network {Network}", Network.Name);
-	        }
+	        // // for some reason fluent docker does not always create the network
+	        // // before the service is started, so we do it manually here
+	        // if (Service is IContainerService service) {
+		       //  var cfg = service.GetConfiguration(true);
+	        //
+		       //  Network = Fd
+			      //   .UseNetwork(cfg.Name)
+			      //   .IsInternal()
+			      //   .Build()
+			      //   .Attach(service, true);
+	        //
+		       //  Logger.Information("Created network {Network}", Network.Name);
+	        // }
 
 	        try {
 		        Service.Start();

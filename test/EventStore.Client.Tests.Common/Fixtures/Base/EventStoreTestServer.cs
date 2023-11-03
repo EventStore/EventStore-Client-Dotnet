@@ -56,7 +56,7 @@ public class EventStoreTestServer : IEventStoreTestServer {
 			.WithName(ContainerName)
 			.MountVolume(_hostCertificatePath, "/etc/eventstore/certs", MountType.ReadOnly)
 			.ExposePort(2113, 2113)
-			.WaitForHealthy(TimeSpan.FromSeconds(30))
+			//.WaitForHealthy(TimeSpan.FromSeconds(120))
 			//.KeepContainer()
 			//.KeepRunning()
 			.Build();
