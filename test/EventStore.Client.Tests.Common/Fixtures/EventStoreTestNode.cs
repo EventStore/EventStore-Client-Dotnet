@@ -26,7 +26,7 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
 			//["EVENTSTORE_NODE_PORT"]                        = port,
 			["EVENTSTORE_NODE_PORT_ADVERTISE_AS"]           = port,
-			["EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS"] = port,
+			//["EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS"] = port,
 			["EVENTSTORE_ENABLE_EXTERNAL_TCP"]              = "false",
 			["EVENTSTORE_MEM_DB"]                           = "true",
 			["EVENTSTORE_CHUNK_SIZE"]                       = (1024 * 1024).ToString(),
@@ -57,9 +57,9 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			.WithEnvironment(env)
 			.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
 			.ExposePort(port, 2113)
-			.WaitForHealthy(TimeSpan.FromSeconds(60));
+			.WaitForHealthy(TimeSpan.FromSeconds(120))
 			//.WaitForMessageInLog($"========== [\"0.0.0.0:{port}\"] IS LEADER... SPARTA!")
-			//.WaitForMessageInLog("'ops' user added to $users.")
-			// .WaitForMessageInLog("'admin' user added to $users.");
+			.WaitForMessageInLog("'ops' user added to $users.")
+			.WaitForMessageInLog("'admin' user added to $users.");
 	}
 }

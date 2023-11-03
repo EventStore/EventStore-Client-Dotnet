@@ -11,7 +11,7 @@ jobs:
   test:
     timeout-minutes: 20
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         framework: [ net6.0, net7.0 ]
         os: [ ubuntu-latest ]

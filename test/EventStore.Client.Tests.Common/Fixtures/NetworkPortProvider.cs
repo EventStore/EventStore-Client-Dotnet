@@ -3,7 +3,7 @@ using System.Net.Sockets;
 
 namespace EventStore.Client.Tests;
 
-public class NetworkPortProvider(int port = 2113) {
+class NetworkPortProvider(int port = 2112) {
 	static readonly SemaphoreSlim Semaphore = new(1, 1);
 	public async Task<int> GetNextAvailablePort(TimeSpan delay = default) {
 		await Semaphore.WaitAsync();
@@ -36,5 +36,5 @@ public class NetworkPortProvider(int port = 2113) {
 		}
 	}
 
-	public int NextAvailablePort => GetNextAvailablePort(TimeSpan.FromMilliseconds(100)).GetAwaiter().GetResult();
+	public int NextAvailablePort => GetNextAvailablePort(TimeSpan.FromMilliseconds(250)).GetAwaiter().GetResult();
 }
