@@ -3,6 +3,7 @@ using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Common;
 using Ductus.FluentDocker.Services;
 using Serilog;
+using static Serilog.Core.Constants;
 
 namespace EventStore.Client.Tests.FluentDocker;
 
@@ -14,8 +15,8 @@ public interface ITestService : IAsyncDisposable {
 }
 
 /// <summary>
-/// Required to prevent multiple services from starting at the same time.
-/// This avoids failures on creating the networks they are attached to.
+/// This prevents multiple services from starting at the same time.
+/// Required to avoid failures on creating the networks the containers are attached to. 
 /// </summary>
 sealed class TestServiceGatekeeper {
     static readonly SemaphoreSlim Semaphore = new(1, 1);
@@ -27,10 +28,8 @@ sealed class TestServiceGatekeeper {
 public abstract class TestService<TService, TBuilder> : ITestService where TService : IService where TBuilder : BaseBuilder<TService> {
     ILogger Logger { get; }
 
-    public TestService() {
-        Logger = Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, GetType().Name);
-    }
-    
+    public TestService() => Logger = Log.ForContext(SourceContextPropertyName, GetType().Name);
+
     protected TService Service { get; private set; } = default!;
     
     INetworkService? Network { get; set; } = null!;
@@ -41,31 +40,32 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
         await TestServiceGatekeeper.Wait();
         
         try {
-            var builder = Configure();
+	        var builder = Configure();
 
-            Service = builder.Build();
+	        Service = builder.Build();
 
-            // for some reason fluent docker does not always create the network
-            // before the service is started, so we do it manually here
-            if (Service is IContainerService service) {
-                var cfg = service.GetConfiguration(true);
+	        // for some reason fluent docker does not always create the network
+	        // before the service is started, so we do it manually here
+	        if (Service is IContainerService service) {
+		        var cfg = service.GetConfiguration(true);
+	        
+		        Network = Fd
+			        .UseNetwork(cfg.Name)
+			        .IsInternal()
+			        .Build()
+			        .Attach(service, true);
+	        
+		        Logger.Information("Created network {Network}", Network.Name);
+	        }
 
-                Network = Fd
-                    .UseNetwork(cfg.Name)
-                    .IsInternal()
-                    .Build()
-                    .Attach(service, true);
-                
-                Logger.Information("Created network {Network}", Network.Name);
-            }
+	        try {
+		        Service.Start();
+		        Logger.Information("Container service started");
+	        }
+	        catch (Exception ex) {
+		        throw new FluentDockerException("Failed to start container service", ex);
 
-            try {
-                Service.Start();
-                Logger.Information("Container service started");
-            }
-            catch (Exception ex) {
-                throw new FluentDockerException("Failed to start container service", ex);
-            }
+	        }
 
             try {
                 await OnServiceStarted();

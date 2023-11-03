@@ -33,6 +33,8 @@ public static class GlobalEnvironment {
 			configuration.EnsureValue("EVENTSTORE_DB_LOG_FORMAT", "V2");
 			configuration.EnsureValue("EVENTSTORE_LOG_LEVEL", "Verbose");
 			configuration.EnsureValue("EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH", "/etc/eventstore/certs/ca");
+
+			configuration.EnsureValue("EVENTSTORE_DISABLE_LOG_FILE", "true");
 		}
 	}
 
