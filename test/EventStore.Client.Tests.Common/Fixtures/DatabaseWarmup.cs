@@ -43,7 +43,6 @@ static class DatabaseWarmup<T> where T : EventStoreClientBase {
 		    Semaphore.Release();
 	    }
     }
-
     
     static Task TryExecute(EventStoreClientBase client, Func<CancellationToken, Task> action, CancellationToken cancellationToken) {
         var retry = Policy
