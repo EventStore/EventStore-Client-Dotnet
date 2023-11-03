@@ -42,7 +42,8 @@ public class EventStoreTestServer : IEventStoreTestServer {
 			["EVENTSTORE_LOG_LEVEL"]                      = "Verbose",
 			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"]   = "10000",
 			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]     = "10000",
-			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]      = "True"
+			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]      = "false",
+			["EVENTSTORE_DISABLE_LOG_FILE"]               = "true"
 		};
 
 		foreach (var (key, value) in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>())
@@ -56,7 +57,6 @@ public class EventStoreTestServer : IEventStoreTestServer {
 			.MountVolume(_hostCertificatePath, "/etc/eventstore/certs", MountType.ReadOnly)
 			.ExposePort(2113, 2113)
 			.WaitForHealthy(TimeSpan.FromSeconds(30))
-			.ReuseIfExists()
 			//.KeepContainer()
 			//.KeepRunning()
 			.Build();

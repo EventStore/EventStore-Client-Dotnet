@@ -18,7 +18,7 @@ public static class Application {
 	static Application() {
 		ForegroundColor = ConsoleColor.Magenta;
 
-		WriteLine($"CONSOLE: {AppContext.BaseDirectory}");
+		WriteLine($"APP: {AppContext.BaseDirectory}");
 
 		Environment = GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? Environments.Development;
 
@@ -30,7 +30,7 @@ public static class Application {
 
 		Configuration = builder.Build();
 
-		WriteLine($"CONSOLE: {Environment} configuration loaded "
+		WriteLine($"APP: {Environment} configuration loaded "
 		        + $"with {Configuration.AsEnumerable().Count()} entries "
 		        + $"from {builder.Sources.Count} sources.");
 
@@ -44,10 +44,8 @@ public static class Application {
 
 		ForegroundColor = ConsoleColor.Blue;
 		
-		WriteLine($"CONSOLE: Framework        : {RuntimeInformation.FrameworkDescription}");
-		WriteLine($"CONSOLE: Operating System : {OSVersion}");
-		WriteLine($"CONSOLE: Processor Count  : {ProcessorCount}");
-		WriteLine($"CONSOLE: ThreadPool       : {workerThreads} Worker | {completionPortThreads} Async");
+		WriteLine($"APP: Processor Count  : {ProcessorCount}");
+		WriteLine($"APP: ThreadPool       : {workerThreads} Worker | {completionPortThreads} Async");
 
 		ForegroundColor = ConsoleColor.Magenta;
 	}
