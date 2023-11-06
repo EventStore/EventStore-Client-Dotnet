@@ -89,7 +89,7 @@ public class EventStoreTestServer : IEventStoreTestServer {
 		_httpClient?.Dispose();
 		_eventStore?.Dispose();
 
-		return new(Task.CompletedTask);
+		return ValueTask.CompletedTask;
 	}
 
 	static Version GetVersion() {

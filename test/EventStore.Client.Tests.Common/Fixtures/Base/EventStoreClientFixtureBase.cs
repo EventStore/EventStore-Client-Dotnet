@@ -27,7 +27,8 @@ public abstract class EventStoreClientFixtureBase : IAsyncLifetime {
 		EventStoreClientSettings? clientSettings,
 		IDictionary<string, string>? env = null, bool noDefaultCredentials = false
 	) {
-		_disposables                                            = new List<IDisposable>();
+		_disposables = new List<IDisposable>();
+		
 		ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
 
 		var connectionString = GlobalEnvironment.UseCluster ? ConnectionStringCluster : ConnectionStringSingle;

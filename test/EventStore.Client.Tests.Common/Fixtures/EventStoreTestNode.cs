@@ -51,7 +51,8 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 
 		var port          = Options.ClientSettings.ConnectivitySettings.Address.Port;
 		var certsPath     = Path.Combine(Environment.CurrentDirectory, "certs");
-		var containerName = $"esbd-dotnet-test-{port}-{Guid.NewGuid().ToString()[30..]}";
+		//var containerName = $"esbd-dotnet-test-{port}-{Guid.NewGuid().ToString()[30..]}";
+		var containerName = "es-client-dotnet-test";
 
 		CertificatesManager.VerifyCertificatesExist(certsPath); // its ok... no really...
 
@@ -62,7 +63,7 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			.WithEnvironment(env)
 			.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
 			.ExposePort(port, 2113)
-			.WaitForHealthy(TimeSpan.FromSeconds(30));
+			.WaitForHealthy(TimeSpan.FromSeconds(60));
 			//.WaitForMessageInLog($"========== [\"0.0.0.0:{port}\"] IS LEADER... SPARTA!")
 			//.WaitForMessageInLog("'ops' user added to $users.")
 			//.WaitForMessageInLog("'admin' user added to $users.");

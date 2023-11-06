@@ -127,7 +127,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 			// ignored
 		}
 
-		await Service.DisposeAsync();
+		await Service.DisposeAsync().AsTask().WithTimeout(TimeSpan.FromMinutes(5));
 
 		foreach (var testRunId in TestRuns)
 			Logging.ReleaseLogs(testRunId);

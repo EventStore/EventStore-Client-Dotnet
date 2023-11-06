@@ -119,10 +119,17 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
     public virtual ValueTask DisposeAsync() {
         try {
             Network?.Dispose();
-            
-            if (Service.State != ServiceRunningState.Unknown) {
-                Service.Dispose();
+
+            try {
+	            Service.Dispose();
             }
+            catch {
+	            // ignored
+            }
+
+            /*if (Service.State != ServiceRunningState.Unknown) {
+	            Service.Dispose();
+            }*/
         }
         catch (Exception ex) {
             throw new FluentDockerException("Failed to dispose of container service", ex);
