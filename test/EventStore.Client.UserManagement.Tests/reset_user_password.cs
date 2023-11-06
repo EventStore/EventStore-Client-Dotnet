@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Shouldly;
 using Xunit;
 
 namespace EventStore.Client {
@@ -39,9 +40,17 @@ namespace EventStore.Client {
 		[Theory, MemberData(nameof(EmptyInputCases))]
 		public async Task with_empty_input_throws(string loginName, string newPassword,
 			string paramName) {
-			var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-				() => _fixture.Client.ResetPasswordAsync(loginName, newPassword,
-					userCredentials: TestCredentials.Root));
+
+			var ex = await _fixture.Client.ResetPasswordAsync(
+				loginName,
+				newPassword,
+				userCredentials: TestCredentials.Root
+			).ShouldThrowAsync<ArgumentOutOfRangeException>();
+			
+			// var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+			// 	() => _fixture.Client.ResetPasswordAsync(loginName, newPassword,
+			// 		userCredentials: TestCredentials.Root));
+			
 			Assert.Equal(paramName, ex.ParamName);
 		}
 
