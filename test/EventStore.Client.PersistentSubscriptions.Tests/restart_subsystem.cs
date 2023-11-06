@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Shouldly;
 using Xunit;
 
 namespace EventStore.Client {
@@ -11,13 +12,15 @@ namespace EventStore.Client {
 
 		[Fact]
 		public async Task does_not_throw() {
-			await _fixture.Client.RestartSubsystemAsync(userCredentials: TestCredentials.Root);
+			await _fixture.Client.RestartSubsystemAsync(userCredentials: TestCredentials.Root).ShouldNotThrowAsync();
 		}
 
 		[Fact]
 		public async Task throws_with_no_credentials() {
-			await Assert.ThrowsAsync<AccessDeniedException>(async () =>
-				await _fixture.Client.RestartSubsystemAsync());
+			// await Assert.ThrowsAsync<AccessDeniedException>(async () =>
+			// 	await _fixture.Client.RestartSubsystemAsync());
+
+			await _fixture.Client.RestartSubsystemAsync().ShouldThrowAsync<AccessDeniedException>();
 		}
 
 		[Fact(Skip = "Unable to produce same behavior with HTTP fallback!")]
@@ -28,8 +31,10 @@ namespace EventStore.Client {
 		
 		[Fact]
 		public async Task throws_with_normal_user_credentials() {
-			await Assert.ThrowsAsync<AccessDeniedException>(async () =>
-				await _fixture.Client.RestartSubsystemAsync(userCredentials: TestCredentials.TestUser1));
+			// await Assert.ThrowsAsync<AccessDeniedException>(async () =>
+			// 	await _fixture.Client.RestartSubsystemAsync(userCredentials: TestCredentials.TestUser1));
+
+			await _fixture.Client.RestartSubsystemAsync(userCredentials: TestCredentials.TestUser1).ShouldThrowAsync<AccessDeniedException>();
 		}
 		
 		public class Fixture : EventStoreClientFixture {
