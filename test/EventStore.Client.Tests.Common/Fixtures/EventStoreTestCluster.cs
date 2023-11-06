@@ -14,7 +14,7 @@ public class EventStoreTestCluster(EventStoreFixtureOptions options) : TestCompo
 		var defaultSettings = EventStoreClientSettings
 			.Create(connString)
 			.With(x => x.LoggerFactory = new SerilogLoggerFactory(Log.Logger))
-			.With(x => x.DefaultDeadline = Application.DebuggerIsAttached ? new TimeSpan?() : TimeSpan.FromSeconds(180))
+			.With(x => x.DefaultDeadline = Application.DebuggerIsAttached ? new TimeSpan?() : TimeSpan.FromSeconds(30))
 			.With(x => x.ConnectivitySettings.MaxDiscoverAttempts = 30)
 			.With(x => x.ConnectivitySettings.DiscoveryInterval = TimeSpan.FromSeconds(1));
 

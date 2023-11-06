@@ -16,13 +16,16 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 	public static EventStoreFixtureOptions DefaultOptions() {
 		const string connString = "esdb://admin:changeit@localhost:{port}/?tlsVerifyCert=false";
 
-		var port = $"{NetworkPortProvider.NextAvailablePort}";
+		// disable it for now
+		//var port = $"{NetworkPortProvider.NextAvailablePort}";
+
+		var port = "2113";
 
 		var defaultSettings = EventStoreClientSettings
 			.Create(connString.Replace("{port}", port))
 			.With(x => x.LoggerFactory = new SerilogLoggerFactory(Log.Logger))
-			.With(x => x.DefaultDeadline = Application.DebuggerIsAttached ? new TimeSpan?() : TimeSpan.FromSeconds(180))
-			.With(x => x.ConnectivitySettings.MaxDiscoverAttempts = 30)
+			.With(x => x.DefaultDeadline = Application.DebuggerIsAttached ? new TimeSpan?() : TimeSpan.FromSeconds(30))
+			.With(x => x.ConnectivitySettings.MaxDiscoverAttempts = 20)
 			.With(x => x.ConnectivitySettings.DiscoveryInterval = TimeSpan.FromSeconds(1));
 
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
@@ -59,10 +62,10 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			.WithEnvironment(env)
 			.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
 			.ExposePort(port, 2113)
-			.WaitForHealthy(TimeSpan.FromSeconds(120))
+			.WaitForHealthy(TimeSpan.FromSeconds(30));
 			//.WaitForMessageInLog($"========== [\"0.0.0.0:{port}\"] IS LEADER... SPARTA!")
-			.WaitForMessageInLog("'ops' user added to $users.")
-			.WaitForMessageInLog("'admin' user added to $users.");
+			//.WaitForMessageInLog("'ops' user added to $users.")
+			//.WaitForMessageInLog("'admin' user added to $users.");
 	}
 }
 

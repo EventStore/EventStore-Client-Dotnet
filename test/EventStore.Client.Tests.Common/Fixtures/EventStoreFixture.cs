@@ -94,21 +94,21 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 		Logger.Information("*** !!! Warming up database !!! ***");
 
 		Users = new(ClientSettings);
-		await Users.WarmUp().ShouldNotThrowAsync();
+		await Users.WarmUp();
 
 		Streams = new(ClientSettings);
-		await Streams.WarmUp().ShouldNotThrowAsync();
+		await Streams.WarmUp();
 
 		if (Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None") {
 			Projections = new(ClientSettings);
-			await Projections.WarmUp().ShouldNotThrowAsync();
+			await Projections.WarmUp();
 		}
 
 		PersistentSubscriptions = new(ClientSettings);
-		await PersistentSubscriptions.WarmUp().ShouldNotThrowAsync();
+		await PersistentSubscriptions.WarmUp();
 
 		Operations = new(ClientSettings);
-		await Operations.WarmUp().ShouldNotThrowAsync();
+		await Operations.WarmUp();
 	}
 
 	public async Task InitializeAsync() {

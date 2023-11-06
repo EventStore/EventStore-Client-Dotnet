@@ -37,7 +37,7 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
     public virtual async Task Start() {
         Logger.Information("Container service starting");
         
-        await TestServiceGatekeeper.Wait();
+        //await TestServiceGatekeeper.Wait();
         
         try {
 	        var builder = Configure();
@@ -75,7 +75,7 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
             }
         }
         finally {
-            TestServiceGatekeeper.Next();
+            //TestServiceGatekeeper.Next();
         }
     }
 
