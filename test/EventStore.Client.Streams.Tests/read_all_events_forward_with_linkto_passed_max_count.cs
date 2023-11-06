@@ -16,7 +16,7 @@ namespace EventStore.Client {
 
 		[Fact]
 		public void one_event_is_read() {
-			Assert.Single(_fixture.Events);
+			Assert.Single(_fixture.Events ?? Array.Empty<ResolvedEvent>());
 		}
 
 		public class Fixture : EventStoreClientFixture {
