@@ -10,7 +10,7 @@ namespace EventStore.Client {
 			clonedOptions.BatchAppendSize = int.MaxValue;
 			
 			Assert.Equal(options.BatchAppendSize, EventStoreClientOperationOptions.Default.BatchAppendSize);
-			Assert.Equal(clonedOptions.BatchAppendSize, int.MaxValue);
+			Assert.Equal(int.MaxValue, clonedOptions.BatchAppendSize);
 		}
 	}
 }

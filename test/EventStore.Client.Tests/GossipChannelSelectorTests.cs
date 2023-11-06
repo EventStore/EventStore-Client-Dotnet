@@ -51,7 +51,7 @@ namespace EventStore.Client {
 			var sut = new GossipChannelSelector(settings, channelCache, new BadGossipClient());
 
 			var ex = await Assert.ThrowsAsync<DiscoveryException>(async () =>
-				await sut.SelectChannelAsync(cancellationToken: default).ConfigureAwait(false));
+				await sut.SelectChannelAsync(cancellationToken: default));
 
 			Assert.Equal(3, ex.MaxDiscoverAttempts);
 		}
