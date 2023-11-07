@@ -1,9 +1,9 @@
 ﻿namespace EventStore.Client.Operations.Tests;
 
-public class AuthenticationTests : IClassFixture<EventStoreFixture> {
-	public AuthenticationTests(ITestOutputHelper output, EventStoreFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
+public class AuthenticationTests : IClassFixture<InsecureClientTestFixture> {
+	public AuthenticationTests(ITestOutputHelper output, InsecureClientTestFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	EventStoreFixture Fixture { get; }
+	InsecureClientTestFixture Fixture { get; }
 	
 	public enum CredentialsCase { None, TestUser, RootUser }
 
@@ -34,7 +34,7 @@ public class AuthenticationTests : IClassFixture<EventStoreFixture> {
 
 	async Task ExecuteTest(int caseNr, CredentialsCase defaultCredentials, CredentialsCase actualCredentials, bool shouldThrow) {
 		var testUser = await Fixture.CreateTestUser();
-
+		
 		var defaultUserCredentials = GetCredentials(defaultCredentials);
 		var actualUserCredentials  = GetCredentials(actualCredentials);
 

@@ -38,13 +38,13 @@ public partial class EventStoreFixture {
             .Generate(count)
             .Select(
                 async user => {
-                    await Users.CreateUserAsync(
-                        user.LoginName,
-                        user.FullName,
-                        user.Groups,
-                        user.Password,
-                        userCredentials: useUserCredentials ? user.Credentials : TestCredentials.Root
-                    );
+	                await Users.CreateUserAsync(
+		                user.LoginName,
+		                user.FullName,
+		                user.Groups,
+		                user.Password,
+		                userCredentials: useUserCredentials ? user.Credentials : TestCredentials.Root
+	                );
 
                     return user;
                 }

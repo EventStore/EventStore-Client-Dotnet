@@ -1,8 +1,12 @@
 using System.Net;
 using System.Net.Sockets;
 using Ductus.FluentDocker.Builders;
+using Ductus.FluentDocker.Common;
 using Ductus.FluentDocker.Model.Builders;
+using Ductus.FluentDocker.Services;
+using Ductus.FluentDocker.Services.Extensions;
 using EventStore.Client.Tests.FluentDocker;
+using Polly;
 using Serilog;
 using Serilog.Extensions.Logging;
 
@@ -30,7 +34,8 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
 			//["EVENTSTORE_NODE_PORT"]                        = port,
-			["EVENTSTORE_NODE_PORT_ADVERTISE_AS"]           = port,
+			// ["EVENTSTORE_NODE_PORT_ADVERTISE_AS"] = port,
+			// ["EVENTSTORE_NODE_PORT_ADVERTISE_AS"] = port,
 			//["EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS"] = port,
 			["EVENTSTORE_ENABLE_EXTERNAL_TCP"]              = "false",
 			["EVENTSTORE_MEM_DB"]                           = "true",
@@ -39,7 +44,7 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"]     = "/etc/eventstore/certs/node/node.key",
 			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"]     = "10000",
 			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]       = "10000",
-			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]        = "false",
+			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]        = "true",
 			["EVENTSTORE_DISABLE_LOG_FILE"]                 = "true"
 		};
 
@@ -63,10 +68,56 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			.WithEnvironment(env)
 			.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
 			.ExposePort(port, 2113)
-			.WaitForHealthy(TimeSpan.FromSeconds(60));
-			//.WaitForMessageInLog($"========== [\"0.0.0.0:{port}\"] IS LEADER... SPARTA!")
-			//.WaitForMessageInLog("'ops' user added to $users.")
-			//.WaitForMessageInLog("'admin' user added to $users.");
+			.WaitForMessageInLog("'admin' user added to $users.", TimeSpan.FromSeconds(60));
+			//.Wait("", (svc, count) => CheckConnection());
+		// .KeepContainer()
+		// .WaitForHealthy(TimeSpan.FromSeconds(60));
+		//.WaitForMessageInLog($"========== [\"0.0.0.0:{port}\"] IS LEADER... SPARTA!")
+		//.WaitForMessageInLog("'ops' user added to $users.")
+		//.WaitForMessageInLog("'admin' user added to $users.");
+	}
+
+	int CheckConnection() {
+		using var http = new HttpClient(
+			new SocketsHttpHandler {
+				SslOptions = { RemoteCertificateValidationCallback = delegate { return true; } }
+			}
+		) {
+			BaseAddress = Options.ClientSettings.ConnectivitySettings.Address
+		};
+
+		return Policy.Handle<Exception>()
+			.WaitAndRetryAsync(300, retryCount => TimeSpan.FromMilliseconds(100))
+			.ExecuteAsync(
+				async () => {
+					using var response = await http.GetAsync("/health/live", CancellationToken.None);
+					
+					if (response.StatusCode >= HttpStatusCode.BadRequest)
+						throw new FluentDockerException($"Health check failed with status code: {response.StatusCode}.");
+
+					return 0;
+				}
+			).GetAwaiter().GetResult();
+	}
+
+	protected override async Task OnServiceStarted() {
+		using var http = new HttpClient(
+			new SocketsHttpHandler {
+				SslOptions = { RemoteCertificateValidationCallback = delegate { return true; } }
+			}
+		) {
+			BaseAddress = Options.ClientSettings.ConnectivitySettings.Address
+		};
+		
+		await Policy.Handle<Exception>()
+			.WaitAndRetryAsync(200, retryCount => TimeSpan.FromMilliseconds(100))
+			.ExecuteAsync(
+				async () => {
+					using var response = await http.GetAsync("/health/live", CancellationToken.None);
+					if (response.StatusCode >= HttpStatusCode.BadRequest)
+						throw new FluentDockerException($"Health check failed with status code: {response.StatusCode}.");
+				}
+			);
 	}
 }
 

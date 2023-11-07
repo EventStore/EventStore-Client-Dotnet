@@ -15,7 +15,7 @@ public class UserCredentialsTests {
 
 	[Fact]
 	public void from_username_and_password() {
-		var user = Fakers.Users.Generate();
+		var user = Fakers.Users.WithNonAsciiPassword();
 
 		var value = new AuthenticationHeaderValue(
 			Constants.Headers.BasicScheme,

@@ -51,4 +51,16 @@ static class PasswordGenerator {
 
         return new(password);
     }
+    
+    public static string GenerateSimplePassword(int length = 8) {
+	    if (length <= 0)
+		    throw new ArgumentException("Invalid input parameters.");
+
+	    var password = new char[length];
+	    
+	    for (var i = 0; i < length; i++)
+		    password[i] = AsciiChars[Random.Next(AsciiChars.Length)];
+
+	    return new(password);
+    }
 }

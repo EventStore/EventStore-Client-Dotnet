@@ -6,7 +6,7 @@ namespace EventStore.Client.Tests;
 public static class GlobalEnvironment {
 	static GlobalEnvironment() {
 		EnsureDefaults(Application.Configuration);
-
+		
 		UseCluster        = Application.Configuration.GetValue<bool>("ES_USE_CLUSTER");
 		UseExternalServer = Application.Configuration.GetValue<bool>("ES_USE_EXTERNAL_SERVER");
 		DockerImage       = Application.Configuration.GetValue<string>("ES_DOCKER_IMAGE")!;
@@ -24,7 +24,7 @@ public static class GlobalEnvironment {
 			configuration.EnsureValue("ES_USE_EXTERNAL_SERVER", "false");
 
 			configuration.EnsureValue("ES_DOCKER_REGISTRY", "ghcr.io/eventstore/eventstore");
-			configuration.EnsureValue("ES_DOCKER_TAG", "ci");
+			configuration.EnsureValue("ES_DOCKER_TAG", "previous-lts");
 			configuration.EnsureValue("ES_DOCKER_IMAGE", $"{configuration["ES_DOCKER_REGISTRY"]}:{configuration["ES_DOCKER_TAG"]}");
 
 			configuration.EnsureValue("EVENTSTORE_MEM_DB", "false");

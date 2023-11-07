@@ -19,7 +19,7 @@ public sealed class TestUserFaker : Faker<TestUser> {
         RuleFor(x => x.LoginName, f => f.Person.UserName);
         RuleFor(x => x.FullName, f => f.Person.FullName);
         RuleFor(x => x.Groups, f => f.Lorem.Words());
-        RuleFor(x => x.Password, () => PasswordGenerator.GeneratePassword());
+        RuleFor(x => x.Password, () => PasswordGenerator.GenerateSimplePassword());
         RuleFor(x => x.Credentials, (_, user) => new(user.LoginName, user.Password));
         RuleFor(x => x.Details, (_, user) => new(user.LoginName, user.FullName, user.Groups, disabled: false, dateLastUpdated: default));
     }
@@ -40,6 +40,12 @@ public sealed class TestUserFaker : Faker<TestUser> {
                 )
             )
             .Generate();
+    
+    public TestUser WithNonAsciiPassword() =>
+	    Instance
+		    .RuleFor(x => x.Password, () => PasswordGenerator.GeneratePassword())
+		    .RuleFor(x => x.Credentials, (_, user) => new (user.LoginName, user.Password))
+		    .Generate();
 }
 
 public static partial class Fakers {
