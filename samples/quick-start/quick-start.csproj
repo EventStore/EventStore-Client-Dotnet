@@ -1,14 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <RootNamespace>quick_start</RootNamespace>
+    </PropertyGroup>
 
-	<PropertyGroup>
-		<RootNamespace>quick_start</RootNamespace>
-	</PropertyGroup>
-
-	<ItemGroup>
-		<!-- Use NuGet instead of ProjectReferences -->
-		<!-- <PackageReference Include="EventStore.Client.Grpc.Streams" Version="20.10.0" /> -->
-		<ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
-		<ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />
-	</ItemGroup>
-
+    <ItemGroup>
+        <!-- Use NuGet instead of ProjectReferences -->
+        <!-- <PackageReference Include="EventStore.Client.Grpc.Streams" Version="20.10.0" /> -->
+        <ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
+        <ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />
+    </ItemGroup>
 </Project>
