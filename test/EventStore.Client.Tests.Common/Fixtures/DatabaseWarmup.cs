@@ -23,21 +23,23 @@ static class DatabaseWarmup<T> where T : EventStoreClientBase {
 	);
 
 	public static async Task TryExecuteOnce(T client, Func<CancellationToken, Task> action, CancellationToken cancellationToken = default) {
-		await Semaphore.WaitAsync(cancellationToken);
-
-		try {
-			if (!Completed.EnsureCalledOnce()) {
-				Logger.Warning("*** Warmup started ***");
-				await TryExecute(client, action, cancellationToken);
-				Logger.Warning("*** Warmup completed ***");
-			}
-			else {
-				Logger.Information("*** Warmup skipped ***");
-			}
-		}
-		finally {
-			Semaphore.Release();
-		}
+		await TryExecuteOld(client, action, cancellationToken);
+		
+		// await Semaphore.WaitAsync(cancellationToken);
+		//
+		// try {
+		// 	if (!Completed.EnsureCalledOnce()) {
+		// 		Logger.Warning("*** Warmup started ***");
+		// 		await TryExecute(client, action, cancellationToken);
+		// 		Logger.Warning("*** Warmup completed ***");
+		// 	}
+		// 	else {
+		// 		Logger.Information("*** Warmup skipped ***");
+		// 	}
+		// }
+		// finally {
+		// 	Semaphore.Release();
+		// }
 	}
 
 	static async Task TryExecute(EventStoreClientBase client, Func<CancellationToken, Task> action, CancellationToken cancellationToken) {

@@ -89,34 +89,36 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 		Logger.Information(">>> Test Run {testRunId} {Operation} <<<", testRunId, "starting");
 		Service.ReportStatus();
 	}
-
-	async Task WarmUp() {
-		Logger.Information("*** !!! Warming up database !!! ***");
-
-		Users = new(ClientSettings);
-		await Users.WarmUp();
-
-		Streams = new(ClientSettings);
-		await Streams.WarmUp();
-
-		if (Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None") {
-			Projections = new(ClientSettings);
-			await Projections.WarmUp();
-		}
-
-		PersistentSubscriptions = new(ClientSettings);
-		await PersistentSubscriptions.WarmUp();
-
-		Operations = new(ClientSettings);
-		await Operations.WarmUp();
-	}
-
+	
 	public async Task InitializeAsync() {
 		await Service.Start();
 
 		await WarmUp();
 
 		await OnSetup();
+		
+		return;
+
+		async Task WarmUp() {
+			Logger.Information("*** !!! Warming up database !!! ***");
+
+			Users = new(ClientSettings);
+			await Users.WarmUp();
+
+			Streams = new(ClientSettings);
+			await Streams.WarmUp();
+
+			if (Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None") {
+				Projections = new(ClientSettings);
+				await Projections.WarmUp();
+			}
+
+			PersistentSubscriptions = new(ClientSettings);
+			await PersistentSubscriptions.WarmUp();
+
+			Operations = new(ClientSettings);
+			await Operations.WarmUp();
+		}
 	}
 
 	public async Task DisposeAsync() {
