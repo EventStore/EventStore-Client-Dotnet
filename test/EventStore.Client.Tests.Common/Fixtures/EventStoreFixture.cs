@@ -18,7 +18,7 @@ public record EventStoreFixtureOptions(EventStoreClientSettings ClientSettings, 
 			)
 		};
 
-	public EventStoreFixtureOptions WithoutDefaultCredentials() => 
+	public EventStoreFixtureOptions WithoutDefaultCredentials() =>
 		this with { ClientSettings = ClientSettings.With(x => x.DefaultCredentials = null) };
 }
 
@@ -30,12 +30,12 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	static EventStoreFixture() {
 		Logging.Initialize();
 		Logger = Log.ForContext<EventStoreFixture>();
-		
+
 		ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
 	}
 
 	public EventStoreFixture() : this(options => options) { }
-	
+
 	protected EventStoreFixture(ConfigureFixture configure) {
 		// TODO SS: should I verify the certificates exist here?
 		if (GlobalEnvironment.UseExternalServer) {
@@ -54,7 +54,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	}
 
 	List<Guid> TestRuns { get; } = new();
-	
+
 	public ITestService             Service { get; }
 	public EventStoreFixtureOptions Options { get; }
 
@@ -63,7 +63,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	public EventStoreProjectionManagementClient    Projections             { get; private set; } = null!;
 	public EventStorePersistentSubscriptionsClient PersistentSubscriptions { get; private set; } = null!;
 	public EventStoreOperationsClient              Operations              { get; private set; } = null!;
-	
+
 	public Func<Task> OnSetup    { get; set; } = () => Task.CompletedTask;
 	public Func<Task> OnTearDown { get; set; } = () => Task.CompletedTask;
 
@@ -82,14 +82,14 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 			DefaultCredentials       = Options.ClientSettings.DefaultCredentials,
 			DefaultDeadline          = Options.ClientSettings.DefaultDeadline
 		};
-	
+
 	public void CaptureTestRun(ITestOutputHelper outputHelper) {
 		var testRunId = Logging.CaptureLogs(outputHelper);
 		TestRuns.Add(testRunId);
 		Logger.Information(">>> Test Run {testRunId} {Operation} <<<", testRunId, "starting");
 		Service.ReportStatus();
 	}
-	
+
 	async Task WarmUp() {
 		Logger.Information("*** !!! Warming up database !!! ***");
 
@@ -118,7 +118,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 
 		await OnSetup();
 	}
-	
+
 	public async Task DisposeAsync() {
 		try {
 			await OnTearDown();
@@ -134,14 +134,4 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	}
 
 	async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
-
 }
-
-/// <summary>
-/// The clients dont have default credentials set.
-/// </summary>
-public class InsecureClientTestFixture() : EventStoreFixture(x => x.WithoutDefaultCredentials());
-
-public class RunInMemoryTestFixture() : EventStoreFixture(x => x.RunInMemory());
-
-public class RunProjectionsTestFixture() : EventStoreFixture(x => x.RunProjections());

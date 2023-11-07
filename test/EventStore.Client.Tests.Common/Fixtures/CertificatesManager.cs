@@ -28,10 +28,10 @@ static class CertificatesManager {
 				certificateDirectory.FullName,
 				"A node certificate & key file have been generated in the '/tmp/node' directory.",
 				"create-node",
-				"-ca-certificate", "/tmp/ca/ca.crt", 
-				"-ca-key", "/tmp/ca/ca.key", 
+				"-ca-certificate", "/tmp/ca/ca.crt",
+				"-ca-key", "/tmp/ca/ca.key",
 				"-out", "/tmp/node",
-				"-ip-addresses", "127.0.0.1", 
+				"-ip-addresses", "127.0.0.1",
 				"-dns-names", "localhost"
 			);
 

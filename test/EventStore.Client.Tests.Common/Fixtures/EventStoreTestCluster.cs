@@ -8,7 +8,7 @@ namespace EventStore.Client.Tests;
 public class EventStoreTestCluster(EventStoreFixtureOptions options) : TestCompositeService {
 	EventStoreFixtureOptions Options { get; } = options;
 
-    public static EventStoreFixtureOptions DefaultOptions() {
+	public static EventStoreFixtureOptions DefaultOptions() {
 		const string connString = "esdb://localhost:2113,localhost:2112,localhost:2111?tls=true&tlsVerifyCert=false";
 
 		var defaultSettings = EventStoreClientSettings
@@ -28,27 +28,27 @@ public class EventStoreTestCluster(EventStoreFixtureOptions options) : TestCompo
 			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"] = "10000",
 			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]   = "10000",
 			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]    = "true" // why true?
-		}; 
-		
+		};
+
 		return new(defaultSettings, defaultEnvironment);
 	}
-	
+
 	protected override CompositeBuilder Configure() {
 		var env = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
 
-        var builder = new Builder()
-            .UseContainer()
-            .FromComposeFile("docker-compose.yml")
-            .ServiceName("esdb-test-cluster")
-            .WithEnvironment(env)
-            .RemoveOrphans()
-            .NoRecreate()
-            .KeepRunning();
-        
-        return builder;
-    }
+		var builder = new Builder()
+			.UseContainer()
+			.FromComposeFile("docker-compose.yml")
+			.ServiceName("esdb-test-cluster")
+			.WithEnvironment(env)
+			.RemoveOrphans()
+			.NoRecreate()
+			.KeepRunning();
 
-    protected override async Task OnServiceStarted() {
-        await Service.WaitUntilNodesAreHealthy("esdb-node", TimeSpan.FromSeconds(60));
-    }
+		return builder;
+	}
+
+	protected override async Task OnServiceStarted() {
+		await Service.WaitUntilNodesAreHealthy("esdb-node", TimeSpan.FromSeconds(60));
+	}
 }

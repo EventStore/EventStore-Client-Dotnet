@@ -37,15 +37,16 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			// ["EVENTSTORE_NODE_PORT_ADVERTISE_AS"] = port,
 			// ["EVENTSTORE_NODE_PORT_ADVERTISE_AS"] = port,
 			//["EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS"] = port,
-			["EVENTSTORE_ENABLE_EXTERNAL_TCP"]              = "false",
-			["EVENTSTORE_MEM_DB"]                           = "true",
-			["EVENTSTORE_CHUNK_SIZE"]                       = (1024 * 1024).ToString(),
-			["EVENTSTORE_CERTIFICATE_FILE"]                 = "/etc/eventstore/certs/node/node.crt",
-			["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"]     = "/etc/eventstore/certs/node/node.key",
-			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"]     = "10000",
-			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]       = "10000",
-			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]        = "true",
-			["EVENTSTORE_DISABLE_LOG_FILE"]                 = "true"
+			//["EVENTSTORE_HTTP_PORT"] = port,
+			["EVENTSTORE_ENABLE_EXTERNAL_TCP"]          = "false",
+			["EVENTSTORE_MEM_DB"]                       = "true",
+			["EVENTSTORE_CHUNK_SIZE"]                   = (1024 * 1024).ToString(),
+			["EVENTSTORE_CERTIFICATE_FILE"]             = "/etc/eventstore/certs/node/node.crt",
+			["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"] = "/etc/eventstore/certs/node/node.key",
+			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"] = "10000",
+			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]   = "10000",
+			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]    = "false",
+			["EVENTSTORE_DISABLE_LOG_FILE"]             = "true"
 		};
 
 		return new(defaultSettings, defaultEnvironment);
@@ -54,8 +55,8 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 	protected override ContainerBuilder Configure() {
 		var env = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
 
-		var port          = Options.ClientSettings.ConnectivitySettings.Address.Port;
-		var certsPath     = Path.Combine(Environment.CurrentDirectory, "certs");
+		var port      = Options.ClientSettings.ConnectivitySettings.Address.Port;
+		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
 		//var containerName = $"esbd-dotnet-test-{port}-{Guid.NewGuid().ToString()[30..]}";
 		var containerName = "es-client-dotnet-test";
 
@@ -69,35 +70,12 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
 			.ExposePort(port, 2113)
 			.WaitForMessageInLog("'admin' user added to $users.", TimeSpan.FromSeconds(60));
-			//.Wait("", (svc, count) => CheckConnection());
+		//.Wait("", (svc, count) => CheckConnection());
 		// .KeepContainer()
 		// .WaitForHealthy(TimeSpan.FromSeconds(60));
 		//.WaitForMessageInLog($"========== [\"0.0.0.0:{port}\"] IS LEADER... SPARTA!")
 		//.WaitForMessageInLog("'ops' user added to $users.")
 		//.WaitForMessageInLog("'admin' user added to $users.");
-	}
-
-	int CheckConnection() {
-		using var http = new HttpClient(
-			new SocketsHttpHandler {
-				SslOptions = { RemoteCertificateValidationCallback = delegate { return true; } }
-			}
-		) {
-			BaseAddress = Options.ClientSettings.ConnectivitySettings.Address
-		};
-
-		return Policy.Handle<Exception>()
-			.WaitAndRetryAsync(300, retryCount => TimeSpan.FromMilliseconds(100))
-			.ExecuteAsync(
-				async () => {
-					using var response = await http.GetAsync("/health/live", CancellationToken.None);
-					
-					if (response.StatusCode >= HttpStatusCode.BadRequest)
-						throw new FluentDockerException($"Health check failed with status code: {response.StatusCode}.");
-
-					return 0;
-				}
-			).GetAwaiter().GetResult();
 	}
 
 	protected override async Task OnServiceStarted() {
@@ -108,7 +86,7 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 		) {
 			BaseAddress = Options.ClientSettings.ConnectivitySettings.Address
 		};
-		
+
 		await Policy.Handle<Exception>()
 			.WaitAndRetryAsync(200, retryCount => TimeSpan.FromMilliseconds(100))
 			.ExecuteAsync(

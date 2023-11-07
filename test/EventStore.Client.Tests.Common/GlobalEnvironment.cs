@@ -6,7 +6,7 @@ namespace EventStore.Client.Tests;
 public static class GlobalEnvironment {
 	static GlobalEnvironment() {
 		EnsureDefaults(Application.Configuration);
-		
+
 		UseCluster        = Application.Configuration.GetValue<bool>("ES_USE_CLUSTER");
 		UseExternalServer = Application.Configuration.GetValue<bool>("ES_USE_EXTERNAL_SERVER");
 		DockerImage       = Application.Configuration.GetValue<string>("ES_DOCKER_IMAGE")!;
@@ -44,7 +44,7 @@ public static class GlobalEnvironment {
 	public static bool   UseExternalServer { get; }
 	public static string DockerImage       { get; }
 	public static string DbLogFormat       { get; }
-	
+
 	#region . Obsolete .
 
 	//[Obsolete("Use the EventStoreFixture instead so you don't have to use this method.", false)]
@@ -73,6 +73,6 @@ public static class GlobalEnvironment {
 		"EVENTSTORE_RUN_PROJECTIONS",
 		"EVENTSTORE_START_STANDARD_PROJECTIONS",
 	};
-	
+
 	#endregion
 }

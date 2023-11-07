@@ -67,7 +67,8 @@ public class Issue_1125 : IClassFixture<Issue_1125.Fixture> {
 					       completed.TrySetException(new Exception($"{dr}"));
 			       },
 			       userCredentials
-		       )) {
+		       )
+		) {
 			for (var i = 0; i < eventCount; i++)
 				await _fixture.StreamsClient.AppendToStreamAsync(
 					streamName,
