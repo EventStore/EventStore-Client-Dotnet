@@ -1,6 +1,7 @@
 using System.Net;
 using EventStore.Client.Tests.FluentDocker;
 using Serilog;
+using static System.TimeSpan;
 
 namespace EventStore.Client.Tests;
 
@@ -24,6 +25,7 @@ public record EventStoreFixtureOptions(EventStoreClientSettings ClientSettings, 
 
 public delegate EventStoreFixtureOptions ConfigureFixture(EventStoreFixtureOptions options);
 
+[PublicAPI]
 public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	static readonly ILogger Logger;
 
@@ -58,14 +60,14 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	public ITestService             Service { get; }
 	public EventStoreFixtureOptions Options { get; }
 
-	public EventStoreClient                        Streams                 { get; private set; } = null!;
-	public EventStoreUserManagementClient          Users                   { get; private set; } = null!;
-	public EventStoreProjectionManagementClient    Projections             { get; private set; } = null!;
-	public EventStorePersistentSubscriptionsClient PersistentSubscriptions { get; private set; } = null!;
-	public EventStoreOperationsClient              Operations              { get; private set; } = null!;
+	public EventStoreClient                        Streams       { get; private set; } = null!;
+	public EventStoreUserManagementClient          Users         { get; private set; } = null!;
+	public EventStoreProjectionManagementClient    Projections   { get; private set; } = null!;
+	public EventStorePersistentSubscriptionsClient Subscriptions { get; private set; } = null!;
+	public EventStoreOperationsClient              Operations    { get; private set; } = null!;
 
-	public Func<Task> OnSetup    { get; set; } = () => Task.CompletedTask;
-	public Func<Task> OnTearDown { get; set; } = () => Task.CompletedTask;
+	public Func<Task> OnSetup    { get; init; } = () => Task.CompletedTask;
+	public Func<Task> OnTearDown { get; init; } = () => Task.CompletedTask;
 
 	/// <summary>
 	/// must test this
@@ -82,42 +84,55 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 			DefaultCredentials       = Options.ClientSettings.DefaultCredentials,
 			DefaultDeadline          = Options.ClientSettings.DefaultDeadline
 		};
-
+	
+	InterlockedBoolean WarmUpCompleted  { get; } = new InterlockedBoolean();
+	SemaphoreSlim      WarmUpGatekeeper { get; } = new(1, 1);
+	
 	public void CaptureTestRun(ITestOutputHelper outputHelper) {
 		var testRunId = Logging.CaptureLogs(outputHelper);
 		TestRuns.Add(testRunId);
-		Logger.Information(">>> Test Run {testRunId} {Operation} <<<", testRunId, "starting");
+		Logger.Information(">>> Test Run {TestRunId} {Operation} <<<", testRunId, "starting");
 		Service.ReportStatus();
 	}
 	
 	public async Task InitializeAsync() {
 		await Service.Start();
 
-		await WarmUp();
+		await WarmUpGatekeeper.WaitAsync();
+		
+		try {
+			if (!WarmUpCompleted.CurrentValue) {
+				Logger.Warning("*** Warmup started ***");
 
+				await Task.WhenAll(
+					InitClient<EventStoreUserManagementClient>(async x => Users = await x.WarmUp()),
+					InitClient<EventStoreClient>(async x => Streams = await x.WarmUp()),
+					InitClient<EventStoreProjectionManagementClient>(async x => Projections = await x.WarmUp(), Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None"),
+					InitClient<EventStorePersistentSubscriptionsClient>(async x => Subscriptions = await x.WarmUp()),
+					InitClient<EventStoreOperationsClient>(async x => Operations = await x.WarmUp())
+				);
+				
+				WarmUpCompleted.EnsureCalledOnce();
+				
+				Logger.Warning("*** Warmup completed ***");
+			}
+			else {
+				Logger.Information("*** Warmup skipped ***");
+			}
+		}
+		finally {
+			WarmUpGatekeeper.Release();
+		}
+		
 		await OnSetup();
 		
 		return;
 
-		async Task WarmUp() {
-			Logger.Information("*** !!! Warming up database !!! ***");
-
-			Users = new(ClientSettings);
-			await Users.WarmUp();
-
-			Streams = new(ClientSettings);
-			await Streams.WarmUp();
-
-			if (Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None") {
-				Projections = new(ClientSettings);
-				await Projections.WarmUp();
-			}
-
-			PersistentSubscriptions = new(ClientSettings);
-			await PersistentSubscriptions.WarmUp();
-
-			Operations = new(ClientSettings);
-			await Operations.WarmUp();
+		async Task<T> InitClient<T>(Func<T, Task> action, bool execute = true) where T : EventStoreClientBase {
+			if (!execute) return default(T)!;
+			var client = (Activator.CreateInstance(typeof(T), new object?[] { ClientSettings }) as T)!;
+			await action(client);
+			return client;
 		}
 	}
 
@@ -129,7 +144,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 			// ignored
 		}
 
-		await Service.DisposeAsync().AsTask().WithTimeout(TimeSpan.FromMinutes(5));
+		await Service.DisposeAsync().AsTask().WithTimeout(FromMinutes(5));
 
 		foreach (var testRunId in TestRuns)
 			Logging.ReleaseLogs(testRunId);

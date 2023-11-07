@@ -1,8 +1,46 @@
+using Grpc.Core;
+using Polly;
+using Polly.Contrib.WaitAndRetry;
+using static System.TimeSpan;
+
 namespace EventStore.Client.Tests;
 
 public static class EventStoreClientWarmupExtensions {
-	public static Task WarmUp(this EventStoreClient client) =>
-		DatabaseWarmup<EventStoreClient>.TryExecuteOnce(
+	static readonly TimeSpan RediscoverTimeout = FromSeconds(5);
+
+	/// <summary>
+	/// max of 30 seconds (300 * 100ms)
+	/// </summary>
+	static readonly IEnumerable<TimeSpan> DefaultBackoffDelay = Backoff.ConstantBackoff(FromMilliseconds(100), 300);
+
+	static async Task<T> TryWarmUp<T>(T client, Func<CancellationToken, Task> action, CancellationToken cancellationToken = default)
+		where T : EventStoreClientBase {
+		await Policy
+			.Handle<RpcException>(ex => ex.StatusCode != StatusCode.Unimplemented)
+			.Or<Exception>()
+			.WaitAndRetryAsync(DefaultBackoffDelay)
+			.WrapAsync(Policy.TimeoutAsync(RediscoverTimeout, (_, _, _) => client.RediscoverAsync()))
+			.ExecuteAsync(
+				async ct => {
+					try {
+						await action(ct).ConfigureAwait(false);
+					}
+					catch (Exception ex) when (ex is not OperationCanceledException) {
+						// grpc throws a rpcexception when you cancel the token (which we convert into
+						// invalid operation) - but polly expects operationcancelledexception or it wont
+						// call onTimeoutAsync. so raise that here.
+						ct.ThrowIfCancellationRequested();
+						throw;
+					}
+				},
+				cancellationToken
+			);
+
+		return client;
+	}
+
+	public static Task<EventStoreClient> WarmUp(this EventStoreClient client, CancellationToken cancellationToken = default) =>
+		TryWarmUp(
 			client,
 			async ct => {
 				// if we can read from $users then we know that
@@ -30,22 +68,26 @@ public static class EventStoreClientWarmupExtensions {
 					userCredentials: TestCredentials.Root,
 					cancellationToken: ct
 				);
-			}
+			},
+			cancellationToken
 		);
 
-	public static Task WarmUp(this EventStoreOperationsClient client) =>
-		DatabaseWarmup<EventStoreOperationsClient>.TryExecuteOnce(
+	public static Task<EventStoreOperationsClient> WarmUp(this EventStoreOperationsClient client, CancellationToken cancellationToken = default) =>
+		TryWarmUp(
 			client,
 			async ct => {
 				await client.RestartPersistentSubscriptions(
 					userCredentials: TestCredentials.Root,
 					cancellationToken: ct
 				);
-			}
+			}, 
+			cancellationToken
 		);
 
-	public static Task WarmUp(this EventStorePersistentSubscriptionsClient client) =>
-		DatabaseWarmup<EventStorePersistentSubscriptionsClient>.TryExecuteOnce(
+	public static Task<EventStorePersistentSubscriptionsClient> WarmUp(
+		this EventStorePersistentSubscriptionsClient client, CancellationToken cancellationToken = default
+	) =>
+		TryWarmUp(
 			client,
 			async ct => {
 				var id = Guid.NewGuid();
@@ -56,34 +98,35 @@ public static class EventStoreClientWarmupExtensions {
 					userCredentials: TestCredentials.Root,
 					cancellationToken: ct
 				);
-			}
+			},
+			cancellationToken
 		);
 
-	public static Task WarmUp(this EventStoreProjectionManagementClient client) =>
-		DatabaseWarmup<EventStoreProjectionManagementClient>.TryExecuteOnce(
+	public static Task<EventStoreProjectionManagementClient> WarmUp(
+		this EventStoreProjectionManagementClient client, CancellationToken cancellationToken = default
+	) =>
+		TryWarmUp(
 			client,
 			async ct => {
 				_ = await client
-					.ListAllAsync(
-						userCredentials: TestCredentials.Root,
-						cancellationToken: ct
-					)
+					.ListAllAsync(userCredentials: TestCredentials.Root, cancellationToken: ct)
 					.Take(1)
 					.ToArrayAsync(ct);
 
 				// await client.RestartSubsystemAsync(userCredentials: TestCredentials.Root, cancellationToken: ct);
-			}
+			},
+			cancellationToken
 		);
 
-	public static Task WarmUp(this EventStoreUserManagementClient client) =>
-		DatabaseWarmup<EventStoreUserManagementClient>.TryExecuteOnce(
+	public static Task<EventStoreUserManagementClient> WarmUp(this EventStoreUserManagementClient client, CancellationToken cancellationToken = default) =>
+		TryWarmUp(
 			client,
-			async ct => _ = await client
-				.ListAllAsync(
-					userCredentials: TestCredentials.Root,
-					cancellationToken: ct
-				)
-				.Take(1)
-				.ToArrayAsync(ct)
+			async ct => {
+				_ = await client
+					.ListAllAsync(userCredentials: TestCredentials.Root, cancellationToken: ct)
+					.Take(1)
+					.ToArrayAsync(ct);
+			},
+			cancellationToken
 		);
 }

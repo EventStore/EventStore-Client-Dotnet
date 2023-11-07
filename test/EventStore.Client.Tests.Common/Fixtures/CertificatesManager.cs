@@ -5,10 +5,27 @@ namespace EventStore.Client.Tests;
 static class CertificatesManager {
 	static readonly DirectoryInfo CertificateDirectory;
 
-	static CertificatesManager() =>
-		CertificateDirectory = new(Path.Combine(Environment.CurrentDirectory, GlobalEnvironment.UseCluster ? "certs-cluster" : "certs"));
+	static CertificatesManager() => CertificateDirectory = new(Path.Combine(Environment.CurrentDirectory, GlobalEnvironment.UseCluster ? "certs-cluster" : "certs"));
 
-	public static async Task<DirectoryInfo> EnsureCertificatesExist(DirectoryInfo? certificateDirectory = null) {
+	public static void VerifyCertificatesExist(string certificatePath) {
+		var certificateFiles = new[] {
+			Path.Combine("ca", "ca.crt"),
+			Path.Combine("ca", "ca.key"),
+			Path.Combine("node", "node.crt"),
+			Path.Combine("node", "node.key")
+		}.Select(path => Path.Combine(certificatePath, path));
+
+		foreach (var file in certificateFiles)
+			if (!File.Exists(file))
+				throw new InvalidOperationException(
+					$"Could not locate the certificates file {file} needed to run EventStoreDB. Please run the 'gencert' tool at the root of the repository."
+				);
+	}
+	
+	/// <summary>
+	/// SS: not ready yet.
+	/// </summary>
+	static async Task<DirectoryInfo> EnsureCertificatesExist(DirectoryInfo? certificateDirectory = null) {
 		certificateDirectory ??= CertificateDirectory;
 
 		if (!certificateDirectory.Exists)
@@ -55,18 +72,4 @@ static class CertificatesManager {
 		return certificateDirectory;
 	}
 
-	public static void VerifyCertificatesExist(string certificatePath) {
-		var certificateFiles = new[] {
-			Path.Combine("ca", "ca.crt"),
-			Path.Combine("ca", "ca.key"),
-			Path.Combine("node", "node.crt"),
-			Path.Combine("node", "node.key")
-		}.Select(path => Path.Combine(certificatePath, path));
-
-		foreach (var file in certificateFiles)
-			if (!File.Exists(file))
-				throw new InvalidOperationException(
-					$"Could not locate the certificates file {file} needed to run EventStoreDB. Please run the 'gencert' tool at the root of the repository."
-				);
-	}
 }

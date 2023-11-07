@@ -14,6 +14,7 @@ namespace EventStore.Client;
 /// <summary>
 /// Loads configuration and provides information about the application environment.
 /// </summary>
+[PublicAPI]
 public static class Application {
 	static Application() {
 		ForegroundColor = ConsoleColor.Magenta;

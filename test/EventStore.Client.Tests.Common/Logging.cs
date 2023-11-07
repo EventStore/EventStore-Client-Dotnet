@@ -53,7 +53,7 @@ static class Logging {
 
 		Action<LogEvent> WriteLogEvent() =>
 			logEvent => {
-				logEvent.AddOrUpdateProperty(testRunIdProperty);
+				logEvent.AddPropertyIfAbsent(testRunIdProperty);
 				using var writer = new StringWriter();
 				DefaultFormatter.Format(logEvent, writer);
 				write(writer.ToString().Trim());
