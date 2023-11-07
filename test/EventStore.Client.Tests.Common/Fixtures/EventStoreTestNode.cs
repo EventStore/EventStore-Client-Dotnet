@@ -71,8 +71,8 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			.WithName(containerName)
 			.WithEnvironment(env)
 			.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
-			.ExposePort(port, 2113)
-			.WaitForMessageInLog("'admin' user added to $users.", FromSeconds(60));
+			.ExposePort(port, 2113);
+		//.WaitForMessageInLog("'admin' user added to $users.", FromSeconds(60));
 	}
 
 	/// <summary>
