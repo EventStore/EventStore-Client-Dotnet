@@ -9,9 +9,9 @@ on:
 
 jobs:
   test:
-    timeout-minutes: 30
+    timeout-minutes: 20
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         framework: [ net6.0, net7.0 ]
         os: [ ubuntu-latest ]
