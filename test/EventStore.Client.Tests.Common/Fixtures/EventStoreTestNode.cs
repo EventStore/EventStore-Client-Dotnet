@@ -133,7 +133,11 @@ class NetworkPortProvider(int port = 2114) {
 				}
 				finally {
 					if (socket.Connected) {
+#if NET5_0
+						socket.Disconnect(true);
+#else
 						await socket.DisconnectAsync(true);
+#endif
 					}
 				}
 			}
