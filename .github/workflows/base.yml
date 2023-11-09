@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [ net6.0, net7.0 ]
+        framework: [ net5.0, net6.0, net7.0 ]
         os: [ ubuntu-latest ]
         test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement ]
         configuration: [ release ]
@@ -33,6 +33,7 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
+            5.0.x
             6.0.x
             7.0.x
       - name: Compile

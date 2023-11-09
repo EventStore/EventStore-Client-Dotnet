@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0;</TargetFrameworks>
+        <TargetFrameworks>net5.0;net6.0;net7.0;</TargetFrameworks>
         <Platform>x64</Platform>
         <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
         <Nullable>enable</Nullable>
