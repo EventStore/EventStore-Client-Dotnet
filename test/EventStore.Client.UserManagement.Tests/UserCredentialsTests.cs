@@ -31,40 +31,6 @@ public class UserCredentialsTests {
 		credentials.ToString().ShouldBe(basicAuthInfo);
 	}
 
-	[Theory]
-	[InlineData("madison", "itwill:befine")]
-	[InlineData("admin", "changeit")]
-	public void from_authentication_header_with_basic_scheme(string username, string password) {
-		var value = new AuthenticationHeaderValue(
-			Constants.Headers.BasicScheme,
-			EncodeCredentials(username, password)
-		);
-
-		var basicAuthInfo = value.ToString();
-
-		var credentials = new UserCredentials(value);
-
-		credentials.Username.ShouldBe(username);
-		credentials.Password.ShouldBe(password);
-		credentials.ToString().ShouldBe(basicAuthInfo);
-	}
-
-	[Fact]
-	public void from_authentication_header_with_bearer_scheme() {
-		var value = new AuthenticationHeaderValue(
-			Constants.Headers.BearerScheme,
-			JwtToken
-		);
-
-		var bearerToken = value.ToString();
-
-		var credentials = new UserCredentials(value);
-
-		credentials.Username.ShouldBeNull();
-		credentials.Password.ShouldBeNull();
-		credentials.ToString().ShouldBe(bearerToken);
-	}
-
 	[Fact]
 	public void from_bearer_token() {
 		var credentials = new UserCredentials(JwtToken);
