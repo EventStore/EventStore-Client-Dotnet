@@ -55,7 +55,7 @@ static class CertificatesManager {
 		static Task GenerateCertificates(string sourceFolder, string expectedLogMessage, string command, params string[] commandArgs) {
 			using var container = new Builder()
 				.UseContainer()
-				.UseImage("eventstore/es-gencert-cli:1.0.2")
+				.UseImage("ghcr.io/eventstore/es-gencert-cli:1.3")
 				.MountVolume(sourceFolder, "/tmp", Ductus.FluentDocker.Model.Builders.MountType.ReadWrite)
 				// .MountVolume(Options.CertificateDirectory.FullName, "/etc/eventstore/certs", MountType.ReadOnly)
 				.Command(command, commandArgs)

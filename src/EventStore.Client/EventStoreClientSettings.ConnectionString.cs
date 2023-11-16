@@ -41,6 +41,8 @@ namespace EventStore.Client {
 			private const string ThrowOnAppendFailure = nameof(ThrowOnAppendFailure);
 			private const string KeepAliveInterval    = nameof(KeepAliveInterval);
 			private const string KeepAliveTimeout     = nameof(KeepAliveTimeout);
+			private const string CertPath             = nameof(CertPath);
+			private const string CertKeyPath          = nameof(CertKeyPath);
 
 			private const string UriSchemeDiscover = "esdb+discover";
 
@@ -62,6 +64,8 @@ namespace EventStore.Client {
 					{ ThrowOnAppendFailure, typeof(bool) },
 					{ KeepAliveInterval, typeof(int) },
 					{ KeepAliveTimeout, typeof(int) },
+					{ CertPath, typeof(string)},
+					{ CertKeyPath, typeof(string)},
 				};
 
 			public static EventStoreClientSettings Parse(string connectionString) {
@@ -80,14 +84,9 @@ namespace EventStore.Client {
 					currentIndex = userInfoIndex + UserInfoSeparator.Length;
 				}
 
-				var slashIndex = connectionString.IndexOf(Slash, currentIndex, StringComparison.Ordinal);
-				var questionMarkIndex = connectionString.IndexOf(
-					QuestionMark,
-					Math.Max(currentIndex, slashIndex),
-					StringComparison.Ordinal
-				);
-
-				var endIndex = connectionString.Length;
+				var slashIndex        = connectionString.IndexOf(Slash, currentIndex, StringComparison.Ordinal);
+				var questionMarkIndex = connectionString.IndexOf(QuestionMark, currentIndex, StringComparison.Ordinal);
+				var endIndex          = connectionString.Length;
 
 				//for simpler substring operations:
 				if (slashIndex == -1) slashIndex               = int.MaxValue;
@@ -228,25 +227,39 @@ namespace EventStore.Client {
 					}
 				}
 
+				var certPathSet    = typedOptions.TryGetValue(CertPath, out var certPath);
+				var certKeyPathSet = typedOptions.TryGetValue(CertKeyPath, out var certKeyPath);
+
+				if (certPathSet ^ certKeyPathSet)
+					throw new InvalidClientCertificateException(
+						$"Invalid certificate settings. {nameof(CertPath)} and {nameof(CertKeyPath)} must both be set"
+					);
+
+				if (certPathSet && certKeyPathSet) {
+					try {
+						settings.ConnectivitySettings.ClientCertificate =
+							CertificateUtils.LoadFromFile((string)certPath!, (string)certKeyPath!);
+					} catch (Exception ex) {
+						throw new InvalidClientCertificateException($"Invalid certificate settings. {ex.Message}");
+					}
+				}
+
 				settings.CreateHttpMessageHandler = CreateDefaultHandler;
 
 				return settings;
 
 				HttpMessageHandler CreateDefaultHandler() {
-					var configureClientCert = settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false };
+					var certificate = settings.ConnectivitySettings.ClientCertificate ??
+					                  settings.ConnectivitySettings.TlsCaFile;
+
+					var configureClientCert = settings.ConnectivitySettings is { Insecure: false } && certificate != null;
+
 #if NET
 					var handler = new SocketsHttpHandler {
 						KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
 						KeepAlivePingTimeout           = settings.ConnectivitySettings.KeepAliveTimeout,
 						EnableMultipleHttp2Connections = true,
 					};
-
-					if (configureClientCert)
-						handler.SslOptions.ClientCertificates = [settings.ConnectivitySettings.TlsCaFile!];
-
-					if (!settings.ConnectivitySettings.TlsVerifyCert) {
-						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
-					}
 #else
 					var handler = new WinHttpHandler {
 						TcpKeepAliveEnabled = true,
@@ -254,9 +267,20 @@ namespace EventStore.Client {
 						TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
 						EnableMultipleHttp2Connections = true
 					};
+#endif
+					if (settings.ConnectivitySettings.Insecure) return handler;
+#if NET
+					if (configureClientCert) {
+						handler.SslOptions.ClientCertificates = [certificate!];
+					}
 
-					if (configureClientCert)
-						handler.ClientCertificates.Add(settings.ConnectivitySettings.TlsCaFile!);
+					if (!settings.ConnectivitySettings.TlsVerifyCert) {
+						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+					}
+#else
+					if (configureClientCert) {
+						handler.ClientCertificates.Add(certificate!);
+					}
 
 					if (!settings.ConnectivitySettings.TlsVerifyCert) {
 						handler.ServerCertificateValidationCallback = delegate { return true; };

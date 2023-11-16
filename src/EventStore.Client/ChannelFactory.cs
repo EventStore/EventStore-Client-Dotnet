@@ -1,6 +1,6 @@
 using System.Net.Http;
+using System.Security.Cryptography.X509Certificates;
 using Grpc.Net.Client;
-using System.Net.Security;
 using EndPoint = System.Net.EndPoint;
 using TChannel = Grpc.Net.Client.GrpcChannel;
 
@@ -25,7 +25,7 @@ namespace EventStore.Client {
 						DefaultRequestVersion = new Version(2, 0)
 					},
 #else
-				HttpHandler = CreateHandler(),
+					HttpHandler = CreateHandler(),
 #endif
 					LoggerFactory         = settings.LoggerFactory,
 					Credentials           = settings.ChannelCredentials,
@@ -39,20 +39,16 @@ namespace EventStore.Client {
 					return settings.CreateHttpMessageHandler.Invoke();
 				}
 
-				var configureClientCert = settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false };
+				var certificate = settings.ConnectivitySettings.ClientCertificate ??
+				                  settings.ConnectivitySettings.TlsCaFile;
+
+				var configureClientCert = settings.ConnectivitySettings is { Insecure: false } && certificate != null;
 #if NET
 				var handler = new SocketsHttpHandler {
 					KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
 					KeepAlivePingTimeout           = settings.ConnectivitySettings.KeepAliveTimeout,
 					EnableMultipleHttp2Connections = true,
 				};
-
-				if (configureClientCert)
-					handler.SslOptions.ClientCertificates = [settings.ConnectivitySettings.TlsCaFile!];
-
-				if (!settings.ConnectivitySettings.TlsVerifyCert) {
-					handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
-				}
 #else
 				var handler = new WinHttpHandler {
 					TcpKeepAliveEnabled = true,
@@ -60,9 +56,20 @@ namespace EventStore.Client {
 					TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
 					EnableMultipleHttp2Connections = true
 				};
+#endif
+				if (settings.ConnectivitySettings.Insecure) return handler;
+#if NET
+				if (configureClientCert) {
+					handler.SslOptions.ClientCertificates = new X509CertificateCollection { certificate! };
+				}
 
-				if (configureClientCert)
-					handler.ClientCertificates.Add(settings.ConnectivitySettings.TlsCaFile!);
+				if (!settings.ConnectivitySettings.TlsVerifyCert) {
+					handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+				}
+#else
+				if (configureClientCert) {
+					handler.ClientCertificates.Add(certificate!);
+				}
 
 				if (!settings.ConnectivitySettings.TlsVerifyCert) {
 					handler.ServerCertificateValidationCallback = delegate { return true; };

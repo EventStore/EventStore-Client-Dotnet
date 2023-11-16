@@ -148,17 +148,35 @@ public class ConnectionStringTests {
 
 #endif
 
-	public static IEnumerable<object?[]> InvalidClientCertificates() {
+	public static IEnumerable<object?[]> InvalidTlsCertificates() {
 		yield return new object?[] { Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "path", "not", "found") };
 		yield return new object?[] { Assembly.GetExecutingAssembly().Location };
 	}
 
 	[Theory]
-	[MemberData(nameof(InvalidClientCertificates))]
-	public void connection_string_with_invalid_client_certificate_should_throw(string clientCertificatePath) {
+	[MemberData(nameof(InvalidTlsCertificates))]
+	public void connection_string_with_invalid_tls_certificate_should_throw(string clientCertificatePath) {
 		Assert.Throws<InvalidClientCertificateException >(
 			() => EventStoreClientSettings.Create(
 				$"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&tlsCAFile={clientCertificatePath}"
+			)
+		);
+	}
+
+	public static IEnumerable<object?[]> InvalidClientCertificates() {
+		var invalidPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "path", "not", "found");
+		yield return [invalidPath, null];
+		yield return [null, invalidPath];
+		yield return [null, null];
+		yield return [invalidPath, invalidPath];
+	}
+
+	[Theory]
+	[MemberData(nameof(InvalidClientCertificates))]
+	public void connection_string_with_invalid_client_certificate_should_throw(string certPath, string certKeyPath) {
+		Assert.Throws<InvalidClientCertificateException >(
+			() => EventStoreClientSettings.Create(
+				$"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&certPath={certPath}&certKeyPath={certKeyPath}"
 			)
 		);
 	}
