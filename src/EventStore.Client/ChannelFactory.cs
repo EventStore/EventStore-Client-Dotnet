@@ -1,6 +1,9 @@
 using System;
+using System.Net;
 using EndPoint = System.Net.EndPoint;
 using System.Net.Http;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using Grpc.Net.Client;
 using TChannel = Grpc.Net.Client.GrpcChannel;
 
@@ -32,11 +35,17 @@ namespace EventStore.Client {
 					return settings.CreateHttpMessageHandler.Invoke();
 				}
 
-				return new SocketsHttpHandler {
+				var handler = new SocketsHttpHandler {
 					KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,
 					KeepAlivePingTimeout = settings.ConnectivitySettings.KeepAliveTimeout,
 					EnableMultipleHttp2Connections = true
 				};
+
+				if (!settings.ConnectivitySettings.TlsVerifyCert) {
+					handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+				}
+
+				return handler;
 			}
 		}
 	}
