@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,9 +18,14 @@ namespace EventStore.Client {
             _defaultCredentials = settings.DefaultCredentials;
 			
 			var handler = new HttpClientHandler();
-			if (!settings.ConnectivitySettings.Insecure && !settings.ConnectivitySettings.TlsVerifyCert) {
+			if (!settings.ConnectivitySettings.Insecure) {
 				handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-				handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
+
+				if (settings.ConnectivitySettings.ClientCertificate != null)
+					handler.ClientCertificates.Add(settings.ConnectivitySettings.ClientCertificate);
+
+				if (!settings.ConnectivitySettings.TlsVerifyCert)
+					handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
 			}
 			
 			_httpClient = new HttpClient(handler);

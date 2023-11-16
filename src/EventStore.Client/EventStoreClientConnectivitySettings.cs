@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 
 namespace EventStore.Client {
 	/// <summary>
@@ -106,7 +107,12 @@ namespace EventStore.Client {
 		/// True if certificates will be validated; otherwise false. 
 		/// </summary>
 		public bool TlsVerifyCert { get; set; } = true;
-		
+
+		/// <summary>
+		/// Client certificate used for user authentication.
+		/// </summary>
+		public X509Certificate2? ClientCertificate { get; set; } = null;
+
 		/// <summary>
 		/// The default <see cref="EventStoreClientConnectivitySettings"/>.
 		/// </summary>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Security.Cryptography.X509Certificates;
 using Timeout_ = System.Threading.Timeout;
 
 namespace EventStore.Client {
@@ -36,6 +37,8 @@ namespace EventStore.Client {
 			private const string ThrowOnAppendFailure = nameof(ThrowOnAppendFailure);
 			private const string KeepAliveInterval = nameof(KeepAliveInterval);
 			private const string KeepAliveTimeout = nameof(KeepAliveTimeout);
+			private const string CertPath = nameof(CertPath);
+			private const string CertKeyPath = nameof(CertKeyPath);
 
 			private const string UriSchemeDiscover = "esdb+discover";
 
@@ -56,6 +59,8 @@ namespace EventStore.Client {
 					{ThrowOnAppendFailure, typeof(bool)},
 					{KeepAliveInterval, typeof(int)},
 					{KeepAliveTimeout, typeof(int)},
+					{CertPath, typeof(string)},
+					{CertKeyPath, typeof(string)},
 				};
 
 			public static EventStoreClientSettings Parse(string connectionString) {
@@ -75,8 +80,7 @@ namespace EventStore.Client {
 
 
 				var slashIndex = connectionString.IndexOf(Slash, currentIndex, StringComparison.Ordinal);
-				var questionMarkIndex = connectionString.IndexOf(QuestionMark, Math.Max(currentIndex, slashIndex),
-					StringComparison.Ordinal);
+				var questionMarkIndex = connectionString.IndexOf(QuestionMark, currentIndex, StringComparison.Ordinal);
 				var endIndex = connectionString.Length;
 
 				//for simpler substring operations:
@@ -198,7 +202,22 @@ namespace EventStore.Client {
 				if (typedOptions.TryGetValue(TlsVerifyCert, out var tlsVerifyCert)) {
 					settings.ConnectivitySettings.TlsVerifyCert = (bool)tlsVerifyCert;
 				}
-				
+
+				var certPathSet = typedOptions.TryGetValue(CertPath, out var certPath);
+				var certKeyPathSet = typedOptions.TryGetValue(CertKeyPath, out var certKeyPath);
+
+				if (certPathSet ^ certKeyPathSet)
+					throw new InvalidSettingException($"Invalid certificate settings. {nameof(CertPath)} and {nameof(CertKeyPath)} must both be set");
+
+				if (certPathSet && certKeyPathSet) {
+					try {
+						settings.ConnectivitySettings.ClientCertificate  =
+							CertificateUtils.LoadFromFile((string)certPath!, (string)certKeyPath!);
+					} catch (Exception ex) {
+						throw new InvalidSettingException($"Invalid certificate settings. {ex.Message}");
+					}
+				}
+
 				settings.CreateHttpMessageHandler = () => {
 					var handler = new SocketsHttpHandler {
 						KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,
@@ -208,6 +227,11 @@ namespace EventStore.Client {
 
 					if (!settings.ConnectivitySettings.TlsVerifyCert) {
 						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+					}
+
+					var clientCertificate = settings.ConnectivitySettings.ClientCertificate;
+					if (clientCertificate != null && !settings.ConnectivitySettings.Insecure) {
+						handler.SslOptions.ClientCertificates = new X509Certificate2Collection(clientCertificate);
 					}
 
 					return handler;

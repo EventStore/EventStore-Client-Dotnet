@@ -45,6 +45,11 @@ namespace EventStore.Client {
 					handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
 				}
 
+				var clientCertificate = settings.ConnectivitySettings.ClientCertificate;
+				if (clientCertificate != null && !settings.ConnectivitySettings.Insecure) {
+					handler.SslOptions.ClientCertificates = new X509Certificate2Collection(clientCertificate);
+				}
+
 				return handler;
 			}
 		}
