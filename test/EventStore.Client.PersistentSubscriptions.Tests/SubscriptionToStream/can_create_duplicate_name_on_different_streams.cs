@@ -1,29 +1,32 @@
-using System.Threading.Tasks;
-using Xunit;
+namespace EventStore.Client.PersistentSubscriptions.Tests.SubscriptionToStream;
 
-namespace EventStore.Client.SubscriptionToStream {
-	public class can_create_duplicate_name_on_different_streams
-		: IClassFixture<can_create_duplicate_name_on_different_streams.Fixture> {
-		public can_create_duplicate_name_on_different_streams(Fixture fixture) {
-			_fixture = fixture;
-		}
+public class can_create_duplicate_name_on_different_streams
+	: IClassFixture<can_create_duplicate_name_on_different_streams.Fixture> {
+	const string Stream =
+		nameof(can_create_duplicate_name_on_different_streams);
 
-		private const string Stream =
-			nameof(can_create_duplicate_name_on_different_streams);
+	readonly Fixture _fixture;
 
-		private readonly Fixture _fixture;
+	public can_create_duplicate_name_on_different_streams(Fixture fixture) => _fixture = fixture;
 
-		public class Fixture : EventStoreClientFixture {
-			protected override Task Given() => Task.CompletedTask;
+	[Fact]
+	public Task the_completion_succeeds() =>
+		_fixture.Client.CreateToStreamAsync(
+			"someother" + Stream,
+			"group3211",
+			new(),
+			userCredentials: TestCredentials.Root
+		);
 
-			protected override Task When() =>
-				Client.CreateToStreamAsync(Stream, "group3211",
-					new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
-		}
+	public class Fixture : EventStoreClientFixture {
+		protected override Task Given() => Task.CompletedTask;
 
-		[Fact]
-		public Task the_completion_succeeds() =>
-			_fixture.Client.CreateToStreamAsync("someother" + Stream,
-				"group3211", new PersistentSubscriptionSettings(), userCredentials: TestCredentials.Root);
+		protected override Task When() =>
+			Client.CreateToStreamAsync(
+				Stream,
+				"group3211",
+				new(),
+				userCredentials: TestCredentials.Root
+			);
 	}
 }

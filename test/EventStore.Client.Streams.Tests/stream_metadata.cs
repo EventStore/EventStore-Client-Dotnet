@@ -1,142 +1,161 @@
-using System;
 using System.Text.Json;
-using System.Threading.Tasks;
-using Xunit;
 
-namespace EventStore.Client {
-	[Trait("Category", "LongRunning")]
-	public class stream_metadata : IClassFixture<stream_metadata.Fixture> {
-		private readonly Fixture _fixture;
+namespace EventStore.Client.Streams.Tests; 
 
-		public stream_metadata(Fixture fixture) {
-			_fixture = fixture;
-		}
+[Trait("Category", "LongRunning")]
+public class stream_metadata : IClassFixture<stream_metadata.Fixture> {
+	readonly Fixture _fixture;
 
-		[Fact]
-		public async Task getting_for_an_existing_stream_and_no_metadata_exists() {
-			var stream = _fixture.GetStreamName();
+	public stream_metadata(Fixture fixture) => _fixture = fixture;
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
+	[Fact]
+	public async Task getting_for_an_existing_stream_and_no_metadata_exists() {
+		var stream = _fixture.GetStreamName();
 
-			var actual = await _fixture.Client.GetStreamMetadataAsync(stream);
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
 
-			Assert.Equal(StreamMetadataResult.None(stream), actual);
-		}
+		var actual = await _fixture.Client.GetStreamMetadataAsync(stream);
 
-		[Fact]
-		public async Task empty_metadata() {
-			var stream = _fixture.GetStreamName();
+		Assert.Equal(StreamMetadataResult.None(stream), actual);
+	}
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new StreamMetadata());
+	[Fact]
+	public async Task empty_metadata() {
+		var stream = _fixture.GetStreamName();
 
-			var actual = await _fixture.Client.GetStreamMetadataAsync(stream);
+		await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new());
 
-			Assert.Equal(stream, actual.StreamName);
-			Assert.Equal(StreamPosition.Start, actual.MetastreamRevision);
-			Assert.False(actual.StreamDeleted);
-			Assert.Equal("{}", JsonSerializer.Serialize(actual.Metadata,
+		var actual = await _fixture.Client.GetStreamMetadataAsync(stream);
+
+		Assert.Equal(stream, actual.StreamName);
+		Assert.Equal(StreamPosition.Start, actual.MetastreamRevision);
+		Assert.False(actual.StreamDeleted);
+		Assert.Equal(
+			"{}",
+			JsonSerializer.Serialize(
+				actual.Metadata,
 				new JsonSerializerOptions {
-					Converters = {StreamMetadataJsonConverter.Instance}
-				}));
-		}
+					Converters = { StreamMetadataJsonConverter.Instance }
+				}
+			)
+		);
+	}
 
-		[Fact]
-		public async Task latest_metadata_is_returned() {
-			var stream = _fixture.GetStreamName();
+	[Fact]
+	public async Task latest_metadata_is_returned() {
+		var stream = _fixture.GetStreamName();
 
-			var expected = new StreamMetadata(17, TimeSpan.FromSeconds(0xDEADBEEF), new StreamPosition(10),
-				TimeSpan.FromSeconds(0xABACABA));
+		var expected = new StreamMetadata(
+			17,
+			TimeSpan.FromSeconds(0xDEADBEEF),
+			new StreamPosition(10),
+			TimeSpan.FromSeconds(0xABACABA)
+		);
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, expected);
+		await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, expected);
 
-			var actual = await _fixture.Client.GetStreamMetadataAsync(stream);
-			
-			Assert.Equal(stream, actual.StreamName);
-			Assert.False(actual.StreamDeleted);
-			Assert.Equal(StreamPosition.Start, actual.MetastreamRevision);
-			Assert.Equal(expected.MaxCount, actual.Metadata.MaxCount);
-			Assert.Equal(expected.MaxAge, actual.Metadata.MaxAge);
-			Assert.Equal(expected.TruncateBefore, actual.Metadata.TruncateBefore);
-			Assert.Equal(expected.CacheControl, actual.Metadata.CacheControl);
-			Assert.Equal(expected.Acl, actual.Metadata.Acl);
-			
-			expected = new StreamMetadata(37, TimeSpan.FromSeconds(0xBEEFDEAD), new StreamPosition(24),
-				TimeSpan.FromSeconds(0xDABACABAD));
+		var actual = await _fixture.Client.GetStreamMetadataAsync(stream);
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(0), expected);
+		Assert.Equal(stream, actual.StreamName);
+		Assert.False(actual.StreamDeleted);
+		Assert.Equal(StreamPosition.Start, actual.MetastreamRevision);
+		Assert.Equal(expected.MaxCount, actual.Metadata.MaxCount);
+		Assert.Equal(expected.MaxAge, actual.Metadata.MaxAge);
+		Assert.Equal(expected.TruncateBefore, actual.Metadata.TruncateBefore);
+		Assert.Equal(expected.CacheControl, actual.Metadata.CacheControl);
+		Assert.Equal(expected.Acl, actual.Metadata.Acl);
 
-			actual = await _fixture.Client.GetStreamMetadataAsync(stream);
-			
-			Assert.Equal(stream, actual.StreamName);
-			Assert.False(actual.StreamDeleted);
-			Assert.Equal(new StreamPosition(1), actual.MetastreamRevision);
-			Assert.Equal(expected.MaxCount, actual.Metadata.MaxCount);
-			Assert.Equal(expected.MaxAge, actual.Metadata.MaxAge);
-			Assert.Equal(expected.TruncateBefore, actual.Metadata.TruncateBefore);
-			Assert.Equal(expected.CacheControl, actual.Metadata.CacheControl);
-			Assert.Equal(expected.Acl, actual.Metadata.Acl);
-		}
-		
-		[Fact]
-		public async Task setting_with_wrong_expected_version_throws() {
-			var stream = _fixture.GetStreamName();
-			await Assert.ThrowsAsync<WrongExpectedVersionException>(() =>
-				_fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(2), new StreamMetadata()));
-		}
+		expected = new(
+			37,
+			TimeSpan.FromSeconds(0xBEEFDEAD),
+			new StreamPosition(24),
+			TimeSpan.FromSeconds(0xDABACABAD)
+		);
 
-		[Fact]
-		public async Task setting_with_wrong_expected_version_returns() {
-			var stream = _fixture.GetStreamName();
-			var writeResult =
-				await _fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(2), new StreamMetadata(),
-					options => {
-						options.ThrowOnAppendFailure = false;
-				});
+		await _fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(0), expected);
 
-			Assert.IsType<WrongExpectedVersionResult>(writeResult);
-		}
+		actual = await _fixture.Client.GetStreamMetadataAsync(stream);
 
-		[Fact]
-		public async Task latest_metadata_returned_stream_revision_any() {
-			var stream = _fixture.GetStreamName();
+		Assert.Equal(stream, actual.StreamName);
+		Assert.False(actual.StreamDeleted);
+		Assert.Equal(new StreamPosition(1), actual.MetastreamRevision);
+		Assert.Equal(expected.MaxCount, actual.Metadata.MaxCount);
+		Assert.Equal(expected.MaxAge, actual.Metadata.MaxAge);
+		Assert.Equal(expected.TruncateBefore, actual.Metadata.TruncateBefore);
+		Assert.Equal(expected.CacheControl, actual.Metadata.CacheControl);
+		Assert.Equal(expected.Acl, actual.Metadata.Acl);
+	}
 
-			var expected = new StreamMetadata(17, TimeSpan.FromSeconds(0xDEADBEEF), new StreamPosition(10),
-				TimeSpan.FromSeconds(0xABACABA));
+	[Fact]
+	public async Task setting_with_wrong_expected_version_throws() {
+		var stream = _fixture.GetStreamName();
+		await Assert.ThrowsAsync<WrongExpectedVersionException>(
+			() =>
+				_fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(2), new())
+		);
+	}
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.Any, expected);
+	[Fact]
+	public async Task setting_with_wrong_expected_version_returns() {
+		var stream = _fixture.GetStreamName();
+		var writeResult =
+			await _fixture.Client.SetStreamMetadataAsync(
+				stream,
+				new StreamRevision(2),
+				new(),
+				options => { options.ThrowOnAppendFailure = false; }
+			);
 
-			var actual = await _fixture.Client.GetStreamMetadataAsync(stream);
-			
-			Assert.Equal(stream, actual.StreamName);
-			Assert.False(actual.StreamDeleted);
-			Assert.Equal(StreamPosition.Start, actual.MetastreamRevision);
-			Assert.Equal(expected.MaxCount, actual.Metadata.MaxCount);
-			Assert.Equal(expected.MaxAge, actual.Metadata.MaxAge);
-			Assert.Equal(expected.TruncateBefore, actual.Metadata.TruncateBefore);
-			Assert.Equal(expected.CacheControl, actual.Metadata.CacheControl);
-			Assert.Equal(expected.Acl, actual.Metadata.Acl);
-			
-			expected = new StreamMetadata(37, TimeSpan.FromSeconds(0xBEEFDEAD), new StreamPosition(24),
-				TimeSpan.FromSeconds(0xDABACABAD));
+		Assert.IsType<WrongExpectedVersionResult>(writeResult);
+	}
 
-			await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.Any, expected);
+	[Fact]
+	public async Task latest_metadata_returned_stream_revision_any() {
+		var stream = _fixture.GetStreamName();
 
-			actual = await _fixture.Client.GetStreamMetadataAsync(stream);
-			
-			Assert.Equal(stream, actual.StreamName);
-			Assert.False(actual.StreamDeleted);
-			Assert.Equal(new StreamPosition(1), actual.MetastreamRevision);
-			Assert.Equal(expected.MaxCount, actual.Metadata.MaxCount);
-			Assert.Equal(expected.MaxAge, actual.Metadata.MaxAge);
-			Assert.Equal(expected.TruncateBefore, actual.Metadata.TruncateBefore);
-			Assert.Equal(expected.CacheControl, actual.Metadata.CacheControl);
-			Assert.Equal(expected.Acl, actual.Metadata.Acl);
-		}
-		
-	
-		public class Fixture : EventStoreClientFixture {
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
+		var expected = new StreamMetadata(
+			17,
+			TimeSpan.FromSeconds(0xDEADBEEF),
+			new StreamPosition(10),
+			TimeSpan.FromSeconds(0xABACABA)
+		);
+
+		await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.Any, expected);
+
+		var actual = await _fixture.Client.GetStreamMetadataAsync(stream);
+
+		Assert.Equal(stream, actual.StreamName);
+		Assert.False(actual.StreamDeleted);
+		Assert.Equal(StreamPosition.Start, actual.MetastreamRevision);
+		Assert.Equal(expected.MaxCount, actual.Metadata.MaxCount);
+		Assert.Equal(expected.MaxAge, actual.Metadata.MaxAge);
+		Assert.Equal(expected.TruncateBefore, actual.Metadata.TruncateBefore);
+		Assert.Equal(expected.CacheControl, actual.Metadata.CacheControl);
+		Assert.Equal(expected.Acl, actual.Metadata.Acl);
+
+		expected = new(
+			37,
+			TimeSpan.FromSeconds(0xBEEFDEAD),
+			new StreamPosition(24),
+			TimeSpan.FromSeconds(0xDABACABAD)
+		);
+
+		await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.Any, expected);
+
+		actual = await _fixture.Client.GetStreamMetadataAsync(stream);
+
+		Assert.Equal(stream, actual.StreamName);
+		Assert.False(actual.StreamDeleted);
+		Assert.Equal(new StreamPosition(1), actual.MetastreamRevision);
+		Assert.Equal(expected.MaxCount, actual.Metadata.MaxCount);
+		Assert.Equal(expected.MaxAge, actual.Metadata.MaxAge);
+		Assert.Equal(expected.TruncateBefore, actual.Metadata.TruncateBefore);
+		Assert.Equal(expected.CacheControl, actual.Metadata.CacheControl);
+		Assert.Equal(expected.Acl, actual.Metadata.Acl);
+	}
+
+	public class Fixture : EventStoreClientFixture {
+		protected override Task Given() => Task.CompletedTask;
+		protected override Task When()  => Task.CompletedTask;
 	}
 }

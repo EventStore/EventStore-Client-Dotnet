@@ -1,23 +1,19 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
+namespace EventStore.Client.Streams.Tests; 
 
-namespace EventStore.Client {
-	public abstract class EventStoreClientFixture : EventStoreClientFixtureBase {
-		public EventStoreClient Client { get; }
-		protected EventStoreClientFixture(EventStoreClientSettings? settings = null,
-			Dictionary<string, string>? env = null, bool noDefaultCredentials = false)
-			: base(settings, env, noDefaultCredentials) {
-			
-			Client = new EventStoreClient(Settings);
-		}
+public abstract class EventStoreClientFixture : EventStoreClientFixtureBase {
+	protected EventStoreClientFixture(
+		EventStoreClientSettings? settings = null,
+		Dictionary<string, string>? env = null, bool noDefaultCredentials = false
+	)
+		: base(settings, env, noDefaultCredentials) =>
+		Client = new(Settings);
 
-		protected override async Task OnServerUpAsync() {
-			await Client.WarmUpAsync();
-		}
+	public EventStoreClient Client { get; }
 
-		public override async Task DisposeAsync() {
-			await Client.DisposeAsync();
-			await base.DisposeAsync();
-		}
+	protected override async Task OnServerUpAsync() => await Client.WarmUp();
+
+	public override async Task DisposeAsync() {
+		await Client.DisposeAsync();
+		await base.DisposeAsync();
 	}
 }

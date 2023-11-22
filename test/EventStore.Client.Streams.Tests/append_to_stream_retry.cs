@@ -1,62 +1,63 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Polly;
-using Xunit;
 
-namespace EventStore.Client {
-	[Trait("Category", "Network")]
-	public class append_to_stream_retry : IClassFixture<append_to_stream_retry.Fixture> {
-		private readonly Fixture _fixture;
+namespace EventStore.Client.Streams.Tests; 
 
-		public append_to_stream_retry(Fixture fixture) {
-			_fixture = fixture;
-		}
+[Trait("Category", "Network")]
+public class append_to_stream_retry : IClassFixture<append_to_stream_retry.Fixture> {
+	readonly Fixture _fixture;
 
-		[Fact]
-		public async Task can_retry() {
-			var stream = _fixture.GetStreamName();
+	public append_to_stream_retry(Fixture fixture) => _fixture = fixture;
 
-			// can definitely write without throwing
-			var nextExpected = (await WriteAnEventAsync(StreamRevision.None)).NextExpectedStreamRevision;
-			Assert.Equal(new StreamRevision(0), nextExpected);
+	[Fact]
+	public async Task can_retry() {
+		var stream = _fixture.GetStreamName();
 
-			_fixture.TestServer.Stop();
+		// can definitely write without throwing
+		var nextExpected = (await WriteAnEventAsync(StreamRevision.None)).NextExpectedStreamRevision;
+		Assert.Equal(new(0), nextExpected);
 
-			// writeTask cannot complete because ES is stopped
-			var ex = await Assert.ThrowsAnyAsync<Exception>(() => WriteAnEventAsync(new StreamRevision(0)));
-			Assert.True(ex is RpcException {
+		_fixture.TestServer.Stop();
+
+		// writeTask cannot complete because ES is stopped
+		var ex = await Assert.ThrowsAnyAsync<Exception>(() => WriteAnEventAsync(new(0)));
+		Assert.True(
+			ex is RpcException {
 				Status: {
 					StatusCode: StatusCode.Unavailable
 				}
-			} or DiscoveryException);
+			} or DiscoveryException
+		);
 
-			await _fixture.TestServer.StartAsync().WithTimeout();
+		await _fixture.TestServer.StartAsync().WithTimeout();
 
-			// write can be retried
-			var writeResult = await Policy
-				.Handle<Exception>()
-				.WaitAndRetryAsync(5, _ => TimeSpan.FromSeconds(3))
-				.ExecuteAsync(async () => await WriteAnEventAsync(new StreamRevision(0)));
+		// write can be retried
+		var writeResult = await Policy
+			.Handle<Exception>()
+			.WaitAndRetryAsync(5, _ => TimeSpan.FromSeconds(3))
+			.ExecuteAsync(async () => await WriteAnEventAsync(new(0)));
 
-			Assert.Equal(new StreamRevision(1), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
+		
+		return;
 
-			Task<IWriteResult> WriteAnEventAsync(StreamRevision expectedRevision) => _fixture.Client.AppendToStreamAsync(
-				streamName: stream,
-				expectedRevision: expectedRevision,
-				eventData: _fixture.CreateTestEvents(1));
-		}
+		Task<IWriteResult> WriteAnEventAsync(StreamRevision expectedRevision) =>
+			_fixture.Client.AppendToStreamAsync(
+				stream,
+				expectedRevision,
+				_fixture.CreateTestEvents(1)
+			);
+	}
 
-		public class Fixture : EventStoreClientFixture {
-			public Fixture() : base(env: new Dictionary<string, string> {
-				["EVENTSTORE_MEM_DB"] = "false",
-			}) {
-				Settings.ConnectivitySettings.MaxDiscoverAttempts = 2;
+	public class Fixture : EventStoreClientFixture {
+		public Fixture() : base(
+			env: new() {
+				["EVENTSTORE_MEM_DB"] = "false"
 			}
+		) =>
+			Settings.ConnectivitySettings.MaxDiscoverAttempts = 2;
 
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
+		protected override Task Given() => Task.CompletedTask;
+		protected override Task When()  => Task.CompletedTask;
 	}
 }

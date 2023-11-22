@@ -13,10 +13,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [net5.0, net6.0, net7.0]
-        os: [ubuntu-latest]
-        test: [Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement]
-        configuration: [release]
+        framework: [ net5.0, net6.0, net7.0 ]
+        os: [ ubuntu-latest ]
+        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement ]
+        configuration: [ release ]
     runs-on: ${{ matrix.os }}
     name: EventStore.Client.${{ matrix.test }}/${{ matrix.os }}/${{ matrix.framework }}/${{ inputs.docker-tag }}
     steps:

@@ -1,44 +1,51 @@
-﻿using System;
-using System.Threading.Tasks;
-using Grpc.Core;
-using Xunit;
+﻿using Grpc.Core;
 
-namespace EventStore.Client {
-	[Trait("Category", "Network")]
-	public class append_to_stream_with_timeout : IClassFixture<append_to_stream_with_timeout.Fixture> {
-		private readonly Fixture _fixture;
+namespace EventStore.Client.Streams.Tests; 
 
-		public append_to_stream_with_timeout(Fixture fixture) {
-			_fixture = fixture;
-		}
+[Trait("Category", "Network")]
+public class append_to_stream_with_timeout : IClassFixture<append_to_stream_with_timeout.Fixture> {
+	readonly Fixture _fixture;
 
-		[Fact]
-		public async Task any_stream_revision_fails_when_operation_expired() {
-			var stream = _fixture.GetStreamName();
+	public append_to_stream_with_timeout(Fixture fixture) => _fixture = fixture;
 
-			var ex = await Assert.ThrowsAsync<RpcException>(() =>
-				_fixture.Client.AppendToStreamAsync(stream, StreamState.Any, _fixture.CreateTestEvents(100),
-					deadline: TimeSpan.FromTicks(1)));
+	[Fact]
+	public async Task any_stream_revision_fails_when_operation_expired() {
+		var stream = _fixture.GetStreamName();
 
-			Assert.Equal(StatusCode.DeadlineExceeded, ex.StatusCode);
-		}
+		var ex = await Assert.ThrowsAsync<RpcException>(
+			() =>
+				_fixture.Client.AppendToStreamAsync(
+					stream,
+					StreamState.Any,
+					_fixture.CreateTestEvents(100),
+					deadline: TimeSpan.FromTicks(1)
+				)
+		);
 
-		[Fact]
-		public async Task stream_revision_fails_when_operation_expired() {
-			var stream = _fixture.GetStreamName();
+		Assert.Equal(StatusCode.DeadlineExceeded, ex.StatusCode);
+	}
 
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, _fixture.CreateTestEvents());
+	[Fact]
+	public async Task stream_revision_fails_when_operation_expired() {
+		var stream = _fixture.GetStreamName();
 
-			var ex = await Assert.ThrowsAsync<RpcException>(() =>
-				_fixture.Client.AppendToStreamAsync(stream, new StreamRevision(0), _fixture.CreateTestEvents(100),
-					deadline: TimeSpan.Zero));
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, _fixture.CreateTestEvents());
 
-			Assert.Equal(StatusCode.DeadlineExceeded, ex.StatusCode);
-		}
+		var ex = await Assert.ThrowsAsync<RpcException>(
+			() =>
+				_fixture.Client.AppendToStreamAsync(
+					stream,
+					new StreamRevision(0),
+					_fixture.CreateTestEvents(100),
+					deadline: TimeSpan.Zero
+				)
+		);
 
-		public class Fixture : EventStoreClientFixture {
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
+		Assert.Equal(StatusCode.DeadlineExceeded, ex.StatusCode);
+	}
+
+	public class Fixture : EventStoreClientFixture {
+		protected override Task Given() => Task.CompletedTask;
+		protected override Task When()  => Task.CompletedTask;
 	}
 }

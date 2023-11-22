@@ -1,80 +1,80 @@
-using System;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Xunit;
 
-namespace EventStore.Client {
-	public abstract class read_events_linked_to_deleted_stream {
-		private readonly Fixture _fixture;
+namespace EventStore.Client.Streams.Tests; 
 
-		protected read_events_linked_to_deleted_stream(Fixture fixture) {
-			_fixture = fixture;
-		}
+public abstract class read_events_linked_to_deleted_stream {
+	readonly Fixture _fixture;
 
-		[Fact]
-		public void one_event_is_read() {
-			Assert.Single(_fixture.Events);
-		}
+	protected read_events_linked_to_deleted_stream(Fixture fixture) => _fixture = fixture;
 
-		[Fact]
-		public void the_linked_event_is_not_resolved() {
-			Assert.Null(_fixture.Events![0].Event);
-		}
+	[Fact]
+	public void one_event_is_read() => Assert.Single(_fixture.Events ?? Array.Empty<ResolvedEvent>());
 
-		[Fact]
-		public void the_link_event_is_included() {
-			Assert.NotNull(_fixture.Events![0].OriginalEvent);
-		}
+	[Fact]
+	public void the_linked_event_is_not_resolved() => Assert.Null(_fixture.Events![0].Event);
 
-		[Fact]
-		public void the_event_is_not_resolved() {
-			Assert.False(_fixture.Events![0].IsResolved);
-		}
+	[Fact]
+	public void the_link_event_is_included() => Assert.NotNull(_fixture.Events![0].OriginalEvent);
 
-		public abstract class Fixture : EventStoreClientFixture {
-			private const string DeletedStream = nameof(DeletedStream);
-			protected const string LinkedStream = nameof(LinkedStream);
-			public ResolvedEvent[]? Events { get; private set; }
+	[Fact]
+	public void the_event_is_not_resolved() => Assert.False(_fixture.Events![0].IsResolved);
 
-			protected override async Task Given() {
-				await Client.AppendToStreamAsync(DeletedStream, StreamState.Any, CreateTestEvents());
-				await Client.AppendToStreamAsync(LinkedStream, StreamState.Any, new[] {
+	public abstract class Fixture : EventStoreClientFixture {
+		const           string           DeletedStream = nameof(DeletedStream);
+		protected const string           LinkedStream  = nameof(LinkedStream);
+		public          ResolvedEvent[]? Events { get; private set; }
+
+		protected override async Task Given() {
+			await Client.AppendToStreamAsync(DeletedStream, StreamState.Any, CreateTestEvents());
+			await Client.AppendToStreamAsync(
+				LinkedStream,
+				StreamState.Any,
+				new[] {
 					new EventData(
-						Uuid.NewUuid(), SystemEventTypes.LinkTo, Encoding.UTF8.GetBytes("0@" + DeletedStream),
-						Array.Empty<byte>(), Constants.Metadata.ContentTypes.ApplicationOctetStream)
-				});
+						Uuid.NewUuid(),
+						SystemEventTypes.LinkTo,
+						Encoding.UTF8.GetBytes("0@" + DeletedStream),
+						Array.Empty<byte>(),
+						Constants.Metadata.ContentTypes.ApplicationOctetStream
+					)
+				}
+			);
 
-				await Client.DeleteAsync(DeletedStream, StreamState.Any);
-			}
-
-			protected override async Task When() {
-				Events = await Read();
-			}
-
-			protected abstract ValueTask<ResolvedEvent[]> Read();
+			await Client.DeleteAsync(DeletedStream, StreamState.Any);
 		}
 
-		public class @forwards : read_events_linked_to_deleted_stream, IClassFixture<forwards.Fixture> {
-			public forwards(Fixture fixture) : base(fixture) {
-			}
+		protected override async Task When() => Events = await Read();
 
-			public new class Fixture : read_events_linked_to_deleted_stream.Fixture {
-				protected override ValueTask<ResolvedEvent[]> Read()
-					=> Client.ReadStreamAsync(Direction.Forwards, LinkedStream, StreamPosition.Start, 1,
-						resolveLinkTos: true).ToArrayAsync();
-			}
+		protected abstract ValueTask<ResolvedEvent[]> Read();
+	}
+
+	public class @forwards : read_events_linked_to_deleted_stream, IClassFixture<forwards.Fixture> {
+		public forwards(Fixture fixture) : base(fixture) { }
+
+		public new class Fixture : read_events_linked_to_deleted_stream.Fixture {
+			protected override ValueTask<ResolvedEvent[]> Read() =>
+				Client.ReadStreamAsync(
+					Direction.Forwards,
+					LinkedStream,
+					StreamPosition.Start,
+					1,
+					true
+				).ToArrayAsync();
 		}
+	}
 
-		public class @backwards : read_events_linked_to_deleted_stream, IClassFixture<backwards.Fixture> {
-			public backwards(Fixture fixture) : base(fixture) {
-			}
+	public class @backwards : read_events_linked_to_deleted_stream, IClassFixture<backwards.Fixture> {
+		public backwards(Fixture fixture) : base(fixture) { }
 
-			public new class Fixture : read_events_linked_to_deleted_stream.Fixture {
-				protected override ValueTask<ResolvedEvent[]> Read()
-					=> Client.ReadStreamAsync(Direction.Backwards, LinkedStream, StreamPosition.Start, 1,
-						resolveLinkTos: true).ToArrayAsync();
-			}
+		public new class Fixture : read_events_linked_to_deleted_stream.Fixture {
+			protected override ValueTask<ResolvedEvent[]> Read() =>
+				Client.ReadStreamAsync(
+					Direction.Backwards,
+					LinkedStream,
+					StreamPosition.Start,
+					1,
+					true
+				).ToArrayAsync();
 		}
 	}
 }

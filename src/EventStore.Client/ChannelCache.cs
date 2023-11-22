@@ -33,7 +33,7 @@ namespace EventStore.Client {
 
 				if (!_channels.TryGetValue(endPoint, out var channel)) {
 					channel = ChannelFactory.CreateChannel(
-						settings: _settings,
+						settings: _settings, 
 						endPoint: endPoint);
 					_channels[endPoint] = channel;
 				}

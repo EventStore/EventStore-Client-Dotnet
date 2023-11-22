@@ -75,13 +75,13 @@ jobs:
           find samples/ -type f -iname "*.csproj" -print0 | xargs -0L1 dotnet run --framework ${{ matrix.framework }} --project
 
   test:
-    timeout-minutes: 10
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        framework: [net5.0, net6.0, net7.0]
-        os: [ubuntu-latest, windows-latest]
-        configuration: [release]
+        framework: [ net5.0, net6.0, net7.0 ]
+        os: [ ubuntu-latest, windows-latest ]
+        configuration: [ release ]
     runs-on: ${{ matrix.os }}
     name: test/EventStore.Client/${{ matrix.os }}/${{ matrix.framework }}
     steps:
@@ -162,4 +162,3 @@ jobs:
           dotnet nuget list source
           dotnet tool restore
           find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.nuget_key }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-    
