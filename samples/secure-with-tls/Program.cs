@@ -9,12 +9,12 @@ var connectionString = Environment.GetEnvironmentVariable("ESDB_CONNECTION_STRIN
 
 Console.WriteLine($"Connecting to EventStoreDB at: `{connectionString}`");
 
-await using var client = new EventStoreClient(EventStoreClientSettings.Create(connectionString));
+using var client = new EventStoreClient(EventStoreClientSettings.Create(connectionString));
 
 var eventData = new EventData(
 	Uuid.NewUuid(),
 	"some-event",
-	"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
+	Encoding.UTF8.GetBytes("{\"id\": \"1\" \"value\": \"some value\"}")
 );
 
 try {

@@ -4,7 +4,6 @@ namespace setting_up_dependency_injection.Controllers {
 	[ApiController]
 	[Route("[controller]")]
 	public class EventStoreController : ControllerBase {
-
 		#region using-dependency
 		private readonly EventStoreClient _eventStoreClient;
 

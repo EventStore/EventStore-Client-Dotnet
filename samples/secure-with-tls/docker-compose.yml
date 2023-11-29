@@ -13,7 +13,7 @@ services:
                 condition: service_healthy
 
     eventstoredb:
-        image: eventstore/eventstore:20.10.0-buster-slim
+        image: eventstore/eventstore:latest
         # container_name should match the DNS name in certificate
         container_name: eventstoredb
         environment:
