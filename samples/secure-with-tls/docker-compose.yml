@@ -28,8 +28,8 @@ services:
             - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/etc/eventstore/certs/node/node.key
             - EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH=/etc/eventstore/certs/ca
         ports:
-            - 1113:1113
-            - 2113:2113
+            - "1113:1113"
+            - "2113:2113"
         networks:
             - esdb_network
         volumes:

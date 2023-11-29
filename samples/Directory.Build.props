@@ -1,10 +1,15 @@
 <Project>
     <PropertyGroup>
-        <TargetFrameworks>net5.0;net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
         <Nullable>enable</Nullable>
         <NullableContextOptions>enable</NullableContextOptions>
         <ImplicitUsings>true</ImplicitUsings>
         <OutputType>Exe</OutputType>
         <LangVersion>preview</LangVersion>
     </PropertyGroup>
+
+    <ItemGroup>
+        <Using Include="System.Text" />
+        <Using Include="EventStore.Client" />
+    </ItemGroup>
 </Project>
