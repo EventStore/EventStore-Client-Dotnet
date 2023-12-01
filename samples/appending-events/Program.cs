@@ -19,7 +19,7 @@ static async Task AppendToStream(EventStoreClient client) {
 	var eventData = new EventData(
 		Uuid.NewUuid(),
 		"some-event",
-		Encoding.UTF8.GetBytes("{\"id\": \"1\" \"value\": \"some value\"}")
+		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
 
 	await client.AppendToStreamAsync(
@@ -39,7 +39,7 @@ static async Task AppendWithSameId(EventStoreClient client) {
 	var eventData = new EventData(
 		Uuid.NewUuid(),
 		"some-event",
-		Encoding.UTF8.GetBytes("{\"id\": \"1\" \"value\": \"some value\"}")
+		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
 
 	await client.AppendToStreamAsync(
@@ -68,13 +68,13 @@ static async Task AppendWithNoStream(EventStoreClient client) {
 	var eventDataOne = new EventData(
 		Uuid.NewUuid(),
 		"some-event",
-		Encoding.UTF8.GetBytes("{\"id\": \"1\" \"value\": \"some value\"}")
+		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
 
 	var eventDataTwo = new EventData(
 		Uuid.NewUuid(),
 		"some-event",
-		Encoding.UTF8.GetBytes("{\"id\": \"2\" \"value\": \"some other value\"}")
+		"{\"id\": \"2\" \"value\": \"some other value\"}"u8.ToArray()
 	);
 
 	await client.AppendToStreamAsync(
@@ -120,7 +120,7 @@ static async Task AppendWithConcurrencyCheck(EventStoreClient client) {
 	var clientOneData = new EventData(
 		Uuid.NewUuid(),
 		"some-event",
-		Encoding.UTF8.GetBytes("{\"id\": \"1\" \"value\": \"clientOne\"}")
+		"{\"id\": \"1\" \"value\": \"clientOne\"}"u8.ToArray()
 	);
 
 	await client.AppendToStreamAsync(
@@ -134,7 +134,7 @@ static async Task AppendWithConcurrencyCheck(EventStoreClient client) {
 	var clientTwoData = new EventData(
 		Uuid.NewUuid(),
 		"some-event",
-		Encoding.UTF8.GetBytes("{\"id\": \"2\" \"value\": \"clientTwo\"}")
+		"{\"id\": \"2\" \"value\": \"clientTwo\"}"u8.ToArray()
 	);
 
 	await client.AppendToStreamAsync(

@@ -175,7 +175,8 @@ static void SubscriptionDropped(StreamSubscription subscription, SubscriptionDro
 static Task HandleEvent(ResolvedEvent evnt) => Task.CompletedTask;
 
 static void ResubscribeToStream(StreamPosition? checkpoint) { }
-static void Resubscribe(Position? checkpoint)       { }
+
+static void Resubscribe(Position? checkpoint) { }
 
 static Task<StreamPosition?> ReadStreamCheckpointAsync() =>
 	Task.FromResult(new StreamPosition?());

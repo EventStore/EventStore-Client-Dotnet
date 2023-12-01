@@ -31,7 +31,7 @@ for (var i = 0; i < eventCount; i++) {
 	var eventData = new EventData(
 		Uuid.NewUuid(),
 		i % 2 == 0 ? "some-event" : "other-event",
-		Encoding.UTF8.GetBytes("{\"id\": \"1\" \"value\": \"some value\"}")
+		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
 
 	await client.AppendToStreamAsync(
