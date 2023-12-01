@@ -1,0 +1,19 @@
+version: "3.5"
+
+networks:
+  default:
+    name: eventstore-network
+
+services:
+
+  app:
+    container_name: app
+    build: ./
+    environment:
+      # URL should match the DNS name in certificate and container name
+      - ESDB__CONNECTION__STRING=esdb://admin:changeit@eventstore:2113?Tls=true
+    depends_on:
+      eventstore:
+        condition: service_healthy
+    links:
+      - eventstore

@@ -1,36 +1,29 @@
-﻿using Grpc.Core;
-
-const string noNodeConnectionErrorMessage = "No connection could be made because the target machine actively refused it.";
-const string connectionRefused = "Connection refused";
-const string certificateIsNotInstalledOrInvalidErrorMessage = "The remote certificate is invalid according to the validation procedure.";
+﻿using Grpc.Core; 
 
 // take the address from environment variable (when run with Docker) or use localhost by default 
-var connectionString = Environment.GetEnvironmentVariable("ESDB_CONNECTION_STRING") ?? "esdb://localhost:2113?tls=true";
+var connectionString = Environment.GetEnvironmentVariable("ESDB__CONNECTION__STRING") 
+                    ?? "esdb://admin:changeit@localhost:2113?tls=true";
 
-Console.WriteLine($"Connecting to EventStoreDB at: `{connectionString}`");
+Console.WriteLine($"Connecting to EventStoreDB at: {connectionString}");
 
-using var client = new EventStoreClient(EventStoreClientSettings.Create(connectionString));
+await using var client = new EventStoreClient(EventStoreClientSettings.Create(connectionString));
 
-var eventData = new EventData(
-	Uuid.NewUuid(),
-	"some-event",
-	Encoding.UTF8.GetBytes("{\"id\": \"1\" \"value\": \"some value\"}")
-);
+var eventData = new EventData(Uuid.NewUuid(), "some-event", "{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray());
 
 try {
 	var appendResult = await client.AppendToStreamAsync(
-		"some-stream",
-		StreamState.Any,
-		new List<EventData> {
-			eventData
-		}
+		"some-stream", StreamState.Any, new List<EventData> { eventData }
 	);
 
 	Console.WriteLine($"SUCCESS! Append result: {appendResult.LogPosition}");
 }
 catch (Exception exception) {
-	var innerException = exception.InnerException;
+	const string noNodeConnectionErrorMessage = "No connection could be made because the target machine actively refused it.";
+	const string connectionRefused = "Connection refused";
+	const string certificateIsNotInstalledOrInvalidErrorMessage = "The remote certificate is invalid according to the validation procedure.";
 
+	var innerException = exception.InnerException;
+	
 	if (innerException is RpcException rpcException) {
 		if (rpcException.Message.Contains(noNodeConnectionErrorMessage)
 		 || rpcException.Message.Contains(connectionRefused)) {

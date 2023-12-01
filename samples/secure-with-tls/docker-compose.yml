@@ -1,43 +1,37 @@
 version: "3.5"
 
-services:
-    grpc.client:
-        build: ./
-        environment:
-            # URL should match the DNS name in certificate and container name
-            - ESDB_CONNECTION_STRING=esdb://eventstoredb:2113?Tls=true
-        networks:
-            - esdb_network
-        depends_on:
-            eventstoredb:
-                condition: service_healthy
-
-    eventstoredb:
-        image: eventstore/eventstore:latest
-        # container_name should match the DNS name in certificate
-        container_name: eventstoredb
-        environment:
-            - EVENTSTORE_CLUSTER_SIZE=1
-            - EVENTSTORE_RUN_PROJECTIONS=All
-            - EVENTSTORE_ENABLE_EXTERNAL_TCP=true
-            - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
-            - EVENTSTORE_EXT_TCP_PORT=1113
-            - EVENTSTORE_EXT_HTTP_PORT=2113
-            # set certificates location
-            - EVENTSTORE_CERTIFICATE_FILE=/etc/eventstore/certs/node/node.crt
-            - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/etc/eventstore/certs/node/node.key
-            - EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH=/etc/eventstore/certs/ca
-        ports:
-            - "1113:1113"
-            - "2113:2113"
-        networks:
-            - esdb_network
-        volumes:
-            # define volume that will copy pregenerated certificates
-            - ./certs:/etc/eventstore/certs
-        restart: unless-stopped
-
 networks:
-    esdb_network:
-        name: eventstoredb.local
-        driver: bridge
+  default:
+    name: eventstore-network
+
+services:
+  
+  eventstore:
+    image: eventstore/eventstore:latest
+    container_name: eventstore
+    environment:
+      - EVENTSTORE_MEM_DB=true
+      - EVENTSTORE_HTTP_PORT=2113
+      - EVENTSTORE_LOG_LEVEL=Information
+      - EVENTSTORE_RUN_PROJECTIONS=None
+      - EVENTSTORE_START_STANDARD_PROJECTIONS=true
+      
+      # set certificates location
+      - EVENTSTORE_CERTIFICATE_FILE=/etc/eventstore/certs/node/node.crt
+      - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/etc/eventstore/certs/node/node.key
+      - EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH=/etc/eventstore/certs/ca
+    ports:
+      - "2113:2113"
+    volumes:
+      - ./certs:/etc/eventstore/certs
+      - type: volume
+        source: eventstore-volume-data1
+        target: /var/lib/eventstore
+      - type: volume
+        source: eventstore-volume-logs1
+        target: /var/log/eventstore
+    restart: unless-stopped
+
+volumes:
+  eventstore-volume-data1:
+  eventstore-volume-logs1:

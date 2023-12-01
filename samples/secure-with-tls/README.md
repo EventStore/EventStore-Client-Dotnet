@@ -56,7 +56,7 @@ services:
         command: >
             -c "es-gencert-cli create-ca -out /tmp/certs/ca &&
                 es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out \
-                /tmp/certs/node -ip-addresses 127.0.0.1 -dns-names localhost,eventstoredb"
+                /tmp/certs/node -ip-addresses 127.0.0.1 -dns-names localhost,eventstore"
         user: "1000:1000"
         volumes:
             - "./certs:/tmp/certs"
@@ -67,17 +67,18 @@ And run `docker-compose up` to generate certificates.
 See instruction how to install certificates [below](#3-run-run-samples-locally-without-docker).
 
 You can find helpers scripts that are also installing created CA on local machine:
-- Linux (Debian based) - [create-certs.sh](./create-certs.sh),
+- Linux (Debian based, MacOS and WSL) - [create-certs.sh](./create-certs.sh),
 - Windows - [create-certs.ps1](./create-certs.ps1)
 
 ## Description
 
-The sample shows how to connect with the gRPC client and append new event. You can run it locally or through docker configuration.
+The sample shows how to connect with the client and append new event. You can run it locally or through docker configuration.
 
 Suggested order of reading:
 - whole code is located in [Program.cs](./Program.cs) file
 - [Dockerfile](./Dockerfile) for building sample image
-- [Docker compose config](./docker-compose.yml) that has configuration for both sample client app and EventStoreDB node.
+- [Docker compose config](./docker-compose.yml) that has configuration for the EventStoreDB node.
+- [Docker compose app config](./docker-compose.app.yml) that has configuration for the sample client app.
 
 ## Running Sample
 
@@ -91,43 +92,43 @@ Use following command to generate certificates:
   ```powershell
   .\create-certs.ps1
   ```
+  
 _Note: to regenerate certificates you need to remove the [./certs](./certs) folder._
 
 ### 2. Run samples with Docker
-Use the following command to run samples with Docker:
-```consoler
-docker-compose up
+The following command will automatically generate certificates in the certs folder, and run both server and client with preconfigured TLS connection setup.
+
+```console
+docker-compose -f docker-compose.yml -f docker-compose.app.yml up
 ```
-It will run both server and client with preconfigured TLS connection setup.
 
 ### 3. Run samples locally (without Docker)
 To run samples locally, you need to install the generated CA certificate. 
 
-#### 3.1 Install certificate - Linux (Ubuntu, Debian)
-- Copy [./certs/ca/ca.crt](./certs/ca/ca.crt) to dir `/usr/local/share/ca-certificates/`
-- Use command: 
-  ```console
-  sudo cp foo.crt /usr/local/share/ca-certificates/foo.crt
-  ```
-- Update the CA store: 
-  ```console
-  sudo update-ca-certificates
-  ```
-#### 3.2 Install certificate - Windows
-Windows certificate will be automatically installed when [./create-certs.ps1](./create-certs.ps1) was run.
+#### 3.1 Generate and install the CA certificate
+The certificate will be automatically generated and installed if you just run the using the following command:
 
-#### 3.3. Run EventStoreDB node
+- Linux (Ubuntu, Debian, WSL) or MacOS
+  ```console
+  create-certs.sh
+  ```
+
+- Windows
+  ```console
+  create-certs.ps1
+  ```
+  
+#### 3.4 Run EventStoreDB
 
 Use the following command to run EventStoreDB 
 
 ```console
-docker-compose up eventstoredb
+docker-compose up
 ```
 
-#### 3.3 Run client application
-Run application from console:
+#### 3.5 Run client application
+Run application from your favourite IDE or the console:
 
 ```console
 dotnet run ./secure-with-tls.csproj
 ```
-or from your favourite IDE.

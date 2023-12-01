@@ -4,6 +4,5 @@ services:
     image: eventstore/eventstore:latest
     environment:
       - EVENTSTORE_INSECURE=true
-      - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
     ports:
       - "2113:2113"

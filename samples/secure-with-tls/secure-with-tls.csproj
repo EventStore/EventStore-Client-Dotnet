@@ -1,15 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <RootNamespace>secure_with_tls</RootNamespace>
-    </PropertyGroup>
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <NullableContextOptions>enable</NullableContextOptions>
-        <ImplicitUsings>true</ImplicitUsings>
         <OutputType>Exe</OutputType>
-        <LangVersion>preview</LangVersion>
+        <TargetFramework>net8.0</TargetFramework>
+        <RootNamespace>secure_with_tls</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
@@ -22,4 +19,5 @@
         <!-- <PackageReference Include="EventStore.Client.Grpc.Streams" Version="23.1.0" /> -->
         <ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
     </ItemGroup>
+
 </Project>
