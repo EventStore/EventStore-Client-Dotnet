@@ -132,13 +132,7 @@ class NetworkPortProvider(int port = 2114) {
 					await Task.Delay(delay);
 				}
 				finally {
-					if (socket.Connected) {
-#if NET5_0
-						socket.Disconnect(true);
-#else
-						await socket.DisconnectAsync(true);
-#endif
-					}
+					if (socket.Connected) await socket.DisconnectAsync(true);
 				}
 			}
 		}

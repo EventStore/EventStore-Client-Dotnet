@@ -22,10 +22,6 @@ static class Logging {
 			.WriteTo.Observers(x => x.Subscribe(LogEventSubject.OnNext))
 			.CreateLogger();
 
-#if GRPC_CORE
-		    GrpcEnvironment.SetLogger(new GrpcCoreSerilogLogger(Log.Logger.ForContext<GrpcCoreSerilogLogger>()));
-#endif
-
 		Ductus.FluentDocker.Services.Logging.Enabled();
 
 		AppDomain.CurrentDomain.DomainUnload += (_, _) => Log.CloseAndFlush();

@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <RootNamespace>server_side_filtering</RootNamespace>
     </PropertyGroup>
@@ -10,5 +9,4 @@
         <ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
         <ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />
     </ItemGroup>
-
 </Project>

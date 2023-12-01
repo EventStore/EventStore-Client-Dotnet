@@ -49,7 +49,7 @@ jobs:
         image: ghcr.io/eventstore/eventstore:lts
         env:
           EVENTSTORE_INSECURE: true
-          EVENTSTORE_MEMDB: true
+          EVENTSTORE_MEM_DB: true
           EVENTSTORE_RUN_PROJECTIONS: all
           EVENTSTORE_START_STANDARD_PROJECTIONS: true
         ports:

@@ -14,17 +14,6 @@ public interface ITestService : IAsyncDisposable {
 	void ReportStatus();
 }
 
-/// <summary>
-/// This prevents multiple services from starting at the same time.
-/// Required to avoid failures on creating the networks the containers are attached to. 
-/// </summary>
-sealed class TestServiceGatekeeper {
-	static readonly SemaphoreSlim Semaphore = new(1, 1);
-
-	public static Task Wait() => Semaphore.WaitAsync();
-	public static void Next() => Semaphore.Release();
-}
-
 public abstract class TestService<TService, TBuilder> : ITestService where TService : IService where TBuilder : BaseBuilder<TService> {
 	ILogger Logger { get; }
 
@@ -37,44 +26,23 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
 	public virtual async Task Start() {
 		Logger.Information("Container service starting");
 
-		//await TestServiceGatekeeper.Wait();
+		var builder = Configure();
+
+		Service = builder.Build();
 
 		try {
-			var builder = Configure();
-
-			Service = builder.Build();
-
-			// // for some reason fluent docker does not always create the network
-			// // before the service is started, so we do it manually here
-			// if (Service is IContainerService service) {
-			//  var cfg = service.GetConfiguration(true);
-			//
-			//  Network = Fd
-			//   .UseNetwork(cfg.Name)
-			//   .IsInternal()
-			//   .Build()
-			//   .Attach(service, true);
-			//
-			//  Logger.Information("Created network {Network}", Network.Name);
-			// }
-
-			try {
-				Service.Start();
-				Logger.Information("Container service started");
-			}
-			catch (Exception ex) {
-				throw new FluentDockerException("Failed to start container service", ex);
-			}
-
-			try {
-				await OnServiceStarted();
-			}
-			catch (Exception ex) {
-				throw new FluentDockerException($"{nameof(OnServiceStarted)} execution error", ex);
-			}
+			Service.Start();
+			Logger.Information("Container service started");
 		}
-		finally {
-			//TestServiceGatekeeper.Next();
+		catch (Exception ex) {
+			throw new FluentDockerException("Failed to start container service", ex);
+		}
+
+		try {
+			await OnServiceStarted();
+		}
+		catch (Exception ex) {
+			throw new FluentDockerException($"{nameof(OnServiceStarted)} execution error", ex);
 		}
 	}
 
@@ -111,8 +79,6 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
 			var cfg = service.GetConfiguration(true);
 			Logger.Information("Container {Name} {State} Ports: {Ports}", service.Name, service.State, cfg.Config.ExposedPorts.Keys);
 		}
-
-		// var docker = Fd.Hosts().Discover().FirstOrDefault(x => x.IsNative || x.Name == "default")!;
 	}
 
 	public virtual ValueTask DisposeAsync() {
@@ -125,10 +91,6 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
 			catch {
 				// ignored
 			}
-
-			/*if (Service.State != ServiceRunningState.Unknown) {
-				Service.Dispose();
-			}*/
 		}
 		catch (Exception ex) {
 			throw new FluentDockerException("Failed to dispose of container service", ex);
