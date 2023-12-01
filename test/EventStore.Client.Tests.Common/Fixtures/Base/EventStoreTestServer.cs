@@ -33,7 +33,7 @@ public class EventStoreTestServer : IEventStoreTestServer {
 		};
 
 		var env = new Dictionary<string, string> {
-			["EVENTSTORE_DB_LOG_FORMAT"]                  = GlobalEnvironment.DbLogFormat,
+			["EVENTSTORE_DB_LOG_FORMAT"]                  = "V2",
 			["EVENTSTORE_MEM_DB"]                         = "true",
 			["EVENTSTORE_CHUNK_SIZE"]                     = (1024 * 1024).ToString(),
 			["EVENTSTORE_CERTIFICATE_FILE"]               = "/etc/eventstore/certs/node/node.crt",

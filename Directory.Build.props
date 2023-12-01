@@ -13,7 +13,7 @@
         <DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
 
         <UseLinkBase>true</UseLinkBase>
-        <GrpcPackageVersion>2.49.0</GrpcPackageVersion>
-        <GrpcToolsPackageVersion>2.50.0</GrpcToolsPackageVersion>
+        <GrpcPackageVersion>2.59.0</GrpcPackageVersion>
+        <GrpcToolsPackageVersion>2.59.0</GrpcToolsPackageVersion>
     </PropertyGroup>
 </Project>

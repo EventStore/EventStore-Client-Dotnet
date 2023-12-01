@@ -1,4 +1,3 @@
-using Ductus.FluentDocker;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Common;
 using Ductus.FluentDocker.Services;

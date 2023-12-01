@@ -10,7 +10,6 @@ public static class GlobalEnvironment {
 		UseCluster        = Application.Configuration.GetValue<bool>("ES_USE_CLUSTER");
 		UseExternalServer = Application.Configuration.GetValue<bool>("ES_USE_EXTERNAL_SERVER");
 		DockerImage       = Application.Configuration.GetValue<string>("ES_DOCKER_IMAGE")!;
-		DbLogFormat       = Application.Configuration.GetValue<string>("EVENTSTORE_DB_LOG_FORMAT")!;
 
 		Variables = Application.Configuration.AsEnumerable()
 			.Where(x => x.Key.StartsWith("ES_") || x.Key.StartsWith("EVENTSTORE_"))
@@ -30,7 +29,6 @@ public static class GlobalEnvironment {
 			configuration.EnsureValue("EVENTSTORE_MEM_DB", "false");
 			configuration.EnsureValue("EVENTSTORE_RUN_PROJECTIONS", "None");
 			configuration.EnsureValue("EVENTSTORE_START_STANDARD_PROJECTIONS", "false");
-			configuration.EnsureValue("EVENTSTORE_DB_LOG_FORMAT", "V2");
 			configuration.EnsureValue("EVENTSTORE_LOG_LEVEL", "Verbose");
 			configuration.EnsureValue("EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH", "/etc/eventstore/certs/ca");
 
@@ -43,7 +41,6 @@ public static class GlobalEnvironment {
 	public static bool   UseCluster        { get; }
 	public static bool   UseExternalServer { get; }
 	public static string DockerImage       { get; }
-	public static string DbLogFormat       { get; }
 
 	#region . Obsolete .
 
