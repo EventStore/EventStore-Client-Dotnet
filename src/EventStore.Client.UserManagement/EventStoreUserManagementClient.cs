@@ -270,7 +270,7 @@ namespace EventStore.Client {
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
-		private static readonly IDictionary<string, Func<RpcException, Exception>> ExceptionMap =
+		private static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap =
 			new Dictionary<string, Func<RpcException, Exception>> {
 				[Constants.Exceptions.UserNotFound] = ex => new UserNotFoundException(
 					ex.Trailers.First(x => x.Key == Constants.Exceptions.LoginName).Value),

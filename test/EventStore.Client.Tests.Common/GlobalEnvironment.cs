@@ -23,16 +23,17 @@ public static class GlobalEnvironment {
 			configuration.EnsureValue("ES_USE_EXTERNAL_SERVER", "false");
 
 			configuration.EnsureValue("ES_DOCKER_REGISTRY", "ghcr.io/eventstore/eventstore");
-			configuration.EnsureValue("ES_DOCKER_TAG", "previous-lts");
+			configuration.EnsureValue("ES_DOCKER_TAG", "latest");
 			configuration.EnsureValue("ES_DOCKER_IMAGE", $"{configuration["ES_DOCKER_REGISTRY"]}:{configuration["ES_DOCKER_TAG"]}");
 
 			configuration.EnsureValue("EVENTSTORE_MEM_DB", "false");
 			configuration.EnsureValue("EVENTSTORE_RUN_PROJECTIONS", "None");
 			configuration.EnsureValue("EVENTSTORE_START_STANDARD_PROJECTIONS", "false");
-			configuration.EnsureValue("EVENTSTORE_LOG_LEVEL", "Verbose");
-			configuration.EnsureValue("EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH", "/etc/eventstore/certs/ca");
-
+			configuration.EnsureValue("EVENTSTORE_LOG_LEVEL", "Information");
 			configuration.EnsureValue("EVENTSTORE_DISABLE_LOG_FILE", "true");
+			configuration.EnsureValue("EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH", "/etc/eventstore/certs/ca");
+			configuration.EnsureValue("EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP", "false");
+			
 		}
 	}
 

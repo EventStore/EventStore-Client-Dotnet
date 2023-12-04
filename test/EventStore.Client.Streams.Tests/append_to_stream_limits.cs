@@ -1,57 +1,58 @@
 namespace EventStore.Client.Streams.Tests;
 
-public class append_to_stream_limits : IClassFixture<append_to_stream_limits.Fixture> {
-	const int MaxAppendSize = 1024;
+public class append_to_stream_limits : IClassFixture<StreamLimitsFixture> {
+	public append_to_stream_limits(ITestOutputHelper output, StreamLimitsFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	readonly Fixture _fixture;
-
-	public append_to_stream_limits(Fixture fixture) => _fixture = fixture;
-
+	StreamLimitsFixture Fixture { get; }
+	
 	[Fact]
 	public async Task succeeds_when_size_is_less_than_max_append_size() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
+		
+		var (events, size) = Fixture.CreateTestEventsUpToMaxSize(StreamLimitsFixture.MaxAppendSize - 1);
 
-		await _fixture.Client.AppendToStreamAsync(
-			stream,
-			StreamState.NoStream,
-			_fixture.GetEvents(MaxAppendSize - 1)
-		);
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 	}
 
 	[Fact]
 	public async Task fails_when_size_exceeds_max_append_size() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
-		var ex = await Assert.ThrowsAsync<MaximumAppendSizeExceededException>(
-			() => _fixture.Client.AppendToStreamAsync(
-				stream,
-				StreamState.NoStream,
-				_fixture.GetEvents(MaxAppendSize * 2)
-			)
-		);
+		var eventsAppendSize = StreamLimitsFixture.MaxAppendSize * 2;
+		
+		// beware of the size of the events...
+		var (events, size) = Fixture.CreateTestEventsUpToMaxSize(eventsAppendSize);
+		
+		size.ShouldBeGreaterThan(StreamLimitsFixture.MaxAppendSize);
+		
+		var ex = await Fixture.Streams
+			.AppendToStreamAsync(stream, StreamState.NoStream, events)
+			.ShouldThrowAsync<MaximumAppendSizeExceededException>();
 
-		Assert.Equal((uint)MaxAppendSize, ex.MaxAppendSize);
+		ex.MaxAppendSize.ShouldBe(StreamLimitsFixture.MaxAppendSize);
 	}
+}
 
-	public class Fixture : EventStoreClientFixture {
-		public Fixture() : base(
-			env: new() {
-				["EVENTSTORE_MAX_APPEND_SIZE"] = $"{MaxAppendSize}"
+public class StreamLimitsFixture()
+	: EventStoreFixture(x => x.WithMaxAppendSize(MaxAppendSize)) {
+	public const uint MaxAppendSize = 64;
+	
+	public (IEnumerable<EventData> Events, uint size) CreateTestEventsUpToMaxSize(uint maxSize) {
+		var size   = 0;
+		var events = new List<EventData>();
+		
+		foreach (var evt in CreateTestEvents(int.MaxValue)) {
+			size += evt.Data.Length;
+		
+			if (size >= maxSize) {
+				size -= evt.Data.Length;
+				break;
 			}
-		) { }
 
-		protected override Task Given() => Task.CompletedTask;
-		protected override Task When()  => Task.CompletedTask;
-
-		public IEnumerable<EventData> GetEvents(int maxSize) {
-			var size = 0;
-			foreach (var e in CreateTestEvents(int.MaxValue)) {
-				size += e.Data.Length;
-				if (size >= maxSize)
-					yield break;
-
-				yield return e;
-			}
+			events.Add(evt);
 		}
+
+		return (events, (uint)size);
 	}
 }

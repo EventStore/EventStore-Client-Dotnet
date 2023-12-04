@@ -21,6 +21,9 @@ public record EventStoreFixtureOptions(EventStoreClientSettings ClientSettings, 
 
 	public EventStoreFixtureOptions WithoutDefaultCredentials() =>
 		this with { ClientSettings = ClientSettings.With(x => x.DefaultCredentials = null) };
+	
+	public EventStoreFixtureOptions WithMaxAppendSize(uint maxAppendSize) =>
+		this with { Environment = Environment.With(x => x["EVENTSTORE_MAX_APPEND_SIZE"] = $"{maxAppendSize}") };
 }
 
 public delegate EventStoreFixtureOptions ConfigureFixture(EventStoreFixtureOptions options);
@@ -31,7 +34,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 
 	static EventStoreFixture() {
 		Logging.Initialize();
-		Logger = Log.ForContext<EventStoreFixture>();
+		Logger = Serilog.Log.ForContext<EventStoreFixture>();
 
 		ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
 	}
@@ -57,6 +60,8 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 
 	List<Guid> TestRuns { get; } = new();
 
+	public ILogger Log => Logger;
+	
 	public ITestService             Service { get; }
 	public EventStoreFixtureOptions Options { get; }
 

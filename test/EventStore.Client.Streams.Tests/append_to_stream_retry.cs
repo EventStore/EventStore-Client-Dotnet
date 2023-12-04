@@ -23,9 +23,7 @@ public class append_to_stream_retry : IClassFixture<append_to_stream_retry.Fixtu
 		var ex = await Assert.ThrowsAnyAsync<Exception>(() => WriteAnEventAsync(new(0)));
 		Assert.True(
 			ex is RpcException {
-				Status: {
-					StatusCode: StatusCode.Unavailable
-				}
+				Status.StatusCode: StatusCode.Unavailable
 			} or DiscoveryException
 		);
 
@@ -34,7 +32,7 @@ public class append_to_stream_retry : IClassFixture<append_to_stream_retry.Fixtu
 		// write can be retried
 		var writeResult = await Policy
 			.Handle<Exception>()
-			.WaitAndRetryAsync(5, _ => TimeSpan.FromSeconds(3))
+			.WaitAndRetryAsync(2, _ => TimeSpan.FromSeconds(1))
 			.ExecuteAsync(async () => await WriteAnEventAsync(new(0)));
 
 		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);

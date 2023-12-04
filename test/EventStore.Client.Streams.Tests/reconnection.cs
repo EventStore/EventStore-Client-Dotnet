@@ -1,103 +1,182 @@
 using Grpc.Core;
+using static System.TimeSpan;
 
 namespace EventStore.Client.Streams.Tests; 
 
-public class @reconnection : IClassFixture<reconnection.Fixture> {
-	readonly Fixture _fixture;
+public class @reconnection : IClassFixture<ReconnectionFixture> {
+	public reconnection(ITestOutputHelper output, ReconnectionFixture fixture) => 
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	public reconnection(Fixture fixture) => _fixture = fixture;
+	ReconnectionFixture Fixture { get; }
+	
+	[Theory]
+	[InlineData(4, 1000, 0, 15000)]
+	public async Task when_the_connection_is_lost(int expectedNumberOfEvents, int reconnectDelayMs, int serviceRestartDelayMs, int testTimeoutMs) {
+		using var cancellator = new CancellationTokenSource().With(x => x.CancelAfter(testTimeoutMs));
 
-	[Fact]
-	public async Task when_the_connection_is_lost() {
-		var streamName        = _fixture.GetStreamName();
-		var eventCount        = 512;
-		var receivedAllEvents = new TaskCompletionSource();
-		var serverRestarted   = new TaskCompletionSource();
-		var receivedEvents    = new List<ResolvedEvent>();
-		var resubscribed      = new TaskCompletionSource<StreamSubscription>();
+		var streamName = Fixture.GetStreamName();
+		
+		// create backpressure by producing half of the events
+		await Fixture.ProduceEvents(streamName, expectedNumberOfEvents / 2, cancellationToken: cancellator.Token);
+		
+		// create subscription that will actually receive the first event and
+		// then wait for the service to be restarted
+		// but we are evil and will force the drop of the subscription muah ah ah
+		var consumeEvents = Fixture.ConsumeEvents(
+			streamName,
+			expectedNumberOfEvents,
+			FromMilliseconds(reconnectDelayMs),
+			cancellator.Token
+		);
+		
+		// create chaos by pausing the service
+		await Fixture.RestartService(FromMilliseconds(serviceRestartDelayMs));
+	
+		// produce the rest of the events to make it more interesting
+		await Fixture.ProduceEvents(streamName, expectedNumberOfEvents / 2, cancellationToken: cancellator.Token);
+		
+		// wait for the subscription to receive all events or timeout
+		await consumeEvents.ShouldNotThrowAsync();
+	}
+}
 
-		using var _ = await _fixture.Client.SubscribeToStreamAsync(
-				streamName,
-				FromStream.Start,
-				EventAppeared,
-				subscriptionDropped: SubscriptionDropped
-			)
-			.WithTimeout();
+public class ReconnectionFixture()
+	: EventStoreFixture(
+		x => x.RunInMemory(false)
+			.With(o => o.ClientSettings.ConnectivitySettings.DiscoveryInterval = FromMilliseconds(100))
+			.With(o => o.ClientSettings.ConnectivitySettings.GossipTimeout = FromMilliseconds(100))
+	) {
+	
 
-		await _fixture.Client
-			.AppendToStreamAsync(streamName, StreamState.NoStream, _fixture.CreateTestEvents(eventCount))
-			.WithTimeout(); // ensure we get backpressure
 
-		_fixture.TestServer.Stop();
-		await Task.Delay(TimeSpan.FromSeconds(2));
-
-		await _fixture.TestServer.StartAsync().WithTimeout();
-		serverRestarted.SetResult();
-
-		await resubscribed.Task.WithTimeout(TimeSpan.FromSeconds(10));
-
-		await receivedAllEvents.Task.WithTimeout(TimeSpan.FromSeconds(10));
-
-		async Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) {
-			await serverRestarted.Task;
-			receivedEvents.Add(e);
-			if (receivedEvents.Count == eventCount)
-				receivedAllEvents.TrySetResult();
-		}
-
-		void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) {
-			if (reason == SubscriptionDroppedReason.Disposed || ex is null)
-				return;
-
-			if (ex is not RpcException {
-				    Status.StatusCode: StatusCode.Unavailable
-			    }) {
-				receivedAllEvents.TrySetException(ex);
-			}
-			else {
-				var _ = ResubscribeAsync();
-			}
-		}
-
-		async Task ResubscribeAsync() {
+	public async Task ProduceEvents(string streamName, int numberOfEvents, StreamState? streamState = null, CancellationToken cancellationToken = default) {
+		while (!cancellationToken.IsCancellationRequested) {
 			try {
-				var sub = await _fixture.Client.SubscribeToStreamAsync(
+				var result = await Streams.AppendToStreamAsync(
 					streamName,
-					receivedEvents.Any()
-						? FromStream.After(receivedEvents[^1].OriginalEventNumber)
-						: FromStream.Start,
-					EventAppeared,
-					subscriptionDropped: SubscriptionDropped
+					streamState.GetValueOrDefault(StreamState.Any),
+					CreateTestEvents(numberOfEvents),
+					cancellationToken: cancellationToken
 				);
 
-				resubscribed.SetResult(sub);
-			}
-			catch (Exception ex) {
-				ex = ex.GetBaseException();
+				if (result is SuccessResult success) {
+					Log.Information(
+						"{NumberOfEvents} events produced to {StreamName}.", numberOfEvents, streamName
+					);
 
-				if (ex is RpcException) {
-					await Task.Delay(200);
-					var _ = ResubscribeAsync();
+					return;
 				}
-				else {
-					resubscribed.SetException(ex);
-				}
+
+				Log.Error(
+					"Failed to produce {NumberOfEvents} events to {StreamName}.", numberOfEvents, streamName
+				);
+
+				await Task.Delay(250);
+			}
+			catch (Exception ex) when ( ex is not OperationCanceledException) {
+				Log.Error(
+					ex, "Failed to produce {NumberOfEvents} events to {StreamName}.", numberOfEvents, streamName
+				);
+
+				await Task.Delay(250);
 			}
 		}
 	}
 
-	public class Fixture : EventStoreClientFixture {
-		public Fixture() : base(
-			env: new() {
-				["EVENTSTORE_MEM_DB"] = "false"
-			}
-		) {
-			Settings.ConnectivitySettings.DiscoveryInterval = TimeSpan.FromMilliseconds(100);
-			Settings.ConnectivitySettings.GossipTimeout     = TimeSpan.FromMilliseconds(100);
+	public Task ConsumeEvents(
+		string streamName, 
+		int expectedNumberOfEvents, 
+		TimeSpan reconnectDelay, 
+		CancellationToken cancellationToken
+	) {
+		var receivedAllEvents = new TaskCompletionSource();
+		
+		var receivedEventsCount = 0;
+		
+		_ = SubscribeToStream(
+			streamName, 
+			checkpoint: null,
+			OnReceive(),
+			OnDrop(),
+			cancellationToken
+		);
+
+		return receivedAllEvents.Task;
+
+		Func<ResolvedEvent, Task> OnReceive() {
+			return re => {
+				receivedEventsCount++;
+				Log.Debug("{ReceivedEventsCount}/{ExpectedNumberOfEvents} events received.", receivedEventsCount, expectedNumberOfEvents);
+
+				if (receivedEventsCount == expectedNumberOfEvents) {
+					Log.Information("Test complete. {ReceivedEventsCount}/{ExpectedNumberOfEvents} events received.", receivedEventsCount, expectedNumberOfEvents);
+					receivedAllEvents.TrySetResult();
+				}
+				
+				return Task.CompletedTask;
+			};
 		}
 
-		protected override Task Given() => Task.CompletedTask;
+		Func<SubscriptionDroppedReason, Exception?, Task<bool>> OnDrop() {
+			return async (reason, ex) => {
+				if (ex is RpcException { StatusCode: StatusCode.Unavailable or StatusCode.DeadlineExceeded }) {
+					Log.Warning("Transitive exception detected. Retrying connection in {reconnectDelayMs}ms.", reconnectDelay.TotalMilliseconds);
+					await Task.Delay(reconnectDelay);
+					return true;
+				}
+				
+				if (reason == SubscriptionDroppedReason.Disposed || ex is OperationCanceledException || ex is TaskCanceledException || ex is null) {
+					if (receivedEventsCount != expectedNumberOfEvents)
+						receivedAllEvents.TrySetException(new TimeoutException($"Test timeout detected. {receivedEventsCount}/{expectedNumberOfEvents} events received.", ex));
+					else {
+						Log.Information("Test cancellation requested. {ReceivedEventsCount}/{ExpectedNumberOfEvents} events received.", receivedEventsCount, expectedNumberOfEvents);
+						receivedAllEvents.TrySetCanceled(cancellationToken);
+					}
+					
+					return false;
+				}
+			
+				Log.Fatal(ex, "Fatal exception detected. This is the end...");
+				receivedAllEvents.SetException(ex);
 
-		protected override Task When() => Task.CompletedTask;
+				return false;
+			};
+		}
+	}
+	
+	async Task SubscribeToStream(
+		string stream, 
+		StreamPosition? checkpoint, 
+		Func<ResolvedEvent, Task> onReceive,
+		Func<SubscriptionDroppedReason, Exception?, Task<bool>> onDrop,
+		CancellationToken cancellationToken
+	) {
+		var start = checkpoint == null ? FromStream.Start : FromStream.After(checkpoint.Value);
+		
+		Log.Verbose("Attempting to start from checkpoint: {Checkpoint}.", checkpoint);
+		
+		try {
+			var sub = await Streams.SubscribeToStreamAsync(
+				streamName: stream,
+				start: start,
+				eventAppeared: async (s, re, ct) => {
+					await onReceive(re);
+					checkpoint = re.OriginalEventNumber;
+					Log.Verbose("Checkpoint Set: {Checkpoint}.", checkpoint);
+				},
+				subscriptionDropped:  async (s, reason, ex) => {
+					var resubscribe    = await onDrop(reason, ex);
+					if (resubscribe) _ = SubscribeToStream(stream, checkpoint, onReceive, onDrop, cancellationToken);
+				},
+				cancellationToken: cancellationToken
+			);
+		} catch (Exception ex) {
+			var reason = ex is OperationCanceledException or TaskCanceledException
+				? SubscriptionDroppedReason.Disposed
+				: SubscriptionDroppedReason.SubscriberError;
+
+			var resubscribe    = await onDrop(reason, ex);
+			if (resubscribe) _ = SubscribeToStream(stream, checkpoint, onReceive, onDrop, cancellationToken);
+		}
 	}
 }

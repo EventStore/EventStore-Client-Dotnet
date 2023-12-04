@@ -31,15 +31,16 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			.With(x => x.ConnectivitySettings.DiscoveryInterval = FromSeconds(1));
 
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
-			["EVENTSTORE_ENABLE_EXTERNAL_TCP"]          = "false",
-			["EVENTSTORE_MEM_DB"]                       = "true",
-			["EVENTSTORE_CHUNK_SIZE"]                   = (1024 * 1024).ToString(),
-			["EVENTSTORE_CERTIFICATE_FILE"]             = "/etc/eventstore/certs/node/node.crt",
-			["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"] = "/etc/eventstore/certs/node/node.key",
-			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"] = "10000",
-			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]   = "10000",
-			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]    = "true",
-			["EVENTSTORE_DISABLE_LOG_FILE"]             = "true"
+			["EVENTSTORE_ENABLE_EXTERNAL_TCP"]              = "false",
+			["EVENTSTORE_MEM_DB"]                           = "true",
+			["EVENTSTORE_CHUNK_SIZE"]                       = (1024 * 1024).ToString(),
+			["EVENTSTORE_CERTIFICATE_FILE"]                 = "/etc/eventstore/certs/node/node.crt",
+			["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"]     = "/etc/eventstore/certs/node/node.key",
+			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"]     = "10000",
+			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]       = "10000",
+			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]        = "false",
+			["EVENTSTORE_DISABLE_LOG_FILE"]                 = "true",
+			["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}"
 		};
 		
 		// TODO SS: must find a way to enable parallel tests on CI. It works locally.

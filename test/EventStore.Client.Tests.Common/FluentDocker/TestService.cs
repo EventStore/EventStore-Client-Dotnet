@@ -9,7 +9,10 @@ namespace EventStore.Client.Tests.FluentDocker;
 public interface ITestService : IAsyncDisposable {
 	Task Start();
 	Task Stop();
-
+	Task Restart(TimeSpan delay);
+	
+	Task Restart() => Restart(TimeSpan.Zero);
+	
 	void ReportStatus();
 }
 
@@ -58,6 +61,40 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
 		}
 		catch (Exception ex) {
 			throw new FluentDockerException("Failed to stop container service", ex);
+		}
+	}
+	
+	public virtual async Task Restart(TimeSpan delay) {
+		try {
+			try {
+				Service.Stop();
+				Logger.Information("Container service stopped");
+			}
+			catch (Exception ex) {
+				throw new FluentDockerException("Failed to stop container service", ex);
+			}
+			
+			await Task.Delay(delay);
+			
+			Logger.Information("Container service starting...");
+
+			try {
+				Service.Start();
+			}
+			catch (Exception ex) {
+				throw new FluentDockerException("Failed to start container service", ex);
+			}
+
+			try {
+				await OnServiceStarted();
+				Logger.Information("Container service started");
+			}
+			catch (Exception ex) {
+				throw new FluentDockerException($"{nameof(OnServiceStarted)} execution error", ex);
+			}
+		}
+		catch (Exception ex) {
+			throw new FluentDockerException("Failed to restart container service", ex);
 		}
 	}
 

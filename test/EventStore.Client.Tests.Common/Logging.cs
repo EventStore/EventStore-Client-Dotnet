@@ -52,7 +52,12 @@ static class Logging {
 				logEvent.AddPropertyIfAbsent(testRunIdProperty);
 				using var writer = new StringWriter();
 				DefaultFormatter.Format(logEvent, writer);
-				write(writer.ToString().Trim());
+				try {
+					write(writer.ToString().Trim());
+				}
+				catch (Exception) {
+					// ignored
+				}
 			};
 	}
 
