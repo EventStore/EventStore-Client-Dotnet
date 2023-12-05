@@ -45,10 +45,9 @@ public partial class EventStoreFixture {
 				}
 			).WhenAll();
 	
-	public async Task RestartService(TimeSpan delay, Action? restarted = default) {
+	public async Task RestartService(TimeSpan delay) {
 		await Service.Restart(delay);
 		await Streams.WarmUp();
 		Log.Information("Service restarted.");
-		restarted?.Invoke();
 	}
 }

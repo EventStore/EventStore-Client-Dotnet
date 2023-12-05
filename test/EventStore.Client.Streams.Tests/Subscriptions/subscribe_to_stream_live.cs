@@ -1,27 +1,25 @@
 namespace EventStore.Client.Streams.Tests; 
 
-[Trait("Category", "LongRunning")]
-public class subscribe_to_stream_live : IClassFixture<subscribe_to_stream_live.Fixture> {
-	readonly Fixture _fixture;
+[LongRunning]
+public class subscribe_to_stream_live : IClassFixture<EventStoreFixture> {
+	public subscribe_to_stream_live(ITestOutputHelper output, EventStoreFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	public subscribe_to_stream_live(Fixture fixture, ITestOutputHelper outputHelper) {
-		_fixture = fixture;
-		_fixture.CaptureLogs(outputHelper);
-	}
+	EventStoreFixture Fixture { get; }
 
 	[Fact]
 	public async Task does_not_read_existing_events_but_keep_listening_to_new_ones() {
-		var stream   = _fixture.GetStreamName();
+		var stream   = Fixture.GetStreamName();
 		var appeared = new TaskCompletionSource<StreamPosition>();
 		var dropped  = new TaskCompletionSource<bool>();
 
-		await _fixture.Client.AppendToStreamAsync(
+		await Fixture.Streams.AppendToStreamAsync(
 			stream,
 			StreamState.NoStream,
-			_fixture.CreateTestEvents()
+			Fixture.CreateTestEvents()
 		);
 
-		using var _ = await _fixture.Client
+		using var _ = await Fixture.Streams
 			.SubscribeToStreamAsync(
 				stream,
 				FromStream.End,
@@ -34,10 +32,10 @@ public class subscribe_to_stream_live : IClassFixture<subscribe_to_stream_live.F
 			)
 			.WithTimeout();
 
-		await _fixture.Client.AppendToStreamAsync(
+		await Fixture.Streams.AppendToStreamAsync(
 			stream,
 			new StreamRevision(0),
-			_fixture.CreateTestEvents()
+			Fixture.CreateTestEvents()
 		);
 
 		Assert.Equal(new(1), await appeared.Task.WithTimeout());
@@ -45,11 +43,11 @@ public class subscribe_to_stream_live : IClassFixture<subscribe_to_stream_live.F
 
 	[Fact]
 	public async Task subscribe_to_non_existing_stream_and_then_catch_new_event() {
-		var stream   = _fixture.GetStreamName();
+		var stream   = Fixture.GetStreamName();
 		var appeared = new TaskCompletionSource<bool>();
 		var dropped  = new TaskCompletionSource<bool>();
 
-		using var _ = await _fixture.Client
+		using var _ = await Fixture.Streams
 			.SubscribeToStreamAsync(
 				stream,
 				FromStream.End,
@@ -62,10 +60,10 @@ public class subscribe_to_stream_live : IClassFixture<subscribe_to_stream_live.F
 			)
 			.WithTimeout();
 
-		await _fixture.Client.AppendToStreamAsync(
+		await Fixture.Streams.AppendToStreamAsync(
 			stream,
 			StreamState.NoStream,
-			_fixture.CreateTestEvents()
+			Fixture.CreateTestEvents()
 		);
 
 		Assert.True(await appeared.Task.WithTimeout());
@@ -73,21 +71,21 @@ public class subscribe_to_stream_live : IClassFixture<subscribe_to_stream_live.F
 
 	[Fact]
 	public async Task allow_multiple_subscriptions_to_same_stream() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
 		var appeared = new TaskCompletionSource<bool>();
 
 		var appearedCount = 0;
 
-		using var s1 = await _fixture.Client
+		using var s1 = await Fixture.Streams
 			.SubscribeToStreamAsync(stream, FromStream.End, EventAppeared)
 			.WithTimeout();
 
-		using var s2 = await _fixture.Client
+		using var s2 = await Fixture.Streams
 			.SubscribeToStreamAsync(stream, FromStream.End, EventAppeared)
 			.WithTimeout();
 
-		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents());
 
 		Assert.True(await appeared.Task.WithTimeout());
 
@@ -101,11 +99,11 @@ public class subscribe_to_stream_live : IClassFixture<subscribe_to_stream_live.F
 
 	[Fact]
 	public async Task calls_subscription_dropped_when_disposed() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
 		var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 
-		using var _ = await _fixture.Client
+		using var _ = await Fixture.Streams
 			.SubscribeToStreamAsync(
 				stream,
 				FromStream.End,
@@ -115,7 +113,7 @@ public class subscribe_to_stream_live : IClassFixture<subscribe_to_stream_live.F
 			)
 			.WithTimeout();
 
-		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents());
 
 		Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) {
 			s.Dispose();
@@ -132,11 +130,11 @@ public class subscribe_to_stream_live : IClassFixture<subscribe_to_stream_live.F
 
 	[Fact]
 	public async Task catches_deletions() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
 		var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 
-		using var _ = await _fixture.Client
+		using var _ = await Fixture.Streams
 			.SubscribeToStreamAsync(
 				stream,
 				FromStream.End,
@@ -146,7 +144,7 @@ public class subscribe_to_stream_live : IClassFixture<subscribe_to_stream_live.F
 			)
 			.WithTimeout();
 
-		await _fixture.Client.TombstoneAsync(stream, StreamState.NoStream);
+		await Fixture.Streams.TombstoneAsync(stream, StreamState.NoStream);
 		var (reason, ex) = await dropped.Task.WithTimeout();
 
 		Assert.Equal(SubscriptionDroppedReason.ServerError, reason);
@@ -158,8 +156,5 @@ public class subscribe_to_stream_live : IClassFixture<subscribe_to_stream_live.F
 		void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) => dropped.SetResult((reason, ex));
 	}
 
-	public class Fixture : EventStoreClientFixture {
-		protected override Task Given() => Task.CompletedTask;
-		protected override Task When()  => Task.CompletedTask;
-	}
+	
 }

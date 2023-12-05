@@ -1,30 +1,40 @@
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests;
 
-public class subscribe_to_all_filtered_with_position : IAsyncLifetime {
-	readonly Fixture _fixture;
+[DedicatedDatabase]
+public class subscribe_to_all_filtered_with_position : IClassFixture<EventStoreFixture> {
+	public subscribe_to_all_filtered_with_position(ITestOutputHelper output, EventStoreFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	public subscribe_to_all_filtered_with_position(ITestOutputHelper outputHelper) {
-		_fixture = new();
-		_fixture.CaptureLogs(outputHelper);
-	}
-
-	public Task InitializeAsync() => _fixture.InitializeAsync();
-
-	public Task DisposeAsync() => _fixture.DisposeAsync();
+	EventStoreFixture Fixture { get; }
 
 	public static IEnumerable<object?[]> FilterCases() => Filters.All.Select(filter => new object[] { filter });
 
 	[Theory]
 	[MemberData(nameof(FilterCases))]
 	public async Task reads_all_existing_events_and_keep_listening_to_new_ones(string filterName) {
-		var streamPrefix = _fixture.GetStreamName();
+		const string filteredOutStream = nameof(filteredOutStream);
+		
+		await Fixture.Streams.SetStreamMetadataAsync(
+			SystemStreams.AllStream,
+			StreamState.Any,
+			new(acl: new(SystemRoles.All)),
+			userCredentials: TestCredentials.Root
+		);
+
+		await Fixture.Streams.AppendToStreamAsync(
+			filteredOutStream,
+			StreamState.NoStream,
+			Fixture.CreateTestEvents(10)
+		);
+
+		var streamPrefix = Fixture.GetStreamName();
 		var (getFilter, prepareEvent) = Filters.GetFilter(filterName);
 
 		var appeared       = new TaskCompletionSource<bool>();
 		var dropped        = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 		var checkpointSeen = new TaskCompletionSource<bool>();
 		var filter         = getFilter(streamPrefix);
-		var events = _fixture.CreateTestEvents(20).Select(e => prepareEvent(streamPrefix, e))
+		var events = Fixture.CreateTestEvents(20).Select(e => prepareEvent(streamPrefix, e))
 			.ToArray();
 
 		var beforeEvents = events.Take(10);
@@ -34,25 +44,25 @@ public class subscribe_to_all_filtered_with_position : IAsyncLifetime {
 		enumerator.MoveNext();
 
 		foreach (var e in beforeEvents)
-			await _fixture.Client.AppendToStreamAsync(
+			await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}_{Guid.NewGuid():n}",
 				StreamState.NoStream,
 				new[] { e }
 			);
 
-		var writeResult = await _fixture.Client.AppendToStreamAsync(
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(
 			"checkpoint",
 			StreamState.NoStream,
-			_fixture.CreateTestEvents()
+			Fixture.CreateTestEvents()
 		);
 
-		await _fixture.Client.AppendToStreamAsync(
+		await Fixture.Streams.AppendToStreamAsync(
 			Guid.NewGuid().ToString(),
 			StreamState.NoStream,
-			_fixture.CreateTestEvents(256)
+			Fixture.CreateTestEvents(256)
 		);
 
-		using var subscription = await _fixture.Client.SubscribeToAllAsync(
+		using var subscription = await Fixture.Streams.SubscribeToAllAsync(
 				FromAll.After(writeResult.LogPosition),
 				EventAppeared,
 				false,
@@ -62,7 +72,7 @@ public class subscribe_to_all_filtered_with_position : IAsyncLifetime {
 			.WithTimeout();
 
 		foreach (var e in afterEvents)
-			await _fixture.Client.AppendToStreamAsync(
+			await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}_{Guid.NewGuid():n}",
 				StreamState.NoStream,
 				new[] { e }
@@ -93,26 +103,13 @@ public class subscribe_to_all_filtered_with_position : IAsyncLifetime {
 			return Task.CompletedTask;
 		}
 
-		void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) => dropped.SetResult((reason, ex));
+		void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) =>
+			dropped.SetResult((reason, ex));
 
 		Task CheckpointReached(StreamSubscription _, Position position, CancellationToken ct) {
 			checkpointSeen.TrySetResult(true);
 
 			return Task.CompletedTask;
 		}
-	}
-
-	public class Fixture : EventStoreClientFixture {
-		public const string FilteredOutStream = nameof(FilteredOutStream);
-
-		protected override Task Given() =>
-			Client.SetStreamMetadataAsync(
-				SystemStreams.AllStream,
-				StreamState.Any,
-				new(acl: new(SystemRoles.All)),
-				userCredentials: TestCredentials.Root
-			);
-
-		protected override Task When() => Client.AppendToStreamAsync(FilteredOutStream, StreamState.NoStream, CreateTestEvents(10));
 	}
 }

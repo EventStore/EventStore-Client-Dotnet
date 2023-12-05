@@ -1,31 +1,32 @@
 using System.Text.Json;
 
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "LongRunning")]
-public class stream_metadata : IClassFixture<stream_metadata.Fixture> {
-	readonly Fixture _fixture;
+[LongRunning]
+public class stream_metadata : IClassFixture<EventStoreFixture> {
+	public stream_metadata(ITestOutputHelper output, EventStoreFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	public stream_metadata(Fixture fixture) => _fixture = fixture;
+	EventStoreFixture Fixture { get; }
 
 	[Fact]
 	public async Task getting_for_an_existing_stream_and_no_metadata_exists() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
-		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents());
 
-		var actual = await _fixture.Client.GetStreamMetadataAsync(stream);
+		var actual = await Fixture.Streams.GetStreamMetadataAsync(stream);
 
 		Assert.Equal(StreamMetadataResult.None(stream), actual);
 	}
 
 	[Fact]
 	public async Task empty_metadata() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
-		await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, new());
+		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.NoStream, new());
 
-		var actual = await _fixture.Client.GetStreamMetadataAsync(stream);
+		var actual = await Fixture.Streams.GetStreamMetadataAsync(stream);
 
 		Assert.Equal(stream, actual.StreamName);
 		Assert.Equal(StreamPosition.Start, actual.MetastreamRevision);
@@ -43,7 +44,7 @@ public class stream_metadata : IClassFixture<stream_metadata.Fixture> {
 
 	[Fact]
 	public async Task latest_metadata_is_returned() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
 		var expected = new StreamMetadata(
 			17,
@@ -52,9 +53,9 @@ public class stream_metadata : IClassFixture<stream_metadata.Fixture> {
 			TimeSpan.FromSeconds(0xABACABA)
 		);
 
-		await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.NoStream, expected);
+		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.NoStream, expected);
 
-		var actual = await _fixture.Client.GetStreamMetadataAsync(stream);
+		var actual = await Fixture.Streams.GetStreamMetadataAsync(stream);
 
 		Assert.Equal(stream, actual.StreamName);
 		Assert.False(actual.StreamDeleted);
@@ -72,9 +73,9 @@ public class stream_metadata : IClassFixture<stream_metadata.Fixture> {
 			TimeSpan.FromSeconds(0xDABACABAD)
 		);
 
-		await _fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(0), expected);
+		await Fixture.Streams.SetStreamMetadataAsync(stream, new StreamRevision(0), expected);
 
-		actual = await _fixture.Client.GetStreamMetadataAsync(stream);
+		actual = await Fixture.Streams.GetStreamMetadataAsync(stream);
 
 		Assert.Equal(stream, actual.StreamName);
 		Assert.False(actual.StreamDeleted);
@@ -88,18 +89,18 @@ public class stream_metadata : IClassFixture<stream_metadata.Fixture> {
 
 	[Fact]
 	public async Task setting_with_wrong_expected_version_throws() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 		await Assert.ThrowsAsync<WrongExpectedVersionException>(
 			() =>
-				_fixture.Client.SetStreamMetadataAsync(stream, new StreamRevision(2), new())
+				Fixture.Streams.SetStreamMetadataAsync(stream, new StreamRevision(2), new())
 		);
 	}
 
 	[Fact]
 	public async Task setting_with_wrong_expected_version_returns() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 		var writeResult =
-			await _fixture.Client.SetStreamMetadataAsync(
+			await Fixture.Streams.SetStreamMetadataAsync(
 				stream,
 				new StreamRevision(2),
 				new(),
@@ -111,7 +112,7 @@ public class stream_metadata : IClassFixture<stream_metadata.Fixture> {
 
 	[Fact]
 	public async Task latest_metadata_returned_stream_revision_any() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
 		var expected = new StreamMetadata(
 			17,
@@ -120,9 +121,9 @@ public class stream_metadata : IClassFixture<stream_metadata.Fixture> {
 			TimeSpan.FromSeconds(0xABACABA)
 		);
 
-		await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.Any, expected);
+		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.Any, expected);
 
-		var actual = await _fixture.Client.GetStreamMetadataAsync(stream);
+		var actual = await Fixture.Streams.GetStreamMetadataAsync(stream);
 
 		Assert.Equal(stream, actual.StreamName);
 		Assert.False(actual.StreamDeleted);
@@ -140,9 +141,9 @@ public class stream_metadata : IClassFixture<stream_metadata.Fixture> {
 			TimeSpan.FromSeconds(0xDABACABAD)
 		);
 
-		await _fixture.Client.SetStreamMetadataAsync(stream, StreamState.Any, expected);
+		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.Any, expected);
 
-		actual = await _fixture.Client.GetStreamMetadataAsync(stream);
+		actual = await Fixture.Streams.GetStreamMetadataAsync(stream);
 
 		Assert.Equal(stream, actual.StreamName);
 		Assert.False(actual.StreamDeleted);
@@ -152,10 +153,5 @@ public class stream_metadata : IClassFixture<stream_metadata.Fixture> {
 		Assert.Equal(expected.TruncateBefore, actual.Metadata.TruncateBefore);
 		Assert.Equal(expected.CacheControl, actual.Metadata.CacheControl);
 		Assert.Equal(expected.Acl, actual.Metadata.Acl);
-	}
-
-	public class Fixture : EventStoreClientFixture {
-		protected override Task Given() => Task.CompletedTask;
-		protected override Task When()  => Task.CompletedTask;
 	}
 }

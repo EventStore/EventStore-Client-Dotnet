@@ -1,19 +1,20 @@
 ﻿using Grpc.Core;
 
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "Network")]
-public class stream_metadata_with_timeout : IClassFixture<stream_metadata_with_timeout.Fixture> {
-	readonly Fixture _fixture;
+[Network]
+public class stream_metadata_with_timeout : IClassFixture<EventStoreFixture> {
+	public stream_metadata_with_timeout(ITestOutputHelper output, EventStoreFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	public stream_metadata_with_timeout(Fixture fixture) => _fixture = fixture;
+	EventStoreFixture Fixture { get; }
 
 	[Fact]
 	public async Task set_with_any_stream_revision_fails_when_operation_expired() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 		var rpcException = await Assert.ThrowsAsync<RpcException>(
 			() =>
-				_fixture.Client.SetStreamMetadataAsync(
+				Fixture.Streams.SetStreamMetadataAsync(
 					stream,
 					StreamState.Any,
 					new(),
@@ -26,11 +27,11 @@ public class stream_metadata_with_timeout : IClassFixture<stream_metadata_with_t
 
 	[Fact]
 	public async Task set_with_stream_revision_fails_when_operation_expired() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
 		var rpcException = await Assert.ThrowsAsync<RpcException>(
 			() =>
-				_fixture.Client.SetStreamMetadataAsync(
+				Fixture.Streams.SetStreamMetadataAsync(
 					stream,
 					new StreamRevision(0),
 					new(),
@@ -43,15 +44,10 @@ public class stream_metadata_with_timeout : IClassFixture<stream_metadata_with_t
 
 	[Fact]
 	public async Task get_fails_when_operation_expired() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 		var rpcException = await Assert.ThrowsAsync<RpcException>(
 			() =>
-				_fixture.Client.GetStreamMetadataAsync(stream, TimeSpan.Zero)
+				Fixture.Streams.GetStreamMetadataAsync(stream, TimeSpan.Zero)
 		);
-	}
-
-	public class Fixture : EventStoreClientFixture {
-		protected override Task Given() => Task.CompletedTask;
-		protected override Task When()  => Task.CompletedTask;
 	}
 }

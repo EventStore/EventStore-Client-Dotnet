@@ -1,39 +1,39 @@
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "LongRunning")]
-public class read_all_events_forward : IClassFixture<read_all_events_forward.Fixture> {
-	const    string  Stream = "stream";
-	readonly Fixture _fixture;
+[LongRunning]
+public class read_all_events_forward : IClassFixture<ReadAllEventsForward> {
+	public read_all_events_forward(ITestOutputHelper output, ReadAllEventsForward fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	public read_all_events_forward(Fixture fixture) => _fixture = fixture;
+	ReadAllEventsForward Fixture { get; }
 
 	[Fact]
 	public async Task return_empty_if_reading_from_end() {
-		var count = await _fixture.Client.ReadAllAsync(Direction.Forwards, Position.End, 1).CountAsync();
+		var count = await Fixture.Streams.ReadAllAsync(Direction.Forwards, Position.End, 1).CountAsync();
 		Assert.Equal(0, count);
 	}
 
 	[Fact]
 	public async Task return_partial_slice_if_not_enough_events() {
-		var events = await _fixture.Client
-			.ReadAllAsync(Direction.Forwards, Position.Start, _fixture.Events.Length * 2)
+		var events = await Fixture.Streams
+			.ReadAllAsync(Direction.Forwards, Position.Start, Fixture.Events.Length * 2)
 			.ToArrayAsync();
 
-		Assert.True(events.Length < _fixture.Events.Length * 2);
+		Assert.True(events.Length < Fixture.Events.Length * 2);
 	}
 
 	[Fact]
 	public async Task return_events_in_correct_order_compared_to_written() {
-		var events = await _fixture.Client
-			.ReadAllAsync(Direction.Forwards, Position.Start, _fixture.Events.Length * 2)
+		var events = await Fixture.Streams
+			.ReadAllAsync(Direction.Forwards, Position.Start, Fixture.Events.Length * 2)
 			.ToArrayAsync();
 
-		Assert.True(EventDataComparer.Equal(_fixture.Events, events.AsResolvedTestEvents().ToArray()));
+		Assert.True(EventDataComparer.Equal(Fixture.Events, events.AsResolvedTestEvents().ToArray()));
 	}
 
 	[Fact]
 	public async Task return_single_event() {
-		var events = await _fixture.Client.ReadAllAsync(Direction.Forwards, Position.Start, 1)
+		var events = await Fixture.Streams.ReadAllAsync(Direction.Forwards, Position.Start, 1)
 			.ToArrayAsync();
 
 		Assert.Single(events);
@@ -50,9 +50,9 @@ public class read_all_events_forward : IClassFixture<read_all_events_forward.Fix
 
 	[Fact]
 	public async Task max_count_is_respected() {
-		var maxCount = _fixture.Events.Length / 2;
-		var events = await _fixture.Client.ReadAllAsync(Direction.Forwards, Position.Start, maxCount)
-			.Take(_fixture.Events.Length)
+		var maxCount = Fixture.Events.Length / 2;
+		var events = await Fixture.Streams.ReadAllAsync(Direction.Forwards, Position.Start, maxCount)
+			.Take(Fixture.Events.Length)
 			.ToArrayAsync();
 
 		Assert.Equal(maxCount, events.Length);
@@ -60,14 +60,16 @@ public class read_all_events_forward : IClassFixture<read_all_events_forward.Fix
 
 	[Fact]
 	public async Task reads_all_events_by_default() {
-		var count = await _fixture.Client.ReadAllAsync(Direction.Forwards, Position.Start)
+		var count = await Fixture.Streams.ReadAllAsync(Direction.Forwards, Position.Start)
 			.CountAsync();
 
-		Assert.True(count >= _fixture.Events.Length);
+		Assert.True(count >= Fixture.Events.Length);
 	}
+}
 
-	public class Fixture : EventStoreClientFixture {
-		public Fixture() =>
+public class ReadAllEventsForward : EventStoreFixture {
+	public ReadAllEventsForward() {
+		OnSetup = async () => {
 			Events = Enumerable
 				.Concat(
 					CreateTestEvents(20),
@@ -75,19 +77,18 @@ public class read_all_events_forward : IClassFixture<read_all_events_forward.Fix
 				)
 				.ToArray();
 
-		public EventData[] Events { get; }
+			var streamName = GetStreamName();
 
-		protected override async Task Given() {
-			var result = await Client.SetStreamMetadataAsync(
+			var result = await Streams.SetStreamMetadataAsync(
 				SystemStreams.AllStream,
 				StreamState.NoStream,
 				new(acl: new(SystemRoles.All)),
 				userCredentials: TestCredentials.Root
 			);
 
-			await Client.AppendToStreamAsync(Stream, StreamState.NoStream, Events);
-		}
-
-		protected override Task When() => Task.CompletedTask;
+			await Streams.AppendToStreamAsync(streamName, StreamState.NoStream, Events);
+		};
 	}
+
+	public EventData[] Events { get; private set; } = Array.Empty<EventData>();
 }

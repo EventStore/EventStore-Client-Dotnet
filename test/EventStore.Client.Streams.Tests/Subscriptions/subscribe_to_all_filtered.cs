@@ -1,49 +1,45 @@
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests;
 
-public class subscribe_to_all_filtered : IAsyncLifetime {
-	readonly Fixture _fixture;
+[DedicatedDatabase]
+public class subscribe_to_all_filtered : IClassFixture<subscribe_to_all_filtered.CustomFixture> {
+	public subscribe_to_all_filtered(ITestOutputHelper output, CustomFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	public subscribe_to_all_filtered(ITestOutputHelper outputHelper) {
-		_fixture = new();
-		_fixture.CaptureLogs(outputHelper);
-	}
-
-	public Task InitializeAsync() => _fixture.InitializeAsync();
-
-	public Task DisposeAsync() => _fixture.DisposeAsync();
+	CustomFixture Fixture { get; }
 
 	public static IEnumerable<object?[]> FilterCases() => Filters.All.Select(filter => new object[] { filter });
 
 	[Theory]
 	[MemberData(nameof(FilterCases))]
 	public async Task reads_all_existing_events(string filterName) {
-		var streamPrefix = _fixture.GetStreamName();
+		var streamPrefix = Fixture.GetStreamName();
 		var (getFilter, prepareEvent) = Filters.GetFilter(filterName);
 
 		var appeared       = new TaskCompletionSource<bool>();
 		var dropped        = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 		var checkpointSeen = new TaskCompletionSource<bool>();
 		var filter         = getFilter(streamPrefix);
-		var events = _fixture.CreateTestEvents(20).Select(e => prepareEvent(streamPrefix, e))
+
+		var events = Fixture.CreateTestEvents(20).Select(e => prepareEvent(streamPrefix, e))
 			.ToArray();
 
 		using var enumerator = events.OfType<EventData>().GetEnumerator();
 		enumerator.MoveNext();
 
-		await _fixture.Client.AppendToStreamAsync(
+		await Fixture.Streams.AppendToStreamAsync(
 			Guid.NewGuid().ToString(),
 			StreamState.NoStream,
-			_fixture.CreateTestEvents(256)
+			Fixture.CreateTestEvents(256)
 		);
 
 		foreach (var e in events)
-			await _fixture.Client.AppendToStreamAsync(
+			await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}_{Guid.NewGuid():n}",
 				StreamState.NoStream,
 				new[] { e }
 			);
 
-		using var subscription = await _fixture.Client.SubscribeToAllAsync(
+		using var subscription = await Fixture.Streams.SubscribeToAllAsync(
 				FromAll.Start,
 				EventAppeared,
 				false,
@@ -95,14 +91,14 @@ public class subscribe_to_all_filtered : IAsyncLifetime {
 	[Theory]
 	[MemberData(nameof(FilterCases))]
 	public async Task reads_all_existing_events_and_keep_listening_to_new_ones(string filterName) {
-		var streamPrefix = _fixture.GetStreamName();
+		var streamPrefix = Fixture.GetStreamName();
 		var (getFilter, prepareEvent) = Filters.GetFilter(filterName);
 
 		var appeared       = new TaskCompletionSource<bool>();
 		var dropped        = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
 		var checkpointSeen = new TaskCompletionSource<bool>();
 		var filter         = getFilter(streamPrefix);
-		var events = _fixture.CreateTestEvents(20).Select(e => prepareEvent(streamPrefix, e))
+		var events = Fixture.CreateTestEvents(20).Select(e => prepareEvent(streamPrefix, e))
 			.ToArray();
 
 		var beforeEvents = events.Take(10);
@@ -111,20 +107,20 @@ public class subscribe_to_all_filtered : IAsyncLifetime {
 		using var enumerator = events.OfType<EventData>().GetEnumerator();
 		enumerator.MoveNext();
 
-		await _fixture.Client.AppendToStreamAsync(
+		await Fixture.Streams.AppendToStreamAsync(
 			Guid.NewGuid().ToString(),
 			StreamState.NoStream,
-			_fixture.CreateTestEvents(256)
+			Fixture.CreateTestEvents(256)
 		);
 
 		foreach (var e in beforeEvents)
-			await _fixture.Client.AppendToStreamAsync(
+			await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}_{Guid.NewGuid():n}",
 				StreamState.NoStream,
 				new[] { e }
 			);
 
-		using var subscription = await _fixture.Client.SubscribeToAllAsync(
+		using var subscription = await Fixture.Streams.SubscribeToAllAsync(
 				FromAll.Start,
 				EventAppeared,
 				false,
@@ -134,7 +130,7 @@ public class subscribe_to_all_filtered : IAsyncLifetime {
 			.WithTimeout();
 
 		foreach (var e in afterEvents)
-			await _fixture.Client.AppendToStreamAsync(
+			await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}_{Guid.NewGuid():n}",
 				StreamState.NoStream,
 				new[] { e }
@@ -180,17 +176,20 @@ public class subscribe_to_all_filtered : IAsyncLifetime {
 		}
 	}
 
-	public class Fixture : EventStoreClientFixture {
+	public class CustomFixture : EventStoreFixture {
 		public const string FilteredOutStream = nameof(FilteredOutStream);
 
-		protected override Task Given() =>
-			Client.SetStreamMetadataAsync(
-				SystemStreams.AllStream,
-				StreamState.Any,
-				new(acl: new(SystemRoles.All)),
-				userCredentials: TestCredentials.Root
-			);
+		public CustomFixture() {
+			OnSetup = async () => {
+				await Streams.SetStreamMetadataAsync(
+					SystemStreams.AllStream,
+					StreamState.NoStream,
+					new(acl: new(SystemRoles.All)),
+					userCredentials: TestCredentials.Root
+				);
 
-		protected override Task When() => Client.AppendToStreamAsync(FilteredOutStream, StreamState.NoStream, CreateTestEvents(10));
+				await Streams.AppendToStreamAsync(FilteredOutStream, StreamState.NoStream, CreateTestEvents(10));
+			};
+		}
 	}
 }

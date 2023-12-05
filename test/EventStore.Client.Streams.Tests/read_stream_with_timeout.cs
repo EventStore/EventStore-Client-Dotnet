@@ -2,20 +2,21 @@
 
 namespace EventStore.Client.Streams.Tests; 
 
-[Trait("Category", "Network")]
-public class read_stream_with_timeout : IClassFixture<read_stream_with_timeout.Fixture> {
-	readonly Fixture _fixture;
+[Network]
+public class read_stream_with_timeout : IClassFixture<EventStoreFixture> {
+	public read_stream_with_timeout(ITestOutputHelper output, EventStoreFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	public read_stream_with_timeout(Fixture fixture) => _fixture = fixture;
+	EventStoreFixture Fixture { get; }
 
 	[Fact]
 	public async Task fails_when_operation_expired() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
-		await _fixture.Client.AppendToStreamAsync(stream, StreamRevision.None, _fixture.CreateTestEvents());
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamRevision.None, Fixture.CreateTestEvents());
 
 		var rpcException = await Assert.ThrowsAsync<RpcException>(
-			() => _fixture.Client
+			() => Fixture.Streams
 				.ReadStreamAsync(
 					Direction.Backwards,
 					stream,
@@ -30,8 +31,5 @@ public class read_stream_with_timeout : IClassFixture<read_stream_with_timeout.F
 		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
 	}
 
-	public class Fixture : EventStoreClientFixture {
-		protected override Task Given() => Task.CompletedTask;
-		protected override Task When()  => Task.CompletedTask;
-	}
+	
 }

@@ -25,6 +25,7 @@
         <Using Include="Shouldly" />
         <Using Include="Xunit" />
         <Using Include="Xunit.Abstractions" />
+        <Using Include="Xunit.Categories" />
         <Using Include="EventStore.Client.Tests" />
         <Using Include="JetBrains.Annotations" />
     </ItemGroup>

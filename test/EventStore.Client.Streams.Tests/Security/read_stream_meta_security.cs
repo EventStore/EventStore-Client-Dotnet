@@ -1,80 +1,72 @@
 namespace EventStore.Client.Streams.Tests.Security; 
 
-public class read_stream_meta_security : IClassFixture<read_stream_meta_security.Fixture> {
-	readonly Fixture _fixture;
+public class read_stream_meta_security : IClassFixture<SecurityFixture> {
+	public read_stream_meta_security(ITestOutputHelper output, SecurityFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	public read_stream_meta_security(Fixture fixture) => _fixture = fixture;
+	SecurityFixture Fixture { get; }
 
 	[Fact]
 	public async Task reading_stream_meta_with_not_existing_credentials_is_not_authenticated() =>
 		await Assert.ThrowsAsync<NotAuthenticatedException>(
-			() =>
-				_fixture.ReadMeta(SecurityFixture.MetaReadStream, TestCredentials.TestBadUser)
+			() => Fixture.ReadMeta(SecurityFixture.MetaReadStream, TestCredentials.TestBadUser)
 		);
 
 	[Fact]
 	public async Task reading_stream_meta_with_no_credentials_is_denied() =>
-		await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadMeta(SecurityFixture.MetaReadStream));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadMeta(SecurityFixture.MetaReadStream));
 
 	[Fact]
 	public async Task reading_stream_meta_with_not_authorized_user_credentials_is_denied() =>
 		await Assert.ThrowsAsync<AccessDeniedException>(
-			() =>
-				_fixture.ReadMeta(SecurityFixture.MetaReadStream, TestCredentials.TestUser2)
+			() => Fixture.ReadMeta(SecurityFixture.MetaReadStream, TestCredentials.TestUser2)
 		);
 
 	[Fact]
 	public async Task reading_stream_meta_with_authorized_user_credentials_succeeds() =>
-		await _fixture.ReadMeta(SecurityFixture.MetaReadStream, TestCredentials.TestUser1);
+		await Fixture.ReadMeta(SecurityFixture.MetaReadStream, TestCredentials.TestUser1);
 
 	[Fact]
 	public async Task reading_stream_meta_with_admin_user_credentials_succeeds() =>
-		await _fixture.ReadMeta(SecurityFixture.MetaReadStream, TestCredentials.TestAdmin);
+		await Fixture.ReadMeta(SecurityFixture.MetaReadStream, TestCredentials.TestAdmin);
 
 	[AnonymousAccess.Fact]
-	public async Task reading_no_acl_stream_meta_succeeds_when_no_credentials_are_passed() => await _fixture.ReadMeta(SecurityFixture.NoAclStream);
+	public async Task reading_no_acl_stream_meta_succeeds_when_no_credentials_are_passed() => await Fixture.ReadMeta(SecurityFixture.NoAclStream);
 
 	[Fact]
 	public async Task reading_no_acl_stream_meta_is_not_authenticated_when_not_existing_credentials_are_passed() =>
 		await Assert.ThrowsAsync<NotAuthenticatedException>(
-			() =>
-				_fixture.ReadMeta(SecurityFixture.NoAclStream, TestCredentials.TestBadUser)
+			() => Fixture.ReadMeta(SecurityFixture.NoAclStream, TestCredentials.TestBadUser)
 		);
 
 	[Fact]
 	public async Task reading_no_acl_stream_meta_succeeds_when_any_existing_user_credentials_are_passed() {
-		await _fixture.ReadMeta(SecurityFixture.NoAclStream, TestCredentials.TestUser1);
-		await _fixture.ReadMeta(SecurityFixture.NoAclStream, TestCredentials.TestUser2);
+		await Fixture.ReadMeta(SecurityFixture.NoAclStream, TestCredentials.TestUser1);
+		await Fixture.ReadMeta(SecurityFixture.NoAclStream, TestCredentials.TestUser2);
 	}
 
 	[Fact]
 	public async Task reading_no_acl_stream_meta_succeeds_when_admin_user_credentials_are_passed() =>
-		await _fixture.ReadMeta(SecurityFixture.NoAclStream, TestCredentials.TestAdmin);
+		await Fixture.ReadMeta(SecurityFixture.NoAclStream, TestCredentials.TestAdmin);
 
 	[AnonymousAccess.Fact]
 	public async Task reading_all_access_normal_stream_meta_succeeds_when_no_credentials_are_passed() =>
-		await _fixture.ReadMeta(SecurityFixture.NormalAllStream);
+		await Fixture.ReadMeta(SecurityFixture.NormalAllStream);
 
 	[Fact]
 	public async Task
 		reading_all_access_normal_stream_meta_is_not_authenticated_when_not_existing_credentials_are_passed() =>
 		await Assert.ThrowsAsync<NotAuthenticatedException>(
-			() =>
-				_fixture.ReadMeta(SecurityFixture.NormalAllStream, TestCredentials.TestBadUser)
+			() => Fixture.ReadMeta(SecurityFixture.NormalAllStream, TestCredentials.TestBadUser)
 		);
 
 	[Fact]
 	public async Task
 		reading_all_access_normal_stream_meta_succeeds_when_any_existing_user_credentials_are_passed() {
-		await _fixture.ReadMeta(SecurityFixture.NormalAllStream, TestCredentials.TestUser1);
-		await _fixture.ReadMeta(SecurityFixture.NormalAllStream, TestCredentials.TestUser2);
+		await Fixture.ReadMeta(SecurityFixture.NormalAllStream, TestCredentials.TestUser1);
+		await Fixture.ReadMeta(SecurityFixture.NormalAllStream, TestCredentials.TestUser2);
 	}
 
 	[Fact]
 	public async Task reading_all_access_normal_stream_meta_succeeds_when_admin_user_credentials_are_passed() =>
-		await _fixture.ReadMeta(SecurityFixture.NormalAllStream, TestCredentials.TestAdmin);
-
-	public class Fixture : SecurityFixture {
-		protected override Task When() => Task.CompletedTask;
-	}
+		await Fixture.ReadMeta(SecurityFixture.NormalAllStream, TestCredentials.TestAdmin);
 }

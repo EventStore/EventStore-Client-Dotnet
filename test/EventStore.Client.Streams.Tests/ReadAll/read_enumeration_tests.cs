@@ -1,14 +1,15 @@
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "Network")]
-public class read_enumeration_tests : IClassFixture<read_enumeration_tests.Fixture> {
-	readonly Fixture _fixture;
+[Network]
+public class read_enumeration_tests : IClassFixture<EventStoreFixture> {
+	public read_enumeration_tests(ITestOutputHelper output, EventStoreFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	public read_enumeration_tests(Fixture fixture) => _fixture = fixture;
+	EventStoreFixture Fixture { get; }
 
 	[Fact]
 	public async Task all_referencing_messages_twice_does_not_throw() {
-		var result = _fixture.Client.ReadAllAsync(
+		var result = Fixture.Streams.ReadAllAsync(
 			Direction.Forwards,
 			Position.Start,
 			32,
@@ -21,7 +22,7 @@ public class read_enumeration_tests : IClassFixture<read_enumeration_tests.Fixtu
 
 	[Fact]
 	public async Task all_enumerating_messages_twice_throws() {
-		var result = _fixture.Client.ReadAllAsync(
+		var result = Fixture.Streams.ReadAllAsync(
 			Direction.Forwards,
 			Position.Start,
 			32,
@@ -38,7 +39,7 @@ public class read_enumeration_tests : IClassFixture<read_enumeration_tests.Fixtu
 
 	[Fact]
 	public async Task referencing_messages_twice_does_not_throw() {
-		var result = _fixture.Client.ReadStreamAsync(
+		var result = Fixture.Streams.ReadStreamAsync(
 			Direction.Forwards,
 			"$users",
 			StreamPosition.Start,
@@ -52,7 +53,7 @@ public class read_enumeration_tests : IClassFixture<read_enumeration_tests.Fixtu
 
 	[Fact]
 	public async Task enumerating_messages_twice_throws() {
-		var result = _fixture.Client.ReadStreamAsync(
+		var result = Fixture.Streams.ReadStreamAsync(
 			Direction.Forwards,
 			"$users",
 			StreamPosition.Start,
@@ -66,10 +67,5 @@ public class read_enumeration_tests : IClassFixture<read_enumeration_tests.Fixtu
 			async () =>
 				await result.Messages.ToArrayAsync()
 		);
-	}
-
-	public class Fixture : EventStoreClientFixture {
-		protected override Task Given() => Task.CompletedTask;
-		protected override Task When()  => Task.CompletedTask;
 	}
 }

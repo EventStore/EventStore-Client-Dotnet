@@ -3,12 +3,13 @@ using System.Text;
 
 namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "Network")]
-[Trait("Category", "LongRunning")]
-public class is_json : IClassFixture<is_json.Fixture> {
-	readonly Fixture _fixture;
+[Network]
+[LongRunning]
+public class is_json : IClassFixture<EventStoreFixture> {
+	public is_json(ITestOutputHelper output, EventStoreFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	public is_json(Fixture fixture) => _fixture = fixture;
+	EventStoreFixture Fixture { get; }
 
 	public static IEnumerable<object?[]> TestCases() {
 		var json = @"{""some"":""json""}";
@@ -36,9 +37,9 @@ public class is_json : IClassFixture<is_json.Fixture> {
 				: Constants.Metadata.ContentTypes.ApplicationOctetStream
 		);
 
-		await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, new[] { eventData });
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, new[] { eventData });
 
-		var @event = await _fixture.Client
+		var @event = await Fixture.Streams
 			.ReadStreamAsync(
 				Direction.Forwards,
 				stream,
@@ -60,10 +61,5 @@ public class is_json : IClassFixture<is_json.Fixture> {
 	}
 
 	string GetStreamName(bool isJson, string data, string metadata, [CallerMemberName] string? testMethod = default) =>
-		$"{_fixture.GetStreamName(testMethod)}_{isJson}_{(data == string.Empty ? "no_data" : "data")}_{(metadata == string.Empty ? "no_metadata" : "metadata")}";
-
-	public class Fixture : EventStoreClientFixture {
-		protected override Task Given() => Task.CompletedTask;
-		protected override Task When()  => Task.CompletedTask;
-	}
+		$"{Fixture.GetStreamName(testMethod)}_{isJson}_{(data == string.Empty ? "no_data" : "data")}_{(metadata == string.Empty ? "no_metadata" : "metadata")}";
 }

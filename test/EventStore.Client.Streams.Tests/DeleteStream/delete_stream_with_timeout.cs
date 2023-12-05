@@ -2,18 +2,19 @@
 
 namespace EventStore.Client.Streams.Tests; 
 
-[Trait("Category", "Network")]
-public class deleting_stream_with_timeout : IClassFixture<deleting_stream_with_timeout.Fixture> {
-	readonly Fixture _fixture;
+[Network]
+public class deleting_stream_with_timeout : IClassFixture<EventStoreFixture> {
+	public deleting_stream_with_timeout(ITestOutputHelper output, EventStoreFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	public deleting_stream_with_timeout(Fixture fixture) => _fixture = fixture;
+	EventStoreFixture Fixture { get; }
 
 	[Fact]
 	public async Task any_stream_revision_delete_fails_when_operation_expired() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 		var rpcException = await Assert.ThrowsAsync<RpcException>(
 			() =>
-				_fixture.Client.DeleteAsync(stream, StreamState.Any, TimeSpan.Zero)
+				Fixture.Streams.DeleteAsync(stream, StreamState.Any, TimeSpan.Zero)
 		);
 
 		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
@@ -21,11 +22,11 @@ public class deleting_stream_with_timeout : IClassFixture<deleting_stream_with_t
 
 	[Fact]
 	public async Task stream_revision_delete_fails_when_operation_expired() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
 		var rpcException = await Assert.ThrowsAsync<RpcException>(
 			() =>
-				_fixture.Client.DeleteAsync(stream, new StreamRevision(0), TimeSpan.Zero)
+				Fixture.Streams.DeleteAsync(stream, new StreamRevision(0), TimeSpan.Zero)
 		);
 
 		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
@@ -33,10 +34,10 @@ public class deleting_stream_with_timeout : IClassFixture<deleting_stream_with_t
 
 	[Fact]
 	public async Task any_stream_revision_tombstoning_fails_when_operation_expired() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 		var rpcException = await Assert.ThrowsAsync<RpcException>(
 			() =>
-				_fixture.Client.TombstoneAsync(stream, StreamState.Any, TimeSpan.Zero)
+				Fixture.Streams.TombstoneAsync(stream, StreamState.Any, TimeSpan.Zero)
 		);
 
 		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
@@ -44,18 +45,13 @@ public class deleting_stream_with_timeout : IClassFixture<deleting_stream_with_t
 
 	[Fact]
 	public async Task stream_revision_tombstoning_fails_when_operation_expired() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
 		var rpcException = await Assert.ThrowsAsync<RpcException>(
 			() =>
-				_fixture.Client.TombstoneAsync(stream, new StreamRevision(0), TimeSpan.Zero)
+				Fixture.Streams.TombstoneAsync(stream, new StreamRevision(0), TimeSpan.Zero)
 		);
 
 		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
-	}
-
-	public class Fixture : EventStoreClientFixture {
-		protected override Task Given() => Task.CompletedTask;
-		protected override Task When()  => Task.CompletedTask;
 	}
 }

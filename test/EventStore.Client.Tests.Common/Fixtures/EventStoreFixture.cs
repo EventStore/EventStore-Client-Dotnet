@@ -1,4 +1,7 @@
 using System.Net;
+using Ductus.FluentDocker.Builders;
+using Ductus.FluentDocker.Extensions;
+using Ductus.FluentDocker.Services.Extensions;
 using EventStore.Client.Tests.FluentDocker;
 using Serilog;
 using static System.TimeSpan;
@@ -64,6 +67,10 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	
 	public ITestService             Service { get; }
 	public EventStoreFixtureOptions Options { get; }
+	public Faker                    Faker   { get; } = new Faker();
+
+	public Version EventStoreVersion               { get; private set; } = null!;
+	public bool    EventStoreHasLastStreamPosition { get; private set; }
 
 	public EventStoreClient                        Streams       { get; private set; } = null!;
 	public EventStoreUserManagementClient          Users         { get; private set; } = null!;
@@ -73,7 +80,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 
 	public Func<Task> OnSetup    { get; init; } = () => Task.CompletedTask;
 	public Func<Task> OnTearDown { get; init; } = () => Task.CompletedTask;
-
+	
 	/// <summary>
 	/// must test this
 	/// </summary>
@@ -92,7 +99,8 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	
 	InterlockedBoolean WarmUpCompleted  { get; } = new InterlockedBoolean();
 	SemaphoreSlim      WarmUpGatekeeper { get; } = new(1, 1);
-	
+
+
 	public void CaptureTestRun(ITestOutputHelper outputHelper) {
 		var testRunId = Logging.CaptureLogs(outputHelper);
 		TestRuns.Add(testRunId);
@@ -103,6 +111,9 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	public async Task InitializeAsync() {
 		await Service.Start();
 
+		EventStoreVersion               = GetEventStoreVersion();
+		EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
+		
 		await WarmUpGatekeeper.WaitAsync();
 		
 		try {
@@ -138,6 +149,27 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 			var client = (Activator.CreateInstance(typeof(T), new object?[] { ClientSettings }) as T)!;
 			await action(client);
 			return client;
+		}
+		
+		
+		static Version GetEventStoreVersion() {
+			const string versionPrefix = "EventStoreDB version";
+
+			using var cancellator = new CancellationTokenSource(FromSeconds(30));
+			using var eventstore = new Builder()
+				.UseContainer()
+				.UseImage(GlobalEnvironment.DockerImage)
+				.Command("--version")
+				.Build()
+				.Start();
+
+			using var log = eventstore.Logs(true, cancellator.Token);
+			foreach (var line in log.ReadToEnd())
+				if (line.StartsWith(versionPrefix) &&
+				    Version.TryParse(line[(versionPrefix.Length + 1)..].Split(' ')[0], out var version))
+					return version;
+
+			throw new InvalidOperationException("Could not determine server version.");
 		}
 	}
 

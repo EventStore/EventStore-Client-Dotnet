@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 
-namespace EventStore.Client.Tests;
+namespace EventStore.Client;
 
-public static class EnumerableTaskExtensions {
+static class EnumerableTaskExtensions {
 	[DebuggerStepThrough]
 	public static Task WhenAll(this IEnumerable<Task> source) => Task.WhenAll(source);
 

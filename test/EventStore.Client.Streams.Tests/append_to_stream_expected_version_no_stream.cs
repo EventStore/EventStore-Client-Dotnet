@@ -1,26 +1,31 @@
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests;
 
-public class append_to_stream_expected_version_no_stream : IClassFixture<append_to_stream_expected_version_no_stream.Fixture> {
-	readonly Fixture _fixture;
+public class append_to_stream_expected_version_no_stream : IClassFixture<EventStoreFixture> {
+	public append_to_stream_expected_version_no_stream(ITestOutputHelper output, EventStoreFixture fixture) {
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
+	}
 
-	public append_to_stream_expected_version_no_stream(Fixture fixture) => _fixture = fixture;
+	EventStoreFixture Fixture { get; }
 
 	[Fact]
-	public void succeeds() => Assert.Equal(new(0), _fixture.Result!.NextExpectedStreamRevision);
+	public async Task succeeds() {
+		var result = await Fixture.Streams.AppendToStreamAsync(
+			Fixture.GetStreamName(),
+			StreamState.NoStream,
+			Fixture.CreateTestEvents()
+		);
+
+		Assert.Equal(new(0), result!.NextExpectedStreamRevision);
+	}
 
 	[Fact]
-	public void returns_position() => Assert.True(_fixture.Result!.LogPosition > Position.Start);
+	public async Task returns_position() {
+		var result = await Fixture.Streams.AppendToStreamAsync(
+			Fixture.GetStreamName(),
+			StreamState.NoStream,
+			Fixture.CreateTestEvents()
+		);
 
-	public class Fixture : EventStoreClientFixture {
-		public IWriteResult? Result { get; private set; }
-
-		protected override Task Given() => Task.CompletedTask;
-
-		protected override async Task When() =>
-			Result = await Client.AppendToStreamAsync(
-				"stream-1",
-				StreamState.NoStream,
-				CreateTestEvents()
-			);
+		Assert.True(result.LogPosition > Position.Start);
 	}
 }

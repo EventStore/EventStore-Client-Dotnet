@@ -1,14 +1,12 @@
 using System.Text.Json;
 
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "LongRunning")]
-public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
-	readonly JsonDocument _customMetadata;
-	readonly Fixture      _fixture;
+[LongRunning]
 
-	public deleted_stream(Fixture fixture) {
-		_fixture = fixture;
+public class deleted_stream : IClassFixture<EventStoreFixture> {
+	public deleted_stream(ITestOutputHelper output, EventStoreFixture fixture) {
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
 		var customMetadata = new Dictionary<string, object> {
 			["key1"] = true,
@@ -16,25 +14,28 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 			["key3"] = "some value"
 		};
 
-		_customMetadata = JsonDocument.Parse(JsonSerializer.Serialize(customMetadata));
+		CustomMetadata = JsonDocument.Parse(JsonSerializer.Serialize(customMetadata));
 	}
+
+	EventStoreFixture Fixture        { get; }
+	JsonDocument      CustomMetadata { get; }
 
 	[Fact]
 	public async Task reading_throws() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
-		var writeResult = await _fixture.Client.AppendToStreamAsync(
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
 			StreamState.NoStream,
-			_fixture.CreateTestEvents()
+			Fixture.CreateTestEvents()
 		);
 
 		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
 
-		await _fixture.Client.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+		await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
 		await Assert.ThrowsAsync<StreamNotFoundException>(
-			() => _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+			() => Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
 				.ToArrayAsync().AsTask()
 		);
 	}
@@ -47,27 +48,27 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 	[Theory]
 	[MemberData(nameof(RecreatingTestCases))]
 	public async Task recreated_with_any_expected_version(StreamState expectedState, string name) {
-		var stream = $"{_fixture.GetStreamName()}_{name}";
+		var stream = $"{Fixture.GetStreamName()}_{name}";
 
-		var writeResult = await _fixture.Client.AppendToStreamAsync(
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
 			StreamState.NoStream,
-			_fixture.CreateTestEvents()
+			Fixture.CreateTestEvents()
 		);
 
 		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
 
-		await _fixture.Client.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+		await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
-		var events = _fixture.CreateTestEvents(3).ToArray();
+		var events = Fixture.CreateTestEvents(3).ToArray();
 
-		writeResult = await _fixture.Client.AppendToStreamAsync(stream, expectedState, events);
+		writeResult = await Fixture.Streams.AppendToStreamAsync(stream, expectedState, events);
 
 		Assert.Equal(new(3), writeResult.NextExpectedStreamRevision);
 
 		await Task.Delay(50); //TODO: This is a workaround until github issue #1744 is fixed
 
-		var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
@@ -78,28 +79,28 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 			actual.Select(x => x.EventNumber)
 		);
 
-		var metadata = await _fixture.Client.GetStreamMetadataAsync(stream);
+		var metadata = await Fixture.Streams.GetStreamMetadataAsync(stream);
 		Assert.Equal(new StreamPosition(1), metadata.Metadata.TruncateBefore);
 		Assert.Equal(new StreamPosition(1), metadata.MetastreamRevision);
 	}
 
 	[Fact]
 	public async Task recreated_with_expected_version() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
-		var writeResult = await _fixture.Client.AppendToStreamAsync(
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
 			StreamState.NoStream,
-			_fixture.CreateTestEvents()
+			Fixture.CreateTestEvents()
 		);
 
 		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
 
-		await _fixture.Client.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+		await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
-		var events = _fixture.CreateTestEvents(3).ToArray();
+		var events = Fixture.CreateTestEvents(3).ToArray();
 
-		writeResult = await _fixture.Client.AppendToStreamAsync(
+		writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
 			writeResult.NextExpectedStreamRevision,
 			events
@@ -109,7 +110,7 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 
 		await Task.Delay(50); //TODO: This is a workaround until github issue #1744 is fixed
 
-		var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
@@ -120,7 +121,7 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 			actual.Select(x => x.EventNumber)
 		);
 
-		var metadata = await _fixture.Client.GetStreamMetadataAsync(stream);
+		var metadata = await Fixture.Streams.GetStreamMetadataAsync(stream);
 		Assert.Equal(new StreamPosition(1), metadata.Metadata.TruncateBefore);
 		Assert.Equal(new StreamPosition(1), metadata.MetastreamRevision);
 	}
@@ -128,12 +129,12 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 	[Fact]
 	public async Task recreated_preserves_metadata_except_truncate_before() {
 		const int count  = 2;
-		var       stream = _fixture.GetStreamName();
+		var       stream = Fixture.GetStreamName();
 
-		var writeResult = await _fixture.Client.AppendToStreamAsync(
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
 			StreamState.NoStream,
-			_fixture.CreateTestEvents(count)
+			Fixture.CreateTestEvents(count)
 		);
 
 		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
@@ -142,10 +143,10 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 			acl: new(deleteRole: "some-role"),
 			maxCount: 100,
 			truncateBefore: new StreamPosition(long.MaxValue), // 1 less than End
-			customMetadata: _customMetadata
+			customMetadata: CustomMetadata
 		);
 
-		writeResult = await _fixture.Client.SetStreamMetadataAsync(
+		writeResult = await Fixture.Streams.SetStreamMetadataAsync(
 			stream,
 			StreamState.NoStream,
 			streamMetadata
@@ -153,13 +154,13 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 
 		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
 
-		var events = _fixture.CreateTestEvents(3).ToArray();
+		var events = Fixture.CreateTestEvents(3).ToArray();
 
-		await _fixture.Client.AppendToStreamAsync(stream, new StreamRevision(1), events);
+		await Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(1), events);
 
 		await Task.Delay(500); //TODO: This is a workaround until github issue #1744 is fixed
 
-		var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
@@ -179,30 +180,30 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 			streamMetadata.CustomMetadata
 		);
 
-		var metadataResult = await _fixture.Client.GetStreamMetadataAsync(stream);
+		var metadataResult = await Fixture.Streams.GetStreamMetadataAsync(stream);
 		Assert.Equal(new StreamPosition(1), metadataResult.MetastreamRevision);
 		Assert.Equal(expected, metadataResult.Metadata);
 	}
 
 	[Fact]
 	public async Task can_be_hard_deleted() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
 		var writeResult =
-			await _fixture.Client.AppendToStreamAsync(
+			await Fixture.Streams.AppendToStreamAsync(
 				stream,
 				StreamState.NoStream,
-				_fixture.CreateTestEvents(2)
+				Fixture.CreateTestEvents(2)
 			);
 
 		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
 
-		await _fixture.Client.DeleteAsync(stream, new StreamRevision(1));
+		await Fixture.Streams.DeleteAsync(stream, new StreamRevision(1));
 
-		await _fixture.Client.TombstoneAsync(stream, StreamState.Any);
+		await Fixture.Streams.TombstoneAsync(stream, StreamState.Any);
 
 		var ex = await Assert.ThrowsAsync<StreamDeletedException>(
-			() => _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+			() => Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
 				.ToArrayAsync().AsTask()
 		);
 
@@ -210,69 +211,71 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 
 		ex = await Assert.ThrowsAsync<StreamDeletedException>(
 			()
-				=> _fixture.Client.GetStreamMetadataAsync(stream)
+				=> Fixture.Streams.GetStreamMetadataAsync(stream)
 		);
 
 		Assert.Equal(SystemStreams.MetastreamOf(stream), ex.Stream);
 
-		await Assert.ThrowsAsync<StreamDeletedException>(() => _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, _fixture.CreateTestEvents()));
+		await Assert.ThrowsAsync<StreamDeletedException>(
+			() => Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents())
+		);
 	}
 
 	[Fact]
 	public async Task allows_recreating_for_first_write_only_throws_wrong_expected_version() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
 		var writeResult =
-			await _fixture.Client.AppendToStreamAsync(
+			await Fixture.Streams.AppendToStreamAsync(
 				stream,
 				StreamState.NoStream,
-				_fixture.CreateTestEvents(2)
+				Fixture.CreateTestEvents(2)
 			);
 
 		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
 
-		await _fixture.Client.DeleteAsync(stream, new StreamRevision(1));
+		await Fixture.Streams.DeleteAsync(stream, new StreamRevision(1));
 
-		writeResult = await _fixture.Client.AppendToStreamAsync(
+		writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
 			StreamState.NoStream,
-			_fixture.CreateTestEvents(3)
+			Fixture.CreateTestEvents(3)
 		);
 
 		Assert.Equal(new(4), writeResult.NextExpectedStreamRevision);
 
 		await Assert.ThrowsAsync<WrongExpectedVersionException>(
-			() => _fixture.Client.AppendToStreamAsync(
+			() => Fixture.Streams.AppendToStreamAsync(
 				stream,
 				StreamState.NoStream,
-				_fixture.CreateTestEvents()
+				Fixture.CreateTestEvents()
 			)
 		);
 	}
 
 	[Fact]
 	public async Task allows_recreating_for_first_write_only_returns_wrong_expected_version() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
 		var writeResult =
-			await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents(2));
+			await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents(2));
 
 		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
 
-		await _fixture.Client.DeleteAsync(stream, new StreamRevision(1));
+		await Fixture.Streams.DeleteAsync(stream, new StreamRevision(1));
 
-		writeResult = await _fixture.Client.AppendToStreamAsync(
+		writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
 			StreamState.NoStream,
-			_fixture.CreateTestEvents(3)
+			Fixture.CreateTestEvents(3)
 		);
 
 		Assert.Equal(new(4), writeResult.NextExpectedStreamRevision);
 
-		var wrongExpectedVersionResult = await _fixture.Client.AppendToStreamAsync(
+		var wrongExpectedVersionResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
 			StreamState.NoStream,
-			_fixture.CreateTestEvents(),
+			Fixture.CreateTestEvents(),
 			options => options.ThrowOnAppendFailure = false
 		);
 
@@ -281,31 +284,31 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 
 	[Fact]
 	public async Task appends_multiple_writes_expected_version_any() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
 		var writeResult =
-			await _fixture.Client.AppendToStreamAsync(
+			await Fixture.Streams.AppendToStreamAsync(
 				stream,
 				StreamState.NoStream,
-				_fixture.CreateTestEvents(2)
+				Fixture.CreateTestEvents(2)
 			);
 
 		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
 
-		await _fixture.Client.DeleteAsync(stream, new StreamRevision(1));
+		await Fixture.Streams.DeleteAsync(stream, new StreamRevision(1));
 
-		var firstEvents  = _fixture.CreateTestEvents(3).ToArray();
-		var secondEvents = _fixture.CreateTestEvents(2).ToArray();
+		var firstEvents  = Fixture.CreateTestEvents(3).ToArray();
+		var secondEvents = Fixture.CreateTestEvents(2).ToArray();
 
-		writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, firstEvents);
+		writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, firstEvents);
 
 		Assert.Equal(new(4), writeResult.NextExpectedStreamRevision);
 
-		writeResult = await _fixture.Client.AppendToStreamAsync(stream, StreamState.Any, secondEvents);
+		writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, secondEvents);
 
 		Assert.Equal(new(6), writeResult.NextExpectedStreamRevision);
 
-		var actual = await _fixture.Client.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
@@ -315,7 +318,7 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 			actual.Select(x => x.EventNumber)
 		);
 
-		var metadataResult = await _fixture.Client.GetStreamMetadataAsync(stream);
+		var metadataResult = await Fixture.Streams.GetStreamMetadataAsync(stream);
 
 		Assert.Equal(new StreamPosition(2), metadataResult.Metadata.TruncateBefore);
 		Assert.Equal(new StreamPosition(1), metadataResult.MetastreamRevision);
@@ -323,16 +326,16 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 
 	[Fact]
 	public async Task recreated_on_empty_when_metadata_set() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
 		var streamMetadata = new StreamMetadata(
 			acl: new(deleteRole: "some-role"),
 			maxCount: 100,
 			truncateBefore: new StreamPosition(0),
-			customMetadata: _customMetadata
+			customMetadata: CustomMetadata
 		);
 
-		var writeResult = await _fixture.Client.SetStreamMetadataAsync(
+		var writeResult = await Fixture.Streams.SetStreamMetadataAsync(
 			stream,
 			StreamState.NoStream,
 			streamMetadata
@@ -347,7 +350,7 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
 
 		await Assert.ThrowsAsync<StreamNotFoundException>(
-			() => _fixture.Client
+			() => Fixture.Streams
 				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
 				.ToArrayAsync().AsTask()
 		);
@@ -361,7 +364,7 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 			streamMetadata.CustomMetadata
 		);
 
-		var metadataResult = await _fixture.Client.GetStreamMetadataAsync(stream);
+		var metadataResult = await Fixture.Streams.GetStreamMetadataAsync(stream);
 		Assert.Equal(new StreamPosition(0), metadataResult.MetastreamRevision);
 		Assert.Equal(expected, metadataResult.Metadata);
 	}
@@ -369,25 +372,25 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 	[Fact]
 	public async Task recreated_on_non_empty_when_metadata_set() {
 		const int count  = 2;
-		var       stream = _fixture.GetStreamName();
+		var       stream = Fixture.GetStreamName();
 
 		var streamMetadata = new StreamMetadata(
 			acl: new(deleteRole: "some-role"),
 			maxCount: 100,
-			customMetadata: _customMetadata
+			customMetadata: CustomMetadata
 		);
 
-		var writeResult = await _fixture.Client.AppendToStreamAsync(
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
 			StreamState.NoStream,
-			_fixture.CreateTestEvents(count)
+			Fixture.CreateTestEvents(count)
 		);
 
 		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
 
-		await _fixture.Client.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+		await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
 
-		writeResult = await _fixture.Client.SetStreamMetadataAsync(
+		writeResult = await Fixture.Streams.SetStreamMetadataAsync(
 			stream,
 			new StreamRevision(0),
 			streamMetadata
@@ -403,13 +406,13 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 			// truncated events can be read
 			await Task.Delay(200);
 
-		var actual = await _fixture.Client
+		var actual = await Fixture.Streams
 			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
 			.ToArrayAsync();
 
 		Assert.Empty(actual);
 
-		var metadataResult = await _fixture.Client.GetStreamMetadataAsync(stream);
+		var metadataResult = await Fixture.Streams.GetStreamMetadataAsync(stream);
 		var expected = new StreamMetadata(
 			streamMetadata.MaxCount,
 			streamMetadata.MaxAge,
@@ -420,10 +423,5 @@ public class deleted_stream : IClassFixture<deleted_stream.Fixture> {
 		);
 
 		Assert.Equal(expected, metadataResult.Metadata);
-	}
-
-	public class Fixture : EventStoreClientFixture {
-		protected override Task Given() => Task.CompletedTask;
-		protected override Task When()  => Task.CompletedTask;
 	}
 }

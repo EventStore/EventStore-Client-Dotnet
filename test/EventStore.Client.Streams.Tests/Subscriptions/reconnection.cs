@@ -47,8 +47,6 @@ public class ReconnectionFixture()
 			.With(o => o.ClientSettings.ConnectivitySettings.GossipTimeout = FromMilliseconds(100))
 	) {
 	
-
-
 	public async Task ProduceEvents(string streamName, int numberOfEvents, StreamState? streamState = null, CancellationToken cancellationToken = default) {
 		while (!cancellationToken.IsCancellationRequested) {
 			try {

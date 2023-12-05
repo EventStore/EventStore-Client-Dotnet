@@ -1,61 +1,46 @@
-﻿using Grpc.Core;
-using Polly;
+﻿using Polly;
 
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "Network")]
-public class append_to_stream_retry : IClassFixture<append_to_stream_retry.Fixture> {
-	readonly Fixture _fixture;
+[Network]
+[DedicatedDatabase]
+public class append_to_stream_retry : IClassFixture<EventStoreFixture> {
+	public append_to_stream_retry(ITestOutputHelper output, EventStoreFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	public append_to_stream_retry(Fixture fixture) => _fixture = fixture;
+	EventStoreFixture Fixture { get; }
 
 	[Fact]
 	public async Task can_retry() {
-		var stream = _fixture.GetStreamName();
+		var stream = Fixture.GetStreamName();
 
 		// can definitely write without throwing
-		var nextExpected = (await WriteAnEventAsync(StreamRevision.None)).NextExpectedStreamRevision;
-		Assert.Equal(new(0), nextExpected);
-
-		_fixture.TestServer.Stop();
-
-		// writeTask cannot complete because ES is stopped
-		var ex = await Assert.ThrowsAnyAsync<Exception>(() => WriteAnEventAsync(new(0)));
-		Assert.True(
-			ex is RpcException {
-				Status.StatusCode: StatusCode.Unavailable
-			} or DiscoveryException
+		var result = await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamRevision.None,
+			Fixture.CreateTestEvents()
 		);
 
-		await _fixture.TestServer.StartAsync().WithTimeout();
+		result.NextExpectedStreamRevision.ShouldBe(new(0));
+
+		await Fixture.Service.Restart();
 
 		// write can be retried
 		var writeResult = await Policy
 			.Handle<Exception>()
 			.WaitAndRetryAsync(2, _ => TimeSpan.FromSeconds(1))
-			.ExecuteAsync(async () => await WriteAnEventAsync(new(0)));
-
-		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
-		
-		return;
-
-		Task<IWriteResult> WriteAnEventAsync(StreamRevision expectedRevision) =>
-			_fixture.Client.AppendToStreamAsync(
-				stream,
-				expectedRevision,
-				_fixture.CreateTestEvents(1)
+			.ExecuteAsync(
+				async () => await Fixture.Streams.AppendToStreamAsync(
+					stream,
+					result.NextExpectedStreamRevision,
+					Fixture.CreateTestEvents()
+				)
 			);
-	}
 
-	public class Fixture : EventStoreClientFixture {
-		public Fixture() : base(
-			env: new() {
-				["EVENTSTORE_MEM_DB"] = "false"
-			}
-		) =>
-			Settings.ConnectivitySettings.MaxDiscoverAttempts = 2;
-
-		protected override Task Given() => Task.CompletedTask;
-		protected override Task When()  => Task.CompletedTask;
+		writeResult.NextExpectedStreamRevision.ShouldBe(new(1));
 	}
 }
+
+public class StreamRetryFixture() : EventStoreFixture(
+	x => x.RunInMemory(false).With(o => o.ClientSettings.ConnectivitySettings.MaxDiscoverAttempts = 2)
+);

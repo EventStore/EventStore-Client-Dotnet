@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
-
+﻿using System.Net;
 using TChannel = Grpc.Net.Client.GrpcChannel;
 
 namespace EventStore.Client {
@@ -11,7 +6,7 @@ namespace EventStore.Client {
 	// Deals with the disposal difference between grpc.net and grpc.core
 	// Thread safe.
 	internal class ChannelCache :
-		IDisposable, // for grpc.net we can dispose synchronously, but not for grpc.core
+		//IDisposable, // for grpc.net we can dispose synchronously, but not for grpc.core
 		IAsyncDisposable {
 
 		private readonly EventStoreClientSettings _settings;

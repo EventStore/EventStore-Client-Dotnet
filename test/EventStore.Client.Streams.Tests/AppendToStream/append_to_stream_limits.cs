@@ -34,8 +34,7 @@ public class append_to_stream_limits : IClassFixture<StreamLimitsFixture> {
 	}
 }
 
-public class StreamLimitsFixture()
-	: EventStoreFixture(x => x.WithMaxAppendSize(MaxAppendSize)) {
+public class StreamLimitsFixture() : EventStoreFixture(x => x.WithMaxAppendSize(MaxAppendSize)) {
 	public const uint MaxAppendSize = 64;
 	
 	public (IEnumerable<EventData> Events, uint size) CreateTestEventsUpToMaxSize(uint maxSize) {

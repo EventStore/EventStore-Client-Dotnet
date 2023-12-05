@@ -1,34 +1,34 @@
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "LongRunning")]
-public class read_all_events_backward : IClassFixture<read_all_events_backward.Fixture> {
-	const    string  Stream = "stream";
-	readonly Fixture _fixture;
+[LongRunning]
+public class read_all_events_backward : IClassFixture<ReadAllEventsBackward> {
+	public read_all_events_backward(ITestOutputHelper output, ReadAllEventsBackward fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	public read_all_events_backward(Fixture fixture) => _fixture = fixture;
+	ReadAllEventsBackward Fixture { get; }
 
 	[Fact]
 	public async Task return_empty_if_reading_from_start() {
-		var count = await _fixture.Client.ReadAllAsync(Direction.Backwards, Position.Start, 1).CountAsync();
+		var count = await Fixture.Streams.ReadAllAsync(Direction.Backwards, Position.Start, 1).CountAsync();
 		Assert.Equal(0, count);
 	}
 
 	[Fact]
 	public async Task return_partial_slice_if_not_enough_events() {
-		var events = await _fixture.Client.ReadAllAsync(Direction.Backwards, Position.End, _fixture.Events.Length * 2)
+		var events = await Fixture.Streams.ReadAllAsync(Direction.Backwards, Position.End, Fixture.Events.Length * 2)
 			.ToArrayAsync();
 
-		Assert.True(events.Length < _fixture.Events.Length * 2);
+		Assert.True(events.Length < Fixture.Events.Length * 2);
 	}
 
 	[Fact]
 	public async Task return_events_in_reversed_order_compared_to_written() {
-		var events = await _fixture.Client.ReadAllAsync(Direction.Backwards, Position.End, _fixture.Events.Length)
+		var events = await Fixture.Streams.ReadAllAsync(Direction.Backwards, Position.End, Fixture.Events.Length)
 			.ToArrayAsync();
 
 		Assert.True(
 			EventDataComparer.Equal(
-				_fixture.Events.Reverse().ToArray(),
+				Fixture.Events.Reverse().ToArray(),
 				events.AsResolvedTestEvents().ToArray()
 			)
 		);
@@ -36,13 +36,13 @@ public class read_all_events_backward : IClassFixture<read_all_events_backward.F
 
 	[Fact]
 	public async Task return_single_event() {
-		var events = await _fixture.Client.ReadAllAsync(Direction.Backwards, Position.End, 1)
+		var events = await Fixture.Streams.ReadAllAsync(Direction.Backwards, Position.End, 1)
 			.ToArrayAsync();
 
 		var actualEvent = Assert.Single(events.AsResolvedTestEvents());
 		Assert.True(
 			EventDataComparer.Equal(
-				_fixture.Events.Last(),
+				Fixture.Events.Last(),
 				actualEvent
 			)
 		);
@@ -59,16 +59,18 @@ public class read_all_events_backward : IClassFixture<read_all_events_backward.F
 
 	[Fact]
 	public async Task max_count_is_respected() {
-		var maxCount = _fixture.Events.Length / 2;
-		var events = await _fixture.Client.ReadAllAsync(Direction.Backwards, Position.End, maxCount)
-			.Take(_fixture.Events.Length)
+		var maxCount = Fixture.Events.Length / 2;
+		var events = await Fixture.Streams.ReadAllAsync(Direction.Backwards, Position.End, maxCount)
+			.Take(Fixture.Events.Length)
 			.ToArrayAsync();
 
 		Assert.Equal(maxCount, events.Length);
 	}
+}
 
-	public class Fixture : EventStoreClientFixture {
-		public Fixture() =>
+public class ReadAllEventsBackward : EventStoreFixture {
+	public ReadAllEventsBackward() {
+		OnSetup = async () => {
 			Events = Enumerable
 				.Concat(
 					CreateTestEvents(20),
@@ -76,19 +78,18 @@ public class read_all_events_backward : IClassFixture<read_all_events_backward.F
 				)
 				.ToArray();
 
-		public EventData[] Events { get; }
+			var streamName = GetStreamName();
 
-		protected override async Task Given() {
-			var result = await Client.SetStreamMetadataAsync(
+			var result = await Streams.SetStreamMetadataAsync(
 				SystemStreams.AllStream,
 				StreamState.NoStream,
 				new(acl: new(SystemRoles.All)),
 				userCredentials: TestCredentials.Root
 			);
 
-			await Client.AppendToStreamAsync(Stream, StreamState.NoStream, Events);
-		}
-
-		protected override Task When() => Task.CompletedTask;
+			await Streams.AppendToStreamAsync(streamName, StreamState.NoStream, Events);
+		};
 	}
+
+	public EventData[] Events { get; private set; } = Array.Empty<EventData>();
 }
