@@ -2,6 +2,8 @@ using System.Text;
 
 namespace EventStore.Client.Streams.Tests;
 
+[Trait("Category", "Stream")]
+[Trait("Category", "Read")]
 public abstract class read_events_linked_to_deleted_stream(ReadEventsLinkedToDeletedStreamFixture fixture) {
 	ReadEventsLinkedToDeletedStreamFixture Fixture { get; } = fixture;
 
@@ -17,13 +19,13 @@ public abstract class read_events_linked_to_deleted_stream(ReadEventsLinkedToDel
 	[Fact]
 	public void the_event_is_not_resolved() => Assert.False(Fixture.Events![0].IsResolved);
 	
-	public class @forwards(ReadEventsLinkedToDeletedStreamFixture fixture)
+	public class @forwards(forwards.CustomFixture fixture)
 		: read_events_linked_to_deleted_stream(fixture), IClassFixture<forwards.CustomFixture> {
 		
 		public class CustomFixture() : ReadEventsLinkedToDeletedStreamFixture(Direction.Forwards);
 	}
 	
-	public class @backwards(ReadEventsLinkedToDeletedStreamFixture fixture)
+	public class @backwards(backwards.CustomFixture fixture)
 		: read_events_linked_to_deleted_stream(fixture), IClassFixture<backwards.CustomFixture> {
 		
 		public class CustomFixture() : ReadEventsLinkedToDeletedStreamFixture(Direction.Backwards);

@@ -1,6 +1,7 @@
 namespace EventStore.Client.Streams.Tests; 
 
-[Network]
+[Trait("Category", "Network")]
+[Trait("Category", "Delete")]
 public class deleting_stream : IClassFixture<EventStoreFixture> {
 	public deleting_stream(ITestOutputHelper output, EventStoreFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

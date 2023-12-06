@@ -1,5 +1,6 @@
 namespace EventStore.Client.Streams.Tests.Security; 
 
+[Trait("Category", "Security")]
 public class stream_security_inheritance : IClassFixture<stream_security_inheritance.CustomFixture> {
 	public stream_security_inheritance(ITestOutputHelper output, CustomFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
 

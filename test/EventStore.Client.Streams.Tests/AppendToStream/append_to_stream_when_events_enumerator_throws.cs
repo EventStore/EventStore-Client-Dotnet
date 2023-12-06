@@ -1,5 +1,7 @@
 namespace EventStore.Client.Streams.Tests; 
 
+[Trait("Category", "Stream")]
+[Trait("Category", "Append")]
 public class append_to_stream_when_events_enumerator_throws : IClassFixture<EventStoreFixture> {
 	public append_to_stream_when_events_enumerator_throws(ITestOutputHelper output, EventStoreFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

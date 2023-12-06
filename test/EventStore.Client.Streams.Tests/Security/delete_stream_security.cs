@@ -1,5 +1,6 @@
 namespace EventStore.Client.Streams.Tests.Security; 
 
+[Trait("Category", "Security")]
 public class delete_stream_security : IClassFixture<SecurityFixture> {
 	public delete_stream_security(ITestOutputHelper output, SecurityFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

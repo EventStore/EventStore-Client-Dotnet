@@ -1,5 +1,6 @@
 namespace EventStore.Client.Streams.Tests.Security; 
 
+[Trait("Category", "Security")]
 public class multiple_role_security : IClassFixture<multiple_role_security.CustomFixture> {
 	public multiple_role_security(ITestOutputHelper output, CustomFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

@@ -1,5 +1,6 @@
 namespace EventStore.Client.Streams.Tests.Security; 
 
+[Trait("Category", "Security")]
 public class all_stream_with_no_acl_security : IClassFixture<all_stream_with_no_acl_security.CustomFixture> {
 	public all_stream_with_no_acl_security(ITestOutputHelper output, CustomFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

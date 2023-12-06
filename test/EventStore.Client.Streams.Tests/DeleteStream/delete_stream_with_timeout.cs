@@ -2,7 +2,8 @@
 
 namespace EventStore.Client.Streams.Tests; 
 
-[Network]
+[Trait("Category", "Network")]
+[Trait("Category", "Delete")]
 public class deleting_stream_with_timeout : IClassFixture<EventStoreFixture> {
 	public deleting_stream_with_timeout(ITestOutputHelper output, EventStoreFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

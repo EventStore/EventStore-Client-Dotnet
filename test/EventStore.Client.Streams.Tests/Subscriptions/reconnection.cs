@@ -3,9 +3,9 @@ using static System.TimeSpan;
 
 namespace EventStore.Client.Streams.Tests; 
 
+[Trait("Category", "Subscriptions")]
 public class @reconnection : IClassFixture<ReconnectionFixture> {
-	public reconnection(ITestOutputHelper output, ReconnectionFixture fixture) => 
-		Fixture = fixture.With(x => x.CaptureTestRun(output));
+	public reconnection(ITestOutputHelper output, ReconnectionFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
 
 	ReconnectionFixture Fixture { get; }
 	

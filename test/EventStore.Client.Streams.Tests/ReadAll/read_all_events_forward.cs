@@ -1,6 +1,8 @@
 namespace EventStore.Client.Streams.Tests;
 
-[LongRunning]
+[Trait("Category", "LongRunning")]
+[Trait("Category", "AllStream")]
+[Trait("Category", "Read")]
 public class read_all_events_forward : IClassFixture<ReadAllEventsForward> {
 	public read_all_events_forward(ITestOutputHelper output, ReadAllEventsForward fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

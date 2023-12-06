@@ -2,6 +2,7 @@
 
 namespace EventStore.Client.Streams.Tests.Bugs; 
 
+[Trait("Category", "Bug")]
 public class Issue_2544 : IClassFixture<EventStoreFixture> {
 	public Issue_2544(ITestOutputHelper output, EventStoreFixture fixture) {
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

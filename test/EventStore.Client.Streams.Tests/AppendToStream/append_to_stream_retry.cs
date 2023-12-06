@@ -2,8 +2,10 @@
 
 namespace EventStore.Client.Streams.Tests;
 
-[Network]
-[DedicatedDatabase]
+[Trait("Category", "Network")]
+[Trait("Category", "DedicatedDatabase")]
+[Trait("Category", "Stream")]
+[Trait("Category", "Append")]
 public class append_to_stream_retry : IClassFixture<EventStoreFixture> {
 	public append_to_stream_retry(ITestOutputHelper output, EventStoreFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

@@ -1,6 +1,8 @@
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests;
 
-[Network]
+[Trait("Category", "Network")]
+[Trait("Category", "Stream")]
+[Trait("Category", "Append")]
 public class append_to_stream : IClassFixture<EventStoreFixture> {
 	public append_to_stream(ITestOutputHelper output, EventStoreFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

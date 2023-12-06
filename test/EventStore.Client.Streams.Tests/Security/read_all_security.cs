@@ -1,5 +1,6 @@
 namespace EventStore.Client.Streams.Tests.Security; 
 
+[Trait("Category", "Security")]
 public class read_all_security : IClassFixture<SecurityFixture> {
 	public read_all_security(ITestOutputHelper output, SecurityFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

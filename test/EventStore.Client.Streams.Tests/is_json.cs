@@ -3,7 +3,7 @@ using System.Text;
 
 namespace EventStore.Client.Streams.Tests;
 
-[Network]
+[Trait("Category", "Network")]
 [LongRunning]
 public class is_json : IClassFixture<EventStoreFixture> {
 	public is_json(ITestOutputHelper output, EventStoreFixture fixture) =>

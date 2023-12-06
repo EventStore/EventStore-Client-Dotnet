@@ -1,6 +1,8 @@
 namespace EventStore.Client.Streams.Tests;
 
-[Network]
+[Trait("Category", "Network")]
+[Trait("Category", "Stream")]
+[Trait("Category", "Read")]
 public class read_stream_backward_messages : IClassFixture<EventStoreFixture> {
 	public read_stream_backward_messages(ITestOutputHelper output, EventStoreFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

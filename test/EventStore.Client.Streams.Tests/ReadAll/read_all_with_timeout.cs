@@ -1,26 +1,24 @@
 ﻿using Grpc.Core;
 
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests;
 
-[Network]
-public class read_stream_with_timeout : IClassFixture<EventStoreFixture> {
-	public read_stream_with_timeout(ITestOutputHelper output, EventStoreFixture fixture) =>
+[Trait("Category", "Network")]
+[Trait("Category", "LongRunning")]
+[Trait("Category", "AllStream")]
+[Trait("Category", "Read")]
+public class read_all_with_timeout : IClassFixture<EventStoreFixture> {
+	public read_all_with_timeout(ITestOutputHelper output, EventStoreFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
 	EventStoreFixture Fixture { get; }
 
 	[Fact]
 	public async Task fails_when_operation_expired() {
-		var stream = Fixture.GetStreamName();
-
-		await Fixture.Streams.AppendToStreamAsync(stream, StreamRevision.None, Fixture.CreateTestEvents());
-
 		var rpcException = await Assert.ThrowsAsync<RpcException>(
 			() => Fixture.Streams
-				.ReadStreamAsync(
+				.ReadAllAsync(
 					Direction.Backwards,
-					stream,
-					StreamPosition.End,
+					Position.Start,
 					1,
 					false,
 					TimeSpan.Zero
@@ -30,6 +28,4 @@ public class read_stream_with_timeout : IClassFixture<EventStoreFixture> {
 
 		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
 	}
-
-	
 }

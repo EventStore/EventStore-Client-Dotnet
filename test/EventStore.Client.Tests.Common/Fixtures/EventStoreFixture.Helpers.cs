@@ -4,7 +4,7 @@ using System.Text;
 namespace EventStore.Client.Tests;
 
 public partial class EventStoreFixture {
-	const string TestEventType = "-";
+	public const string TestEventType = "tst";
 
 	public T NewClient<T>(Action<EventStoreClientSettings> configure) where T : EventStoreClientBase, new() =>
 		(T)Activator.CreateInstance(typeof(T), new object?[] { ClientSettings.With(configure) })!;

@@ -1,6 +1,8 @@
 namespace EventStore.Client.Streams.Tests;
 
-[LongRunning]
+[Trait("Category", "LongRunning")]
+[Trait("Category", "Stream")]
+[Trait("Category", "Read")]
 public class when_having_max_count_set_for_stream : IClassFixture<EventStoreFixture> {
 	public when_having_max_count_set_for_stream(ITestOutputHelper output, EventStoreFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

@@ -2,7 +2,9 @@
 
 namespace EventStore.Client.Streams.Tests;
 
-[Network]
+[Trait("Category", "Network")]
+[Trait("Category", "Stream")]
+[Trait("Category", "Append")]
 public class append_to_stream_with_timeout : IClassFixture<EventStoreFixture> {
 	public append_to_stream_with_timeout(ITestOutputHelper output, EventStoreFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

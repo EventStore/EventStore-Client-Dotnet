@@ -2,7 +2,8 @@ using System.Text.Json;
 
 namespace EventStore.Client.Streams.Tests;
 
-[LongRunning]
+[Trait("Category", "LongRunning")]
+[Trait("Category", "StreamMetadata")]
 public class stream_metadata : IClassFixture<EventStoreFixture> {
 	public stream_metadata(ITestOutputHelper output, EventStoreFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

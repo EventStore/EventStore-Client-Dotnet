@@ -2,7 +2,9 @@ using System.Text;
 
 namespace EventStore.Client.Streams.Tests; 
 
-[LongRunning]
+[Trait("Category", "LongRunning")]
+[Trait("Category", "AllStream")]
+[Trait("Category", "Read")]
 public class read_all_events_forward_with_linkto_passed_max_count : IClassFixture<EventStoreFixture> {
 	public read_all_events_forward_with_linkto_passed_max_count(ITestOutputHelper output, EventStoreFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

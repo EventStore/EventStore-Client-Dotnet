@@ -1,6 +1,8 @@
 namespace EventStore.Client.Streams.Tests; 
 
-[LongRunning]
+[Trait("Category", "LongRunning")]
+[Trait("Category", "Stream")]
+[Trait("Category", "Append")]
 public class appending_to_implicitly_created_stream
 	: IClassFixture<EventStoreFixture> {
 	public appending_to_implicitly_created_stream(ITestOutputHelper output, EventStoreFixture fixture) =>

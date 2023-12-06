@@ -2,8 +2,8 @@ using System.Text.Json;
 
 namespace EventStore.Client.Streams.Tests;
 
-[LongRunning]
-
+[Trait("Category", "LongRunning")]
+[Trait("Category", "Delete")]
 public class deleted_stream : IClassFixture<EventStoreFixture> {
 	public deleted_stream(ITestOutputHelper output, EventStoreFixture fixture) {
 		Fixture = fixture.With(x => x.CaptureTestRun(output));

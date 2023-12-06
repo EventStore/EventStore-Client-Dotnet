@@ -2,6 +2,8 @@ using Grpc.Core;
 
 namespace EventStore.Client.Streams.Tests;
 
+[Trait("Category", "Stream")]
+[Trait("Category", "Append")]
 public class sending_and_receiving_large_messages : IClassFixture<sending_and_receiving_large_messages.CustomFixture> {
 	public sending_and_receiving_large_messages(ITestOutputHelper output, CustomFixture fixture) =>
 		Fixture = fixture.With(x => x.CaptureTestRun(output));
