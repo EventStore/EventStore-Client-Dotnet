@@ -1,14 +1,11 @@
+using Grpc.Core;
+
 namespace EventStore.Client.Streams.Tests;
 
 [Trait("Category", "Network")]
 [Trait("Category", "Stream")]
 [Trait("Category", "Read")]
-public class read_stream_backward : IClassFixture<EventStoreFixture> {
-	public read_stream_backward(ITestOutputHelper output, EventStoreFixture fixture) =>
-		Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	EventStoreFixture Fixture { get; }
-
+public class read_stream_backward(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) {
 	[Theory]
 	[InlineData(0)]
 	public async Task count_le_equal_zero_throws(long maxCount) {
@@ -183,5 +180,98 @@ public class read_stream_backward : IClassFixture<EventStoreFixture> {
 		Assert.Single(actual);
 		Assert.Equal(writeResult.LogPosition.PreparePosition, writeResult.LogPosition.CommitPosition);
 		Assert.Equal(writeResult.LogPosition, actual.First().Position);
+	}
+	
+	[Fact]
+	public async Task with_timeout_fails_when_operation_expired() {
+		var stream = Fixture.GetStreamName();
+
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamRevision.None, Fixture.CreateTestEvents());
+
+		var rpcException = await Assert.ThrowsAsync<RpcException>(
+			() => Fixture.Streams
+				.ReadStreamAsync(
+					Direction.Backwards,
+					stream,
+					StreamPosition.End,
+					1,
+					false,
+					TimeSpan.Zero
+				)
+				.ToArrayAsync().AsTask()
+		);
+
+		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
+	}
+	
+	[Fact]
+	public async Task enumeration_referencing_messages_twice_does_not_throw() {
+		var result = Fixture.Streams.ReadStreamAsync(
+			Direction.Forwards,
+			"$users",
+			StreamPosition.Start,
+			32,
+			userCredentials: TestCredentials.Root
+		);
+
+		_ = result.Messages;
+		await result.Messages.ToArrayAsync();
+	}
+
+	[Fact]
+	public async Task enumeration_enumerating_messages_twice_throws() {
+		var result = Fixture.Streams.ReadStreamAsync(
+			Direction.Forwards,
+			"$users",
+			StreamPosition.Start,
+			32,
+			userCredentials: TestCredentials.Root
+		);
+
+		await result.Messages.ToArrayAsync();
+
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			async () =>
+				await result.Messages.ToArrayAsync()
+		);
+	}
+	
+	[Fact]
+	public async Task stream_not_found() {
+		var result = await Fixture.Streams.ReadStreamAsync(
+			Direction.Backwards,
+			Fixture.GetStreamName(),
+			StreamPosition.End
+		).Messages.SingleAsync();
+
+		Assert.Equal(StreamMessage.NotFound.Instance, result);
+	}
+
+	[Fact]
+	public async Task stream_found() {
+		const int eventCount = 32;
+		
+		var events = Fixture.CreateTestEvents(eventCount).ToArray();
+
+		var streamName = Fixture.GetStreamName();
+
+		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, events);
+
+		var result = await Fixture.Streams.ReadStreamAsync(
+			Direction.Backwards,
+			streamName,
+			StreamPosition.End
+		).Messages.ToArrayAsync();
+
+		Assert.Equal(
+			eventCount + (Fixture.EventStoreHasLastStreamPosition ? 2 : 1),
+			result.Length
+		);
+
+		Assert.Equal(StreamMessage.Ok.Instance, result[0]);
+		Assert.Equal(eventCount, result.OfType<StreamMessage.Event>().Count());
+
+		if (Fixture.EventStoreHasLastStreamPosition)
+			Assert.Equal(new StreamMessage.LastStreamPosition(new(31)), result[^1]);
 	}
 }

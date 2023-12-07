@@ -1,14 +1,7 @@
-namespace EventStore.Client.Streams.Tests.Security; 
+namespace EventStore.Client.Streams.Tests.Security;
 
 [Trait("Category", "Security")]
-public class all_stream_with_no_acl_security : IClassFixture<all_stream_with_no_acl_security.CustomFixture> {
-	public all_stream_with_no_acl_security(ITestOutputHelper output, CustomFixture fixture) =>
-		Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	CustomFixture Fixture { get; }
-
-	public all_stream_with_no_acl_security(CustomFixture fixture) => Fixture = fixture;
-
+public class all_stream_with_no_acl_security(ITestOutputHelper output, all_stream_with_no_acl_security.CustomFixture fixture) : EventStoreTests<all_stream_with_no_acl_security.CustomFixture>(output, fixture) {
 	[Fact]
 	public async Task write_to_all_is_never_allowed() {
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.AppendStream(SecurityFixture.AllStream));
@@ -56,19 +49,14 @@ public class all_stream_with_no_acl_security : IClassFixture<all_stream_with_no_
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.WriteMeta(SecurityFixture.AllStream, TestCredentials.TestUser1));
 
 	[Fact]
-	public Task meta_write_is_allowed_for_admin_user() => 
+	public Task meta_write_is_allowed_for_admin_user() =>
 		Fixture.WriteMeta(SecurityFixture.AllStream, TestCredentials.TestAdmin);
 
 	public class CustomFixture : SecurityFixture {
 		protected override async Task Given() {
 			await base.Given();
-			
-			await Streams.SetStreamMetadataAsync(
-				AllStream,
-				StreamState.Any,
-				new(),
-				userCredentials: TestCredentials.Root
-			);
+
+			await Streams.SetStreamMetadataAsync(AllStream, StreamState.Any, new(), userCredentials: TestCredentials.Root);
 		}
 	}
 }

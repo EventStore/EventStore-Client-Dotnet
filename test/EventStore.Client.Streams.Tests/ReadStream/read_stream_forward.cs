@@ -3,12 +3,7 @@ namespace EventStore.Client.Streams.Tests;
 [Trait("Category", "Network")]
 [Trait("Category", "Stream")]
 [Trait("Category", "Read")]
-public class read_stream_forward : IClassFixture<EventStoreFixture> {
-	public read_stream_forward(ITestOutputHelper output, EventStoreFixture fixture) =>
-		Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	EventStoreFixture Fixture { get; }
-
+public class read_stream_forward(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) {
 	[Theory]
 	[InlineData(0)]
 	public async Task count_le_equal_zero_throws(long maxCount) {
@@ -180,5 +175,92 @@ public class read_stream_forward : IClassFixture<EventStoreFixture> {
 		Assert.Single(actual);
 		Assert.Equal(writeResult.LogPosition.PreparePosition, writeResult.LogPosition.CommitPosition);
 		Assert.Equal(writeResult.LogPosition, actual.First().Position);
+	}
+
+	[Fact]
+	public async Task stream_not_found() {
+		var result = await Fixture.Streams.ReadStreamAsync(
+			Direction.Forwards,
+			Fixture.GetStreamName(),
+			StreamPosition.Start
+		).Messages.SingleAsync();
+
+		Assert.Equal(StreamMessage.NotFound.Instance, result);
+	}
+
+	[Fact]
+	public async Task stream_found() {
+		const int eventCount = 64;
+		
+		var events = Fixture.CreateTestEvents(eventCount).ToArray();
+
+		var streamName = Fixture.GetStreamName();
+
+		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, events);
+
+		var result = await Fixture.Streams.ReadStreamAsync(
+			Direction.Forwards,
+			streamName,
+			StreamPosition.Start
+		).Messages.ToArrayAsync();
+
+		Assert.Equal(
+			eventCount + (Fixture.EventStoreHasLastStreamPosition ? 2 : 1),
+			result.Length
+		);
+
+		Assert.Equal(StreamMessage.Ok.Instance, result[0]);
+		Assert.Equal(eventCount, result.OfType<StreamMessage.Event>().Count());
+		var first = Assert.IsType<StreamMessage.Event>(result[1]);
+		Assert.Equal(new(0), first.ResolvedEvent.OriginalEventNumber);
+		var last = Assert.IsType<StreamMessage.Event>(result[Fixture.EventStoreHasLastStreamPosition ? ^2 : ^1]);
+		Assert.Equal(new((ulong)eventCount - 1), last.ResolvedEvent.OriginalEventNumber);
+
+		if (Fixture.EventStoreHasLastStreamPosition)
+			Assert.Equal(
+				new StreamMessage.LastStreamPosition(new((ulong)eventCount - 1)),
+				result[^1]
+			);
+	}
+
+	[Fact]
+	public async Task stream_found_truncated() {
+		const int eventCount = 64;
+		
+		var events = Fixture.CreateTestEvents(eventCount).ToArray();
+
+		var streamName = Fixture.GetStreamName();
+
+		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, events);
+
+		await Fixture.Streams.SetStreamMetadataAsync(
+			streamName,
+			StreamState.Any,
+			new(truncateBefore: new StreamPosition(32))
+		);
+
+		var result = await Fixture.Streams.ReadStreamAsync(
+			Direction.Forwards,
+			streamName,
+			StreamPosition.Start
+		).Messages.ToArrayAsync();
+
+		Assert.Equal(
+			eventCount - 32 + (Fixture.EventStoreHasLastStreamPosition ? 3 : 1),
+			result.Length
+		);
+
+		Assert.Equal(StreamMessage.Ok.Instance, result[0]);
+
+		if (Fixture.EventStoreHasLastStreamPosition)
+			Assert.Equal(new StreamMessage.FirstStreamPosition(new(32)), result[1]);
+
+		Assert.Equal(32, result.OfType<StreamMessage.Event>().Count());
+
+		if (Fixture.EventStoreHasLastStreamPosition)
+			Assert.Equal(
+				new StreamMessage.LastStreamPosition(new((ulong)eventCount - 1)),
+				result[^1]
+			);
 	}
 }

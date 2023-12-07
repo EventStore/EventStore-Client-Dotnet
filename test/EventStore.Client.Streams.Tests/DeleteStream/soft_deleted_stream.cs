@@ -4,10 +4,10 @@ namespace EventStore.Client.Streams.Tests;
 
 [Trait("Category", "LongRunning")]
 [Trait("Category", "Delete")]
-public class deleted_stream : IClassFixture<EventStoreFixture> {
-	public deleted_stream(ITestOutputHelper output, EventStoreFixture fixture) {
-		Fixture = fixture.With(x => x.CaptureTestRun(output));
+public class deleted_stream(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) {
+	static JsonDocument CustomMetadata { get; }
 
+	static deleted_stream() {
 		var customMetadata = new Dictionary<string, object> {
 			["key1"] = true,
 			["key2"] = 17,
@@ -16,10 +16,7 @@ public class deleted_stream : IClassFixture<EventStoreFixture> {
 
 		CustomMetadata = JsonDocument.Parse(JsonSerializer.Serialize(customMetadata));
 	}
-
-	EventStoreFixture Fixture        { get; }
-	JsonDocument      CustomMetadata { get; }
-
+	
 	[Fact]
 	public async Task reading_throws() {
 		var stream = Fixture.GetStreamName();
@@ -129,7 +126,8 @@ public class deleted_stream : IClassFixture<EventStoreFixture> {
 	[Fact]
 	public async Task recreated_preserves_metadata_except_truncate_before() {
 		const int count  = 2;
-		var       stream = Fixture.GetStreamName();
+
+		var stream = Fixture.GetStreamName();
 
 		var writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
@@ -225,12 +223,11 @@ public class deleted_stream : IClassFixture<EventStoreFixture> {
 	public async Task allows_recreating_for_first_write_only_throws_wrong_expected_version() {
 		var stream = Fixture.GetStreamName();
 
-		var writeResult =
-			await Fixture.Streams.AppendToStreamAsync(
-				stream,
-				StreamState.NoStream,
-				Fixture.CreateTestEvents(2)
-			);
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			Fixture.CreateTestEvents(2)
+		);
 
 		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
 
@@ -257,8 +254,7 @@ public class deleted_stream : IClassFixture<EventStoreFixture> {
 	public async Task allows_recreating_for_first_write_only_returns_wrong_expected_version() {
 		var stream = Fixture.GetStreamName();
 
-		var writeResult =
-			await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents(2));
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents(2));
 
 		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
 
@@ -372,7 +368,8 @@ public class deleted_stream : IClassFixture<EventStoreFixture> {
 	[Fact]
 	public async Task recreated_on_non_empty_when_metadata_set() {
 		const int count  = 2;
-		var       stream = Fixture.GetStreamName();
+
+		var stream = Fixture.GetStreamName();
 
 		var streamMetadata = new StreamMetadata(
 			acl: new(deleteRole: "some-role"),

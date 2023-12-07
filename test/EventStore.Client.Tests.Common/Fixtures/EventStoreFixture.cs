@@ -189,3 +189,20 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 
 	async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
 }
+
+[CollectionDefinition(nameof(EventStoreSharedDatabaseFixture))]
+public class EventStoreSharedDatabaseFixture : ICollectionFixture<EventStoreFixture> {
+	// This class has no code, and is never created. Its purpose is simply
+	// to be the place to apply [CollectionDefinition] and all the
+	// ICollectionFixture<> interfaces.
+}
+
+public abstract class EventStoreTests<TFixture> : IClassFixture<TFixture> where TFixture : EventStoreFixture {
+	protected EventStoreTests(ITestOutputHelper output, TFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
+
+	protected TFixture Fixture { get; }
+}
+
+[Collection(nameof(EventStoreSharedDatabaseFixture))]
+public abstract class EventStoreSharedDatabaseTests<TFixture>(ITestOutputHelper output, TFixture fixture) : EventStoreTests<TFixture>(output, fixture)
+	where TFixture : EventStoreFixture;

@@ -1,12 +1,7 @@
 namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "Subscriptions")]
 [Trait("Category", "AllStream")]
-public class subscribe_to_all : IClassFixture<SubscriptionsFixture> {
-	public subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	SubscriptionsFixture Fixture { get; }
-	
+public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fixture) : EventStoreTests<SubscriptionsFixture>(output, fixture) {
 	[Fact]
 	public async Task receives_all_events_from_start() {
 		var receivedAllEvents   = new TaskCompletionSource<bool>();
@@ -590,7 +585,6 @@ public class subscribe_to_all : IClassFixture<SubscriptionsFixture> {
 		await Fixture.Streams.AppendToStreamAsync(Fixture.GetStreamName(), StreamState.NoStream, Fixture.CreateTestEvents());
 
 		var result = await subscriptionDropped.Task.WithTimeout();
-		
 		result.ShouldBe(expectedResult);
 	}
 }

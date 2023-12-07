@@ -4,13 +4,8 @@ using System.Text;
 namespace EventStore.Client.Streams.Tests;
 
 [Trait("Category", "Network")]
-[LongRunning]
-public class is_json : IClassFixture<EventStoreFixture> {
-	public is_json(ITestOutputHelper output, EventStoreFixture fixture) =>
-		Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	EventStoreFixture Fixture { get; }
-
+[Trait("Category", "LongRunning")]
+public class is_json(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) { 
 	public static IEnumerable<object?[]> TestCases() {
 		var json = @"{""some"":""json""}";
 

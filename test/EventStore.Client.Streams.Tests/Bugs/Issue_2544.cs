@@ -169,16 +169,3 @@ public class Issue_2544 : IClassFixture<EventStoreFixture> {
 		return Task.CompletedTask;
 	}
 }
-
-public class IssueFixture : EventStoreFixture {
-	public IssueFixture() { 
-		OnSetup = async () => {
-			await Streams.SetStreamMetadataAsync(
-				SystemStreams.AllStream,
-				StreamState.Any,
-				new(acl: new(SystemRoles.All)),
-				userCredentials: TestCredentials.Root
-			);
-		};
-	}
-}

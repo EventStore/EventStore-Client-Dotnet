@@ -1,11 +1,7 @@
 namespace EventStore.Client.Streams.Tests.Security; 
 
 [Trait("Category", "Security")]
-public class system_stream_security : IClassFixture<SecurityFixture> {
-	public system_stream_security(ITestOutputHelper output, SecurityFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	SecurityFixture Fixture { get; }
-
+public class system_stream_security(ITestOutputHelper output, SecurityFixture fixture) : EventStoreTests<SecurityFixture>(output, fixture) { 
 	[Fact]
 	public async Task operations_on_system_stream_with_no_acl_set_fail_for_non_admin() {
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadEvent("$system-no-acl", TestCredentials.TestUser1));

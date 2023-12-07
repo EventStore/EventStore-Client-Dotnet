@@ -6,14 +6,6 @@ using static Grpc.Core.StatusCode;
 
 namespace EventStore.Client.Interceptors;
 
-static class EnumerableExtensions {
-    public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> source) where TKey : notnull =>
-	    ToDictionary(source, null);
-
-    public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> source, IEqualityComparer<TKey>? comparer) where TKey : notnull =>
-	    new(source, comparer);
-}
-
 class TypedExceptionInterceptor : Interceptor {
 	static readonly Dictionary<string, Func<RpcException, Exception>> DefaultExceptionMap = new() {
 		[Exceptions.AccessDenied] = ex => ex.ToAccessDeniedException(),
@@ -21,7 +13,6 @@ class TypedExceptionInterceptor : Interceptor {
 	};
 
 	public TypedExceptionInterceptor(Dictionary<string, Func<RpcException, Exception>> customExceptionMap) {
-		//var map = DefaultExceptionMap.Concat(customExceptionMap).ToDictionary();	// net 8...
 		var map = new Dictionary<string, Func<RpcException, Exception>>(DefaultExceptionMap.Concat(customExceptionMap));
 
 		ConvertRpcException = rpcEx => {

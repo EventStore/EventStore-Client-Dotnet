@@ -1,12 +1,7 @@
 namespace EventStore.Client.Streams.Tests.Bugs;
 
 [Trait("Category", "Bug")]
-public class Issue_104 : IClassFixture<EventStoreFixture> {
-	public Issue_104(ITestOutputHelper output, EventStoreFixture fixture) =>
-		Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	EventStoreFixture Fixture { get; }
-
+public class Issue_104(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) { 
 	[Fact]
 	public async Task subscription_does_not_send_checkpoint_reached_after_disposal() {
 		var streamName                   = Fixture.GetStreamName();
@@ -52,6 +47,6 @@ public class Issue_104 : IClassFixture<EventStoreFixture> {
 
 		var delay  = Task.Delay(300);
 		var result = await Task.WhenAny(delay, checkpointReachAfterDisposed.Task);
-		Assert.Equal(delay, result); // iow 300ms have passed without seeing checkpointReachAfterDisposed
+		result.ShouldBe(delay); // iow 300ms have passed without seeing checkpointReachAfterDisposed
 	}
 }

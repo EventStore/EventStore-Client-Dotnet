@@ -1,5 +1,7 @@
 namespace EventStore.Client.Streams.Tests;
 
+[Trait("Category", "LongRunning")]
+[Trait("Category", "Subscriptions")]
 public class SubscriptionsFixture : EventStoreFixture {
 	public SubscriptionsFixture(): base(x => x.RunProjections()) {
 		OnSetup = async () => {

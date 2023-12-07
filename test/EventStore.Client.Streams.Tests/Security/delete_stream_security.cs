@@ -1,12 +1,7 @@
 namespace EventStore.Client.Streams.Tests.Security; 
 
 [Trait("Category", "Security")]
-public class delete_stream_security : IClassFixture<SecurityFixture> {
-	public delete_stream_security(ITestOutputHelper output, SecurityFixture fixture) =>
-		Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	SecurityFixture Fixture { get; }
-
+public class delete_stream_security(ITestOutputHelper output, SecurityFixture fixture) : EventStoreTests<SecurityFixture>(output, fixture) { 
 	[Fact]
 	public async Task delete_of_all_is_never_allowed() {
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.DeleteStream(SecurityFixture.AllStream));

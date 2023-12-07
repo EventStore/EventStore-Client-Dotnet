@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace EventStore.Client.Streams.Tests.Security;
 
-public abstract class SecurityFixture : InsecureClientTestFixture {
+public class SecurityFixture : EventStoreFixture {
 	public const string NoAclStream       = nameof(NoAclStream);
 	public const string ReadStream        = nameof(ReadStream);
 	public const string WriteStream       = nameof(WriteStream);
@@ -16,7 +16,7 @@ public abstract class SecurityFixture : InsecureClientTestFixture {
 
 	const int TimeoutMs = 1000;
 
-	public SecurityFixture() {
+	public SecurityFixture() : base(x => x.WithoutDefaultCredentials()) {
 		OnSetup = async () => {
 			await Users.CreateUserWithRetry(
 				TestCredentials.TestUser1.Username!,

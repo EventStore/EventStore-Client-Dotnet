@@ -4,8 +4,7 @@ public class EventDataTests {
 	[Fact]
 	public void EmptyEventIdThrows() {
 		var ex = Assert.Throws<ArgumentOutOfRangeException>(
-			() =>
-				new EventData(Uuid.Empty, "-", Array.Empty<byte>())
+			() => new EventData(Uuid.Empty, "-", Array.Empty<byte>())
 		);
 
 		Assert.Equal("eventId", ex.ParamName);

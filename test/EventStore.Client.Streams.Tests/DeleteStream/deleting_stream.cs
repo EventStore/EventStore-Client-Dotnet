@@ -1,13 +1,10 @@
+using Grpc.Core;
+
 namespace EventStore.Client.Streams.Tests; 
 
 [Trait("Category", "Network")]
 [Trait("Category", "Delete")]
-public class deleting_stream : IClassFixture<EventStoreFixture> {
-	public deleting_stream(ITestOutputHelper output, EventStoreFixture fixture) =>
-		Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	EventStoreFixture Fixture { get; }
-
+public class deleting_stream(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) { 
 	public static IEnumerable<object?[]> ExpectedStreamStateCases() {
 		yield return new object?[] { StreamState.Any, nameof(StreamState.Any) };
 		yield return new object?[] { StreamState.NoStream, nameof(StreamState.NoStream) };
@@ -81,5 +78,48 @@ public class deleting_stream : IClassFixture<EventStoreFixture> {
 		await Fixture.Streams.TombstoneAsync(stream, StreamState.NoStream);
 
 		await Assert.ThrowsAsync<StreamDeletedException>(() => Fixture.Streams.TombstoneAsync(stream, StreamState.NoStream));
+	}
+	
+	
+	[Fact]
+	public async Task with_timeout_any_stream_revision_delete_fails_when_operation_expired() {
+		var stream = Fixture.GetStreamName();
+		var rpcException = await Assert.ThrowsAsync<RpcException>(
+			() => Fixture.Streams.DeleteAsync(stream, StreamState.Any, TimeSpan.Zero)
+		);
+
+		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
+	}
+
+	[Fact]
+	public async Task with_timeout_stream_revision_delete_fails_when_operation_expired() {
+		var stream = Fixture.GetStreamName();
+
+		var rpcException = await Assert.ThrowsAsync<RpcException>(
+			() => Fixture.Streams.DeleteAsync(stream, new StreamRevision(0), TimeSpan.Zero)
+		);
+
+		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
+	}
+
+	[Fact]
+	public async Task with_timeout_any_stream_revision_tombstoning_fails_when_operation_expired() {
+		var stream = Fixture.GetStreamName();
+		var rpcException = await Assert.ThrowsAsync<RpcException>(
+			() => Fixture.Streams.TombstoneAsync(stream, StreamState.Any, TimeSpan.Zero)
+		);
+
+		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
+	}
+
+	[Fact]
+	public async Task with_timeout_stream_revision_tombstoning_fails_when_operation_expired() {
+		var stream = Fixture.GetStreamName();
+
+		var rpcException = await Assert.ThrowsAsync<RpcException>(
+			() => Fixture.Streams.TombstoneAsync(stream, new StreamRevision(0), TimeSpan.Zero)
+		);
+
+		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
 	}
 }

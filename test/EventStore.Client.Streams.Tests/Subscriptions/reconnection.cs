@@ -4,11 +4,7 @@ using static System.TimeSpan;
 namespace EventStore.Client.Streams.Tests; 
 
 [Trait("Category", "Subscriptions")]
-public class @reconnection : IClassFixture<ReconnectionFixture> {
-	public reconnection(ITestOutputHelper output, ReconnectionFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	ReconnectionFixture Fixture { get; }
-	
+public class @reconnection(ITestOutputHelper output, ReconnectionFixture fixture) : EventStoreTests<ReconnectionFixture>(output, fixture) {
 	[Theory]
 	[InlineData(4, 1000, 0, 15000)]
 	public async Task when_the_connection_is_lost(int expectedNumberOfEvents, int reconnectDelayMs, int serviceRestartDelayMs, int testTimeoutMs) {
@@ -45,8 +41,8 @@ public class ReconnectionFixture()
 		x => x.RunInMemory(false)
 			.With(o => o.ClientSettings.ConnectivitySettings.DiscoveryInterval = FromMilliseconds(100))
 			.With(o => o.ClientSettings.ConnectivitySettings.GossipTimeout = FromMilliseconds(100))
-	) {
-	
+	) 
+{
 	public async Task ProduceEvents(string streamName, int numberOfEvents, StreamState? streamState = null, CancellationToken cancellationToken = default) {
 		while (!cancellationToken.IsCancellationRequested) {
 			try {

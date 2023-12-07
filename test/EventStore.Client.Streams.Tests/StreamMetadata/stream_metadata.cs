@@ -1,15 +1,11 @@
 using System.Text.Json;
+using Grpc.Core;
 
 namespace EventStore.Client.Streams.Tests;
 
 [Trait("Category", "LongRunning")]
 [Trait("Category", "StreamMetadata")]
-public class stream_metadata : IClassFixture<EventStoreFixture> {
-	public stream_metadata(ITestOutputHelper output, EventStoreFixture fixture) =>
-		Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	EventStoreFixture Fixture { get; }
-
+public class stream_metadata(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) {
 	[Fact]
 	public async Task getting_for_an_existing_stream_and_no_metadata_exists() {
 		var stream = Fixture.GetStreamName();
@@ -154,5 +150,46 @@ public class stream_metadata : IClassFixture<EventStoreFixture> {
 		Assert.Equal(expected.TruncateBefore, actual.Metadata.TruncateBefore);
 		Assert.Equal(expected.CacheControl, actual.Metadata.CacheControl);
 		Assert.Equal(expected.Acl, actual.Metadata.Acl);
+	}
+	
+	[Fact]
+	public async Task with_timeout_set_with_any_stream_revision_fails_when_operation_expired() {
+		var stream = Fixture.GetStreamName();
+		var rpcException = await Assert.ThrowsAsync<RpcException>(
+			() =>
+				Fixture.Streams.SetStreamMetadataAsync(
+					stream,
+					StreamState.Any,
+					new(),
+					deadline: TimeSpan.Zero
+				)
+		);
+
+		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
+	}
+
+	[Fact]
+	public async Task with_timeout_set_with_stream_revision_fails_when_operation_expired() {
+		var stream = Fixture.GetStreamName();
+
+		var rpcException = await Assert.ThrowsAsync<RpcException>(
+			() =>
+				Fixture.Streams.SetStreamMetadataAsync(
+					stream,
+					new StreamRevision(0),
+					new(),
+					deadline: TimeSpan.Zero
+				)
+		);
+
+		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
+	}
+
+	[Fact]
+	public async Task with_timeout_get_fails_when_operation_expired() {
+		var stream = Fixture.GetStreamName();
+		var rpcException = await Assert.ThrowsAsync<RpcException>(
+			() => Fixture.Streams.GetStreamMetadataAsync(stream, TimeSpan.Zero)
+		);
 	}
 }

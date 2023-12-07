@@ -1,12 +1,7 @@
 namespace EventStore.Client.Streams.Tests.Security; 
 
 [Trait("Category", "Security")]
-public class multiple_role_security : IClassFixture<multiple_role_security.CustomFixture> {
-	public multiple_role_security(ITestOutputHelper output, CustomFixture fixture) =>
-		Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	CustomFixture Fixture { get; }
-
+public class multiple_role_security(ITestOutputHelper output, multiple_role_security.CustomFixture fixture) : EventStoreTests<multiple_role_security.CustomFixture>(output, fixture) {
 	[Fact]
 	public async Task multiple_roles_are_handled_correctly() {
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadEvent("usr-stream"));

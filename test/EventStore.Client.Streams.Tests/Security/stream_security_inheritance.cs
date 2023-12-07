@@ -1,11 +1,7 @@
 namespace EventStore.Client.Streams.Tests.Security; 
 
 [Trait("Category", "Security")]
-public class stream_security_inheritance : IClassFixture<stream_security_inheritance.CustomFixture> {
-	public stream_security_inheritance(ITestOutputHelper output, CustomFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	CustomFixture Fixture { get; }
-
+public class stream_security_inheritance(ITestOutputHelper output, stream_security_inheritance.CustomFixture fixture) : EventStoreTests<stream_security_inheritance.CustomFixture>(output, fixture) {
 	[Fact]
 	public async Task acl_inheritance_is_working_properly_on_user_streams() {
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.AppendStream("user-no-acl"));

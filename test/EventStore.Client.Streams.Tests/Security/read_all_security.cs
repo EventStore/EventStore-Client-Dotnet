@@ -1,12 +1,7 @@
 namespace EventStore.Client.Streams.Tests.Security; 
 
 [Trait("Category", "Security")]
-public class read_all_security : IClassFixture<SecurityFixture> {
-	public read_all_security(ITestOutputHelper output, SecurityFixture fixture) =>
-		Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	SecurityFixture Fixture { get; }
-
+public class read_all_security(ITestOutputHelper output, SecurityFixture fixture) : EventStoreTests<SecurityFixture>(output, fixture) { 
 	[Fact]
 	public async Task reading_all_with_not_existing_credentials_is_not_authenticated() {
 		await Assert.ThrowsAsync<NotAuthenticatedException>(() => Fixture.ReadAllForward(TestCredentials.TestBadUser));

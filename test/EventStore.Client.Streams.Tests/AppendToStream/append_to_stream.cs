@@ -1,13 +1,26 @@
+using Grpc.Core;
+
 namespace EventStore.Client.Streams.Tests;
+
+public static class ShouldThrowAsyncExtensions {
+	
+	public static Task<TException> ShouldThrowAsync<TException>(this EventStoreClient.ReadStreamResult source) where TException : Exception =>
+		source
+			.ToArrayAsync()
+			.AsTask()
+			.ShouldThrowAsync<TException>();
+
+	public static async Task ShouldThrowAsync<TException>(this EventStoreClient.ReadStreamResult source, Action<TException> handler) where TException : Exception {
+		var ex = await source.ShouldThrowAsync<TException>();
+		handler(ex);
+	}
+}
+
 
 [Trait("Category", "Network")]
 [Trait("Category", "Stream")]
 [Trait("Category", "Append")]
-public class append_to_stream : IClassFixture<EventStoreFixture> {
-	public append_to_stream(ITestOutputHelper output, EventStoreFixture fixture) =>
-		Fixture = fixture.With(x => x.CaptureTestRun(output));
-
-	EventStoreFixture Fixture { get; }
+public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) {
 	public static IEnumerable<object?[]> ExpectedVersionCreateStreamTestCases() {
 		yield return new object?[] { StreamState.Any };
 		yield return new object?[] { StreamState.NoStream };
@@ -21,17 +34,12 @@ public class append_to_stream : IClassFixture<EventStoreFixture> {
 		const int iterations = 2;
 		for (var i = 0; i < iterations; i++) {
 			var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, expectedStreamState, Enumerable.Empty<EventData>());
-			Assert.Equal(StreamRevision.None, writeResult.NextExpectedStreamRevision);
+			writeResult.NextExpectedStreamRevision.ShouldBe(StreamRevision.None);
 		}
 
-		var ex = await Assert.ThrowsAsync<StreamNotFoundException>(
-			() =>
-				Fixture.Streams
-					.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, iterations)
-					.ToArrayAsync().AsTask()
-		);
-
-		Assert.Equal(stream, ex.Stream);
+		await Fixture.Streams
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, iterations)
+			.ShouldThrowAsync<StreamNotFoundException>(ex => ex.Stream.ShouldBe(stream));
 	}
 
 	[Theory]
@@ -45,14 +53,9 @@ public class append_to_stream : IClassFixture<EventStoreFixture> {
 			Assert.Equal(StreamRevision.None, writeResult.NextExpectedStreamRevision);
 		}
 
-		var ex = await Assert.ThrowsAsync<StreamNotFoundException>(
-			() =>
-				Fixture.Streams
-					.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, iterations)
-					.ToArrayAsync().AsTask()
-		);
-
-		Assert.Equal(stream, ex.Stream);
+		await Fixture.Streams
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, iterations)
+			.ShouldThrowAsync<StreamNotFoundException>(ex => ex.Stream.ShouldBe(stream));
 	}
 
 	[Theory]
@@ -137,13 +140,9 @@ public class append_to_stream : IClassFixture<EventStoreFixture> {
 
 		await Fixture.Streams.TombstoneAsync(stream, StreamState.NoStream);
 
-		await Assert.ThrowsAsync<StreamDeletedException>(
-			() => Fixture.Streams.AppendToStreamAsync(
-				stream,
-				StreamState.NoStream,
-				Fixture.CreateTestEvents(1)
-			)
-		);
+		await Fixture.Streams
+			.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents(1))
+			.ShouldThrowAsync<StreamDeletedException>();
 	}
 
 	[Fact]
@@ -165,7 +164,9 @@ public class append_to_stream : IClassFixture<EventStoreFixture> {
 		var stream = Fixture.GetStreamName();
 		await Fixture.Streams.TombstoneAsync(stream, StreamState.NoStream);
 
-		await Assert.ThrowsAsync<StreamDeletedException>(() => Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents(1)));
+		await Fixture.Streams
+			.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents(1))
+			.ShouldThrowAsync<StreamDeletedException>();
 	}
 
 	[Fact]
@@ -174,7 +175,9 @@ public class append_to_stream : IClassFixture<EventStoreFixture> {
 
 		await Fixture.Streams.TombstoneAsync(stream, StreamState.NoStream);
 
-		await Assert.ThrowsAsync<StreamDeletedException>(() => Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(5), Fixture.CreateTestEvents()));
+		await Fixture.Streams
+			.AppendToStreamAsync(stream, new StreamRevision(5), Fixture.CreateTestEvents())
+			.ShouldThrowAsync<StreamDeletedException>();
 	}
 
 	[Fact]
@@ -223,12 +226,12 @@ public class append_to_stream : IClassFixture<EventStoreFixture> {
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents());
 
-		var ex = await Assert.ThrowsAsync<WrongExpectedVersionException>(
-			() => Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(999), Fixture.CreateTestEvents())
-		);
+		var ex = await Fixture.Streams
+			.AppendToStreamAsync(stream, new StreamRevision(999), Fixture.CreateTestEvents())
+			.ShouldThrowAsync<WrongExpectedVersionException>();
 
-		Assert.Equal(new(0), ex.ActualStreamRevision);
-		Assert.Equal(new(999), ex.ExpectedStreamRevision);
+		ex.ActualStreamRevision.ShouldBe(new(0));
+		ex.ExpectedStreamRevision.ShouldBe(new(999));
 	}
 
 	[Fact]
@@ -295,15 +298,11 @@ public class append_to_stream : IClassFixture<EventStoreFixture> {
 	public async Task appending_with_stream_exists_expected_version_and_stream_does_not_exist_throws_wrong_expected_version() {
 		var stream = Fixture.GetStreamName();
 
-		var ex = await Assert.ThrowsAsync<WrongExpectedVersionException>(
-			() => Fixture.Streams.AppendToStreamAsync(
-				stream,
-				StreamState.StreamExists,
-				Fixture.CreateTestEvents()
-			)
-		);
-
-		Assert.Equal(StreamRevision.None, ex.ActualStreamRevision);
+		var ex = await Fixture.Streams
+			.AppendToStreamAsync(stream, StreamState.StreamExists, Fixture.CreateTestEvents())
+			.ShouldThrowAsync<WrongExpectedVersionException>();
+		
+		ex.ActualStreamRevision.ShouldBe(StreamRevision.None);
 	}
 
 	[Fact]
@@ -328,13 +327,9 @@ public class append_to_stream : IClassFixture<EventStoreFixture> {
 
 		await Fixture.Streams.TombstoneAsync(stream, StreamState.NoStream);
 
-		await Assert.ThrowsAsync<StreamDeletedException>(
-			() => Fixture.Streams.AppendToStreamAsync(
-				stream,
-				StreamState.StreamExists,
-				Fixture.CreateTestEvents()
-			)
-		);
+		await Fixture.Streams
+			.AppendToStreamAsync(stream, StreamState.StreamExists, Fixture.CreateTestEvents())
+			.ShouldThrowAsync<StreamDeletedException>();
 	}
 
 	[Fact]
@@ -345,13 +340,9 @@ public class append_to_stream : IClassFixture<EventStoreFixture> {
 
 		await Fixture.Streams.DeleteAsync(stream, StreamState.Any);
 
-		await Assert.ThrowsAsync<StreamDeletedException>(
-			() => Fixture.Streams.AppendToStreamAsync(
-				stream,
-				StreamState.StreamExists,
-				Fixture.CreateTestEvents()
-			)
-		);
+		await Fixture.Streams
+			.AppendToStreamAsync(stream, StreamState.StreamExists, Fixture.CreateTestEvents())
+			.ShouldThrowAsync<StreamDeletedException>();
 	}
 
 	[Fact]
@@ -410,5 +401,91 @@ public class append_to_stream : IClassFixture<EventStoreFixture> {
 		);
 
 		Assert.Equal(ConditionalWriteResult.StreamDeleted, result);
+	}
+	
+	[Fact]
+	public async Task expected_version_no_stream() {
+		var result = await Fixture.Streams.AppendToStreamAsync(
+			Fixture.GetStreamName(),
+			StreamState.NoStream,
+			Fixture.CreateTestEvents()
+		);
+
+		Assert.Equal(new(0), result!.NextExpectedStreamRevision);
+	}
+
+	[Fact]
+	public async Task expected_version_no_stream_returns_position() {
+		var result = await Fixture.Streams.AppendToStreamAsync(
+			Fixture.GetStreamName(),
+			StreamState.NoStream,
+			Fixture.CreateTestEvents()
+		);
+
+		Assert.True(result.LogPosition > Position.Start);
+	}
+	
+	[Fact]
+	public async Task with_timeout_any_stream_revision_fails_when_operation_expired() {
+		var stream = Fixture.GetStreamName();
+
+		var ex = await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.Any,
+			Fixture.CreateTestEvents(100),
+			deadline: TimeSpan.FromTicks(1)
+		).ShouldThrowAsync<RpcException>();
+
+		ex.StatusCode.ShouldBe(StatusCode.DeadlineExceeded);
+	}
+
+	[Fact]
+	public async Task with_timeout_stream_revision_fails_when_operation_expired() {
+		var stream = Fixture.GetStreamName();
+
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents());
+		
+		var ex = await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			new StreamRevision(0),
+			Fixture.CreateTestEvents(10),
+			deadline: TimeSpan.Zero
+		).ShouldThrowAsync<RpcException>();
+
+		ex.StatusCode.ShouldBe(StatusCode.DeadlineExceeded);
+	}
+	
+	[Fact]
+	public async Task when_events_enumerator_throws_the_write_does_not_succeed() {
+		var streamName = Fixture.GetStreamName();
+
+		await Fixture.Streams
+			.AppendToStreamAsync(streamName, StreamRevision.None, GetEvents())
+			.ShouldThrowAsync<EnumerationFailedException>();
+
+		var result = Fixture.Streams.ReadStreamAsync(Direction.Forwards, streamName, StreamPosition.Start);
+
+		var state = await result.ReadState;
+
+		state.ShouldBe(ReadState.StreamNotFound);
+		
+		return;
+
+		IEnumerable<EventData> GetEvents() {
+			var i = 0;
+			foreach (var evt in Fixture.CreateTestEvents(5)) {
+				if (i++ % 3 == 0)
+					throw new EnumerationFailedException();
+
+				yield return evt;
+			}
+		}
+	}
+
+	class EnumerationFailedException : Exception { }
+	
+	public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
+		yield return new object?[] { StreamState.Any };
+		yield return new object?[] { ulong.MaxValue - 1UL };
 	}
 }

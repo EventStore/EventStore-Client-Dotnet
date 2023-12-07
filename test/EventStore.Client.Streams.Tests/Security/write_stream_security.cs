@@ -55,8 +55,7 @@ public class write_stream_security : IClassFixture<SecurityFixture> {
 		await Fixture.AppendStream(SecurityFixture.NormalAllStream);
 
 	[Fact]
-	public async Task
-		writing_to_all_access_normal_stream_is_not_authenticated_when_not_existing_credentials_are_passed() =>
+	public async Task writing_to_all_access_normal_stream_is_not_authenticated_when_not_existing_credentials_are_passed() =>
 		await Assert.ThrowsAsync<NotAuthenticatedException>(() => Fixture.AppendStream(SecurityFixture.NormalAllStream, TestCredentials.TestBadUser));
 
 	[Fact]

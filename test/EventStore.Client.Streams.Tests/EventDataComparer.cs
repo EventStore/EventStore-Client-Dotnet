@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace EventStore.Client.Streams.Tests; 
 
 static class EventDataComparer {
@@ -10,23 +8,14 @@ static class EventDataComparer {
 		if (expected.Type != actual.EventType)
 			return false;
 
-		var expectedDataString     = Encoding.UTF8.GetString(expected.Data.ToArray());
-		var expectedMetadataString = Encoding.UTF8.GetString(expected.Metadata.ToArray());
-
-		var actualDataString         = Encoding.UTF8.GetString(actual.Data.ToArray());
-		var actualMetadataDataString = Encoding.UTF8.GetString(actual.Metadata.ToArray());
-
-		return expectedDataString == actualDataString && expectedMetadataString == actualMetadataDataString;
+		return expected.Data.ToArray().SequenceEqual(actual.Data.ToArray()) 
+		    && expected.Metadata.ToArray().SequenceEqual(actual.Metadata.ToArray());
 	}
 
 	public static bool Equal(EventData[] expected, EventRecord[] actual) {
 		if (expected.Length != actual.Length)
 			return false;
 
-		for (var i = 0; i < expected.Length; i++)
-			if (!Equal(expected[i], actual[i]))
-				return false;
-
-		return true;
+		return !expected.Where((t, i) => !Equal(t, actual[i])).Any();
 	}
 }
