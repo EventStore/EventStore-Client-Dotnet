@@ -1,5 +1,5 @@
 ﻿await using var client = new EventStorePersistentSubscriptionsClient(
-	EventStoreClientSettings.Create("esdb://localhost:2113?tls=false")
+	EventStoreClientSettings.Create("esdb://admin:changeit@localhost:2113?tls=true&tlsVerifyCert=false")
 );
 
 await CreatePersistentSubscription(client);
