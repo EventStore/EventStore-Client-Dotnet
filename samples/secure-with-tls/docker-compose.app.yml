@@ -11,7 +11,7 @@ services:
     build: ./
     environment:
       # URL should match the DNS name in certificate and container name
-      - ESDB__CONNECTION__STRING=esdb://admin:changeit@eventstore:2113?Tls=true
+      - ESDB__CONNECTION__STRING=esdb://admin:changeit@eventstore:2113?Tls=true&tlsVerifyCert=false
     depends_on:
       eventstore:
         condition: service_healthy

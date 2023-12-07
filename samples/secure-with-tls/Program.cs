@@ -2,7 +2,7 @@
 
 // take the address from environment variable (when run with Docker) or use localhost by default 
 var connectionString = Environment.GetEnvironmentVariable("ESDB__CONNECTION__STRING") 
-                    ?? "esdb://admin:changeit@localhost:2113?tls=true";
+                    ?? "esdb://admin:changeit@localhost:2113?tls=true&tlsVerifyCert=false";
 
 Console.WriteLine($"Connecting to EventStoreDB at: {connectionString}");
 
