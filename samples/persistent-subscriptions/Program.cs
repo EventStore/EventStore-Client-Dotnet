@@ -1,6 +1,9 @@
 ﻿await using var client = new EventStorePersistentSubscriptionsClient(
-	EventStoreClientSettings.Create("esdb://admin:changeit@localhost:2113?tls=true&tlsVerifyCert=false")
+	EventStoreClientSettings.Create("esdb://localhost:2113?tls=false&tlsVerifyCert=false")
 );
+
+await TryDeletePersistentSubscription(client);
+await TryDeletePersistentSubscriptionToAll(client);
 
 await CreatePersistentSubscription(client);
 await UpdatePersistentSubscription(client);
@@ -16,7 +19,9 @@ await ListPersistentSubscriptionsToStream(client);
 await ListPersistentSubscriptionsToAll(client);
 await ListAllPersistentSubscriptions(client);
 await RestartPersistentSubscriptionSubsystem(client);
-await DeletePersistentSubscription(client);
+
+await TryDeletePersistentSubscription(client);
+await TryDeletePersistentSubscriptionToAll(client);
 
 return;
 
@@ -33,6 +38,7 @@ static async Task CreatePersistentSubscription(EventStorePersistentSubscriptions
 		userCredentials: userCredentials
 	);
 
+	Console.WriteLine("Subscription to stream created");
 	#endregion create-persistent-subscription-to-stream
 }
 
@@ -47,10 +53,11 @@ static async Task ConnectToPersistentSubscriptionToStream(EventStorePersistentSu
 			await subscription.Ack(evnt);
 		},
 		(subscription, dropReason, exception) => {
-			Console.WriteLine($"Subscription was dropped due to {dropReason}. {exception}");
+			Console.WriteLine($"Subscription to stream was dropped due to {dropReason}. {exception?.Message}");
 		}
 	);
 
+	Console.WriteLine("Subscription to stream started");
 	#endregion subscribe-to-persistent-subscription-to-stream
 }
 
@@ -68,6 +75,7 @@ static async Task CreatePersistentSubscriptionToAll(EventStorePersistentSubscrip
 		userCredentials: userCredentials
 	);
 
+	Console.WriteLine("Subscription to all created");
 	#endregion create-persistent-subscription-to-all
 }
 
@@ -78,10 +86,11 @@ static async Task ConnectToPersistentSubscriptionToAll(EventStorePersistentSubsc
 		"subscription-group",
 		async (subscription, evnt, retryCount, cancellationToken) => { await HandleEvent(evnt); },
 		(subscription, dropReason, exception) => {
-			Console.WriteLine($"Subscription was dropped due to {dropReason}. {exception}");
+			Console.WriteLine($"Subscription to all was dropped due to {dropReason}. {exception?.Message}");
 		}
 	);
 
+	Console.WriteLine("Subscription to all started");
 	#endregion subscribe-to-persistent-subscription-to-all
 }
 
@@ -101,10 +110,11 @@ static async Task ConnectToPersistentSubscriptionWithManualAcks(EventStorePersis
 			}
 		},
 		(subscription, dropReason, exception) => {
-			Console.WriteLine($"Subscription was dropped due to {dropReason}. {exception}");
+			Console.WriteLine($"Subscription to stream with manual acks was dropped due to {dropReason}. {exception?.Message}");
 		}
 	);
 
+	Console.WriteLine("Subscription to stream with manual acks started");
 	#endregion subscribe-to-persistent-subscription-with-manual-acks
 }
 
@@ -112,10 +122,7 @@ static async Task UpdatePersistentSubscription(EventStorePersistentSubscriptions
 	#region update-persistent-subscription
 
 	var userCredentials = new UserCredentials("admin", "changeit");
-	var settings = new PersistentSubscriptionSettings(
-		true,
-		checkPointLowerBound: 20
-	);
+	var settings = new PersistentSubscriptionSettings(true, checkPointLowerBound: 20);
 
 	await client.UpdateToStreamAsync(
 		"test-stream",
@@ -124,20 +131,68 @@ static async Task UpdatePersistentSubscription(EventStorePersistentSubscriptions
 		userCredentials: userCredentials
 	);
 
+	Console.WriteLine("Subscription updated");
 	#endregion update-persistent-subscription
 }
 
-static async Task DeletePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
+// static async Task DeletePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
+// 	#region delete-persistent-subscription
+//
+// 	var userCredentials = new UserCredentials("admin", "changeit");
+// 	
+// 	await client.DeleteToStreamAsync(
+// 		"test-stream",
+// 		"subscription-group",
+// 		userCredentials: userCredentials
+// 	);
+// 	
+// 	Console.WriteLine("Subscription deleted");
+// 	#endregion delete-persistent-subscription
+// }
+
+static async Task TryDeletePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
 	#region delete-persistent-subscription
 
-	var userCredentials = new UserCredentials("admin", "changeit");
-	await client.DeleteToStreamAsync(
-		"test-stream",
-		"subscription-group",
-		userCredentials: userCredentials
-	);
+	try {
+		var userCredentials = new UserCredentials("admin", "changeit");
+		await client.DeleteToStreamAsync(
+			"test-stream",
+			"subscription-group",
+			userCredentials: userCredentials
+		);
 
+		Console.WriteLine("Subscription to stream deleted");
+	}
+	catch (PersistentSubscriptionNotFoundException) {
+		// ignore
+	}
+	catch (Exception ex)  {
+		Console.WriteLine($"Subscription to stream delete error: {ex.GetType()} {ex.Message}");
+	}
+	
 	#endregion delete-persistent-subscription
+}
+
+static async Task TryDeletePersistentSubscriptionToAll(EventStorePersistentSubscriptionsClient client) {
+	#region delete-persistent-subscription-to-all
+
+	try {
+		var userCredentials = new UserCredentials("admin", "changeit");
+		await client.DeleteToAllAsync(
+			"subscription-group",
+			userCredentials: userCredentials
+		);
+
+		Console.WriteLine("Subscription to all deleted");
+	}
+	catch (PersistentSubscriptionNotFoundException) {
+		// ignore
+	}
+	catch (Exception ex) {
+		Console.WriteLine($"Subscription to all delete error: {ex.GetType()} {ex.Message}");
+	}
+
+	#endregion delete-persistent-subscription-to-all
 }
 
 static async Task GetPersistentSubscriptionToStreamInfo(EventStorePersistentSubscriptionsClient client) {
@@ -150,7 +205,7 @@ static async Task GetPersistentSubscriptionToStreamInfo(EventStorePersistentSubs
 		userCredentials: userCredentials
 	);
 
-	Console.WriteLine($"GroupName: {info.GroupName}, EventSource: {info.EventSource}, Status: {info.Status}");
+	Console.WriteLine($"GroupName: {info.GroupName} EventSource: {info.EventSource} Status: {info.Status}");
 
 	#endregion get-persistent-subscription-to-stream-info
 }
@@ -164,7 +219,7 @@ static async Task GetPersistentSubscriptionToAllInfo(EventStorePersistentSubscri
 		userCredentials: userCredentials
 	);
 
-	Console.WriteLine($"GroupName: {info.GroupName}, EventSource: {info.EventSource}, Status: {info.Status}");
+	Console.WriteLine($"GroupName: {info.GroupName} EventSource: {info.EventSource} Status: {info.Status}");
 
 	#endregion get-persistent-subscription-to-all-info
 }
@@ -180,6 +235,7 @@ static async Task ReplayParkedToStream(EventStorePersistentSubscriptionsClient c
 		userCredentials: userCredentials
 	);
 
+	Console.WriteLine("Replay of parked messages to stream requested");
 	#endregion persistent-subscription-replay-parked-to-stream
 }
 
@@ -193,6 +249,7 @@ static async Task ReplayParkedToAll(EventStorePersistentSubscriptionsClient clie
 		userCredentials: userCredentials
 	);
 
+	Console.WriteLine("Replay of parked messages to all requested");
 	#endregion replay-parked-of-persistent-subscription-to-all
 }
 
@@ -205,8 +262,10 @@ static async Task ListPersistentSubscriptionsToStream(EventStorePersistentSubscr
 		userCredentials: userCredentials
 	);
 
-	foreach (var s in subscriptions)
-		Console.WriteLine($"GroupName: {s.GroupName}, EventSource: {s.EventSource}, Status: {s.Status}");
+	var entries = subscriptions
+		.Select(s => $"GroupName: {s.GroupName} EventSource: {s.EventSource} Status: {s.Status}");
+	
+	Console.WriteLine($"Subscriptions to stream: [ {string.Join(", ", entries)} ]");
 
 	#endregion list-persistent-subscriptions-to-stream
 }
@@ -217,9 +276,11 @@ static async Task ListPersistentSubscriptionsToAll(EventStorePersistentSubscript
 	var userCredentials = new UserCredentials("admin", "changeit");
 	var subscriptions   = await client.ListToAllAsync(userCredentials: userCredentials);
 
-	foreach (var s in subscriptions)
-		Console.WriteLine($"GroupName: {s.GroupName}, EventSource: {s.EventSource}, Status: {s.Status}");
-
+	var entries = subscriptions
+		.Select(s => $"GroupName: {s.GroupName} EventSource: {s.EventSource} Status: {s.Status}");
+	
+	Console.WriteLine($"Subscriptions to all: [ {string.Join(", ", entries)} ]");
+	
 	#endregion list-persistent-subscriptions-to-all
 }
 
@@ -229,9 +290,11 @@ static async Task ListAllPersistentSubscriptions(EventStorePersistentSubscriptio
 	var userCredentials = new UserCredentials("admin", "changeit");
 	var subscriptions   = await client.ListAllAsync(userCredentials: userCredentials);
 
-	foreach (var s in subscriptions)
-		Console.WriteLine($"GroupName: {s.GroupName}, EventSource: {s.EventSource}, Status: {s.Status}");
-
+	var entries = subscriptions
+		.Select(s => $"GroupName: {s.GroupName} EventSource: {s.EventSource} Status: {s.Status}");
+	
+	Console.WriteLine($"Subscriptions: [{string.Join(", ", entries)} ]");
+	
 	#endregion list-persistent-subscriptions
 }
 
@@ -241,6 +304,7 @@ static async Task RestartPersistentSubscriptionSubsystem(EventStorePersistentSub
 	var userCredentials = new UserCredentials("admin", "changeit");
 	await client.RestartSubsystemAsync(userCredentials: userCredentials);
 
+	Console.WriteLine("Persistent subscription subsystem restarted");
 	#endregion restart-persistent-subscription-subsystem
 }
 

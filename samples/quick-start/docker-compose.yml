@@ -1,8 +1,11 @@
-version: '3'
+version: '3.5'
 services:
   eventstore:
     image: eventstore/eventstore:latest
     environment:
-      - EVENTSTORE_INSECURE=true
+      EVENTSTORE_INSECURE: true
+      EVENTSTORE_MEM_DB: false
+      EVENTSTORE_RUN_PROJECTIONS: all
+      EVENTSTORE_START_STANDARD_PROJECTIONS: true
     ports:
       - "2113:2113"

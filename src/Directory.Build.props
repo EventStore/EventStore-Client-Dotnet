@@ -35,10 +35,10 @@
     </ItemGroup>
 
     <ItemGroup>
-<!--        <PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="4.0.0">-->
-<!--            <PrivateAssets>all</PrivateAssets>-->
-<!--            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>-->
-<!--        </PackageReference>-->
+        <PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="4.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Grpc.Tools" Version="$(GrpcToolsPackageVersion)">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>

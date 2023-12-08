@@ -7,9 +7,11 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Google.Protobuf" Version="3.25.1" />
-		<PackageReference Include="Grpc.Net.Client" Version="$(GrpcPackageVersion)" />
+		<PackageReference Include="Grpc.Net.Client" Version="2.59.0" />
+<!--        <PackageReference Include="Grpc.Net.Client" Version="$(GrpcPackageVersion)" />-->
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+<!--		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />-->
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
 		<PackageReference Include="System.Linq.Async" Version="6.0.1" />
 	</ItemGroup>
 	<ItemGroup>
