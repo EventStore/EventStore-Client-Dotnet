@@ -141,8 +141,7 @@ namespace EventStore.Client {
 			_log.LogDebug("Persistent Subscription {subscriptionId} confirmed.", SubscriptionId);
 
 			try {
-				await foreach (var response in
-				               _call.ResponseStream.ReadAllAsync(_cancellationToken).ConfigureAwait(false)) {
+				await foreach (var response in _call.ResponseStream.ReadAllAsync(_cancellationToken).ConfigureAwait(false)) {
 					if (response.ContentCase != ReadResp.ContentOneofCase.Event) {
 						continue;
 					}
