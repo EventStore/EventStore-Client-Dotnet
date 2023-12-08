@@ -1,4 +1,4 @@
-namespace EventStore.Client.Streams.Tests.Security; 
+namespace EventStore.Client.Streams.Tests; 
 
 [Trait("Category", "Security")]
 public class write_stream_meta_security(ITestOutputHelper output, SecurityFixture fixture) : EventStoreTests<SecurityFixture>(output, fixture) { 

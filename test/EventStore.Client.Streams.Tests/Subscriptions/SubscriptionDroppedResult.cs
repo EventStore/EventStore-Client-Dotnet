@@ -1,4 +1,4 @@
-namespace EventStore.Client.Streams.Tests;
+namespace EventStore.Client.Streams.Tests.Subscriptions;
 
 public record SubscriptionDroppedResult(SubscriptionDroppedReason Reason, Exception? Error) {
 	public Task Throw() => Task.FromException(Error!);

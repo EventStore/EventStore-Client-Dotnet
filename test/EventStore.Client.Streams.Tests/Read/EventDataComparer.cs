@@ -1,4 +1,4 @@
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests.Read; 
 
 static class EventDataComparer {
 	public static bool Equal(EventData expected, EventRecord actual) {

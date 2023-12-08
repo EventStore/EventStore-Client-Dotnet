@@ -1,4 +1,4 @@
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests.Read; 
 
 [Trait("Category", "Target:Stream")]
 [Trait("Category", "Operation:Read")]

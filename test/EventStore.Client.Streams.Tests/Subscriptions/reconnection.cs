@@ -1,7 +1,7 @@
 using Grpc.Core;
 using static System.TimeSpan;
 
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests.Subscriptions; 
 
 [Trait("Category", "Subscriptions")]
 public class @reconnection(ITestOutputHelper output, ReconnectionFixture fixture) : EventStoreTests<ReconnectionFixture>(output, fixture) {

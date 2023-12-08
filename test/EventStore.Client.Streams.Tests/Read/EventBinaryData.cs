@@ -1,4 +1,4 @@
-namespace EventStore.Client.Streams.Tests;
+namespace EventStore.Client.Streams.Tests.Read;
 
 public readonly record struct EventBinaryData(Uuid Id, byte[] Data, byte[] Metadata) {
 	public bool Equals(EventBinaryData other) => 

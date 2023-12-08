@@ -1,6 +1,6 @@
 using Grpc.Core;
 
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests.Delete; 
 
 [Trait("Category", "Operation:Delete")]
 public class deleting_stream(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) { 

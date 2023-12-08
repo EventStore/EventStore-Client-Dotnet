@@ -1,4 +1,4 @@
-namespace EventStore.Client.Streams.Tests;
+namespace EventStore.Client.Streams.Tests.Read;
 
 public class ReadAllEventsFixture : EventStoreFixture {
 	public ReadAllEventsFixture() {

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Grpc.Core;
 
-namespace EventStore.Client.Streams.Tests;
+namespace EventStore.Client.Streams.Tests.Metadata;
 
 [Trait("Category", "Metadata")]
 public class stream_metadata(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) {

@@ -1,4 +1,4 @@
-namespace EventStore.Client.Streams.Tests.Security; 
+namespace EventStore.Client.Streams.Tests; 
 
 [Trait("Category", "Security")]
 public class stream_security_inheritance(ITestOutputHelper output, stream_security_inheritance.CustomFixture fixture) : EventStoreTests<stream_security_inheritance.CustomFixture>(output, fixture) {

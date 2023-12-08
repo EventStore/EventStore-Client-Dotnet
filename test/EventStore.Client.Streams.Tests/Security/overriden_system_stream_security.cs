@@ -1,4 +1,4 @@
-namespace EventStore.Client.Streams.Tests.Security;
+namespace EventStore.Client.Streams.Tests;
 
 [Trait("Category", "Security")]
 public class overriden_system_stream_security(ITestOutputHelper output, overriden_system_stream_security.CustomFixture fixture) : EventStoreTests<overriden_system_stream_security.CustomFixture>(output, fixture) {

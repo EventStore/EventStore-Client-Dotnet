@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace EventStore.Client.Streams.Tests;
+namespace EventStore.Client.Streams.Tests.Read;
 
 [Trait("Category", "Target:Stream")]
 public abstract class read_stream_events_linked_to_deleted_stream(ReadEventsLinkedToDeletedStreamFixture fixture) {

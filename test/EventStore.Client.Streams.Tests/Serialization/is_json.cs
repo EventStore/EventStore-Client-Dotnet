@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace EventStore.Client.Streams.Tests;
+namespace EventStore.Client.Streams.Tests.Serialization;
 
 [Trait("Category", "Serialization")]
 public class is_json(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) { 

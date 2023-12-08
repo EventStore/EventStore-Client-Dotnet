@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace EventStore.Client.Streams.Tests.Security;
+namespace EventStore.Client.Streams.Tests;
 
 public class SecurityFixture : EventStoreFixture {
 	public const string NoAclStream       = nameof(NoAclStream);

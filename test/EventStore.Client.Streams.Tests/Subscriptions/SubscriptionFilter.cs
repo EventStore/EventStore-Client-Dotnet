@@ -1,4 +1,4 @@
-namespace EventStore.Client.Streams.Tests;
+namespace EventStore.Client.Streams.Tests.Subscriptions;
 
 public record SubscriptionFilter(string Name, Func<string, IEventFilter> Create, Func<string, EventData, EventData> PrepareEvent) {
 	public override string ToString() => Name;

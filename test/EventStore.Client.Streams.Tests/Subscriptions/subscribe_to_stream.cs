@@ -1,4 +1,4 @@
-namespace EventStore.Client.Streams.Tests;
+namespace EventStore.Client.Streams.Tests.Subscriptions;
 
 [Trait("Category", "Subscriptions")]
 [Trait("Category", "Target:Stream")]

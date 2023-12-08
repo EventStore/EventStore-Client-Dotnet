@@ -1,4 +1,4 @@
-namespace EventStore.Client.Streams.Tests.Security; 
+namespace EventStore.Client.Streams.Tests; 
 
 [Trait("Category", "Security")]
 public class multiple_role_security(ITestOutputHelper output, multiple_role_security.CustomFixture fixture) : EventStoreTests<multiple_role_security.CustomFixture>(output, fixture) {

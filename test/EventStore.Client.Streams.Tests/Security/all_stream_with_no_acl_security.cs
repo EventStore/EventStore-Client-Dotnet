@@ -1,4 +1,4 @@
-namespace EventStore.Client.Streams.Tests.Security;
+namespace EventStore.Client.Streams.Tests;
 
 [Trait("Category", "Security")]
 public class all_stream_with_no_acl_security(ITestOutputHelper output, all_stream_with_no_acl_security.CustomFixture fixture) : EventStoreTests<all_stream_with_no_acl_security.CustomFixture>(output, fixture) {
