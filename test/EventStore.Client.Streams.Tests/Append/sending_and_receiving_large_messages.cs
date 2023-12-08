@@ -2,8 +2,8 @@ using Grpc.Core;
 
 namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "Stream")]
-[Trait("Category", "Append")]
+[Trait("Category", "Target:Stream")]
+[Trait("Category", "Operation:Append")]
 public class sending_and_receiving_large_messages(ITestOutputHelper output, sending_and_receiving_large_messages.CustomFixture fixture)
 	: EventStoreTests<sending_and_receiving_large_messages.CustomFixture>(output, fixture) {
 	[Fact]

@@ -1,9 +1,9 @@
 namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "LongRunning")]
-[Trait("Category", "Stream")]
-[Trait("Category", "Read")]
-public class when_having_max_count_set_for_stream (ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) {
+
+[Trait("Category", "Target:Stream")]
+[Trait("Category", "Operation:Read")]
+public class read_stream_when_having_max_count_set_for_stream (ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) {
 	[Fact]
 	public async Task read_stream_forwards_respects_max_count() {
 		var stream = Fixture.GetStreamName();

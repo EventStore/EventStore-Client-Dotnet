@@ -1,6 +1,7 @@
 namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "AllStream")]
+[Trait("Category", "Subscriptions")]
+[Trait("Category", "Target:All")]
 public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fixture) : EventStoreTests<SubscriptionsFixture>(output, fixture) {
 	[Fact]
 	public async Task receives_all_events_from_start() {

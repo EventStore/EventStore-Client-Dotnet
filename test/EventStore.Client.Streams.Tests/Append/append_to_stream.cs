@@ -2,24 +2,8 @@ using Grpc.Core;
 
 namespace EventStore.Client.Streams.Tests;
 
-public static class ShouldThrowAsyncExtensions {
-	
-	public static Task<TException> ShouldThrowAsync<TException>(this EventStoreClient.ReadStreamResult source) where TException : Exception =>
-		source
-			.ToArrayAsync()
-			.AsTask()
-			.ShouldThrowAsync<TException>();
-
-	public static async Task ShouldThrowAsync<TException>(this EventStoreClient.ReadStreamResult source, Action<TException> handler) where TException : Exception {
-		var ex = await source.ShouldThrowAsync<TException>();
-		handler(ex);
-	}
-}
-
-
-[Trait("Category", "Network")]
-[Trait("Category", "Stream")]
-[Trait("Category", "Append")]
+[Trait("Category", "Target:Stream")]
+[Trait("Category", "Operation:Append")]
 public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) {
 	public static IEnumerable<object?[]> ExpectedVersionCreateStreamTestCases() {
 		yield return new object?[] { StreamState.Any };

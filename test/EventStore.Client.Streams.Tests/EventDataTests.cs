@@ -1,5 +1,6 @@
 namespace EventStore.Client.Streams.Tests; 
 
+[Trait("Category", "UnitTest")]
 public class EventDataTests {
 	[Fact]
 	public void EmptyEventIdThrows() {

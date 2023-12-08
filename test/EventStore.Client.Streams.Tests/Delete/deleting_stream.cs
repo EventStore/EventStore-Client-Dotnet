@@ -2,8 +2,7 @@ using Grpc.Core;
 
 namespace EventStore.Client.Streams.Tests; 
 
-[Trait("Category", "Network")]
-[Trait("Category", "Delete")]
+[Trait("Category", "Operation:Delete")]
 public class deleting_stream(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) { 
 	public static IEnumerable<object?[]> ExpectedStreamStateCases() {
 		yield return new object?[] { StreamState.Any, nameof(StreamState.Any) };

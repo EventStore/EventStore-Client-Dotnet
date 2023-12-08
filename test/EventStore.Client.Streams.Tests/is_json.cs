@@ -3,8 +3,7 @@ using System.Text;
 
 namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "Network")]
-[Trait("Category", "LongRunning")]
+[Trait("Category", "Serialization")]
 public class is_json(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) { 
 	public static IEnumerable<object?[]> TestCases() {
 		var json = @"{""some"":""json""}";

@@ -2,9 +2,9 @@ using Grpc.Core;
 
 namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "Network")]
-[Trait("Category", "Stream")]
-[Trait("Category", "Read")]
+[Trait("Category", "Target:Stream")]
+[Trait("Category", "Operation:Read")]
+[Trait("Category", "Operation:Read:Backwards")]
 public class read_stream_backward(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) {
 	[Theory]
 	[InlineData(0)]

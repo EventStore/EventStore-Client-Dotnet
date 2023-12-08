@@ -2,8 +2,8 @@
 	EventStoreClientSettings.Create("esdb://localhost:2113?tls=false&tlsVerifyCert=false")
 );
 
-await TryDeletePersistentSubscription(client);
-await TryDeletePersistentSubscriptionToAll(client);
+await DeletePersistentSubscription(client);
+await DeletePersistentSubscriptionToAll(client);
 
 await CreatePersistentSubscription(client);
 await UpdatePersistentSubscription(client);
@@ -20,8 +20,8 @@ await ListPersistentSubscriptionsToAll(client);
 await ListAllPersistentSubscriptions(client);
 await RestartPersistentSubscriptionSubsystem(client);
 
-await TryDeletePersistentSubscription(client);
-await TryDeletePersistentSubscriptionToAll(client);
+await DeletePersistentSubscription(client);
+await DeletePersistentSubscriptionToAll(client);
 
 return;
 
@@ -135,22 +135,7 @@ static async Task UpdatePersistentSubscription(EventStorePersistentSubscriptions
 	#endregion update-persistent-subscription
 }
 
-// static async Task DeletePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
-// 	#region delete-persistent-subscription
-//
-// 	var userCredentials = new UserCredentials("admin", "changeit");
-// 	
-// 	await client.DeleteToStreamAsync(
-// 		"test-stream",
-// 		"subscription-group",
-// 		userCredentials: userCredentials
-// 	);
-// 	
-// 	Console.WriteLine("Subscription deleted");
-// 	#endregion delete-persistent-subscription
-// }
-
-static async Task TryDeletePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
+static async Task DeletePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
 	#region delete-persistent-subscription
 
 	try {
@@ -173,7 +158,7 @@ static async Task TryDeletePersistentSubscription(EventStorePersistentSubscripti
 	#endregion delete-persistent-subscription
 }
 
-static async Task TryDeletePersistentSubscriptionToAll(EventStorePersistentSubscriptionsClient client) {
+static async Task DeletePersistentSubscriptionToAll(EventStorePersistentSubscriptionsClient client) {
 	#region delete-persistent-subscription-to-all
 
 	try {

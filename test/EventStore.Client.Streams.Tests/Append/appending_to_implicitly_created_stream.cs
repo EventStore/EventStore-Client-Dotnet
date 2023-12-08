@@ -1,8 +1,7 @@
 namespace EventStore.Client.Streams.Tests; 
 
-[Trait("Category", "LongRunning")]
-[Trait("Category", "Stream")]
-[Trait("Category", "Append")]
+[Trait("Category", "Target:Stream")]
+[Trait("Category", "Operation:Append")]
 public class appending_to_implicitly_created_stream(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) {
 	[Fact]
 	public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0em1_idempotent() {

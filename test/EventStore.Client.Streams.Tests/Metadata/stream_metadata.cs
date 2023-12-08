@@ -3,8 +3,7 @@ using Grpc.Core;
 
 namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "LongRunning")]
-[Trait("Category", "StreamMetadata")]
+[Trait("Category", "Metadata")]
 public class stream_metadata(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) {
 	[Fact]
 	public async Task getting_for_an_existing_stream_and_no_metadata_exists() {

@@ -2,11 +2,11 @@ using Grpc.Core;
 
 namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "LongRunning")]
-[Trait("Category", "AllStream")]
-[Trait("Category", "Read")]
-[Trait("Category", "ReadBackwards")]
-[Trait("Category", "DedicatedDatabase")]
+
+[Trait("Category", "Target:All")]
+[Trait("Category", "Operation:Read")]
+[Trait("Category", "Operation:Read:Backwards")]
+[Trait("Category", "Database:Dedicated")]
 public class read_all_events_backward(ITestOutputHelper output, ReadAllEventsFixture fixture) : EventStoreTests<ReadAllEventsFixture>(output, fixture) { 
 	[Fact]
 	public async Task return_empty_if_reading_from_start() {

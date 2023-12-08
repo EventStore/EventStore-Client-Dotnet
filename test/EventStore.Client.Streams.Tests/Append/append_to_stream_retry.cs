@@ -3,10 +3,8 @@ using Polly.Contrib.WaitAndRetry;
 
 namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "Network")]
-[Trait("Category", "DedicatedDatabase")]
-[Trait("Category", "Stream")]
-[Trait("Category", "Append")]
+[Trait("Category", "Target:Stream")]
+[Trait("Category", "Operation:Append")]
 public class append_to_stream_retry(ITestOutputHelper output, StreamRetryFixture fixture) : EventStoreTests<StreamRetryFixture>(output, fixture) {
 	[Fact]
 	public async Task can_retry() {

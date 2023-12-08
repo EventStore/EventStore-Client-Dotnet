@@ -2,8 +2,7 @@ using System.Text.Json;
 
 namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "LongRunning")]
-[Trait("Category", "Delete")]
+[Trait("Category", "Operation:Delete")]
 public class deleted_stream(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) {
 	static JsonDocument CustomMetadata { get; }
 

@@ -1,7 +1,7 @@
 namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "Stream")]
-[Trait("Category", "Append")]
+[Trait("Category", "Target:Stream")]
+[Trait("Category", "Operation:Append")]
 public class append_to_stream_limits(ITestOutputHelper output, StreamLimitsFixture fixture) : EventStoreTests<StreamLimitsFixture>(output, fixture) {
 	[Fact]
 	public async Task succeeds_when_size_is_less_than_max_append_size() {

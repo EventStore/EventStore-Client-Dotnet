@@ -2,10 +2,11 @@ using System.Text;
 
 namespace EventStore.Client.Streams.Tests;
 
-[Trait("Category", "LongRunning")]
-[Trait("Category", "AllStream")]
-[Trait("Category", "Read")]
-[Trait("Category", "ReadForwards")]
+
+[Trait("Category", "Target:All")]
+[Trait("Category", "Operation:Read")]
+[Trait("Category", "Operation:Read:Forwards")]
+[Trait("Category", "Database:Dedicated")]
 public class read_all_events_forward(ITestOutputHelper output, ReadAllEventsFixture fixture) : EventStoreTests<ReadAllEventsFixture>(output, fixture) {
 	[Fact]
 	public async Task return_empty_if_reading_from_end() {
