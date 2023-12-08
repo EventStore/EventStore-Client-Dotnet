@@ -6,4 +6,8 @@
     <ItemGroup>
       <None Remove="EventStore.Client.Streams.Tests.csproj.DotSettings" />
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="ReadAll\" />
+      <Folder Include="ReadStream\" />
+    </ItemGroup>
 </Project>
