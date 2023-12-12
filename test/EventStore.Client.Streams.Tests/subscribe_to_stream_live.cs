@@ -131,7 +131,7 @@ public class subscribe_to_stream_live : IClassFixture<subscribe_to_stream_live.F
 	}
 
 	[Fact]
-	public async Task catches_deletions() {
+	public async Task catches_deletions_when_stream_has_no_existing_events() {
 		var stream = _fixture.GetStreamName();
 
 		var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
@@ -147,6 +147,36 @@ public class subscribe_to_stream_live : IClassFixture<subscribe_to_stream_live.F
 			.WithTimeout();
 
 		await _fixture.Client.TombstoneAsync(stream, StreamState.NoStream);
+		var (reason, ex) = await dropped.Task.WithTimeout();
+
+		Assert.Equal(SubscriptionDroppedReason.ServerError, reason);
+		var sdex = Assert.IsType<StreamDeletedException>(ex);
+		Assert.Equal(stream, sdex.Stream);
+
+		Task EventAppeared(StreamSubscription s, ResolvedEvent e, CancellationToken ct) => Task.CompletedTask;
+
+		void SubscriptionDropped(StreamSubscription s, SubscriptionDroppedReason reason, Exception? ex) => dropped.SetResult((reason, ex));
+	}
+
+	[Fact]
+	public async Task catches_deletions_when_stream_has_existing_events() {
+		var stream = _fixture.GetStreamName();
+
+		var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
+
+		await _fixture.Client.AppendToStreamAsync(stream, StreamState.NoStream, _fixture.CreateTestEvents());
+
+		using var _ = await _fixture.Client
+			.SubscribeToStreamAsync(
+				stream,
+				FromStream.End,
+				EventAppeared,
+				false,
+				SubscriptionDropped
+			)
+			.WithTimeout();
+
+		await _fixture.Client.TombstoneAsync(stream, StreamState.StreamExists);
 		var (reason, ex) = await dropped.Task.WithTimeout();
 
 		Assert.Equal(SubscriptionDroppedReason.ServerError, reason);
