@@ -102,21 +102,6 @@ static class RpcExceptionConversionExtensions {
 	public static Task<TResponse> Apply<TResponse>(this Task<TResponse> task, Func<RpcException, Exception> convertException) => 
 		task.ContinueWith(t => t.Exception?.InnerException is RpcException ex ? throw convertException(ex) : t.Result);
 	
-	// public static async Task<TResponse> Apply<TResponse>(this Task<TResponse> task, Func<RpcException, Exception> convertException) {
-	// 	try {
-	// 		return await task.ConfigureAwait(false);
-	// 	}
-	// 	catch (Exception ex) {
-	// 		if (ex is RpcException rpcex)
-	// 			throw convertException(rpcex);
-	//
-	// 		if(ex is not OperationCanceledException)
-	// 			throw new Exception($"WTF!? {ex.Message}", ex);
-	//
-	// 		throw;
-	// 	}
-	// }
-	
 	public static AccessDeniedException ToAccessDeniedException(this RpcException exception) => 
 		new(exception.Message, exception);
 
