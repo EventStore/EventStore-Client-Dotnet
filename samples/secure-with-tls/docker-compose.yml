@@ -15,6 +15,7 @@ services:
       - EVENTSTORE_LOG_LEVEL=Information
       - EVENTSTORE_RUN_PROJECTIONS=None
       - EVENTSTORE_START_STANDARD_PROJECTIONS=true
+      - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
       
       # set certificates location
       - EVENTSTORE_CERTIFICATE_FILE=/etc/eventstore/certs/node/node.crt

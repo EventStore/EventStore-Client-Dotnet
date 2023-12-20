@@ -1,7 +1,6 @@
 namespace EventStore.Client.Streams.Tests.Append;
 
 public static class ShouldThrowAsyncExtensions {
-	
 	public static Task<TException> ShouldThrowAsync<TException>(this EventStoreClient.ReadStreamResult source) where TException : Exception =>
 		source
 			.ToArrayAsync()

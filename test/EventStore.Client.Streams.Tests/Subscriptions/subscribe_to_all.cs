@@ -573,7 +573,7 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 		var expectedResult = SubscriptionDroppedResult.SubscriberError();
 
 		var subscriptionDropped = new TaskCompletionSource<SubscriptionDroppedResult>();
-
+		
 		using var subscription = await Fixture.Streams
 			.SubscribeToAllAsync(
 				FromAll.Start,
