@@ -14,7 +14,7 @@ namespace EventStore.Client {
 		IDisposable, // for grpc.net we can dispose synchronously, but not for grpc.core
 		IAsyncDisposable {
 
-		private readonly IDictionary<string, Func<RpcException, Exception>> _exceptionMap;
+		private readonly Dictionary<string, Func<RpcException, Exception>> _exceptionMap;
 		private readonly CancellationTokenSource _cts;
 		private readonly ChannelCache _channelCache;
 		private readonly SharingProvider<ReconnectionRequired, ChannelInfo> _channelInfoProvider;
@@ -28,7 +28,7 @@ namespace EventStore.Client {
 
 		/// Constructs a new <see cref="EventStoreClientBase"/>.
 		protected EventStoreClientBase(EventStoreClientSettings? settings,
-			IDictionary<string, Func<RpcException, Exception>> exceptionMap) {
+			Dictionary<string, Func<RpcException, Exception>> exceptionMap) {
 			Settings = settings ?? new EventStoreClientSettings();
 			_exceptionMap = exceptionMap;
 			_cts = new CancellationTokenSource();

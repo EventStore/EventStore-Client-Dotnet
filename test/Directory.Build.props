@@ -9,12 +9,12 @@
     <ItemGroup>
         <PackageReference Include="Bogus" Version="34.0.2" />
         <PackageReference Include="GitHubActionsTestLogger" Version="2.3.3" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
         <!-- https://github.com/advisories/GHSA-5crp-9r3c-p9vr -->
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="Shouldly" Version="4.2.1" />
-        <PackageReference Include="xunit" Version="2.4.2"/>
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+        <PackageReference Include="xunit" Version="2.6.2" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.5.4">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
@@ -25,6 +25,7 @@
         <Using Include="Shouldly" />
         <Using Include="Xunit" />
         <Using Include="Xunit.Abstractions" />
+        <Using Include="Xunit.Categories" />
         <Using Include="EventStore.Client.Tests" />
         <Using Include="JetBrains.Annotations" />
     </ItemGroup>

@@ -4,13 +4,13 @@ using System.Text;
 namespace EventStore.Client.Tests;
 
 public partial class EventStoreFixture {
-	const string TestEventType = "-";
+	public const string TestEventType = "tst";
 
 	public T NewClient<T>(Action<EventStoreClientSettings> configure) where T : EventStoreClientBase, new() =>
 		(T)Activator.CreateInstance(typeof(T), new object?[] { ClientSettings.With(configure) })!;
-
+	
 	public string GetStreamName([CallerMemberName] string? testMethod = null) =>
-		$"{GetType().DeclaringType?.Name}.{testMethod ?? "unknown"}";
+		$"{testMethod}-{Guid.NewGuid():N}";
 
 	public IEnumerable<EventData> CreateTestEvents(int count = 1, string? type = null, int metadataSize = 1) =>
 		Enumerable.Range(0, count).Select(index => CreateTestEvent(index, type ?? TestEventType, metadataSize));
@@ -37,14 +37,17 @@ public partial class EventStoreFixture {
 			.Select(
 				async user => {
 					await Users.CreateUserAsync(
-						user.LoginName,
-						user.FullName,
-						user.Groups,
-						user.Password,
+						user.LoginName, user.FullName, user.Groups, user.Password,
 						userCredentials: useUserCredentials ? user.Credentials : TestCredentials.Root
 					);
 
 					return user;
 				}
 			).WhenAll();
+	
+	public async Task RestartService(TimeSpan delay) {
+		await Service.Restart(delay);
+		await Streams.WarmUp();
+		Log.Information("Service restarted.");
+	}
 }

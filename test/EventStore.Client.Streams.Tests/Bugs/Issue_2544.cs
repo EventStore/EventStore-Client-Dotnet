@@ -2,16 +2,11 @@
 
 namespace EventStore.Client.Streams.Tests.Bugs; 
 
-public class Issue_2544 : IAsyncLifetime {
-	const    int                              BatchSize = 18;
-	const    int                              Batches   = 4;
-	readonly TaskCompletionSource<bool>       _completed;
-	readonly Fixture                          _fixture;
-	readonly Dictionary<StreamPosition, bool> _seen;
-
-	public Issue_2544(ITestOutputHelper outputHelper) {
-		_fixture = new();
-		_fixture.CaptureLogs(outputHelper);
+[Trait("Category", "Bug")]
+public class Issue_2544 : IClassFixture<EventStoreFixture> {
+	public Issue_2544(ITestOutputHelper output, EventStoreFixture fixture) {
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
+	
 		_seen = Enumerable.Range(0, 1 + Batches * BatchSize)
 			.Select(i => new StreamPosition((ulong)i))
 			.ToDictionary(r => r, _ => false);
@@ -19,22 +14,25 @@ public class Issue_2544 : IAsyncLifetime {
 		_completed = new();
 	}
 
-	public Task InitializeAsync() => _fixture.InitializeAsync();
+	EventStoreFixture Fixture { get; }
 
-	public Task DisposeAsync() => _fixture.DisposeAsync();
+	const int BatchSize = 18;
+	const int Batches   = 4;
+	
+	readonly TaskCompletionSource<bool>       _completed;
+	readonly Dictionary<StreamPosition, bool> _seen;
 
 	public static IEnumerable<object?[]> TestCases() =>
-		Enumerable.Range(0, 5)
-			.Select(i => new object[] { i });
+		Enumerable.Range(0, 5).Select(i => new object[] { i });
 
 	[Theory]
 	[MemberData(nameof(TestCases))]
 	public async Task subscribe_to_stream(int iteration) {
-		var streamName = $"{_fixture.GetStreamName()}_{iteration}";
+		var streamName = $"{Fixture.GetStreamName()}_{iteration}";
 		var startFrom  = FromStream.Start;
 
 		async Task<StreamSubscription> Subscribe() =>
-			await _fixture.Client
+			await Fixture.Streams
 				.SubscribeToStreamAsync(
 					streamName,
 					startFrom,
@@ -53,11 +51,11 @@ public class Issue_2544 : IAsyncLifetime {
 	[Theory]
 	[MemberData(nameof(TestCases))]
 	public async Task subscribe_to_all(int iteration) {
-		var streamName = $"{_fixture.GetStreamName()}_{iteration}";
+		var streamName = $"{Fixture.GetStreamName()}_{iteration}";
 		var startFrom  = FromAll.Start;
 
 		async Task<StreamSubscription> Subscribe() =>
-			await _fixture.Client
+			await Fixture.Streams
 				.SubscribeToAllAsync(
 					startFrom,
 					(_, e, _) => EventAppeared(e, streamName, out startFrom),
@@ -75,11 +73,11 @@ public class Issue_2544 : IAsyncLifetime {
 	[Theory]
 	[MemberData(nameof(TestCases))]
 	public async Task subscribe_to_all_filtered(int iteration) {
-		var streamName = $"{_fixture.GetStreamName()}_{iteration}";
+		var streamName = $"{Fixture.GetStreamName()}_{iteration}";
 		var startFrom  = FromAll.Start;
 
 		async Task<StreamSubscription> Subscribe() =>
-			await _fixture.Client
+			await Fixture.Streams
 				.SubscribeToAllAsync(
 					startFrom,
 					(_, e, _) => EventAppeared(e, streamName, out startFrom),
@@ -102,19 +100,19 @@ public class Issue_2544 : IAsyncLifetime {
 
 		for (var i = 0; i < Batches; i++) {
 			if (expectedRevision == StreamRevision.None) {
-				var result = await _fixture.Client.AppendToStreamAsync(
+				var result = await Fixture.Streams.AppendToStreamAsync(
 					streamName,
 					StreamState.NoStream,
-					_fixture.CreateTestEvents(BatchSize)
+					Fixture.CreateTestEvents(BatchSize)
 				);
 
 				expectedRevision = result.NextExpectedStreamRevision;
 			}
 			else {
-				var result = await _fixture.Client.AppendToStreamAsync(
+				var result = await Fixture.Streams.AppendToStreamAsync(
 					streamName,
 					expectedRevision,
-					_fixture.CreateTestEvents(BatchSize)
+					Fixture.CreateTestEvents(BatchSize)
 				);
 
 				expectedRevision = result.NextExpectedStreamRevision;
@@ -123,7 +121,7 @@ public class Issue_2544 : IAsyncLifetime {
 			await Task.Delay(TimeSpan.FromMilliseconds(10));
 		}
 
-		await _fixture.Client.AppendToStreamAsync(
+		await Fixture.Streams.AppendToStreamAsync(
 			streamName,
 			expectedRevision,
 			new[] {
@@ -169,23 +167,5 @@ public class Issue_2544 : IAsyncLifetime {
 			_completed.TrySetResult(true);
 
 		return Task.CompletedTask;
-	}
-
-	public class Fixture : EventStoreClientFixture {
-		public Fixture() : base(
-			env: new() {
-				["EVENTSTORE_LOG_LEVEL"] = "Verbose"
-			}
-		) { }
-
-		protected override Task Given() =>
-			Client.SetStreamMetadataAsync(
-				SystemStreams.AllStream,
-				StreamState.Any,
-				new(acl: new(SystemRoles.All)),
-				userCredentials: TestCredentials.Root
-			);
-
-		protected override Task When() => Task.CompletedTask;
 	}
 }

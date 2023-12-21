@@ -1,5 +1,8 @@
+// ReSharper disable InconsistentNaming
+
 namespace EventStore.Client.Tests;
 
+[PublicAPI]
 public class SupportsPSToAll {
 	const int SupportedFromMajorVersion = 21;
 
@@ -9,11 +12,7 @@ public class SupportsPSToAll {
 	public static bool No  => !Yes;
 	public static bool Yes => (EventStoreTestServer.Version?.Major ?? int.MaxValue) >= SupportedFromMajorVersion;
 
-	public class FactAttribute : Regression.FactAttribute {
-		public FactAttribute() : base(SupportedFromMajorVersion, SkipMessage) { }
-	}
+	public class FactAttribute() : Regression.FactAttribute(SupportedFromMajorVersion, SkipMessage);
 
-	public class TheoryAttribute : Regression.TheoryAttribute {
-		public TheoryAttribute() : base(SupportedFromMajorVersion, SkipMessage) { }
-	}
+	public class TheoryAttribute() : Regression.TheoryAttribute(SupportedFromMajorVersion, SkipMessage);
 }

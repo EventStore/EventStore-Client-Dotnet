@@ -3,4 +3,4 @@ using Ductus.FluentDocker.Services;
 
 namespace EventStore.Client.Tests.FluentDocker;
 
-public abstract class TestContainerService : TestService<IContainerService, ContainerBuilder> { }
+public abstract class TestContainerService : TestService<IContainerService, ContainerBuilder>;

@@ -1,17 +1,10 @@
 ﻿namespace EventStore.Client.Tests;
 
+[PublicAPI]
 public class Deprecation {
-	public class FactAttribute : Xunit.FactAttribute {
-		readonly Version _legacySince;
-		readonly string  _skipMessage;
-
-		public FactAttribute(Version since, string skipMessage) {
-			_legacySince = since;
-			_skipMessage = skipMessage;
-		}
-
+	public class FactAttribute(Version since, string skipMessage) : Xunit.FactAttribute {
 		public override string? Skip {
-			get => EventStoreTestServer.Version >= _legacySince ? _skipMessage : null;
+			get => EventStoreTestServer.Version >= since ? skipMessage : null;
 			set => throw new NotSupportedException();
 		}
 	}

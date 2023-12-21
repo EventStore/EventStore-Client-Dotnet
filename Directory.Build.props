@@ -1,7 +1,6 @@
 <Project>
     <PropertyGroup>
-        <TargetFrameworks>net5.0;net6.0;net7.0;</TargetFrameworks>
-        <Platform>x64</Platform>
+        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
         <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
         <Nullable>enable</Nullable>
         <NullableContextOptions>enable</NullableContextOptions>
@@ -14,7 +13,7 @@
         <DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
 
         <UseLinkBase>true</UseLinkBase>
-        <GrpcPackageVersion>2.49.0</GrpcPackageVersion>
-        <GrpcToolsPackageVersion>2.50.0</GrpcToolsPackageVersion>
+        <GrpcPackageVersion>2.59.0</GrpcPackageVersion>
+        <GrpcToolsPackageVersion>2.59.0</GrpcToolsPackageVersion>
     </PropertyGroup>
 </Project>

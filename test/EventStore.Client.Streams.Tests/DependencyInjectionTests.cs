@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EventStore.Client.Streams.Tests; 
 
+[Trait("Category", "UnitTest")]
 public class DependencyInjectionTests {
 	[Fact]
 	public void Register() =>

@@ -1,41 +1,34 @@
-namespace EventStore.Client.Streams.Tests.Security; 
+namespace EventStore.Client.Streams.Tests; 
 
-public class read_all_security : IClassFixture<read_all_security.Fixture> {
-	readonly Fixture _fixture;
-
-	public read_all_security(Fixture fixture) => _fixture = fixture;
-
+[Trait("Category", "Security")]
+public class read_all_security(ITestOutputHelper output, SecurityFixture fixture) : EventStoreTests<SecurityFixture>(output, fixture) { 
 	[Fact]
 	public async Task reading_all_with_not_existing_credentials_is_not_authenticated() {
-		await Assert.ThrowsAsync<NotAuthenticatedException>(() => _fixture.ReadAllForward(TestCredentials.TestBadUser));
-		await Assert.ThrowsAsync<NotAuthenticatedException>(() => _fixture.ReadAllBackward(TestCredentials.TestBadUser));
+		await Assert.ThrowsAsync<NotAuthenticatedException>(() => Fixture.ReadAllForward(TestCredentials.TestBadUser));
+		await Assert.ThrowsAsync<NotAuthenticatedException>(() => Fixture.ReadAllBackward(TestCredentials.TestBadUser));
 	}
 
 	[Fact]
 	public async Task reading_all_with_no_credentials_is_denied() {
-		await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadAllForward());
-		await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadAllBackward());
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadAllForward());
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadAllBackward());
 	}
 
 	[Fact]
 	public async Task reading_all_with_not_authorized_user_credentials_is_denied() {
-		await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadAllForward(TestCredentials.TestUser2));
-		await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadAllBackward(TestCredentials.TestUser2));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadAllForward(TestCredentials.TestUser2));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadAllBackward(TestCredentials.TestUser2));
 	}
 
 	[Fact]
 	public async Task reading_all_with_authorized_user_credentials_succeeds() {
-		await _fixture.ReadAllForward(TestCredentials.TestUser1);
-		await _fixture.ReadAllBackward(TestCredentials.TestUser1);
+		await Fixture.ReadAllForward(TestCredentials.TestUser1);
+		await Fixture.ReadAllBackward(TestCredentials.TestUser1);
 	}
 
 	[Fact]
 	public async Task reading_all_with_admin_credentials_succeeds() {
-		await _fixture.ReadAllForward(TestCredentials.TestAdmin);
-		await _fixture.ReadAllBackward(TestCredentials.TestAdmin);
-	}
-
-	public class Fixture : SecurityFixture {
-		protected override Task When() => Task.CompletedTask;
+		await Fixture.ReadAllForward(TestCredentials.TestAdmin);
+		await Fixture.ReadAllBackward(TestCredentials.TestAdmin);
 	}
 }

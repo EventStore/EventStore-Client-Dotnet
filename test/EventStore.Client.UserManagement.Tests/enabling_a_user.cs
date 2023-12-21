@@ -1,7 +1,8 @@
 namespace EventStore.Client.Tests;
 
 public class enabling_a_user : IClassFixture<InsecureClientTestFixture> {
-	public enabling_a_user(ITestOutputHelper output, InsecureClientTestFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
+	public enabling_a_user(ITestOutputHelper output, InsecureClientTestFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
 	InsecureClientTestFixture Fixture { get; }
 

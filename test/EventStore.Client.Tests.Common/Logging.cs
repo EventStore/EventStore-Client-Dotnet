@@ -22,10 +22,6 @@ static class Logging {
 			.WriteTo.Observers(x => x.Subscribe(LogEventSubject.OnNext))
 			.CreateLogger();
 
-#if GRPC_CORE
-		    GrpcEnvironment.SetLogger(new GrpcCoreSerilogLogger(Log.Logger.ForContext<GrpcCoreSerilogLogger>()));
-#endif
-
 		Ductus.FluentDocker.Services.Logging.Enabled();
 
 		AppDomain.CurrentDomain.DomainUnload += (_, _) => Log.CloseAndFlush();
@@ -56,7 +52,12 @@ static class Logging {
 				logEvent.AddPropertyIfAbsent(testRunIdProperty);
 				using var writer = new StringWriter();
 				DefaultFormatter.Format(logEvent, writer);
-				write(writer.ToString().Trim());
+				try {
+					write(writer.ToString().Trim());
+				}
+				catch (Exception) {
+					// ignored
+				}
 			};
 	}
 

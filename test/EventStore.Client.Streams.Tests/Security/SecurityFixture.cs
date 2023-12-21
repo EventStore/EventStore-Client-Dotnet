@@ -1,8 +1,8 @@
 using System.Runtime.CompilerServices;
 
-namespace EventStore.Client.Streams.Tests.Security; 
+namespace EventStore.Client.Streams.Tests;
 
-public abstract class SecurityFixture : EventStoreClientFixture {
+public class SecurityFixture : EventStoreFixture {
 	public const string NoAclStream       = nameof(NoAclStream);
 	public const string ReadStream        = nameof(ReadStream);
 	public const string WriteStream       = nameof(WriteStream);
@@ -10,89 +10,87 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 	public const string MetaWriteStream   = nameof(MetaWriteStream);
 	public const string AllStream         = SystemStreams.AllStream;
 	public const string NormalAllStream   = nameof(NormalAllStream);
-	public const string SystemAllStream   = "$" + nameof(SystemAllStream);
-	public const string SystemAdminStream = "$" + nameof(SystemAdminStream);
-	public const string SystemAclStream   = "$" + nameof(SystemAclStream);
-	const        int    TimeoutMs         = 1000;
+	public const string SystemAllStream   = $"${nameof(SystemAllStream)}";
+	public const string SystemAdminStream = $"${nameof(SystemAdminStream)}";
+	public const string SystemAclStream   = $"${nameof(SystemAclStream)}";
 
-	protected SecurityFixture() : base(noDefaultCredentials: true) => UserManagementClient = new(Settings);
+	const int TimeoutMs = 1000;
 
-	public EventStoreUserManagementClient UserManagementClient { get; }
+	public SecurityFixture() : base(x => x.WithoutDefaultCredentials()) {
+		OnSetup = async () => {
+			await Users.CreateUserWithRetry(
+				TestCredentials.TestUser1.Username!,
+				nameof(TestCredentials.TestUser1),
+				Array.Empty<string>(),
+				TestCredentials.TestUser1.Password!,
+				TestCredentials.Root
+			).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	protected override async Task OnServerUpAsync() {
-		await base.OnServerUpAsync();
+			await Users.CreateUserWithRetry(
+				TestCredentials.TestUser2.Username!,
+				nameof(TestCredentials.TestUser2),
+				Array.Empty<string>(),
+				TestCredentials.TestUser2.Password!,
+				TestCredentials.Root
+			).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		await UserManagementClient.WarmUp();
-
-		await UserManagementClient.CreateUserWithRetry(
-			TestCredentials.TestUser1.Username!,
-			nameof(TestCredentials.TestUser1),
-			Array.Empty<string>(),
-			TestCredentials.TestUser1.Password!,
-			TestCredentials.Root
-		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
-
-		await UserManagementClient.CreateUserWithRetry(
-			TestCredentials.TestUser2.Username!,
-			nameof(TestCredentials.TestUser2),
-			Array.Empty<string>(),
-			TestCredentials.TestUser2.Password!,
-			TestCredentials.Root
-		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
-
-		await UserManagementClient.CreateUserWithRetry(
-			TestCredentials.TestAdmin.Username!,
-			nameof(TestCredentials.TestAdmin),
-			new[] { SystemRoles.Admins },
-			TestCredentials.TestAdmin.Password!,
-			TestCredentials.Root
-		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
+			await Users.CreateUserWithRetry(
+				TestCredentials.TestAdmin.Username!,
+				nameof(TestCredentials.TestAdmin),
+				new[] { SystemRoles.Admins },
+				TestCredentials.TestAdmin.Password!,
+				TestCredentials.Root
+			).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
+			
+			await Given();
+			await When();
+		};
 	}
 
-	protected override async Task Given() {
-		await Client.SetStreamMetadataAsync(
+	protected virtual async Task Given() {
+		await Streams.SetStreamMetadataAsync(
 			NoAclStream,
 			StreamState.NoStream,
 			new(),
 			userCredentials: TestCredentials.TestAdmin
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		await Client.SetStreamMetadataAsync(
+		await Streams.SetStreamMetadataAsync(
 			ReadStream,
 			StreamState.NoStream,
 			new(acl: new(TestCredentials.TestUser1.Username)),
 			userCredentials: TestCredentials.TestAdmin
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		await Client.SetStreamMetadataAsync(
+		await Streams.SetStreamMetadataAsync(
 			WriteStream,
 			StreamState.NoStream,
 			new(acl: new(writeRole: TestCredentials.TestUser1.Username)),
 			userCredentials: TestCredentials.TestAdmin
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		await Client.SetStreamMetadataAsync(
+		await Streams.SetStreamMetadataAsync(
 			MetaReadStream,
 			StreamState.NoStream,
 			new(acl: new(metaReadRole: TestCredentials.TestUser1.Username)),
 			userCredentials: TestCredentials.TestAdmin
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		await Client.SetStreamMetadataAsync(
+		await Streams.SetStreamMetadataAsync(
 			MetaWriteStream,
 			StreamState.NoStream,
 			new(acl: new(metaWriteRole: TestCredentials.TestUser1.Username)),
 			userCredentials: TestCredentials.TestAdmin
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		await Client.SetStreamMetadataAsync(
+		await Streams.SetStreamMetadataAsync(
 			AllStream,
 			StreamState.Any,
 			new(acl: new(TestCredentials.TestUser1.Username)),
 			userCredentials: TestCredentials.TestAdmin
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		await Client.SetStreamMetadataAsync(
+		await Streams.SetStreamMetadataAsync(
 			SystemAclStream,
 			StreamState.NoStream,
 			new(
@@ -106,7 +104,7 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 			userCredentials: TestCredentials.TestAdmin
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		await Client.SetStreamMetadataAsync(
+		await Streams.SetStreamMetadataAsync(
 			SystemAdminStream,
 			StreamState.NoStream,
 			new(
@@ -120,7 +118,7 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 			userCredentials: TestCredentials.TestAdmin
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		await Client.SetStreamMetadataAsync(
+		await Streams.SetStreamMetadataAsync(
 			NormalAllStream,
 			StreamState.NoStream,
 			new(
@@ -134,7 +132,7 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 			userCredentials: TestCredentials.TestAdmin
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-		await Client.SetStreamMetadataAsync(
+		await Streams.SetStreamMetadataAsync(
 			SystemAllStream,
 			StreamState.NoStream,
 			new(
@@ -149,8 +147,10 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 	}
 
+	protected virtual Task When() => Task.CompletedTask;
+
 	public Task ReadEvent(string streamId, UserCredentials? userCredentials = default) =>
-		Client.ReadStreamAsync(
+		Streams.ReadStreamAsync(
 				Direction.Forwards,
 				streamId,
 				StreamPosition.Start,
@@ -163,7 +163,7 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 	public Task ReadStreamForward(string streamId, UserCredentials? userCredentials = default) =>
-		Client.ReadStreamAsync(
+		Streams.ReadStreamAsync(
 				Direction.Forwards,
 				streamId,
 				StreamPosition.Start,
@@ -176,7 +176,7 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 	public Task ReadStreamBackward(string streamId, UserCredentials? userCredentials = default) =>
-		Client.ReadStreamAsync(
+		Streams.ReadStreamAsync(
 				Direction.Backwards,
 				streamId,
 				StreamPosition.Start,
@@ -189,7 +189,7 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 	public Task<IWriteResult> AppendStream(string streamId, UserCredentials? userCredentials = default) =>
-		Client.AppendToStreamAsync(
+		Streams.AppendToStreamAsync(
 				streamId,
 				StreamState.Any,
 				CreateTestEvents(3),
@@ -198,7 +198,7 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 	public Task ReadAllForward(UserCredentials? userCredentials = default) =>
-		Client.ReadAllAsync(
+		Streams.ReadAllAsync(
 				Direction.Forwards,
 				Position.Start,
 				1,
@@ -210,7 +210,8 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 	public Task ReadAllBackward(UserCredentials? userCredentials = default) =>
-		Client.ReadAllAsync(
+		Streams
+			.ReadAllAsync(
 				Direction.Backwards,
 				Position.End,
 				1,
@@ -222,14 +223,11 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 	public Task<StreamMetadataResult> ReadMeta(string streamId, UserCredentials? userCredentials = default) =>
-		Client.GetStreamMetadataAsync(streamId, userCredentials: userCredentials)
+		Streams.GetStreamMetadataAsync(streamId, userCredentials: userCredentials)
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public Task<IWriteResult> WriteMeta(
-		string streamId, UserCredentials? userCredentials = default,
-		string? role = default
-	) =>
-		Client.SetStreamMetadataAsync(
+	public Task<IWriteResult> WriteMeta(string streamId, UserCredentials? userCredentials = default, string? role = default) =>
+		Streams.SetStreamMetadataAsync(
 				streamId,
 				StreamState.Any,
 				new(
@@ -246,7 +244,7 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 
 	public async Task SubscribeToStream(string streamId, UserCredentials? userCredentials = default) {
 		var source = new TaskCompletionSource<bool>();
-		using (await Client.SubscribeToStreamAsync(
+		using (await Streams.SubscribeToStreamAsync(
 			       streamId,
 			       FromStream.Start,
 			       (_, _, _) => {
@@ -267,7 +265,7 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 
 	public async Task SubscribeToAll(UserCredentials? userCredentials = default) {
 		var source = new TaskCompletionSource<bool>();
-		using (await Client.SubscribeToAllAsync(
+		using (await Streams.SubscribeToAllAsync(
 			       FromAll.Start,
 			       (_, _, _) => {
 				       source.TrySetResult(true);
@@ -286,12 +284,8 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 		}
 	}
 
-	public async Task<string> CreateStreamWithMeta(
-		StreamMetadata metadata,
-		[CallerMemberName]
-		string streamId = "<unknown>"
-	) {
-		await Client.SetStreamMetadataAsync(
+	public async Task<string> CreateStreamWithMeta(StreamMetadata metadata, [CallerMemberName] string streamId = "<unknown>") {
+		await Streams.SetStreamMetadataAsync(
 				streamId,
 				StreamState.NoStream,
 				metadata,
@@ -303,11 +297,6 @@ public abstract class SecurityFixture : EventStoreClientFixture {
 	}
 
 	public Task<DeleteResult> DeleteStream(string streamId, UserCredentials? userCredentials = default) =>
-		Client.TombstoneAsync(streamId, StreamState.Any, userCredentials: userCredentials)
+		Streams.TombstoneAsync(streamId, StreamState.Any, userCredentials: userCredentials)
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
-
-	public override async Task DisposeAsync() {
-		await UserManagementClient.DisposeAsync();
-		await base.DisposeAsync();
-	}
 }
