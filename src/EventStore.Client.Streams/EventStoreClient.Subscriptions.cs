@@ -17,6 +17,8 @@ namespace EventStore.Client {
 		/// <param name="eventAppeared">A Task invoked and awaited when a new event is received over the subscription.</param>
 		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
 		/// <param name="subscriptionDropped">An action invoked if the subscription is dropped.</param>
+		/// <param name="caughtUp">An action invoked if the subscription reached the head of the stream.</param>
+		/// <param name="fellBehind">An action invoked if the subscription has fallen behind</param>
 		/// <param name="filterOptions">The optional <see cref="SubscriptionFilterOptions"/> to apply.</param>
 		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
@@ -26,6 +28,8 @@ namespace EventStore.Client {
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			bool resolveLinkTos = false,
 			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = default,
+			Func<StreamSubscription, CancellationToken, Task>? caughtUp = default,
+			Func<StreamSubscription, CancellationToken, Task>? fellBehind = default,
 			SubscriptionFilterOptions? filterOptions = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) => StreamSubscription.Confirm(ReadInternal(new ReadReq {
@@ -36,9 +40,9 @@ namespace EventStore.Client {
 					Subscription = new ReadReq.Types.Options.Types.SubscriptionOptions(),
 					Filter = GetFilterOptions(filterOptions)!
 				}
-			}, userCredentials, cancellationToken), eventAppeared, subscriptionDropped, _log,
+			}, userCredentials, cancellationToken), eventAppeared, subscriptionDropped, caughtUp, fellBehind, _log,
 			filterOptions?.CheckpointReached, cancellationToken);
-		
+
 		/// <summary>
 		/// Subscribes to all events.
 		/// </summary>
@@ -72,6 +76,8 @@ namespace EventStore.Client {
 		/// <param name="eventAppeared">A Task invoked and awaited when a new event is received over the subscription.</param>
 		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
 		/// <param name="subscriptionDropped">An action invoked if the subscription is dropped.</param>
+		/// <param name="caughtUp">An action invoked if the subscription reached the head of the stream.</param>
+		/// <param name="fellBehind">An action is invoked if the subscription has fallen behind</param>
 		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
@@ -80,6 +86,8 @@ namespace EventStore.Client {
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			bool resolveLinkTos = false,
 			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = default,
+			Func<StreamSubscription, CancellationToken, Task>? caughtUp = default,
+			Func<StreamSubscription, CancellationToken, Task>? fellBehind = default,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) => StreamSubscription.Confirm(ReadInternal(new ReadReq {
 				Options = new ReadReq.Types.Options {
@@ -88,7 +96,7 @@ namespace EventStore.Client {
 					Stream = ReadReq.Types.Options.Types.StreamOptions.FromSubscriptionPosition(streamName, start),
 					Subscription = new ReadReq.Types.Options.Types.SubscriptionOptions()
 				}
-			}, userCredentials, cancellationToken), eventAppeared, subscriptionDropped, _log,
+			}, userCredentials, cancellationToken), eventAppeared, subscriptionDropped, caughtUp, fellBehind, _log,
 			cancellationToken: cancellationToken);
 
 		/// <summary>
@@ -115,9 +123,7 @@ namespace EventStore.Client {
 				}
 			}, Settings, userCredentials, cancellationToken, _log);
 		}
-		
-		
-		
+
 		/// <summary>
 		/// A class which represents current subscription state and an enumerator to consume messages
 		/// </summary>
@@ -130,9 +136,9 @@ namespace EventStore.Client {
 			/// The name of the stream.
 			/// </summary>
 			public string StreamName { get; }
-			
+
 			/// <summary>
-			/// 
+			///
 			/// </summary>
 			public Position StreamPosition { get; private set; }
 
@@ -144,7 +150,7 @@ namespace EventStore.Client {
 			/// <summary>
 			/// Current subscription state
 			/// </summary>
-			
+
 			public SubscriptionState SubscriptionState {
 				get {
 					if (_exceptionInternal is not null) {
@@ -156,7 +162,7 @@ namespace EventStore.Client {
 			}
 
 			private volatile SubscriptionState _subscriptionStateInternal;
-			
+
 			private volatile Exception? _exceptionInternal;
 
 			/// <summary>
@@ -170,7 +176,7 @@ namespace EventStore.Client {
 						if (Interlocked.Exchange(ref _messagesEnumerated, 1) == 1) {
 							throw new InvalidOperationException("Messages may only be enumerated once.");
 						}
-						
+
 						try {
 							await foreach (var message in _internalChannel.Reader.ReadAllAsync()
 								               .ConfigureAwait(false)) {
@@ -232,10 +238,10 @@ namespace EventStore.Client {
 					: request.Options.Stream.StreamIdentifier!;
 
 				_subscriptionStateInternal = Initializing;
-				
+
 				_ = PumpMessages(selectCallInvoker, request, callOptions);
 			}
-			
+
 			async Task PumpMessages(Func<CancellationToken, Task<CallInvoker>> selectCallInvoker, ReadReq request, CallOptions callOptions) {
 				var firstMessageRead = false;
 				var callInvoker = await selectCallInvoker(_cts.Token).ConfigureAwait(false);
@@ -269,14 +275,14 @@ namespace EventStore.Client {
 						await _internalChannel.Writer.WriteAsync(messageToWrite, _cts.Token).ConfigureAwait(false);
 
 						if (messageToWrite is StreamMessage.NotFound) {
-							_exceptionInternal = new StreamNotFoundException(StreamName); 
+							_exceptionInternal = new StreamNotFoundException(StreamName);
 							break;
 						}
 					}
 				} catch (RpcException ex) when (ex.Status.StatusCode == StatusCode.Cancelled &&
 				                                ex.Status.Detail.Contains("Call canceled by the client.")) {
 					_log.LogInformation(
-						"Subscription {subscriptionId} was dropped because cancellation was requested by the client.", 
+						"Subscription {subscriptionId} was dropped because cancellation was requested by the client.",
 						SubscriptionId);
 				} catch (Exception ex) {
 					if (ex is ObjectDisposedException or OperationCanceledException) {
@@ -309,11 +315,11 @@ namespace EventStore.Client {
 
 				var streamOptions = request.Options.Stream;
 				var allOptions = request.Options.All;
-				
+
 				if (allOptions == null && streamOptions == null) {
 					throw new ArgumentException("No stream provided to subscribe");
 				}
-				
+
 				if (allOptions != null && streamOptions != null) {
 					throw new ArgumentException($"Cannot subscribe both ${SystemStreams.AllStream}, and ${streamOptions.StreamIdentifier}");
 				}

@@ -72,6 +72,8 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	public Version EventStoreVersion               { get; private set; } = null!;
 	public bool    EventStoreHasLastStreamPosition { get; private set; }
 
+	public bool    EventStoreHasCaughtUpAndFellBehind { get; private set; }
+
 	public EventStoreClient                        Streams       { get; private set; } = null!;
 	public EventStoreUserManagementClient          Users         { get; private set; } = null!;
 	public EventStoreProjectionManagementClient    Projections   { get; private set; } = null!;
@@ -113,6 +115,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 
 		EventStoreVersion               = GetEventStoreVersion();
 		EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
+		EventStoreHasCaughtUpAndFellBehind = (EventStoreVersion?.Major ?? int.MaxValue) > 22;
 		
 		await WarmUpGatekeeper.WaitAsync();
 		
