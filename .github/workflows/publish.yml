@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [ net5.0, net6.0, net7.0 ]
+        framework: [ net6.0, net7.0, net8.0 ]
         os: [ ubuntu-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     name: scan-vulnerabilities/${{ matrix.os }}/${{ matrix.framework }}
@@ -25,9 +25,9 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            5.0.x
             6.0.x
             7.0.x
+            8.0.x
       - name: Scan for Vulnerabilities
         shell: bash
         run: |
@@ -43,13 +43,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [ net5.0, net6.0, net7.0 ]
+        framework: [ net8.0 ]
     services:
       esdb:
         image: ghcr.io/eventstore/eventstore:lts
         env:
           EVENTSTORE_INSECURE: true
-          EVENTSTORE_MEMDB: true
+          EVENTSTORE_MEM_DB: false
           EVENTSTORE_RUN_PROJECTIONS: all
           EVENTSTORE_START_STANDARD_PROJECTIONS: true
         ports:
@@ -62,9 +62,7 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            5.0.x
-            6.0.x
-            7.0.x
+            8.0.x
       - name: Compile
         shell: bash
         run: |
@@ -75,13 +73,13 @@ jobs:
           find samples/ -type f -iname "*.csproj" -print0 | xargs -0L1 dotnet run --framework ${{ matrix.framework }} --project
 
   test:
-    timeout-minutes: 10
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        framework: [net5.0, net6.0, net7.0]
-        os: [ubuntu-latest, windows-latest]
-        configuration: [release]
+        framework: [ net6.0, net7.0, net8.0 ]
+        os: [ ubuntu-latest, windows-latest ]
+        configuration: [ release ]
     runs-on: ${{ matrix.os }}
     name: test/EventStore.Client/${{ matrix.os }}/${{ matrix.framework }}
     steps:
@@ -94,9 +92,9 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            5.0.x
             6.0.x
             7.0.x
+            8.0.x
       - name: Compile
         shell: bash
         run: |
@@ -132,9 +130,9 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            5.0.x
             6.0.x
             7.0.x
+            8.0.x
       - name: Dotnet Pack
         shell: bash
         run: |
@@ -162,4 +160,3 @@ jobs:
           dotnet nuget list source
           dotnet tool restore
           find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.nuget_key }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-    

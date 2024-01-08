@@ -1,9 +1,12 @@
-version: '3'
+version: '3.5'
 services:
   eventstore:
-    image: eventstore/eventstore:20.10.0-buster-slim
+    image: eventstore/eventstore:latest
     environment:
-      - EVENTSTORE_INSECURE=true
-      - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
+      EVENTSTORE_INSECURE: true
+      EVENTSTORE_MEM_DB: false
+      EVENTSTORE_RUN_PROJECTIONS: all
+      EVENTSTORE_START_STANDARD_PROJECTIONS: true
+      EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP: true
     ports:
-      - 2113:2113
+      - "2113:2113"
