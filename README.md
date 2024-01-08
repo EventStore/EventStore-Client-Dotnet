@@ -25,7 +25,9 @@ Information on support and commercial tools such as LDAP authentication can be f
 
 ## CI Status
 
-![Build](https://github.com/EventStore/EventStore-Client-Dotnet/workflows/Build/badge.svg)
+![Build](https://github.com/EventStore/EventStore-Client-Dotnet/actions/workflows/ci.yml/badge.svg)
+![Build](https://github.com/EventStore/EventStore-Client-Dotnet/actions/workflows/lts.yml/badge.svg)
+![Build](https://github.com/EventStore/EventStore-Client-Dotnet/actions/workflows/previous-lts.yml/badge.svg)
 
 ## Documentation
 

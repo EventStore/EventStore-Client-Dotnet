@@ -1,26 +1,48 @@
-using System;
-using System.Threading;
 using Grpc.Core;
-using Timeout_ = System.Threading.Timeout;
+using static System.Threading.Timeout;
 
-namespace EventStore.Client {
-	internal static class EventStoreCallOptions {
-		// deadline falls back to infinity
-		public static CallOptions CreateStreaming(EventStoreClientSettings settings,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) =>
-			Create(settings, deadline, userCredentials, cancellationToken);
+namespace EventStore.Client;
 
-		// deadline falls back to connection DefaultDeadline
-		public static CallOptions CreateNonStreaming(EventStoreClientSettings settings, TimeSpan? deadline,
-			UserCredentials? userCredentials, CancellationToken cancellationToken) => Create(settings,
-			deadline ?? settings.DefaultDeadline, userCredentials, cancellationToken);
+static class EventStoreCallOptions {
+	// deadline falls back to infinity
+	public static CallOptions CreateStreaming(
+		EventStoreClientSettings settings,
+		TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+		CancellationToken cancellationToken = default
+	) =>
+		Create(settings, deadline, userCredentials, cancellationToken);
 
-		private static CallOptions Create(EventStoreClientSettings settings, TimeSpan? deadline,
-			UserCredentials? userCredentials, CancellationToken cancellationToken) => new(
+	// deadline falls back to connection DefaultDeadline
+	public static CallOptions CreateNonStreaming(
+		EventStoreClientSettings settings,
+		CancellationToken cancellationToken
+	) =>
+		Create(
+			settings,
+			settings.DefaultDeadline,
+			settings.DefaultCredentials,
+			cancellationToken
+		);
+
+	public static CallOptions CreateNonStreaming(
+		EventStoreClientSettings settings, TimeSpan? deadline,
+		UserCredentials? userCredentials, CancellationToken cancellationToken
+	) =>
+		Create(
+			settings,
+			deadline ?? settings.DefaultDeadline,
+			userCredentials,
+			cancellationToken
+		);
+
+	static CallOptions Create(
+		EventStoreClientSettings settings, TimeSpan? deadline,
+		UserCredentials? userCredentials, CancellationToken cancellationToken
+	) =>
+		new(
 			cancellationToken: cancellationToken,
 			deadline: DeadlineAfter(deadline),
-			headers: new Metadata {
+			headers: new() {
 				{
 					Constants.Headers.RequiresLeader,
 					settings.ConnectivitySettings.NodePreference == NodePreference.Leader
@@ -28,22 +50,25 @@ namespace EventStore.Client {
 						: bool.FalseString
 				}
 			},
-			credentials: (settings.DefaultCredentials ?? userCredentials) == null
+			credentials: (userCredentials ?? settings.DefaultCredentials) == null
 				? null
-				: CallCredentials.FromInterceptor(async (_, metadata) => {
-					var credentials = settings.DefaultCredentials ?? userCredentials;
+				: CallCredentials.FromInterceptor(
+					async (_, metadata) => {
+						var credentials = userCredentials ?? settings.DefaultCredentials;
 
-					var authorizationHeader = await settings.OperationOptions
-						.GetAuthenticationHeaderValue(credentials!, CancellationToken.None)
-						.ConfigureAwait(false);
-					metadata.Add(Constants.Headers.Authorization, authorizationHeader);
-				})
+						var authorizationHeader = await settings.OperationOptions
+							.GetAuthenticationHeaderValue(credentials!, CancellationToken.None)
+							.ConfigureAwait(false);
+
+						metadata.Add(Constants.Headers.Authorization, authorizationHeader);
+					}
+				)
 		);
 
-		private static DateTime? DeadlineAfter(TimeSpan? timeoutAfter) => !timeoutAfter.HasValue
+	static DateTime? DeadlineAfter(TimeSpan? timeoutAfter) =>
+		!timeoutAfter.HasValue
 			? new DateTime?()
-			: timeoutAfter.Value == TimeSpan.MaxValue || timeoutAfter.Value == Timeout_.InfiniteTimeSpan
+			: timeoutAfter.Value == TimeSpan.MaxValue || timeoutAfter.Value == InfiniteTimeSpan
 				? DateTime.MaxValue
 				: DateTime.UtcNow.Add(timeoutAfter.Value);
-	}
 }

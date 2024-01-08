@@ -1,90 +1,86 @@
-using System.Threading.Tasks;
-using Xunit;
+namespace EventStore.Client.Streams.Tests;
 
-namespace EventStore.Client.Security {
-	public class overriden_system_stream_security : IClassFixture<overriden_system_stream_security.Fixture> {
-		private readonly Fixture _fixture;
+[Trait("Category", "Security")]
+public class overriden_system_stream_security(ITestOutputHelper output, overriden_system_stream_security.CustomFixture fixture) : EventStoreTests<overriden_system_stream_security.CustomFixture>(output, fixture) {
+	[Fact]
+	public async Task operations_on_system_stream_succeed_for_authorized_user() {
+		var stream = $"${Fixture.GetStreamName()}";
+		await Fixture.AppendStream(stream, TestCredentials.TestUser1);
 
-		public overriden_system_stream_security(Fixture fixture) {
-			_fixture = fixture;
-		}
+		await Fixture.ReadEvent(stream, TestCredentials.TestUser1);
+		await Fixture.ReadStreamForward(stream, TestCredentials.TestUser1);
+		await Fixture.ReadStreamBackward(stream, TestCredentials.TestUser1);
 
-		[Fact]
-		public async Task operations_on_system_stream_succeed_for_authorized_user() {
-			var stream = $"${_fixture.GetStreamName()}";
-			await _fixture.AppendStream(stream, userCredentials: TestCredentials.TestUser1);
+		await Fixture.ReadMeta(stream, TestCredentials.TestUser1);
+		await Fixture.WriteMeta(stream, TestCredentials.TestUser1);
 
-			await _fixture.ReadEvent(stream, userCredentials: TestCredentials.TestUser1);
-			await _fixture.ReadStreamForward(stream, userCredentials: TestCredentials.TestUser1);
-			await _fixture.ReadStreamBackward(stream, userCredentials: TestCredentials.TestUser1);
+		await Fixture.SubscribeToStream(stream, TestCredentials.TestUser1);
 
-			await _fixture.ReadMeta(stream, userCredentials: TestCredentials.TestUser1);
-			await _fixture.WriteMeta(stream, userCredentials: TestCredentials.TestUser1);
+		await Fixture.DeleteStream(stream, TestCredentials.TestUser1);
+	}
 
-			await _fixture.SubscribeToStream(stream, userCredentials: TestCredentials.TestUser1);
+	[Fact]
+	public async Task operations_on_system_stream_fail_for_not_authorized_user() {
+		var stream = $"${Fixture.GetStreamName()}";
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadEvent(stream, TestCredentials.TestUser2));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadStreamForward(stream, TestCredentials.TestUser2));
+		await Assert.ThrowsAsync<AccessDeniedException>(
+			() =>
+				Fixture.ReadStreamBackward(stream, TestCredentials.TestUser2)
+		);
 
-			await _fixture.DeleteStream(stream, userCredentials: TestCredentials.TestUser1);
-		}
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.AppendStream(stream, TestCredentials.TestUser2));
 
-		[Fact]
-		public async Task operations_on_system_stream_fail_for_not_authorized_user() {
-			var stream = $"${_fixture.GetStreamName()}";
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadEvent(stream, TestCredentials.TestUser2));
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadStreamForward(stream, TestCredentials.TestUser2));
-			await Assert.ThrowsAsync<AccessDeniedException>(() =>
-				_fixture.ReadStreamBackward(stream, TestCredentials.TestUser2));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadMeta(stream, TestCredentials.TestUser2));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.WriteMeta(stream, TestCredentials.TestUser2));
 
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.AppendStream(stream, TestCredentials.TestUser2));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStream(stream, TestCredentials.TestUser2));
 
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadMeta(stream, TestCredentials.TestUser2));
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.WriteMeta(stream, TestCredentials.TestUser2));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.DeleteStream(stream, TestCredentials.TestUser2));
+	}
 
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.SubscribeToStream(stream, TestCredentials.TestUser2));
+	[Fact]
+	public async Task operations_on_system_stream_fail_for_anonymous_user() {
+		var stream = $"${Fixture.GetStreamName()}";
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadEvent(stream));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadStreamForward(stream));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadStreamBackward(stream));
 
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.DeleteStream(stream, TestCredentials.TestUser2));
-		}
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.AppendStream(stream));
 
-		[Fact]
-		public async Task operations_on_system_stream_fail_for_anonymous_user() {
-			var stream = $"${_fixture.GetStreamName()}";
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadEvent(stream));
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadStreamForward(stream));
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadStreamBackward(stream));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadMeta(stream));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.WriteMeta(stream));
 
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.AppendStream(stream));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStream(stream));
 
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.ReadMeta(stream));
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.WriteMeta(stream));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.DeleteStream(stream));
+	}
 
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.SubscribeToStream(stream));
+	[Fact]
+	public async Task operations_on_system_stream_succeed_for_admin() {
+		var stream = $"${Fixture.GetStreamName()}";
+		await Fixture.AppendStream(stream, TestCredentials.TestAdmin);
 
-			await Assert.ThrowsAsync<AccessDeniedException>(() => _fixture.DeleteStream(stream));
-		}
+		await Fixture.ReadEvent(stream, TestCredentials.TestAdmin);
+		await Fixture.ReadStreamForward(stream, TestCredentials.TestAdmin);
+		await Fixture.ReadStreamBackward(stream, TestCredentials.TestAdmin);
 
-		[Fact]
-		public async Task operations_on_system_stream_succeed_for_admin() {
-			var stream = $"${_fixture.GetStreamName()}";
-			await _fixture.AppendStream(stream, userCredentials: TestCredentials.TestAdmin);
+		await Fixture.ReadMeta(stream, TestCredentials.TestAdmin);
+		await Fixture.WriteMeta(stream, TestCredentials.TestAdmin);
 
-			await _fixture.ReadEvent(stream, userCredentials: TestCredentials.TestAdmin);
-			await _fixture.ReadStreamForward(stream, userCredentials: TestCredentials.TestAdmin);
-			await _fixture.ReadStreamBackward(stream, userCredentials: TestCredentials.TestAdmin);
+		await Fixture.SubscribeToStream(stream, TestCredentials.TestAdmin);
 
-			await _fixture.ReadMeta(stream, userCredentials: TestCredentials.TestAdmin);
-			await _fixture.WriteMeta(stream, userCredentials: TestCredentials.TestAdmin);
+		await Fixture.DeleteStream(stream, TestCredentials.TestAdmin);
+	}
 
-			await _fixture.SubscribeToStream(stream, userCredentials: TestCredentials.TestAdmin);
+	public class CustomFixture : SecurityFixture {
+		protected override Task When() {
+			var settings = new SystemSettings(
+				systemStreamAcl: new("user1", "user1", "user1", "user1", "user1"),
+				userStreamAcl: default
+			);
 
-			await _fixture.DeleteStream(stream, userCredentials: TestCredentials.TestAdmin);
-		}
-
-		public class Fixture : SecurityFixture {
-			protected override Task When() {
-				var settings = new SystemSettings(
-					systemStreamAcl: new StreamAcl("user1", "user1", "user1", "user1", "user1"),
-					userStreamAcl: default);
-				return Client.SetSystemSettingsAsync(settings, userCredentials: TestCredentials.TestAdmin);
-			}
+			return Streams.SetSystemSettingsAsync(settings, userCredentials: TestCredentials.TestAdmin);
 		}
 	}
 }

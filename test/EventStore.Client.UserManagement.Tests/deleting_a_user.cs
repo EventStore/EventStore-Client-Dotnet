@@ -1,73 +1,68 @@
-using System;
-using System.Threading.Tasks;
-using Xunit;
+namespace EventStore.Client.Tests;
 
-namespace EventStore.Client {
-	public class deleting_a_user : IClassFixture<deleting_a_user.Fixture> {
-		private readonly Fixture _fixture;
+public class deleting_a_user : IClassFixture<InsecureClientTestFixture> {
+	public deleting_a_user(ITestOutputHelper output, InsecureClientTestFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-		public deleting_a_user(Fixture fixture) {
-			_fixture = fixture;
-		}
+	InsecureClientTestFixture Fixture { get; }
 
-		[Fact]
-		public async Task with_null_input_throws() {
-			var ex = await Assert.ThrowsAsync<ArgumentNullException>(
-				() => _fixture.Client.DeleteUserAsync(null!, userCredentials: TestCredentials.Root));
-			Assert.Equal("loginName", ex.ParamName);
-		}
+	[Fact]
+	public async Task with_null_input_throws() {
+		var ex = await Fixture.Users
+			.DeleteUserAsync(null!, userCredentials: TestCredentials.Root)
+			.ShouldThrowAsync<ArgumentNullException>();
 
-		[Fact]
-		public async Task with_empty_input_throws() {
-			var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-				() => _fixture.Client.DeleteUserAsync(string.Empty, userCredentials: TestCredentials.Root));
-			Assert.Equal("loginName", ex.ParamName);
-		}
+		ex.ParamName.ShouldBe("loginName");
+	}
 
-		[Theory, ClassData(typeof(InvalidCredentialsCases))]
-		public async Task with_user_with_insufficient_credentials_throws(string loginName,
-			UserCredentials userCredentials) {
-			await _fixture.Client.CreateUserAsync(loginName, "Full Name", new[] {"foo", "bar"},
-				"password", userCredentials: TestCredentials.Root);
-			if(userCredentials == null)
-				await Assert.ThrowsAsync<AccessDeniedException>(
-				() => _fixture.Client.DeleteUserAsync(loginName));
-			else
-				await Assert.ThrowsAsync<NotAuthenticatedException>(
-				() => _fixture.Client.DeleteUserAsync(loginName, userCredentials: userCredentials));
-		}
+	[Fact]
+	public async Task with_empty_input_throws() {
+		var ex = await Fixture.Users
+			.DeleteUserAsync(string.Empty, userCredentials: TestCredentials.Root)
+			.ShouldThrowAsync<ArgumentOutOfRangeException>();
 
-		[Fact]
-		public async Task cannot_be_read() {
-			var loginName = Guid.NewGuid().ToString();
-			await _fixture.Client.CreateUserAsync(loginName, "Full Name", new[] {"foo", "bar"}, "password",
-				userCredentials: TestCredentials.Root);
+		ex.ParamName.ShouldBe("loginName");
+	}
 
-			await _fixture.Client.DeleteUserAsync(loginName, userCredentials: TestCredentials.Root);
+	[Theory]
+	[ClassData(typeof(InvalidCredentialsTestCases))]
+	public async Task with_user_with_insufficient_credentials_throws(InvalidCredentialsTestCase testCase) {
+		await Fixture.Users.CreateUserAsync(
+			testCase.User.LoginName,
+			testCase.User.FullName,
+			testCase.User.Groups,
+			testCase.User.Password,
+			userCredentials: TestCredentials.Root
+		);
 
-			var ex = await Assert.ThrowsAsync<UserNotFoundException>(
-				() => _fixture.Client.GetUserAsync(loginName, userCredentials: TestCredentials.Root));
+		await Fixture.Users
+			.DeleteUserAsync(testCase.User.LoginName, userCredentials: testCase.User.Credentials)
+			.ShouldThrowAsync(testCase.ExpectedException);
+	}
 
-			Assert.Equal(loginName, ex.LoginName);
-		}
+	[Fact]
+	public async Task cannot_be_read() {
+		var user = await Fixture.CreateTestUser();
 
-		[Fact]
-		public async Task a_second_time_throws() {
-			var loginName = Guid.NewGuid().ToString();
-			await _fixture.Client.CreateUserAsync(loginName, "Full Name", new[] {"foo", "bar"}, "password",
-				userCredentials: TestCredentials.Root);
+		await Fixture.Users.DeleteUserAsync(user.LoginName, userCredentials: TestCredentials.Root);
 
-			await _fixture.Client.DeleteUserAsync(loginName, userCredentials: TestCredentials.Root);
+		var ex = await Fixture.Users
+			.GetUserAsync(user.LoginName, userCredentials: TestCredentials.Root)
+			.ShouldThrowAsync<UserNotFoundException>();
 
-			var ex = await Assert.ThrowsAsync<UserNotFoundException>(
-				() => _fixture.Client.DeleteUserAsync(loginName, userCredentials: TestCredentials.Root));
+		ex.LoginName.ShouldBe(user.LoginName);
+	}
 
-			Assert.Equal(loginName, ex.LoginName);
-		}
+	[Fact]
+	public async Task a_second_time_throws() {
+		var user = await Fixture.CreateTestUser();
 
-		public class Fixture : EventStoreClientFixture {
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
+		await Fixture.Users.DeleteUserAsync(user.LoginName, userCredentials: TestCredentials.Root);
+
+		var ex = await Fixture.Users
+			.DeleteUserAsync(user.LoginName, userCredentials: TestCredentials.Root)
+			.ShouldThrowAsync<UserNotFoundException>();
+
+		ex.LoginName.ShouldBe(user.LoginName);
 	}
 }
