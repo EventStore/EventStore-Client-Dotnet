@@ -20,6 +20,8 @@ public class Issue_104(ITestOutputHelper output, EventStoreFixture fixture) : Ev
 			},
 			false,
 			(_, _, _) => subscriptionDisposed.TrySetResult(true),
+			caughtUp: null,
+			fellBehind: null,
 			new(
 				StreamFilter.Prefix(streamName),
 				1,

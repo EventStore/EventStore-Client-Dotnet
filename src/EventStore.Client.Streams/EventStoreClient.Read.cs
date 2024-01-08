@@ -165,7 +165,7 @@ namespace EventStore.Client {
 
 		/// <summary>
 		/// Asynchronously reads all the events from a stream.
-		/// 
+		///
 		/// The result could also be inspected as a means to avoid handling exceptions as the <see cref="ReadState"/> would indicate whether or not the stream is readable./>
 		/// </summary>
 		/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
@@ -227,12 +227,12 @@ namespace EventStore.Client {
 			public string StreamName { get; }
 
 			/// <summary>
-			/// The <see cref="StreamPosition"/> of the first message in this stream. Will only be filled once <see cref="Messages"/> has been enumerated. 
+			/// The <see cref="StreamPosition"/> of the first message in this stream. Will only be filled once <see cref="Messages"/> has been enumerated.
 			/// </summary>
 			public StreamPosition? FirstStreamPosition { get; private set; }
 
 			/// <summary>
-			/// The <see cref="StreamPosition"/> of the last message in this stream. Will only be filled once <see cref="Messages"/> has been enumerated. 
+			/// The <see cref="StreamPosition"/> of the last message in this stream. Will only be filled once <see cref="Messages"/> has been enumerated.
 			/// </summary>
 			public StreamPosition? LastStreamPosition { get; private set; }
 
@@ -357,7 +357,7 @@ namespace EventStore.Client {
 			}
 		}
 
-		private async IAsyncEnumerable<(SubscriptionConfirmation, Position?, ResolvedEvent)> ReadInternal(
+		private async IAsyncEnumerable<(SubscriptionConfirmation, Position?, ResolvedEvent, StreamMessage.SubscriptionMessage?)> ReadInternal(
 			ReadReq request,
 			UserCredentials? userCredentials,
 			[EnumeratorCancellation] CancellationToken cancellationToken) {
@@ -392,16 +392,18 @@ namespace EventStore.Client {
 			}
 		}
 
-		private static (SubscriptionConfirmation, Position?, ResolvedEvent)? ConvertToItem(ReadResp response) =>
+		private static (SubscriptionConfirmation, Position?, ResolvedEvent, StreamMessage.SubscriptionMessage?)? ConvertToItem(ReadResp response) =>
 			response.ContentCase switch {
 				Confirmation => (
-					new SubscriptionConfirmation(response.Confirmation.SubscriptionId), null, default),
+					new SubscriptionConfirmation(response.Confirmation.SubscriptionId), null, default, null),
 				Event => (SubscriptionConfirmation.None,
 					null,
-					ConvertToResolvedEvent(response.Event)),
+					ConvertToResolvedEvent(response.Event), null),
 				Checkpoint => (SubscriptionConfirmation.None,
 					new Position(response.Checkpoint.CommitPosition, response.Checkpoint.PreparePosition),
-					default),
+					default, null),
+				CaughtUp => (SubscriptionConfirmation.None, null, default, StreamMessage.SubscriptionMessage.CaughtUp.Instance),
+				FellBehind => (SubscriptionConfirmation.None, null, default, StreamMessage.SubscriptionMessage.FellBehind.Instance),
 				_ => null
 			};
 
@@ -421,6 +423,7 @@ namespace EventStore.Client {
 					new StreamPosition(response.LastStreamPosition)),
 				StreamNotFound => StreamMessage.NotFound.Instance,
 				CaughtUp => StreamMessage.SubscriptionMessage.CaughtUp.Instance,
+				FellBehind => StreamMessage.SubscriptionMessage.FellBehind.Instance,
 				_ => StreamMessage.Unknown.Instance
 			};
 

@@ -137,6 +137,8 @@ public class Issue_2544 : IClassFixture<EventStoreFixture> {
 					(_, e, _) => EventAppeared(e, streamName, out startFrom),
 					false,
 					(s, r, e) => SubscriptionDropped(s, r, e, Subscribe),
+					caughtUp: null,
+					fellBehind: null,
 					new(EventTypeFilter.ExcludeSystemEvents())
 				);
 
