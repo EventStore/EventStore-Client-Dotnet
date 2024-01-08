@@ -103,7 +103,7 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 	}
 
 	[Fact]
-	public async Task receives_all_events_from_non_existing_stream() {
+	public async Task Callback_receives_all_events_from_non_existing_stream() {
 		var streamName = Fixture.GetStreamName();
 
 		var receivedAllEvents   = new TaskCompletionSource<bool>();
@@ -148,7 +148,35 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 	}
 
 	[Fact]
-	public async Task allow_multiple_subscriptions_to_same_stream() {
+	public async Task Iterator_subscribe_to_non_existing_stream() {
+		var stream = $"{Fixture.GetStreamName()}_{Guid.NewGuid()}";
+		var appeared = new TaskCompletionSource<bool>();
+		var dropped = new TaskCompletionSource<Exception?>();
+
+		var subscription = Fixture.Streams.SubscribeToStream(stream, FromStream.Start);
+		ReadMessages(subscription, EventAppeared, SubscriptionDropped);
+
+		Assert.False(appeared.Task.IsCompleted);
+
+		if (dropped.Task.IsCompleted) {
+			Assert.False(dropped.Task.IsCompleted, dropped.Task.Result?.ToString());
+		}
+
+		subscription.Dispose();
+
+		var ex = await dropped.Task.WithTimeout();
+		Assert.Null(ex);
+
+		Task EventAppeared(ResolvedEvent e) {
+			appeared.TrySetResult(true);
+			return Task.CompletedTask;
+		}
+
+		void SubscriptionDropped(Exception? ex) => dropped.SetResult(ex);
+	}
+
+	[Fact]
+	public async Task Callback_allow_multiple_subscriptions_to_same_stream() {
 		var streamName = Fixture.GetStreamName();
 
 		var receivedAllEvents = new TaskCompletionSource<bool>();
@@ -180,7 +208,34 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 	}
 
 	[Fact]
-	public async Task drops_when_disposed() {
+	public async Task Iterator_allow_multiple_subscriptions_to_same_stream() {
+		var stream = $"{Fixture.GetStreamName()}_{Guid.NewGuid()}";
+
+		var appeared = new TaskCompletionSource<bool>();
+
+		int appearedCount = 0;
+
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents());
+
+		var s1 = Fixture.Streams.SubscribeToStream(stream, FromStream.Start);
+		ReadMessages(s1, EventAppeared, null);
+
+		var s2 = Fixture.Streams.SubscribeToStream(stream, FromStream.Start);
+		ReadMessages(s2, EventAppeared, null);
+
+		Assert.True(await appeared.Task.WithTimeout());
+
+		Task EventAppeared(ResolvedEvent e) {
+			if (++appearedCount == 2) {
+				appeared.TrySetResult(true);
+			}
+
+			return Task.CompletedTask;
+		}
+	}
+
+	[Fact]
+	public async Task Callback_drops_when_disposed() {
 		var streamName = Fixture.GetStreamName();
 
 		var subscriptionDropped = new TaskCompletionSource<SubscriptionDroppedResult>();
@@ -206,7 +261,35 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 	}
 
 	[Fact]
-	public async Task drops_when_subscriber_error() {
+	public async Task Iterator_client_stops_reading_messages_when_subscription_disposed() {
+		var stream = $"{Fixture.GetStreamName()}_{Guid.NewGuid()}";
+		var dropped = new TaskCompletionSource<Exception?>();
+
+		var subscription = Fixture.Streams.SubscribeToStream(stream, FromStream.Start);
+		var testEvent = Fixture.CreateTestEvents(1).First();
+		ReadMessages(subscription, EventAppeared, SubscriptionDropped);
+
+		if (dropped.Task.IsCompleted) {
+			Assert.False(dropped.Task.IsCompleted, dropped.Task.Result?.ToString());
+		}
+
+		subscription.Dispose();
+
+		var ex = await dropped.Task.WithTimeout();
+		Assert.Null(ex);
+
+		// new event after subscription is disposed
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, new[]{testEvent});
+
+		Task EventAppeared(ResolvedEvent e) {
+			return testEvent.EventId.Equals(e.OriginalEvent.EventId) ? Task.FromException(new Exception("Subscription not dropped")) : Task.CompletedTask;
+		}
+
+		void SubscriptionDropped(Exception? ex) => dropped.SetResult(ex);
+	}
+
+	[Fact]
+	public async Task Callback_drops_when_subscriber_error() {
 		var streamName = Fixture.GetStreamName();
 
 		var expectedResult = SubscriptionDroppedResult.SubscriberError();
@@ -230,7 +313,32 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 	}
 
 	[Fact]
-	public async Task drops_when_stream_tombstoned() {
+	public async Task Iterator_client_stops_reading_messages_when_error_processing_event() {
+		var stream = $"{Fixture.GetStreamName()}_{Guid.NewGuid()}";
+		var dropped = new TaskCompletionSource<Exception?>();
+		var expectedException = new Exception("Error");
+		int numTimesCalled = 0;
+
+		var subscription = Fixture.Streams.SubscribeToStream(stream, FromStream.Start);
+		ReadMessages(subscription, EventAppeared, SubscriptionDropped);
+
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents(2));
+
+		var ex = await dropped.Task.WithTimeout();
+		Assert.Same(expectedException, ex);
+
+		Assert.Equal(1, numTimesCalled);
+
+		Task EventAppeared(ResolvedEvent e) {
+			numTimesCalled++;
+			return Task.FromException(expectedException);
+		}
+
+		void SubscriptionDropped(Exception? ex) => dropped.SetResult(ex);
+	}
+
+	[Fact]
+	public async Task Callback_drops_when_stream_tombstoned() {
 		var streamName = Fixture.GetStreamName();
 
 		var subscriptionDropped = new TaskCompletionSource<SubscriptionDroppedResult>();
@@ -250,6 +358,26 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 
 		var result = await subscriptionDropped.Task.WithTimeout();
 		result.Error.ShouldBeOfType<StreamDeletedException>().Stream.ShouldBe(streamName);
+	}
+
+	[Fact]
+	public async Task Iterator_drops_when_stream_tombstoned() {
+		var stream = $"{Fixture.GetStreamName()}_{Guid.NewGuid()}";
+
+		var dropped = new TaskCompletionSource<Exception?>();
+
+		var subscription = Fixture.Streams.SubscribeToStream(stream, FromStream.Start);
+		ReadMessages(subscription, EventAppeared, SubscriptionDropped);
+
+		await Fixture.Streams.TombstoneAsync(stream, StreamState.NoStream);
+		var ex = await dropped.Task.WithTimeout();
+
+		var sdex = Assert.IsType<StreamDeletedException>(ex);
+		Assert.Equal(stream, sdex.Stream);
+
+		Task EventAppeared(ResolvedEvent e) => Task.CompletedTask;
+
+		void SubscriptionDropped(Exception? ex) => dropped.SetResult(ex);
 	}
 
 	[Fact]
@@ -298,5 +426,29 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 
 		void OnDropped(StreamSubscription sub, SubscriptionDroppedReason reason, Exception? ex) =>
 			subscriptionDropped.SetResult(new(reason, ex));
+	}
+
+	async void ReadMessages(EventStoreClient.SubscriptionResult subscription, Func<ResolvedEvent, Task> eventAppeared, Action<Exception?>? subscriptionDropped) {
+		Exception? exception = null;
+		try {
+			await foreach (var message in subscription.Messages) {
+				if (message is StreamMessage.Event eventMessage) {
+					await eventAppeared(eventMessage.ResolvedEvent);
+				}
+			}
+		} catch (Exception ex) {
+			exception = ex;
+		}
+
+		//allow some time for subscription cleanup and chance for exception to be raised
+		await Task.Delay(100);
+
+		try {
+			//subscription.SubscriptionState will throw exception if some problem occurred for the subscription
+			Assert.Equal(SubscriptionState.Disposed, subscription.SubscriptionState);
+			subscriptionDropped?.Invoke(exception);
+		} catch (Exception ex) {
+			subscriptionDropped?.Invoke(ex);
+		}
 	}
 }

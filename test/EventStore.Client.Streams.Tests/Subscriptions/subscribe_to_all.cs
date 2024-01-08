@@ -546,7 +546,7 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 	}
 	
 	[Fact]
-	public async Task drops_when_disposed() {
+	public async Task Callback_drops_when_disposed() {
 		var subscriptionDropped = new TaskCompletionSource<SubscriptionDroppedResult>();
 		
 		using var subscription = await Fixture.Streams
@@ -569,7 +569,34 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 	}
 
 	[Fact]
-	public async Task drops_when_subscriber_error() {
+	public async Task Iterator_client_stops_reading_messages_when_subscription_disposed() {
+		var dropped = new TaskCompletionSource<Exception?>();
+
+		var subscription = Fixture.Streams.SubscribeToAll(FromAll.Start);
+		var testEvent = Fixture.CreateTestEvents(1).First();
+		ReadMessages(subscription, EventAppeared, SubscriptionDropped);
+
+		if (dropped.Task.IsCompleted) {
+			Assert.False(dropped.Task.IsCompleted, dropped.Task.Result?.ToString());
+		}
+
+		subscription.Dispose();
+
+		var ex = await dropped.Task.WithTimeout();
+		Assert.Null(ex);
+
+		// new event after subscription is disposed
+		await Fixture.Streams.AppendToStreamAsync($"test-{Guid.NewGuid()}", StreamState.NoStream, new[]{testEvent});
+
+		Task EventAppeared(ResolvedEvent e) {
+			return testEvent.EventId.Equals(e.OriginalEvent.EventId) ? Task.FromException(new Exception("Subscription not dropped")) : Task.CompletedTask;
+		}
+
+		void SubscriptionDropped(Exception? ex) => dropped.SetResult(ex);
+	}
+
+	[Fact]
+	public async Task Callback_drops_when_subscriber_error() {
 		var expectedResult = SubscriptionDroppedResult.SubscriberError();
 
 		var subscriptionDropped = new TaskCompletionSource<SubscriptionDroppedResult>();
@@ -587,5 +614,54 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 
 		var result = await subscriptionDropped.Task.WithTimeout();
 		result.ShouldBe(expectedResult);
+	}
+
+	[Fact]
+	public async Task Iterator_client_stops_reading_messages_when_error_processing_event() {
+		var stream = $"{Fixture.GetStreamName()}_{Guid.NewGuid()}";
+		var dropped = new TaskCompletionSource<Exception?>();
+		var expectedException = new Exception("Error");
+		int numTimesCalled = 0;
+
+		var subscription = Fixture.Streams.SubscribeToAll(FromAll.Start);
+		ReadMessages(subscription, EventAppeared, SubscriptionDropped);
+
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents(2));
+
+		var ex = await dropped.Task.WithTimeout();
+		Assert.Same(expectedException, ex);
+
+		Assert.Equal(1, numTimesCalled);
+
+		Task EventAppeared(ResolvedEvent e) {
+			numTimesCalled++;
+			return Task.FromException(expectedException);
+		}
+
+		void SubscriptionDropped(Exception? ex) => dropped.SetResult(ex);
+	}
+
+	async void ReadMessages(EventStoreClient.SubscriptionResult subscription, Func<ResolvedEvent, Task> eventAppeared, Action<Exception?> subscriptionDropped) {
+		Exception? exception = null;
+		try {
+			await foreach (var message in subscription.Messages) {
+				if (message is StreamMessage.Event eventMessage) {
+					await eventAppeared(eventMessage.ResolvedEvent);
+				}
+			}
+		} catch (Exception ex) {
+			exception = ex;
+		}
+
+		//allow some time for subscription cleanup and chance for exception to be raised
+		await Task.Delay(100);
+
+		try {
+			//subscription.SubscriptionState will throw exception if some problem occurred for the subscription
+			Assert.Equal(SubscriptionState.Disposed, subscription.SubscriptionState);
+			subscriptionDropped(exception);
+		} catch (Exception ex) {
+			subscriptionDropped(ex);
+		}
 	}
 }
