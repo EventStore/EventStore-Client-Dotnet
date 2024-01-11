@@ -3,31 +3,45 @@ version: "3.5"
 services:
   volumes-provisioner:
     image: hasnat/volumes-provisioner
+    container_name: volumes-provisioner
     environment:
       PROVISION_DIRECTORIES: "1000:1000:0755:/tmp/certs"
     volumes:
     - "${ES_CERTS_CLUSTER}:/tmp/certs"
     network_mode: none
+    
   cert-gen:
     image: eventstore/es-gencert-cli:1.0.2
-    entrypoint: bash
-    command: >
-      -c "es-gencert-cli create-ca -out /tmp/certs/ca &&
-          es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out \
-          /tmp/certs/node1 -ip-addresses 127.0.0.1,172.30.240.11 -dns-names localhost &&
-          es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out \
-          /tmp/certs/node2 -ip-addresses 127.0.0.1,172.30.240.12 -dns-names localhost &&
-          es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out \
-          /tmp/certs/node3 -ip-addresses 127.0.0.1,172.30.240.13 -dns-names localhost &&
-          es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out \
-          /tmp/certs/node4 -ip-addresses 127.0.0.1,172.30.240.14 -dns-names localhost"
+    container_name: cert-gen
     user: "1000:1000"
+    entrypoint: [ "/bin/sh","-c" ]
+    #    rm -rf /tmp/certs/**
+    command: 
+      - |
+        es-gencert-cli create-ca -out /tmp/certs/ca
+        es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out /tmp/certs/node1 -ip-addresses 127.0.0.1,172.30.240.11 -dns-names localhost
+        es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out /tmp/certs/node2 -ip-addresses 127.0.0.1,172.30.240.12 -dns-names localhost
+        es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out /tmp/certs/node3 -ip-addresses 127.0.0.1,172.30.240.13 -dns-names localhost
+        es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out /tmp/certs/node4 -ip-addresses 127.0.0.1,172.30.240.14 -dns-names localhost
     volumes:
       - "${ES_CERTS_CLUSTER}:/tmp/certs"
     depends_on:
       - volumes-provisioner
+  
+  seq:
+    image: datalust/seq:latest
+    container_name: seq
+    environment:
+      ACCEPT_EULA: Y
+    ports:
+      - "5341:80"
+    depends_on:
+      - volumes-provisioner
+      - cert-gen
+        
   esdb-node1:
     image: ghcr.io/eventstore/eventstore:${ES_DOCKER_TAG}
+    container_name: esdb-node1
     env_file:
       - shared.env
     environment:
@@ -38,7 +52,7 @@ services:
       - EVENTSTORE_ADVERTISE_HOST_TO_CLIENT_AS=127.0.0.1
       - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=2111
     ports:
-      - 2111:2113
+      - "2111:2113"
     networks:
       clusternetwork:
         ipv4_address: 172.30.240.11
@@ -56,6 +70,7 @@ services:
 
   esdb-node2:
     image: ghcr.io/eventstore/eventstore:${ES_DOCKER_TAG}
+    container_name: esdb-node2
     env_file:
       - shared.env
     environment:
@@ -66,7 +81,7 @@ services:
       - EVENTSTORE_ADVERTISE_HOST_TO_CLIENT_AS=127.0.0.1
       - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=2112
     ports:
-      - 2112:2113
+      - "2112:2113"
     networks:
       clusternetwork:
         ipv4_address: 172.30.240.12
@@ -84,6 +99,7 @@ services:
 
   esdb-node3:
     image: ghcr.io/eventstore/eventstore:${ES_DOCKER_TAG}
+    container_name: esdb-node3
     env_file:
       - shared.env
     environment:
@@ -94,7 +110,7 @@ services:
       - EVENTSTORE_ADVERTISE_HOST_TO_CLIENT_AS=127.0.0.1
       - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=2113
     ports:
-      - 2113:2113
+      - "2113:2113"
     networks:
       clusternetwork:
         ipv4_address: 172.30.240.13
@@ -112,6 +128,7 @@ services:
 
   esdb-node4:
     image: ghcr.io/eventstore/eventstore:${ES_DOCKER_TAG}
+    container_name: esdb-node4
     env_file:
       - shared.env
     environment:
@@ -123,7 +140,7 @@ services:
       - EVENTSTORE_ADVERTISE_HOST_TO_CLIENT_AS=127.0.0.1
       - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=2114
     ports:
-      - 2114:2113
+      - "2114:2113"
     networks:
       clusternetwork:
         ipv4_address: 172.30.240.14

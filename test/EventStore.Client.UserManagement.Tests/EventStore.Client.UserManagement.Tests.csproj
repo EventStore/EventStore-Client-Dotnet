@@ -1,7 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-	<ItemGroup>
-		<ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
-		<ProjectReference Include="..\..\src\EventStore.Client.UserManagement\EventStore.Client.UserManagement.csproj" />
-	</ItemGroup>
+    <PropertyGroup>
+        <RootNamespace>EventStore.Client.Tests</RootNamespace>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\EventStore.Client.Tests.Common\EventStore.Client.Tests.Common.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Remove="EventStore.Client.UserManagement.Tests.csproj.DotSettings" />
+    </ItemGroup>
+    <ItemGroup>
+      <Compile Remove="..\EventStore.Client.Tests.Common\EventStoreClientFixtureBase.cs" />
+      <Compile Remove="..\EventStore.Client.Tests.Common\EventStoreTestServer.cs" />
+      <Compile Remove="..\EventStore.Client.Tests.Common\EventStoreTestServerCluster.cs" />
+    </ItemGroup>
 </Project>

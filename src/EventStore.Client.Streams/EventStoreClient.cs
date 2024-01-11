@@ -30,35 +30,19 @@ namespace EventStore.Client {
 
 
 		private static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
-			[Constants.Exceptions.InvalidTransaction] =
-				ex => new InvalidTransactionException(ex.Message, ex),
-			[Constants.Exceptions.StreamDeleted] = ex => new StreamDeletedException(
-				ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value ??
-				"<unknown>",
-				ex),
-			[Constants.Exceptions.WrongExpectedVersion] = ex => new WrongExpectedVersionException(
-				ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!,
-				ex.Trailers.GetStreamRevision(Constants.Exceptions.ExpectedVersion),
-				ex.Trailers.GetStreamRevision(Constants.Exceptions.ActualVersion),
-				ex, ex.Message),
-			[Constants.Exceptions.MaximumAppendSizeExceeded] = ex =>
-				new MaximumAppendSizeExceededException(
-					ex.Trailers.GetIntValueOrDefault(Constants.Exceptions.MaximumAppendSize), ex),
-			[Constants.Exceptions.StreamNotFound] = ex => new StreamNotFoundException(
-				ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!, ex),
-			[Constants.Exceptions.MissingRequiredMetadataProperty] = ex => new
-				RequiredMetadataPropertyMissingException(
-					ex.Trailers.FirstOrDefault(x =>
-							x.Key == Constants.Exceptions.MissingRequiredMetadataProperty)
-						?.Value!, ex),
+			[Constants.Exceptions.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),
+			[Constants.Exceptions.StreamDeleted] = ex => new StreamDeletedException(ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value ?? "<unknown>", ex),
+			[Constants.Exceptions.WrongExpectedVersion] = ex => new WrongExpectedVersionException(ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!, ex.Trailers.GetStreamRevision(Constants.Exceptions.ExpectedVersion), ex.Trailers.GetStreamRevision(Constants.Exceptions.ActualVersion), ex, ex.Message),
+			[Constants.Exceptions.MaximumAppendSizeExceeded] = ex => new MaximumAppendSizeExceededException(ex.Trailers.GetIntValueOrDefault(Constants.Exceptions.MaximumAppendSize), ex),
+			[Constants.Exceptions.StreamNotFound] = ex => new StreamNotFoundException(ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!, ex),
+			[Constants.Exceptions.MissingRequiredMetadataProperty] = ex => new RequiredMetadataPropertyMissingException(ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.MissingRequiredMetadataProperty)?.Value!, ex),
 		};
 
 		/// <summary>
 		/// Constructs a new <see cref="EventStoreClient"/>. This is not intended to be called directly from your code.
 		/// </summary>
 		/// <param name="options"></param>
-		public EventStoreClient(IOptions<EventStoreClientSettings> options) : this(options.Value) {
-		}
+		public EventStoreClient(IOptions<EventStoreClientSettings> options) : this(options.Value) { }
 
 		/// <summary>
 		/// Constructs a new <see cref="EventStoreClient"/>.
@@ -71,9 +55,7 @@ namespace EventStore.Client {
 		}
 
 		private void SwapStreamAppender(Exception ex) =>
-			Interlocked.Exchange(ref _streamAppenderLazy,
-					new Lazy<StreamAppender>(CreateStreamAppender))
-				.Value.Dispose();
+			Interlocked.Exchange(ref _streamAppenderLazy, new Lazy<StreamAppender>(CreateStreamAppender)).Value.Dispose();
 
 		// todo: might be nice to have two different kinds of appenders and we decide which to instantiate according to the server caps.
 		private StreamAppender CreateStreamAppender() {

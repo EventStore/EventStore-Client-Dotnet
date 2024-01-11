@@ -3,6 +3,16 @@
 		<Nullable>enable</Nullable>
 		<NullableContextOptions>enable</NullableContextOptions>
 		<OutputType>Exe</OutputType>
-		<TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+
+<!--	 Wasn't here before	-->
+		<ImplicitUsings>true</ImplicitUsings>
+		<LangVersion>preview</LangVersion>
+
+		<TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<Using Include="System.Text" />
+		<Using Include="EventStore.Client" />
+	</ItemGroup>
 </Project>

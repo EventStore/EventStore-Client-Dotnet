@@ -1,65 +1,42 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
+namespace EventStore.Client.Tests;
 
-namespace EventStore.Client {
-	public class listing_users : IClassFixture<listing_users.Fixture> {
-		private readonly Fixture _fixture;
+public class listing_users : IClassFixture<EventStoreFixture> {
+	public listing_users(ITestOutputHelper output, EventStoreFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-		public listing_users(Fixture fixture) {
-			_fixture = fixture;
-		}
+	EventStoreFixture Fixture { get; }
+	
+	[Fact]
+	public async Task returns_all_created_users() {
+		var seed = await Fixture.CreateTestUsers();
 
-		[Fact]
-		public async Task returns_all_users() {
-			var users = await _fixture.Client.ListAllAsync(userCredentials: TestCredentials.Root)
-				.ToArrayAsync();
+		var admin = new UserDetails("admin", "Event Store Administrator", new[] { "$admins" }, false, default);
+		var ops   = new UserDetails("ops", "Event Store Operations", new[] { "$ops" }, false, default);
 
-			var expected = new[] {
-					new UserDetails("admin", "Event Store Administrator", new[] {"$admins"}, false, default),
-					new UserDetails("ops", "Event Store Operations", new[] {"$ops"}, false, default)
-				}.Concat(Array.ConvertAll(_fixture.Users, user => new UserDetails(
-					user.LoginName,
-					user.FullName,
-					user.Groups,
-					user.Disabled,
-					default)))
-				.OrderBy(user => user.LoginName)
-				.ToArray();
+		var expected = new[] { admin, ops }
+			.Concat(seed.Select(user => user.Details))
+			.ToArray();
 
-			var actual = Array.ConvertAll(users, user => new UserDetails(
-					user.LoginName,
-					user.FullName,
-					user.Groups,
-					user.Disabled,
-					default))
-				.OrderBy(user => user.LoginName)
-				.ToArray();
+		var actual = await Fixture.Users
+			.ListAllAsync(userCredentials: TestCredentials.Root)
+			.Select(user => new UserDetails(user.LoginName, user.FullName, user.Groups, user.Disabled, default))
+			.ToArrayAsync();
 
-			Assert.Equal(expected, actual);
-		}
+		expected.ShouldBeSubsetOf(actual);
+	}
 
-		public class Fixture : EventStoreClientFixture {
-			public UserDetails[] Users { get; }
+	[Fact]
+	public async Task returns_all_system_users() {
+		var admin = new UserDetails("admin", "Event Store Administrator", new[] { "$admins" }, false, default);
+		var ops   = new UserDetails("ops", "Event Store Operations", new[] { "$ops" }, false, default);
 
-			public Fixture() {
-				Users = Enumerable.Range(0, 3)
-					.Select(_ => new UserDetails(Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), new[] {
-						Guid.NewGuid().ToString(),
-						Guid.NewGuid().ToString()
-					}, false, default))
-					.ToArray();
-			}
+		var expected = new[] { admin, ops };
 
-			protected override async Task Given() {
-				foreach (var user in Users) {
-					await Client.CreateUserAsync(user.LoginName, user.FullName,
-						user.Groups, Guid.NewGuid().ToString(), userCredentials: TestCredentials.Root);
-				}
-			}
+		var actual = await Fixture.Users
+			.ListAllAsync(userCredentials: TestCredentials.Root)
+			.Select(user => new UserDetails(user.LoginName, user.FullName, user.Groups, user.Disabled, default))
+			.ToArrayAsync();
 
-			protected override Task When() => Task.CompletedTask;
-		}
+		expected.ShouldBeSubsetOf(actual);
 	}
 }

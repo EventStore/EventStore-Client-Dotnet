@@ -1,71 +1,69 @@
-using System.Threading.Tasks;
-using Xunit;
+namespace EventStore.Client.Streams.Tests; 
 
-namespace EventStore.Client.Security {
-	public class overriden_system_stream_security_for_all
-		: IClassFixture<overriden_system_stream_security_for_all.Fixture> {
-		private readonly Fixture _fixture;
+[Trait("Category", "Security")]
+public class overriden_system_stream_security_for_all(ITestOutputHelper output, overriden_system_stream_security_for_all.CustomFixture fixture) : EventStoreTests<overriden_system_stream_security_for_all.CustomFixture>(output, fixture) {
+	[Fact]
+	public async Task operations_on_system_stream_succeeds_for_user() {
+		var stream = $"${Fixture.GetStreamName()}";
+		await Fixture.AppendStream(stream, TestCredentials.TestUser1);
+		await Fixture.ReadEvent(stream, TestCredentials.TestUser1);
+		await Fixture.ReadStreamForward(stream, TestCredentials.TestUser1);
+		await Fixture.ReadStreamBackward(stream, TestCredentials.TestUser1);
 
-		public overriden_system_stream_security_for_all(Fixture fixture) {
-			_fixture = fixture;
-		}
+		await Fixture.ReadMeta(stream, TestCredentials.TestUser1);
+		await Fixture.WriteMeta(stream, TestCredentials.TestUser1);
 
-		public class Fixture : SecurityFixture {
-			protected override Task When() {
-				var settings = new SystemSettings(
-					systemStreamAcl: new StreamAcl(SystemRoles.All, SystemRoles.All, SystemRoles.All, SystemRoles.All,
-						SystemRoles.All));
-				return Client.SetSystemSettingsAsync(settings, userCredentials: TestCredentials.TestAdmin);
-			}
-		}
+		await Fixture.SubscribeToStream(stream, TestCredentials.TestUser1);
 
-		[Fact]
-		public async Task operations_on_system_stream_succeeds_for_user() {
-			var stream = $"${_fixture.GetStreamName()}";
-			await _fixture.AppendStream(stream, userCredentials: TestCredentials.TestUser1);
-			await _fixture.ReadEvent(stream, userCredentials: TestCredentials.TestUser1);
-			await _fixture.ReadStreamForward(stream, userCredentials: TestCredentials.TestUser1);
-			await _fixture.ReadStreamBackward(stream, userCredentials: TestCredentials.TestUser1);
+		await Fixture.DeleteStream(stream, TestCredentials.TestUser1);
+	}
 
-			await _fixture.ReadMeta(stream, userCredentials: TestCredentials.TestUser1);
-			await _fixture.WriteMeta(stream, userCredentials: TestCredentials.TestUser1);
+	[AnonymousAccess.Fact]
+	public async Task operations_on_system_stream_fail_for_anonymous_user() {
+		var stream = $"${Fixture.GetStreamName()}";
+		await Fixture.AppendStream(stream);
+		await Fixture.ReadEvent(stream);
+		await Fixture.ReadStreamForward(stream);
+		await Fixture.ReadStreamBackward(stream);
 
-			await _fixture.SubscribeToStream(stream, userCredentials: TestCredentials.TestUser1);
+		await Fixture.ReadMeta(stream);
+		await Fixture.WriteMeta(stream);
 
-			await _fixture.DeleteStream(stream, userCredentials: TestCredentials.TestUser1);
-		}
+		await Fixture.SubscribeToStream(stream);
 
-		[Fact]
-		public async Task operations_on_system_stream_fail_for_anonymous_user() {
-			var stream = $"${_fixture.GetStreamName()}";
-			await _fixture.AppendStream(stream);
-			await _fixture.ReadEvent(stream);
-			await _fixture.ReadStreamForward(stream);
-			await _fixture.ReadStreamBackward(stream);
+		await Fixture.DeleteStream(stream);
+	}
 
-			await _fixture.ReadMeta(stream);
-			await _fixture.WriteMeta(stream);
+	[Fact]
+	public async Task operations_on_system_stream_succeed_for_admin() {
+		var stream = $"${Fixture.GetStreamName()}";
+		await Fixture.AppendStream(stream, TestCredentials.TestAdmin);
 
-			await _fixture.SubscribeToStream(stream);
+		await Fixture.ReadEvent(stream, TestCredentials.TestAdmin);
+		await Fixture.ReadStreamForward(stream, TestCredentials.TestAdmin);
+		await Fixture.ReadStreamBackward(stream, TestCredentials.TestAdmin);
 
-			await _fixture.DeleteStream(stream);
-		}
+		await Fixture.ReadMeta(stream, TestCredentials.TestAdmin);
+		await Fixture.WriteMeta(stream, TestCredentials.TestAdmin);
 
-		[Fact]
-		public async Task operations_on_system_stream_succeed_for_admin() {
-			var stream = $"${_fixture.GetStreamName()}";
-			await _fixture.AppendStream(stream, userCredentials: TestCredentials.TestAdmin);
+		await Fixture.SubscribeToStream(stream, TestCredentials.TestAdmin);
 
-			await _fixture.ReadEvent(stream, userCredentials: TestCredentials.TestAdmin);
-			await _fixture.ReadStreamForward(stream, userCredentials: TestCredentials.TestAdmin);
-			await _fixture.ReadStreamBackward(stream, userCredentials: TestCredentials.TestAdmin);
+		await Fixture.DeleteStream(stream, TestCredentials.TestAdmin);
+	}
 
-			await _fixture.ReadMeta(stream, userCredentials: TestCredentials.TestAdmin);
-			await _fixture.WriteMeta(stream, userCredentials: TestCredentials.TestAdmin);
+	public class CustomFixture : SecurityFixture {
+		protected override Task When() {
+			var settings = new SystemSettings(
+				systemStreamAcl: new(
+					SystemRoles.All,
+					SystemRoles.All,
+					SystemRoles.All,
+					SystemRoles.All,
+					SystemRoles.All
+				)
+			);
 
-			await _fixture.SubscribeToStream(stream, userCredentials: TestCredentials.TestAdmin);
-
-			await _fixture.DeleteStream(stream, userCredentials: TestCredentials.TestAdmin);
+			return Streams.SetSystemSettingsAsync(settings, userCredentials: TestCredentials.TestAdmin);
 		}
 	}
 }

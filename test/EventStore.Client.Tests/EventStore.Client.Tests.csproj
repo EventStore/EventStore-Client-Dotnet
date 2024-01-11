@@ -1,28 +1,31 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-	<ItemGroup>
-	  <ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />
-	</ItemGroup>
-	<ItemGroup>
-		<Compile Remove="..\EventStore.Client.Tests.Common\*.cs" />
-		<Compile Remove="..\..\src\EventStore.Client.Common\Shims\**" />
-	</ItemGroup>
-	<ItemGroup>
-		<Protobuf Include="..\..\src\EventStore.Client.Common\protos\serverfeatures.proto" ProtoCompile="false" ProtoRoot="..\..\src\EventStore.Client.Common\protos" GrpcServices="Server" />
-	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="6.0.11" />
-	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="7.0.0" />
-	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' != 'net48'">
-		<PackageReference Include="Grpc.AspNetCore" Version="$(GrpcPackageVersion)" />
-	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-		<PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
-	</ItemGroup>
-	<ItemGroup>
-		<PackageReference Include="Grpc.Tools" Version="$(GrpcToolsPackageVersion)" PrivateAssets="All"/>
-	</ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\EventStore.Client.Tests.Common\EventStore.Client.Tests.Common.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <Protobuf Include="..\..\src\EventStore.Client.Common\protos\serverfeatures.proto" ProtoCompile="false" ProtoRoot="..\..\src\EventStore.Client.Common\protos" GrpcServices="Server" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="6.0.25" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="7.0.12" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.0" />
+    </ItemGroup>
+		<ItemGroup Condition="'$(TargetFramework)' != 'net48'">
+			<PackageReference Include="Grpc.AspNetCore" Version="$(GrpcPackageVersion)" />
+		</ItemGroup>
+		<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+			<PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+		</ItemGroup>
+		<ItemGroup>
+			<PackageReference Include="Grpc.Tools" Version="$(GrpcToolsPackageVersion)" PrivateAssets="All"/>
+		</ItemGroup>
+    <ItemGroup>
+			<PackageReference Include="AutoFixture.Idioms" Version="4.18.1" />
+			<PackageReference Include="AutoFixture.Xunit2" Version="4.18.1" />
+    </ItemGroup>
 </Project>

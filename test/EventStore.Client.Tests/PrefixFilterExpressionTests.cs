@@ -1,14 +1,11 @@
 using AutoFixture;
 
-namespace EventStore.Client {
-	public class PrefixFilterExpressionTests : ValueObjectTests<PrefixFilterExpression> {
-		public PrefixFilterExpressionTests() : base(new ScenarioFixture()) { }
+namespace EventStore.Client.Tests;
 
-		private class ScenarioFixture : Fixture {
-			public ScenarioFixture() {
-				Customize<PrefixFilterExpression>(composer =>
-					composer.FromFactory<string>(value => new PrefixFilterExpression(value)));
-			}
-		}
+public class PrefixFilterExpressionTests : ValueObjectTests<PrefixFilterExpression> {
+	public PrefixFilterExpressionTests() : base(new ScenarioFixture()) { }
+
+	class ScenarioFixture : Fixture {
+		public ScenarioFixture() => Customize<PrefixFilterExpression>(composer => composer.FromFactory<string>(value => new(value)));
 	}
 }

@@ -1,120 +1,126 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-using Xunit.Abstractions;
+namespace EventStore.Client.PersistentSubscriptions.Tests.SubscriptionToStream;
 
-namespace EventStore.Client.SubscriptionToStream {
-	public class update_existing_with_check_point
-		: IClassFixture<update_existing_with_check_point.Fixture> {
-		private const string Stream = nameof(update_existing_with_check_point);
-		private const string Group = "existing-with-check-point";
-		private readonly Fixture _fixture;
+public class update_existing_with_check_point
+	: IClassFixture<update_existing_with_check_point.Fixture> {
+	const    string  Stream = nameof(update_existing_with_check_point);
+	const    string  Group  = "existing-with-check-point";
+	readonly Fixture _fixture;
 
-		public update_existing_with_check_point(Fixture fixture) {
-			_fixture = fixture;
+	public update_existing_with_check_point(Fixture fixture) => _fixture = fixture;
+
+	[Fact]
+	public async Task resumes_from_check_point() {
+		var resumedEvent = await _fixture.Resumed.WithTimeout(TimeSpan.FromSeconds(10));
+		Assert.Equal(_fixture.CheckPoint.Next(), resumedEvent.Event.EventNumber);
+	}
+
+	public class Fixture : EventStoreClientFixture {
+		readonly TaskCompletionSource<bool>          _appeared;
+		readonly List<ResolvedEvent>                 _appearedEvents;
+		readonly TaskCompletionSource<ResolvedEvent> _checkPointSource;
+
+		readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception?)> _droppedSource;
+		readonly EventData[]                                                   _events;
+		readonly TaskCompletionSource<ResolvedEvent>                           _resumedSource;
+		PersistentSubscription?                                                _firstSubscription;
+		PersistentSubscription?                                                _secondSubscription;
+
+		public Fixture() {
+			_droppedSource    = new();
+			_resumedSource    = new();
+			_checkPointSource = new();
+			_appeared         = new();
+			_appearedEvents   = new();
+			_events           = CreateTestEvents(5).ToArray();
 		}
 
-		[Fact]
-		public async Task resumes_from_check_point() {
-			var resumedEvent = await _fixture.Resumed.WithTimeout(TimeSpan.FromSeconds(10));
-			Assert.Equal(_fixture.CheckPoint.Next(), resumedEvent.Event.EventNumber);
+		public Task<ResolvedEvent> Resumed    => _resumedSource.Task;
+		public StreamPosition      CheckPoint { get; private set; }
+
+		protected override async Task Given() {
+			await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, _events);
+
+			await Client.CreateToStreamAsync(
+				Stream,
+				Group,
+				new(
+					checkPointLowerBound: 5,
+					checkPointAfter: TimeSpan.FromSeconds(1),
+					startFrom: StreamPosition.Start
+				),
+				userCredentials: TestCredentials.Root
+			);
+
+			var checkPointStream = $"$persistentsubscription-{Stream}::{Group}-checkpoint";
+			await StreamsClient.SubscribeToStreamAsync(
+				checkPointStream,
+				FromStream.Start,
+				(_, e, _) => {
+					_checkPointSource.TrySetResult(e);
+					return Task.CompletedTask;
+				},
+				subscriptionDropped: (_, _, ex) => {
+					if (ex != null)
+						_checkPointSource.TrySetException(ex);
+					else
+						_checkPointSource.TrySetResult(default);
+				},
+				userCredentials: TestCredentials.Root
+			);
+
+			_firstSubscription = await Client.SubscribeToStreamAsync(
+				Stream,
+				Group,
+				async (s, e, _, _) => {
+					_appearedEvents.Add(e);
+					await s.Ack(e);
+
+					if (_appearedEvents.Count == _events.Length)
+						_appeared.TrySetResult(true);
+				},
+				(_, reason, ex) => _droppedSource.TrySetResult((reason, ex)),
+				TestCredentials.Root
+			);
+
+			await Task.WhenAll(_appeared.Task, _checkPointSource.Task).WithTimeout();
+
+			CheckPoint = _checkPointSource.Task.Result.Event.Data.ParseStreamPosition();
 		}
 
-		public class Fixture : EventStoreClientFixture {
-			public Task<ResolvedEvent> Resumed => _resumedSource.Task;
-			public StreamPosition CheckPoint { get; private set; }
+		protected override async Task When() {
+			// Force restart of the subscription
+			await Client.UpdateToStreamAsync(
+				Stream,
+				Group,
+				new(),
+				userCredentials: TestCredentials.Root
+			);
 
-			private readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception?)> _droppedSource;
-			private readonly TaskCompletionSource<ResolvedEvent> _resumedSource;
-			private readonly TaskCompletionSource<ResolvedEvent> _checkPointSource;
-			private PersistentSubscription? _firstSubscription;
-			private PersistentSubscription? _secondSubscription;
-			private readonly TaskCompletionSource<bool> _appeared;
-			private readonly List<ResolvedEvent> _appearedEvents;
-			private readonly EventData[] _events;
+			await _droppedSource.Task.WithTimeout();
 
-			public Fixture() {
-				_droppedSource = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
-				_resumedSource = new TaskCompletionSource<ResolvedEvent>();
-				_checkPointSource = new TaskCompletionSource<ResolvedEvent>();
-				_appeared = new TaskCompletionSource<bool>();
-				_appearedEvents = new List<ResolvedEvent>();
-				_events = CreateTestEvents(5).ToArray();
-			}
+			_secondSubscription = await Client.SubscribeToStreamAsync(
+				Stream,
+				Group,
+				async (s, e, _, _) => {
+					_resumedSource.TrySetResult(e);
+					await s.Ack(e);
+				},
+				(_, reason, ex) => {
+					if (ex is not null)
+						_resumedSource.TrySetException(ex);
+					else
+						_resumedSource.TrySetResult(default);
+				},
+				TestCredentials.Root
+			);
 
-			protected override async Task Given() {
-				await StreamsClient.AppendToStreamAsync(Stream, StreamState.NoStream, _events);
+			await StreamsClient.AppendToStreamAsync(Stream, StreamState.Any, CreateTestEvents(1));
+		}
 
-				await Client.CreateToStreamAsync(Stream, Group,
-					new PersistentSubscriptionSettings(
-						checkPointLowerBound: 5,
-						checkPointAfter: TimeSpan.FromSeconds(1),
-						startFrom: StreamPosition.Start),
-					userCredentials: TestCredentials.Root);
-
-				var checkPointStream = $"$persistentsubscription-{Stream}::{Group}-checkpoint";
-				await StreamsClient.SubscribeToStreamAsync(checkPointStream,
-					FromStream.Start,
-					(_, e, _) => {
-						_checkPointSource.TrySetResult(e);
-						return Task.CompletedTask;
-					},
-					subscriptionDropped: (_, _, ex) => {
-						if (ex != null) {
-							_checkPointSource.TrySetException(ex);
-						} else {
-							_checkPointSource.TrySetResult(default);
-						}
-					},
-					userCredentials: TestCredentials.Root);
-
-				_firstSubscription = await Client.SubscribeToStreamAsync(Stream, Group,
-					eventAppeared: async (s, e, _, _) => {
-						_appearedEvents.Add(e);
-						await s.Ack(e);
-
-						if (_appearedEvents.Count == _events.Length)
-							_appeared.TrySetResult(true);
-					},
-					(_, reason, ex) => _droppedSource.TrySetResult((reason, ex)),
-					TestCredentials.Root);
-
-				await Task.WhenAll(_appeared.Task, _checkPointSource.Task).WithTimeout();
-
-				CheckPoint = _checkPointSource.Task.Result.Event.Data.ParseStreamPosition();
-			}
-
-			protected override async Task When() {
-				// Force restart of the subscription
-				await Client.UpdateToStreamAsync(Stream, Group, new PersistentSubscriptionSettings(),
-					userCredentials: TestCredentials.Root);
-
-				await _droppedSource.Task.WithTimeout();
-
-				_secondSubscription = await Client.SubscribeToStreamAsync(Stream, Group,
-					eventAppeared: async (s, e, _, _) => {
-						_resumedSource.TrySetResult(e);
-						await s.Ack(e);
-					},
-					(_, reason, ex) => {
-						if (ex is not null) {
-							_resumedSource.TrySetException(ex);
-						} else {
-							_resumedSource.TrySetResult(default);
-						}
-					},
-					userCredentials: TestCredentials.Root);
-
-				await StreamsClient.AppendToStreamAsync(Stream, StreamState.Any, CreateTestEvents(1));
-			}
-
-			public override Task DisposeAsync() {
-				_firstSubscription?.Dispose();
-				_secondSubscription?.Dispose();
-				return base.DisposeAsync();
-			}
+		public override Task DisposeAsync() {
+			_firstSubscription?.Dispose();
+			_secondSubscription?.Dispose();
+			return base.DisposeAsync();
 		}
 	}
 }

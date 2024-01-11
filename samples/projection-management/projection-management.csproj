@@ -1,12 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <RootNamespace>projection_management</RootNamespace>
+    </PropertyGroup>
 
-  <PropertyGroup>
-    <RootNamespace>projection_management</RootNamespace>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\EventStore.Client.ProjectionManagement\EventStore.Client.ProjectionManagement.csproj" />
-    <ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
-  </ItemGroup>
-
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\EventStore.Client.ProjectionManagement\EventStore.Client.ProjectionManagement.csproj" />
+        <ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
+    </ItemGroup>
 </Project>

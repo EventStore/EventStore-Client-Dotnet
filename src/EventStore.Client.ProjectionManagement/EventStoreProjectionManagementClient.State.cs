@@ -9,6 +9,8 @@ using Type = System.Type;
 
 namespace EventStore.Client {
 	public partial class EventStoreProjectionManagementClient {
+        static readonly JsonSerializerOptions DefaultJsonSerializerOptions = new JsonSerializerOptions();
+        
 		/// <summary>
 		/// Gets the result of a projection as an untyped document.
 		/// </summary>
@@ -30,7 +32,7 @@ namespace EventStore.Client {
 #endif
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
-			serializer.Write(writer, value, new JsonSerializerOptions());
+			serializer.Write(writer, value, DefaultJsonSerializerOptions);
 			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 			stream.Position = 0;
 
@@ -61,7 +63,7 @@ namespace EventStore.Client {
 #endif
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
-			serializer.Write(writer, value, new JsonSerializerOptions());
+			serializer.Write(writer, value, DefaultJsonSerializerOptions);
 			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 			stream.Position = 0;
 
@@ -104,7 +106,7 @@ namespace EventStore.Client {
 #endif
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
-			serializer.Write(writer, value, new JsonSerializerOptions());
+			serializer.Write(writer, value, DefaultJsonSerializerOptions);
 			stream.Position = 0;
 			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 
@@ -134,7 +136,7 @@ namespace EventStore.Client {
 #endif
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
-			serializer.Write(writer, value, new JsonSerializerOptions());
+			serializer.Write(writer, value, DefaultJsonSerializerOptions);
 			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 			stream.Position = 0;
 
