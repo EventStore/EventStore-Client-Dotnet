@@ -3,9 +3,4 @@
     <ItemGroup>
         <ProjectReference Include="..\EventStore.Client.Tests.Common\EventStore.Client.Tests.Common.csproj" />
     </ItemGroup>
-    <ItemGroup>
-      <Compile Remove="..\EventStore.Client.Tests.Common\EventStoreClientFixtureBase.cs" />
-      <Compile Remove="..\EventStore.Client.Tests.Common\EventStoreTestServer.cs" />
-      <Compile Remove="..\EventStore.Client.Tests.Common\EventStoreTestServerCluster.cs" />
-    </ItemGroup>
 </Project>

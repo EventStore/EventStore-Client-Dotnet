@@ -6,10 +6,7 @@
     <ItemGroup>
       <None Remove="EventStore.Client.Streams.Tests.csproj.DotSettings" />
     </ItemGroup>
-		<ItemGroup>
-			<Compile Remove="..\..\src\EventStore.Client.Common\Shims\**" />
-			<Compile Remove="..\EventStore.Client.Tests.Common\EventStoreClientFixtureBase.cs" />
-			<Compile Remove="..\EventStore.Client.Tests.Common\EventStoreTestServer.cs" />
-			<Compile Remove="..\EventStore.Client.Tests.Common\EventStoreTestServerCluster.cs" />
-		</ItemGroup>
+  	<ItemGroup>
+  		<Compile Remove="..\..\src\EventStore.Client.Common\Shims\**" />
+  	</ItemGroup>
 </Project>

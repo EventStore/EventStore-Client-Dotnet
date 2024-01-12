@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         framework: [ net48, net6.0, net7.0, net8.0 ]
-        os: [ ubuntu-latest, windows-latest ]
+        os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
     name: scan-vulnerabilities/${{ matrix.os }}/${{ matrix.framework }}
     steps:
@@ -27,7 +27,6 @@ jobs:
           dotnet-version: |
             6.0.x
             7.0.x
-            8.0.x
       - name: Scan for Vulnerabilities
         shell: bash
         run: |
@@ -42,19 +41,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-<<<<<<< HEAD
-        framework: [ net48, net6.0, net7.0 ]
+        framework: [ net48, net6.0, net7.0, net8.0 ]
         os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
-=======
-        framework: [ net8.0 ]
->>>>>>> master
     services:
       esdb:
         image: ghcr.io/eventstore/eventstore:lts
         env:
           EVENTSTORE_INSECURE: true
-          EVENTSTORE_MEM_DB: false
+          EVENTSTORE_MEMDB: true
           EVENTSTORE_RUN_PROJECTIONS: all
           EVENTSTORE_START_STANDARD_PROJECTIONS: true
         ports:
@@ -67,12 +62,8 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-<<<<<<< HEAD
             6.0.x
             7.0.x
-=======
-            8.0.x
->>>>>>> master
       - name: Compile
         shell: bash
         run: |
@@ -83,15 +74,11 @@ jobs:
           find samples/ -type f -iname "*.csproj" -print0 | xargs -0L1 dotnet run --framework ${{ matrix.framework }} --project
 
   test:
-    timeout-minutes: 20
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-<<<<<<< HEAD
         framework: [ net48, net6.0, net7.0 ]
-=======
-        framework: [ net6.0, net7.0, net8.0 ]
->>>>>>> master
         os: [ ubuntu-latest, windows-latest ]
         configuration: [ release ]
     runs-on: ${{ matrix.os }}
@@ -108,7 +95,6 @@ jobs:
           dotnet-version: |
             6.0.x
             7.0.x
-            8.0.x
       - name: Compile
         shell: bash
         run: |
@@ -146,7 +132,6 @@ jobs:
           dotnet-version: |
             6.0.x
             7.0.x
-            8.0.x
       - name: Dotnet Pack
         shell: bash
         run: |
@@ -173,8 +158,4 @@ jobs:
         run: |
           dotnet nuget list source
           dotnet tool restore
-<<<<<<< HEAD
           find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.nuget_key }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-=======
-          find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.nuget_key }} --source https://api.nuget.org/v3/index.json --skip-duplicate
->>>>>>> master

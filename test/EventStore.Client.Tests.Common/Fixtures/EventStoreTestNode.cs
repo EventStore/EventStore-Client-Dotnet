@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Common;
@@ -82,7 +83,11 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 
 	protected override async Task OnServiceStarted() {
 		using var http = new HttpClient(
+#if NET
 			new SocketsHttpHandler { SslOptions = { RemoteCertificateValidationCallback = delegate { return true; } } }
+#else
+            new WinHttpHandler { ServerCertificateValidationCallback = delegate { return true; } }
+#endif
 		) {
 			BaseAddress = Options.ClientSettings.ConnectivitySettings.Address
 		};
@@ -132,7 +137,11 @@ class NetworkPortProvider(int port = 2114) {
 					await Task.Delay(delay);
 				}
 				finally {
+#if NET
 					if (socket.Connected) await socket.DisconnectAsync(true);
+#else
+                    if (socket.Connected) socket.Disconnect(true);
+#endif
 				}
 			}
 		}

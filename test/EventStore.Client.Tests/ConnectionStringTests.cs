@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http;
 using AutoFixture;
 
 namespace EventStore.Client.Tests;
@@ -105,6 +106,7 @@ public class ConnectionStringTests {
 		Assert.Equal(expected, result, EventStoreClientSettingsEqualityComparer.Instance);
 	}
 
+#if !GRPC_CORE
 	[Theory]
 	[InlineData(false)]
 	[InlineData(true)]
@@ -140,6 +142,8 @@ public class ConnectionStringTests {
 #endif
 	}
 
+#endif
+
 	[Fact]
 	public void infinite_grpc_timeouts() {
 		var result = EventStoreClientSettings.Create("esdb://localhost:2113?keepAliveInterval=-1&keepAliveTimeout=-1");
@@ -148,11 +152,15 @@ public class ConnectionStringTests {
 		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveTimeout);
 
 		using var handler = result.CreateHttpMessageHandler?.Invoke();
-
+#if NET
 		var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
-
 		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingTimeout);
 		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingDelay);
+#else
+        var winHttpHandler = Assert.IsType<WinHttpHandler>(handler);
+        Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, winHttpHandler.TcpKeepAliveTime);
+        Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, winHttpHandler.TcpKeepAliveInterval);
+#endif
 	}
 
 	[Fact]
@@ -368,14 +376,19 @@ public class ConnectionStringTests {
 				settings.DefaultDeadline.Value.TotalMilliseconds.ToString()
 			);
 
-#if !GRPC_CORE
 		if (settings.CreateHttpMessageHandler != null) {
 			using var handler = settings.CreateHttpMessageHandler.Invoke();
+#if NET
 			if (handler is SocketsHttpHandler socketsHttpHandler &&
 			    socketsHttpHandler.SslOptions.RemoteCertificateValidationCallback != null)
 				pairs.Add("tlsVerifyCert", "false");
-		}
+#else
+            if (handler is WinHttpHandler winHttpHandler &&
+                winHttpHandler.ServerCertificateValidationCallback != null) {
+                pairs.Add("tlsVerifyCert", "false");
+            }
 #endif
+		}
 
 		return string.Join("&", pairs.Select(pair => $"{getKey?.Invoke(pair.Key) ?? pair.Key}={pair.Value}"));
 	}

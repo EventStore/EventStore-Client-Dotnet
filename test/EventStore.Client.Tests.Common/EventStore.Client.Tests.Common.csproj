@@ -67,10 +67,4 @@
     <ItemGroup>
         <None Remove="EventStore.Client.Tests.Common.csproj.DotSettings" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Compile Remove="EventStoreClientFixtureBase.cs" />
-      <Compile Remove="EventStoreTestServer.cs" />
-      <Compile Remove="EventStoreTestServerCluster.cs" />
-    </ItemGroup>
 </Project>

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Channels;
+using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using EventStore.Client.Streams;
 using Grpc.Core;
@@ -340,7 +340,7 @@ namespace EventStore.Client {
 				_channel.Writer.TryComplete();
 			}
 		}
-        
+
         private static async IAsyncEnumerable<T> ReadAllAsync<T>(ChannelReader<T> reader, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))

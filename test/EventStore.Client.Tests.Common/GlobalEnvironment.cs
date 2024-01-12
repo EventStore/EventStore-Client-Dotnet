@@ -33,7 +33,7 @@ public static class GlobalEnvironment {
 			configuration.EnsureValue("EVENTSTORE_DISABLE_LOG_FILE", "true");
 			configuration.EnsureValue("EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH", "/etc/eventstore/certs/ca");
 			configuration.EnsureValue("EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP", "true");
-
+			
 		}
 	}
 

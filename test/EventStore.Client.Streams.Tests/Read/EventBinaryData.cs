@@ -6,7 +6,11 @@ public readonly record struct EventBinaryData(Uuid Id, byte[] Data, byte[] Metad
 	 && Data.SequenceEqual(other.Data) 
 	 && Metadata.SequenceEqual(other.Metadata);
 
+#if NET
 	public override int GetHashCode() => System.HashCode.Combine(Id, Data, Metadata);
+#else
+	public override int GetHashCode() => HashCode.Combine(Id, Data, Metadata);
+#endif
 }
 
 public static class EventBinaryDataConverters {

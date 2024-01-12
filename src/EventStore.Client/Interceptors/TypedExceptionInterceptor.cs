@@ -1,3 +1,4 @@
+
 using System.Diagnostics.CodeAnalysis;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
@@ -13,11 +14,7 @@ class TypedExceptionInterceptor : Interceptor {
 	};
 
 	public TypedExceptionInterceptor(Dictionary<string, Func<RpcException, Exception>> customExceptionMap) {
-#if NET
-    var map = new Dictionary<string, Func<RpcException, Exception>>(DefaultExceptionMap.Concat(customExceptionMap));
-#else
-    var map = new Dictionary<string, Func<RpcException, Exception>>(DefaultExceptionMap);
-#endif
+		var map = new Dictionary<string, Func<RpcException, Exception>>(DefaultExceptionMap.Concat(customExceptionMap));
 
 		ConvertRpcException = rpcEx => {
 			if (rpcEx.TryMapException(map, out var ex))

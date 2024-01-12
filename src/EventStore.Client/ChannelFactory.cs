@@ -48,7 +48,7 @@ namespace EventStore.Client {
                     EnableMultipleHttp2Connections = true
                 };
 #endif
-            }
+			}
 		}
 	}
 }

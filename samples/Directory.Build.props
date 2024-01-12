@@ -1,18 +1,15 @@
 <Project>
-	<PropertyGroup>
-		<Nullable>enable</Nullable>
-		<NullableContextOptions>enable</NullableContextOptions>
-		<OutputType>Exe</OutputType>
+    <PropertyGroup>
+        <TargetFramework>net48;net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <NullableContextOptions>enable</NullableContextOptions>
+        <ImplicitUsings>true</ImplicitUsings>
+        <OutputType>Exe</OutputType>
+        <LangVersion>preview</LangVersion>
+    </PropertyGroup>
 
-<!--	 Wasn't here before	-->
-		<ImplicitUsings>true</ImplicitUsings>
-		<LangVersion>preview</LangVersion>
-
-		<TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
-	</PropertyGroup>
-
-	<ItemGroup>
-		<Using Include="System.Text" />
-		<Using Include="EventStore.Client" />
-	</ItemGroup>
+    <ItemGroup>
+        <Using Include="System.Text" />
+        <Using Include="EventStore.Client" />
+    </ItemGroup>
 </Project>
