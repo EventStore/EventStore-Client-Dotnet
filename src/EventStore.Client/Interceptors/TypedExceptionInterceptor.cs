@@ -13,8 +13,13 @@ class TypedExceptionInterceptor : Interceptor {
 		[Exceptions.NotLeader]    = ex => ex.ToNotLeaderException(),
 	};
 
+#if NET48
+	public TypedExceptionInterceptor(Dictionary<string, Func<RpcException, Exception>> customExceptionMap) {
+		var map = new Dictionary<string, Func<RpcException, Exception>>(DefaultExceptionMap);
+#else
 	public TypedExceptionInterceptor(Dictionary<string, Func<RpcException, Exception>> customExceptionMap) {
 		var map = new Dictionary<string, Func<RpcException, Exception>>(DefaultExceptionMap.Concat(customExceptionMap));
+#endif
 
 		ConvertRpcException = rpcEx => {
 			if (rpcEx.TryMapException(map, out var ex))
@@ -117,6 +122,17 @@ static class RpcExceptionConversionExtensions {
 	public static RpcException ToDeadlineExceededRpcException(this RpcException exception) =>
 		new(new Status(DeadlineExceeded, exception.Status.Detail, exception.Status.DebugException));
 
+#if NET48
+	public static bool TryMapException(this RpcException exception, Dictionary<string, Func<RpcException, Exception>> map, out Exception createdException) {
+		if (exception.Trailers.TryGetValue(Exceptions.ExceptionKey, out var key) && map.TryGetValue(key!, out var factory)) {
+			createdException = factory.Invoke(exception);
+			return true;
+		}
+
+		createdException = null!;
+		return false;
+	}
+#else
 	public static bool TryMapException(this RpcException exception, Dictionary<string, Func<RpcException, Exception>> map, [MaybeNullWhen(false)] out Exception createdException) {
 		if (exception.Trailers.TryGetValue(Exceptions.ExceptionKey, out var key) && map.TryGetValue(key!, out var factory)) {
 			createdException = factory.Invoke(exception);
@@ -126,6 +142,7 @@ static class RpcExceptionConversionExtensions {
 		createdException = null;
 		return false;
 	}
+#endif
 }
 
 class ExceptionConverterStreamReader<TResponse>(IAsyncStreamReader<TResponse> reader, Func<RpcException, Exception> convertException) : IAsyncStreamReader<TResponse> {

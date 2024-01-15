@@ -1,6 +1,7 @@
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Common;
 using Ductus.FluentDocker.Services;
+using Google.Protobuf.WellKnownTypes;
 using Serilog;
 using static Serilog.Core.Constants;
 
@@ -10,10 +11,14 @@ public interface ITestService : IAsyncDisposable {
 	Task Start();
 	Task Stop();
 	Task Restart(TimeSpan delay);
-	
-	Task Restart() => Restart(TimeSpan.Zero);
-	
-	void ReportStatus();
+
+#if NET
+    Task Restart() => Restart(TimeSpan.Zero);
+#else
+    Task Restart();
+#endif
+
+    void ReportStatus();
 }
 
 public abstract class TestService<TService, TBuilder> : ITestService where TService : IService where TBuilder : BaseBuilder<TService> {
@@ -24,6 +29,13 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
 	protected TService Service { get; private set; } = default!;
 
 	INetworkService? Network { get; set; } = null!;
+
+#if !NET
+    Task ITestService.Restart()
+    {
+      return Restart(TimeSpan.Zero);
+    }
+#endif
 
 	public virtual async Task Start() {
 		Logger.Information("Container service starting");
@@ -63,7 +75,7 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
 			throw new FluentDockerException("Failed to stop container service", ex);
 		}
 	}
-	
+
 	public virtual async Task Restart(TimeSpan delay) {
 		try {
 			try {
@@ -117,6 +129,12 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
 		}
 	}
 
+#if !NET
+    public virtual ValueTask DisposeAsync()
+    {
+        return DisposeAsync();
+    }
+#else
 	public virtual ValueTask DisposeAsync() {
 		try {
 			Network?.Dispose();
@@ -134,6 +152,7 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
 
 		return ValueTask.CompletedTask;
 	}
+#endif
 
 	protected abstract TBuilder Configure();
 
