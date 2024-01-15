@@ -6,7 +6,7 @@
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
 		<PackageReference Include="System.Threading.Channels" Version="7.0.0"/>
-		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<InternalsVisibleTo Include="EventStore.Client.Streams.Tests"/>
