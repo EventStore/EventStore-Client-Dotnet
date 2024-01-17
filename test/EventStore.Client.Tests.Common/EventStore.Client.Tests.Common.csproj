@@ -63,7 +63,7 @@
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
-
+	
     <ItemGroup>
         <None Remove="EventStore.Client.Tests.Common.csproj.DotSettings" />
     </ItemGroup>

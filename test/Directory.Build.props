@@ -29,12 +29,7 @@
         <Using Include="JetBrains.Annotations" />
     </ItemGroup>
 
-	  <ItemGroup Condition="$(MSBuildProjectName) != 'EventStore.Client.IntegrationTests'">
-	  	<Compile Include="..\EventStore.Client.Tests.Common\*.cs" LinkBase="Common"/>
+	  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
 	  	<Compile Include="..\..\src\EventStore.Client.Common\Shims\*.cs" LinkBase="Shims"/>
-	  	<Content
-	  		Include="..\EventStore.Client.Tests.Common\docker-compose.yml;
-	  				 ..\EventStore.Client.Tests.Common\shared.env;"
-	  		CopyToOutputDirectory="Always"/>
 	  </ItemGroup>
 </Project>
