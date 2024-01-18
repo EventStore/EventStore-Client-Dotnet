@@ -32,15 +32,6 @@ namespace EventStore.Client {
 		public HashCode Combine(IEnumerable<string>? values) =>
 			(values ?? Enumerable.Empty<string>()).Aggregate(Hash, (previous, value) => previous.Combine(value));
 
-        public static int Combine(Uuid values, byte[] data, byte[] metadata) {
-            unchecked {
-                var hash = HashCode.Hash.Combine(values);
-                hash = hash.Combine(data);
-                hash = hash.Combine(metadata);
-                return hash;
-            }
-        }
-
 		public static implicit operator int(HashCode value) => value._value;
-    }
+	}
 }

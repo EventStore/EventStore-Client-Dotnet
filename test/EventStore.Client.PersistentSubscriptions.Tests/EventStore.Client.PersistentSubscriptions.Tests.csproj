@@ -6,7 +6,4 @@
     <ItemGroup>
         <None Remove="EventStore.Client.PersistentSubscriptions.Tests.csproj.DotSettings" />
     </ItemGroup>
-  	<ItemGroup>
-  		<Compile Remove="..\..\src\EventStore.Client.Common\Shims\**" />
-  	</ItemGroup>
 </Project>

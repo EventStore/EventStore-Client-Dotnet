@@ -171,13 +171,13 @@ public class get_info : IClassFixture<get_info.Fixture> {
 				(s, e, r, ct) => {
 					counter++;
 
-                    switch (counter) {
-                        case 1: s.Nack(PersistentSubscriptionNakEventAction.Park, "Test", e);
-                            break;
-                        case > 10: tcs.TrySetResult();
-                            break;
-                    }
-                    return Task.CompletedTask;
+					if (counter == 1)
+						s.Nack(PersistentSubscriptionNakEventAction.Park, "Test", e);
+
+					if (counter > 10)
+						tcs.TrySetResult();
+
+					return Task.CompletedTask;
 				},
 				userCredentials: TestCredentials.Root
 			);

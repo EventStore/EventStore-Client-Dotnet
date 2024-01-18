@@ -1,4 +1,4 @@
-using System;
+namespace EventStore.Client;
 
 static class EpochExtensions {
 	private const long TicksPerMillisecond = 10000;
@@ -15,7 +15,7 @@ static class EpochExtensions {
 
 	private static readonly DateTime UnixEpoch = new(UnixEpochTicks, DateTimeKind.Utc);
 
-        private static readonly DateTime UnixEpoch = new(UnixEpochTicks, DateTimeKind.Utc);
+	public static DateTime FromTicksSinceEpoch(this long value) => new(UnixEpoch.Ticks + value, DateTimeKind.Utc);
 
 	public static long ToTicksSinceEpoch(this DateTime value) => (value - UnixEpoch).Ticks;
 }

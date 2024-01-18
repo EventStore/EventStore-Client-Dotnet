@@ -3,19 +3,9 @@
     <ItemGroup>
         <ProjectReference Include="..\EventStore.Client.Tests.Common\EventStore.Client.Tests.Common.csproj" />
     </ItemGroup>
-	  <ItemGroup>
-	  	<Compile Remove="..\EventStore.Client.Tests.Common\*.cs" />
-	  	<Compile Remove="..\..\src\EventStore.Client.Common\Shims\**" />
-	  </ItemGroup>
     <ItemGroup>
         <Protobuf Include="..\..\src\EventStore.Client.Common\protos\serverfeatures.proto" ProtoCompile="false" ProtoRoot="..\..\src\EventStore.Client.Common\protos" GrpcServices="Server" />
     </ItemGroup>
-	  <ItemGroup Condition="'$(TargetFramework)' != 'net48'">
-	  	<PackageReference Include="Grpc.AspNetCore" Version="$(GrpcPackageVersion)" />
-	  </ItemGroup>
-	  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-	  	<PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
-	  </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
         <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="6.0.25" />
     </ItemGroup>

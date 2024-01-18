@@ -193,28 +193,5 @@ namespace EventStore.Client {
 			return true;
 #endif
 		}
-        
-        private static bool TryWriteBytes(Span<byte> destination, long value)
-        {
-            if (destination.Length < sizeof(long))
-                return false;
-
-            Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(destination), value);
-            return true;
-        }
-        
-        private bool TryWriteGuidBytes(Guid value, Span<byte> destination)
-        {
-#if NET
-            return value.TryWriteBytes(destination);
-#else
-            if (destination.Length < 16)
-                return false;
-
-            var bytes = value.ToByteArray();
-            bytes.CopyTo(destination);
-            return true;
-#endif
-        }
 	}
 }

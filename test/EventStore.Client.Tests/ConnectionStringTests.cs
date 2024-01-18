@@ -391,7 +391,6 @@ public class ConnectionStringTests {
 			}
 		}
 #endif
-		}
 
 		return string.Join("&", pairs.Select(pair => $"{getKey?.Invoke(pair.Key) ?? pair.Key}={pair.Value}"));
 	}

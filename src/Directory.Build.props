@@ -35,9 +35,15 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="4.0.0" PrivateAssets="All" />
-        <PackageReference Include="Grpc.Tools" Version="$(GrpcToolsPackageVersion)" PrivateAssets="All" />
-        <PackageReference Include="MinVer" Version="4.3.0" PrivateAssets="All" />
+        <PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="4.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Grpc.Tools" Version="$(GrpcToolsPackageVersion)">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="MinVer" Version="3.0.0" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup>

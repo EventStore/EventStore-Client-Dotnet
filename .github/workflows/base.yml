@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [ net48, net6.0, net7.0, net8.0 ]
+        framework: [ net6.0, net7.0, net8.0 ]
         os: [ ubuntu-latest ]
         test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement ]
         configuration: [ release ]
@@ -25,6 +25,10 @@ jobs:
       - shell: bash
         run: |
           git fetch --prune --unshallow
+      - name: Pull EventStore Image
+        shell: bash
+        run: |
+          docker pull ghcr.io/eventstore/eventstore:${{ inputs.docker-tag }}
       - name: Install dotnet SDKs
         uses: actions/setup-dotnet@v3
         with:
@@ -36,10 +40,6 @@ jobs:
         shell: bash
         run: |
           dotnet build --configuration ${{ matrix.configuration }} --framework ${{ matrix.framework }} src/EventStore.Client.${{ matrix.test }}
-      - name: Pull EventStore Image
-        shell: bash
-        run: |
-            docker pull ghcr.io/eventstore/eventstore:${{ inputs.docker-tag }}
       - name: Run Tests
         shell: bash
         env:

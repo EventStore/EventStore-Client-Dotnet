@@ -14,8 +14,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [ net48, net6.0, net7.0, net8.0 ]
-        os: [ ubuntu-latest ]
+        framework: [ net6.0, net7.0, net8.0 ]
+        os: [ ubuntu-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     name: scan-vulnerabilities/${{ matrix.os }}/${{ matrix.framework }}
     steps:
@@ -27,6 +27,7 @@ jobs:
           dotnet-version: |
             6.0.x
             7.0.x
+            8.0.x
       - name: Scan for Vulnerabilities
         shell: bash
         run: |
@@ -37,19 +38,18 @@ jobs:
 
   build-samples:
     timeout-minutes: 5
-    name: build-samples/${{ matrix.os }}/${{ matrix.framework }}
+    name: build-samples/${{ matrix.framework }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        framework: [ net48, net6.0, net7.0, net8.0 ]
-        os: [ ubuntu-latest ]
-    runs-on: ${{ matrix.os }}
+        framework: [ net8.0 ]
     services:
       esdb:
         image: ghcr.io/eventstore/eventstore:lts
         env:
           EVENTSTORE_INSECURE: true
-          EVENTSTORE_MEMDB: true
+          EVENTSTORE_MEM_DB: false
           EVENTSTORE_RUN_PROJECTIONS: all
           EVENTSTORE_START_STANDARD_PROJECTIONS: true
         ports:
@@ -62,8 +62,7 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            6.0.x
-            7.0.x
+            8.0.x
       - name: Compile
         shell: bash
         run: |
@@ -74,11 +73,11 @@ jobs:
           find samples/ -type f -iname "*.csproj" -print0 | xargs -0L1 dotnet run --framework ${{ matrix.framework }} --project
 
   test:
-    timeout-minutes: 10
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        framework: [ net48, net6.0, net7.0 ]
+        framework: [ net6.0, net7.0, net8.0 ]
         os: [ ubuntu-latest, windows-latest ]
         configuration: [ release ]
     runs-on: ${{ matrix.os }}
@@ -95,6 +94,7 @@ jobs:
           dotnet-version: |
             6.0.x
             7.0.x
+            8.0.x
       - name: Compile
         shell: bash
         run: |
@@ -106,7 +106,7 @@ jobs:
             --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
             --framework ${{ matrix.framework }} \
             test/EventStore.Client.Tests
- 
+
   publish:
     timeout-minutes: 5
     needs: [ vulnerability-scan, test, build-samples ]
@@ -132,6 +132,7 @@ jobs:
           dotnet-version: |
             6.0.x
             7.0.x
+            8.0.x
       - name: Dotnet Pack
         shell: bash
         run: |
