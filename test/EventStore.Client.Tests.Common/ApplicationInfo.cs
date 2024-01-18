@@ -3,6 +3,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.Hosting;
 
 using static System.Console;
@@ -23,12 +24,6 @@ public static class Application {
 
 		Environment = GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? Environments.Development;
 
-		// var builder = new ConfigurationBuilder()
-		// 	.AddJsonFile("appsettings.json", true)
-		// 	.AddJsonFile($"appsettings.{Environment}.json", true)                    // Accept default naming convention
-		// 	.AddJsonFile($"appsettings.{Environment.ToLowerInvariant()}.json", true) // Linux is case sensitive
-		// 	.AddEnvironmentVariables();
-
 		var builder = new ConfigurationBuilder()
 			.AddJsonFile("appsettings.json", true)
 			.AddJsonFile($"appsettings.{Environment}.json", true) // Accept default naming convention
@@ -36,9 +31,9 @@ public static class Application {
 
 		Configuration = builder.Build();
 
-		// WriteLine($"APP: {Environment} configuration loaded "
-		//         + $"with {builder.AsEnumerable().Count()} entries "
-		//         + $"from {builder} sources.");
+		WriteLine($"APP: {Environment} configuration loaded "
+		        + $"with {Configuration.AsEnumerable().Count()} entries "
+		        + $"from {builder.Sources.Count()} sources.");
 
 		IsDevelopment = IsEnvironment(Environments.Development);
 		IsStaging     = IsEnvironment(Environments.Staging);
