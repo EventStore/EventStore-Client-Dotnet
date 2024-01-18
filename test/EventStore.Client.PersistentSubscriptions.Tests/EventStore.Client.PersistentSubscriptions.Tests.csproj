@@ -6,4 +6,7 @@
     <ItemGroup>
         <None Remove="EventStore.Client.PersistentSubscriptions.Tests.csproj.DotSettings" />
     </ItemGroup>
+		<ItemGroup>
+			<Compile Include="..\..\src\EventStore.Client.Common\Shims\*.cs" LinkBase="Shims"/>
+		</ItemGroup>
 </Project>

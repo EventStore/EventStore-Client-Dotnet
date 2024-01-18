@@ -8,6 +8,8 @@ using Google.Protobuf;
 using EventStore.Client.Streams;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
+
 namespace EventStore.Client {
 	public partial class EventStoreClient {
 		/// <summary>
@@ -257,8 +259,8 @@ namespace EventStore.Client {
 
 					// complete whatever tcs's we have
 					_onException(ex);
-					foreach (var (_, source) in _pendingRequests) {
-						source.TrySetException(ex);
+					foreach (var request in _pendingRequests) {
+						request.Value.TrySetException(ex);
 					}
 				}
 			}
@@ -268,7 +270,7 @@ namespace EventStore.Client {
 				if (call is null)
 					throw new NotSupportedException("Server does not support batch append");
 
-				await foreach (var appendRequest in _channel.Reader.ReadAllAsync(_cancellationToken)
+				await foreach (var appendRequest in ReadAllAsync(_channel.Reader, _cancellationToken)
 					.ConfigureAwait(false)) {
 					await call.RequestStream.WriteAsync(appendRequest).ConfigureAwait(false);
 				}
@@ -337,6 +339,16 @@ namespace EventStore.Client {
 
 			public void Dispose() {
 				_channel.Writer.TryComplete();
+			}
+		}
+		private static async IAsyncEnumerable<T> ReadAllAsync<T>(ChannelReader<T> reader, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+		{
+			while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+			{
+				while (reader.TryRead(out T? item))
+				{
+					yield return item;
+				}
 			}
 		}
 	}

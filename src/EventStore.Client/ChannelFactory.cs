@@ -19,7 +19,9 @@ namespace EventStore.Client {
 			return TChannel.ForAddress(address, new GrpcChannelOptions {
 				HttpClient = new HttpClient(CreateHandler(), true) {
 					Timeout = System.Threading.Timeout.InfiniteTimeSpan,
+#if NET
 					DefaultRequestVersion = new Version(2, 0),
+#endif
 				},
 				LoggerFactory = settings.LoggerFactory,
 				Credentials = settings.ChannelCredentials,
@@ -32,11 +34,20 @@ namespace EventStore.Client {
 					return settings.CreateHttpMessageHandler.Invoke();
 				}
 
+#if NET
 				return new SocketsHttpHandler {
 					KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,
 					KeepAlivePingTimeout = settings.ConnectivitySettings.KeepAliveTimeout,
 					EnableMultipleHttp2Connections = true
 				};
+#else
+                return new WinHttpHandler {
+                    TcpKeepAliveEnabled = true,
+                    TcpKeepAliveTime = settings.ConnectivitySettings.KeepAliveTimeout,
+                    TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
+                    EnableMultipleHttp2Connections = true
+                };
+#endif
 			}
 		}
 	}

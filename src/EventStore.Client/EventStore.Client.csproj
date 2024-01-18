@@ -21,4 +21,13 @@
 		<Compile Remove="..\EventStore.Client.Common\TypedExceptionInterceptor.cs" />
 		<Compile Remove="..\EventStore.Client.Common\EventStoreClientSettingsExtensions.cs" />
 	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+		<Reference Include="System.Net.Http"/>
+		<Reference Include="System.Web"/>
+		<PackageReference Include="System.Text.Json" Version="7.0.3"/>
+		<PackageReference Include="System.Net.Http.WinHttpHandler" Version="7.0.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<InternalsVisibleTo Include="EventStore.Client.Tests" />
+	</ItemGroup>
 </Project>

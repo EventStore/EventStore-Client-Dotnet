@@ -29,4 +29,13 @@
         <Using Include="EventStore.Client.Tests" />
         <Using Include="JetBrains.Annotations" />
     </ItemGroup>
+
+		<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+			<PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+		</ItemGroup>
+
+		<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+<!--			<Compile Include="..\..\src\EventStore.Client.Common\Shims\*.cs" LinkBase="Shims"/>-->
+				<Compile Include="..\src\EventStore.Client.Common\Shims\*.cs" LinkBase="Shims"/>
+		</ItemGroup>
 </Project>

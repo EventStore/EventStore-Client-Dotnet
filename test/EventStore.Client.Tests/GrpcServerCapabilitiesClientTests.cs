@@ -1,3 +1,4 @@
+#if NET
 using System.Net;
 using EventStore.Client.ServerFeatures;
 using Grpc.Core;
@@ -98,3 +99,4 @@ public class GrpcServerCapabilitiesClientTests {
 		public override Task<SupportedMethods> GetSupportedMethods(Empty request, ServerCallContext context) => Task.FromResult(_supportedMethods);
 	}
 }
+#endif

@@ -105,30 +105,35 @@ namespace EventStore.Client {
 				return CreateSettings(scheme, userInfo, hosts, options);
 			}
 
-			private static EventStoreClientSettings CreateSettings(string scheme, (string user, string pass)? userInfo,
-				EndPoint[] hosts, Dictionary<string, string> options) {
+			private static EventStoreClientSettings CreateSettings(
+				string scheme, (string user, string pass)? userInfo,
+				EndPoint[] hosts, Dictionary<string, string> options
+			) {
 				var settings = new EventStoreClientSettings {
 					ConnectivitySettings = EventStoreClientConnectivitySettings.Default,
-					OperationOptions = EventStoreClientOperationOptions.Default
+					OperationOptions     = EventStoreClientOperationOptions.Default
 				};
 
 				if (userInfo.HasValue)
 					settings.DefaultCredentials = new UserCredentials(userInfo.Value.user, userInfo.Value.pass);
 
 				var typedOptions = new Dictionary<string, object>(StringComparer.InvariantCultureIgnoreCase);
-				foreach (var (key, value) in options) {
-					if (!SettingsType.TryGetValue(key, out var type))
-						throw new InvalidSettingException($"Unknown option: {key}");
+				foreach (var kv in options) {
+					if (!SettingsType.TryGetValue(kv.Key, out var type))
+						throw new InvalidSettingException($"Unknown option: {kv.Key}");
+
 					if (type == typeof(int)) {
-						if (!int.TryParse(value, out var intValue))
-							throw new InvalidSettingException($"{key} must be an integer value");
-						typedOptions.Add(key, intValue);
+						if (!int.TryParse(kv.Value, out var intValue))
+							throw new InvalidSettingException($"{kv.Key} must be an integer value");
+
+						typedOptions.Add(kv.Key, intValue);
 					} else if (type == typeof(bool)) {
-						if (!bool.TryParse(value, out var boolValue))
-							throw new InvalidSettingException($"{key} must be either true or false");
-						typedOptions.Add(key, boolValue);
+						if (!bool.TryParse(kv.Value, out var boolValue))
+							throw new InvalidSettingException($"{kv.Key} must be either true or false");
+
+						typedOptions.Add(kv.Key, boolValue);
 					} else if (type == typeof(string)) {
-						typedOptions.Add(key, value);
+						typedOptions.Add(kv.Key, kv.Value);
 					}
 				}
 
@@ -198,8 +203,13 @@ namespace EventStore.Client {
 				if (typedOptions.TryGetValue(TlsVerifyCert, out var tlsVerifyCert)) {
 					settings.ConnectivitySettings.TlsVerifyCert = (bool)tlsVerifyCert;
 				}
-				
-				settings.CreateHttpMessageHandler = () => {
+
+				settings.CreateHttpMessageHandler = CreateDefaultHandler;
+
+				return settings;
+
+				HttpMessageHandler CreateDefaultHandler() {
+#if NET
 					var handler = new SocketsHttpHandler {
 						KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,
 						KeepAlivePingTimeout = settings.ConnectivitySettings.KeepAliveTimeout,
@@ -209,11 +219,20 @@ namespace EventStore.Client {
 					if (!settings.ConnectivitySettings.TlsVerifyCert) {
 						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
 					}
+#else
+					var handler = new WinHttpHandler {
+						TcpKeepAliveEnabled = true,
+						TcpKeepAliveTime = settings.ConnectivitySettings.KeepAliveTimeout,
+						TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
+						EnableMultipleHttp2Connections = true
+					};
 
+					if (!settings.ConnectivitySettings.TlsVerifyCert) {
+						handler.ServerCertificateValidationCallback = delegate { return true; };
+					}
+#endif
 					return handler;
-				};
-
-				return settings;
+				}
 			}
 
 			private static string ParseScheme(string s) =>

@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Net.Http;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
@@ -24,13 +25,19 @@ public class EventStoreTestServer : IEventStoreTestServer {
 		_hostCertificatePath = hostCertificatePath;
 		VerifyCertificatesExist();
 
-		_httpClient = new(
-			new SocketsHttpHandler {
-				SslOptions = { RemoteCertificateValidationCallback = delegate { return true; } }
-			}
-		) {
-			BaseAddress = address
+#if NET
+		_httpClient = new HttpClient(new SocketsHttpHandler {
+			SslOptions = {RemoteCertificateValidationCallback = delegate { return true; }}
+		}) {
+			BaseAddress = address,
 		};
+#else
+		_httpClient = new HttpClient(new WinHttpHandler {
+			ServerCertificateValidationCallback = delegate { return true; }
+		}) {
+			BaseAddress = address,
+		};
+#endif
 
 		var env = new Dictionary<string, string> {
 			["EVENTSTORE_DB_LOG_FORMAT"]                  = "V2",
@@ -46,8 +53,8 @@ public class EventStoreTestServer : IEventStoreTestServer {
 			["EVENTSTORE_DISABLE_LOG_FILE"]               = "true"
 		};
 
-		foreach (var (key, value) in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>())
-			env[key] = value;
+		foreach (var val in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>())
+			env[val.Key] = val.Value;
 
 		_eventStore = new Builder()
 			.UseContainer()
@@ -89,7 +96,7 @@ public class EventStoreTestServer : IEventStoreTestServer {
 		_httpClient?.Dispose();
 		_eventStore?.Dispose();
 
-		return ValueTask.CompletedTask;
+        return new ValueTask(Task.CompletedTask);
 	}
 
 	static Version GetVersion() {

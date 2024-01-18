@@ -27,19 +27,55 @@ public static class FluentDockerServiceExtensions {
 		await WaitUntilNodesAreHealthy(service, cts.Token);
 	}
 
-	public static async Task WaitUntilNodesAreHealthy(this ICompositeService service, IEnumerable<string> services, CancellationToken cancellationToken) {
+#if NET
+	public static async Task WaitUntilNodesAreHealthy(this ICompositeService service, IEnumerable<string> services, CancellationToken cancellationToken)
+#else
+    public static void WaitUntilNodesAreHealthy(this ICompositeService service, IEnumerable<string> services, CancellationToken cancellationToken)
+#endif
+{
 		var nodes = service.Containers.Where(x => services.Contains(x.Name));
-		
-		await Parallel.ForEachAsync(nodes, cancellationToken, async (node, ct) => await node.WaitUntilNodesAreHealthy(ct));
-	}
 
-	public static async Task WaitUntilNodesAreHealthy(this ICompositeService service, string serviceNamePrefix, CancellationToken cancellationToken) {
+#if NET
+		await Parallel.ForEachAsync(nodes, cancellationToken, async (node, ct) => await node.WaitUntilNodesAreHealthy(ct));
+#else
+        Parallel.ForEach(
+            nodes,
+            node => {
+                node.WaitUntilNodesAreHealthy(cancellationToken).GetAwaiter().GetResult();
+            }
+        );
+#endif
+    }
+
+#if NET
+	public static async Task WaitUntilNodesAreHealthy(this ICompositeService service, string serviceNamePrefix, CancellationToken cancellationToken)
+#else
+	public static void WaitUntilNodesAreHealthy(this ICompositeService service, string serviceNamePrefix, CancellationToken cancellationToken)
+#endif
+{
 		var nodes = service.Containers.Where(x => x.Name.StartsWith(serviceNamePrefix));
+#if NET
 		await Parallel.ForEachAsync(nodes, cancellationToken, async (node, ct) => await node.WaitUntilNodesAreHealthy(ct));
+#else
+        Parallel.ForEach(
+            nodes,
+            node => {
+                node.WaitUntilNodesAreHealthy(cancellationToken).GetAwaiter().GetResult();
+            }
+        );
+#endif
 	}
 
+#if NET
 	public static async Task WaitUntilNodesAreHealthy(this ICompositeService service, string serviceNamePrefix, TimeSpan timeout) {
+#else
+	public static void WaitUntilNodesAreHealthy(this ICompositeService service, string serviceNamePrefix, TimeSpan timeout) {
+#endif
 		using var cts = new CancellationTokenSource(timeout);
+#if NET
 		await WaitUntilNodesAreHealthy(service, serviceNamePrefix, cts.Token);
+#else
+        WaitUntilNodesAreHealthy(service, serviceNamePrefix, cts.Token);
+#endif
 	}
 }

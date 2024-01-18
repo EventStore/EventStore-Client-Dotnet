@@ -12,7 +12,11 @@ namespace EventStore.Client {
 			}
 			if (source._cached != null || source.StreamName.IsEmpty) return source._cached;
 
+#if NET
 			var tmp = Encoding.UTF8.GetString(source.StreamName.Span);
+#else
+			var tmp = Encoding.UTF8.GetString(source.StreamName.ToByteArray());
+#endif
 			//this doesn't have to be thread safe, its just a cache in case the identifier is turned into a string several times
 			source._cached = tmp;
 			return source._cached;

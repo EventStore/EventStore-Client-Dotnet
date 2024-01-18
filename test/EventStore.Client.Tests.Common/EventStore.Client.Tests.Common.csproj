@@ -26,6 +26,7 @@
         <PackageReference Include="Serilog.Sinks.Seq" Version="6.0.0" />
         <PackageReference Include="System.Reactive" Version="6.0.0" />
         <PackageReference Include="xunit.categories" Version="2.0.8" />
+				<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
     </ItemGroup>
 
     <!-- Vulnerable Transitive Packages -->
