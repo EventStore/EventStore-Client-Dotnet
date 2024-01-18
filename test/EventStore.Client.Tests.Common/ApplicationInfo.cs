@@ -3,7 +3,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.Hosting;
 
 using static System.Console;
@@ -27,7 +26,8 @@ public static class Application {
 		var builder = new ConfigurationBuilder()
 			.AddJsonFile("appsettings.json", true)
 			.AddJsonFile($"appsettings.{Environment}.json", true) // Accept default naming convention
-			.AddJsonFile($"appsettings.{Environment.ToLowerInvariant()}.json", true); // Linux is case sensitive
+			.AddJsonFile($"appsettings.{Environment.ToLowerInvariant()}.json", true) // Linux is case sensitive
+			.AddEnvironmentVariables();
 
 		Configuration = builder.Build();
 
