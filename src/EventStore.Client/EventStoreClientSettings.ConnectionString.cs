@@ -105,11 +105,13 @@ namespace EventStore.Client {
 				return CreateSettings(scheme, userInfo, hosts, options);
 			}
 
-			private static EventStoreClientSettings CreateSettings(string scheme, (string user, string pass)? userInfo,
-				EndPoint[] hosts, Dictionary<string, string> options) {
+			private static EventStoreClientSettings CreateSettings(
+				string scheme, (string user, string pass)? userInfo,
+				EndPoint[] hosts, Dictionary<string, string> options
+			) {
 				var settings = new EventStoreClientSettings {
 					ConnectivitySettings = EventStoreClientConnectivitySettings.Default,
-					OperationOptions = EventStoreClientOperationOptions.Default
+					OperationOptions     = EventStoreClientOperationOptions.Default
 				};
 
 				if (userInfo.HasValue)
@@ -119,13 +121,16 @@ namespace EventStore.Client {
 				foreach (var kv in options) {
 					if (!SettingsType.TryGetValue(kv.Key, out var type))
 						throw new InvalidSettingException($"Unknown option: {kv.Key}");
+
 					if (type == typeof(int)) {
 						if (!int.TryParse(kv.Value, out var intValue))
 							throw new InvalidSettingException($"{kv.Key} must be an integer value");
+
 						typedOptions.Add(kv.Key, intValue);
 					} else if (type == typeof(bool)) {
 						if (!bool.TryParse(kv.Value, out var boolValue))
 							throw new InvalidSettingException($"{kv.Key} must be either true or false");
+
 						typedOptions.Add(kv.Key, boolValue);
 					} else if (type == typeof(string)) {
 						typedOptions.Add(kv.Key, kv.Value);
@@ -199,11 +204,11 @@ namespace EventStore.Client {
 					settings.ConnectivitySettings.TlsVerifyCert = (bool)tlsVerifyCert;
 				}
 
-                settings.CreateHttpMessageHandler = CreateDefaultHandler;
+				settings.CreateHttpMessageHandler = CreateDefaultHandler;
 
 				return settings;
 
-                HttpMessageHandler CreateDefaultHandler() {
+				HttpMessageHandler CreateDefaultHandler() {
 #if NET
 					var handler = new SocketsHttpHandler {
 						KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,
@@ -215,19 +220,19 @@ namespace EventStore.Client {
 						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
 					}
 #else
-                    var handler = new WinHttpHandler {
-                        TcpKeepAliveEnabled = true,
-                        TcpKeepAliveTime = settings.ConnectivitySettings.KeepAliveTimeout,
-                        TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
-                        EnableMultipleHttp2Connections = true
-                    };
-                    
+					var handler = new WinHttpHandler {
+						TcpKeepAliveEnabled = true,
+						TcpKeepAliveTime = settings.ConnectivitySettings.KeepAliveTimeout,
+						TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
+						EnableMultipleHttp2Connections = true
+					};
+
 					if (!settings.ConnectivitySettings.TlsVerifyCert) {
 						handler.ServerCertificateValidationCallback = delegate { return true; };
 					}
 #endif
 					return handler;
-                }
+				}
 			}
 
 			private static string ParseScheme(string s) =>

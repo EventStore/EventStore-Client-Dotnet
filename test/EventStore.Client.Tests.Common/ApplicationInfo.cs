@@ -23,17 +23,17 @@ public static class Application {
 
 		Environment = GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? Environments.Development;
 
-        var builder = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", true)
-            .AddJsonFile($"appsettings.{Environment}.json", true) // Accept default naming convention
-            .AddJsonFile($"appsettings.{Environment.ToLowerInvariant()}.json", true) // Linux is case sensitive
-            .AddEnvironmentVariables();
+		var builder = new ConfigurationBuilder()
+			.AddJsonFile("appsettings.json", true)
+			.AddJsonFile($"appsettings.{Environment}.json", true) // Accept default naming convention
+			.AddJsonFile($"appsettings.{Environment.ToLowerInvariant()}.json", true) // Linux is case sensitive
+			.AddEnvironmentVariables();
 
 		Configuration = builder.Build();
 
 		WriteLine($"APP: {Environment} configuration loaded "
 		        + $"with {Configuration.AsEnumerable().Count()} entries "
-		        + $"from {builder.Sources.Count} sources.");
+		        + $"from {builder.Sources.Count()} sources.");
 
 		IsDevelopment = IsEnvironment(Environments.Development);
 		IsStaging     = IsEnvironment(Environments.Staging);

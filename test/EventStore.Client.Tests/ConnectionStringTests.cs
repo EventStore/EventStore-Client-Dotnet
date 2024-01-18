@@ -131,14 +131,14 @@ public class ConnectionStringTests {
 			Assert.Null(socketsHandler.SslOptions.RemoteCertificateValidationCallback);
 		}
 #else
-        var socketsHandler = Assert.IsType<WinHttpHandler>(handler);
-        if (!tlsVerifyCert) {
-            Assert.NotNull(socketsHandler.ServerCertificateValidationCallback);
-            Assert.True(socketsHandler.ServerCertificateValidationCallback!.Invoke(null!, default!,
-                default!, default));
-        } else {
-            Assert.Null(socketsHandler.ServerCertificateValidationCallback);
-        }
+		var socketsHandler = Assert.IsType<WinHttpHandler>(handler);
+		if (!tlsVerifyCert) {
+			Assert.NotNull(socketsHandler.ServerCertificateValidationCallback);
+			Assert.True(socketsHandler.ServerCertificateValidationCallback!.Invoke(null!, default!,
+				default!, default));
+		} else {
+			Assert.Null(socketsHandler.ServerCertificateValidationCallback);
+		}
 #endif
 	}
 
@@ -152,14 +152,15 @@ public class ConnectionStringTests {
 		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveTimeout);
 
 		using var handler = result.CreateHttpMessageHandler?.Invoke();
+
 #if NET
 		var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
 		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingTimeout);
 		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingDelay);
 #else
-        var winHttpHandler = Assert.IsType<WinHttpHandler>(handler);
-        Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, winHttpHandler.TcpKeepAliveTime);
-        Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, winHttpHandler.TcpKeepAliveInterval);
+		var winHttpHandler = Assert.IsType<WinHttpHandler>(handler);
+		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, winHttpHandler.TcpKeepAliveTime);
+		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, winHttpHandler.TcpKeepAliveInterval);
 #endif
 	}
 
@@ -382,11 +383,13 @@ public class ConnectionStringTests {
 			if (handler is SocketsHttpHandler socketsHttpHandler &&
 			    socketsHttpHandler.SslOptions.RemoteCertificateValidationCallback != null)
 				pairs.Add("tlsVerifyCert", "false");
+		}
 #else
-            if (handler is WinHttpHandler winHttpHandler &&
-                winHttpHandler.ServerCertificateValidationCallback != null) {
-                pairs.Add("tlsVerifyCert", "false");
-            }
+			if (handler is WinHttpHandler winHttpHandler &&
+			    winHttpHandler.ServerCertificateValidationCallback != null) {
+				pairs.Add("tlsVerifyCert", "false");
+			}
+		}
 #endif
 		}
 
@@ -488,6 +491,7 @@ public class ConnectionStringTests {
 			return x.GetType() == y.GetType();
 		}
 
-		public int GetHashCode(EventStoreClientOperationOptions obj) => System.HashCode.Combine(obj.ThrowOnAppendFailure);
+		public int GetHashCode(EventStoreClientOperationOptions obj) =>
+			System.HashCode.Combine(obj.ThrowOnAppendFailure);
 	}
 }

@@ -47,12 +47,12 @@ public class EventStoreTestCluster(EventStoreFixtureOptions options) : TestCompo
 		return builder;
 	}
 
-    protected override async Task OnServiceStarted() {
-    #if NET48
+	protected override async Task OnServiceStarted() {
+#if NET48
         Service.WaitUntilNodesAreHealthy("esdb-node", TimeSpan.FromSeconds(60));
-    #else
+#else
         await Service.WaitUntilNodesAreHealthy("esdb-node", TimeSpan.FromSeconds(60));
-    #endif
+#endif
         await Task.CompletedTask;
-    }
+	}
 }

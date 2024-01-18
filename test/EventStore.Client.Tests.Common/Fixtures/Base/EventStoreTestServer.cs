@@ -26,17 +26,17 @@ public class EventStoreTestServer : IEventStoreTestServer {
 		VerifyCertificatesExist();
 
 #if NET
-        _httpClient = new HttpClient(new SocketsHttpHandler {
-            SslOptions = {RemoteCertificateValidationCallback = delegate { return true; }}
-        }) {
-            BaseAddress = address,
-        };
+		_httpClient = new HttpClient(new SocketsHttpHandler {
+			SslOptions = {RemoteCertificateValidationCallback = delegate { return true; }}
+		}) {
+			BaseAddress = address,
+		};
 #else
-        _httpClient = new HttpClient(new WinHttpHandler {
-            ServerCertificateValidationCallback = delegate { return true; }
-        }) {
-            BaseAddress = address,
-        };
+		_httpClient = new HttpClient(new WinHttpHandler {
+			ServerCertificateValidationCallback = delegate { return true; }
+		}) {
+			BaseAddress = address,
+		};
 #endif
 
 		var env = new Dictionary<string, string> {
@@ -53,9 +53,8 @@ public class EventStoreTestServer : IEventStoreTestServer {
 			["EVENTSTORE_DISABLE_LOG_FILE"]               = "true"
 		};
 
-        foreach (var val in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
-            env[val.Key] = val.Value;
-        }
+		foreach (var val in envOverrides ?? Enumerable.Empty<KeyValuePair<string, string>>())
+			env[val.Key] = val.Value;
 
 		_eventStore = new Builder()
 			.UseContainer()
@@ -98,7 +97,7 @@ public class EventStoreTestServer : IEventStoreTestServer {
 		_eventStore?.Dispose();
 
         return new ValueTask(Task.CompletedTask);
-    }
+	}
 
 	static Version GetVersion() {
 		const string versionPrefix = "EventStoreDB version";

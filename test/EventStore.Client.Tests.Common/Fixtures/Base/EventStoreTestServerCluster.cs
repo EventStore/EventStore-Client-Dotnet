@@ -23,17 +23,17 @@ public class EventStoreTestServerCluster : IEventStoreTestServer {
 		_eventStoreCluster = BuildCluster(envOverrides);
 
 #if NET
-        _httpClient = new HttpClient(new SocketsHttpHandler {
-            SslOptions = {RemoteCertificateValidationCallback = delegate { return true; }}
-        }) {
-            BaseAddress = address,
-        };
+		_httpClient = new HttpClient(new SocketsHttpHandler {
+			SslOptions = {RemoteCertificateValidationCallback = delegate { return true; }}
+		}) {
+			BaseAddress = address,
+		};
 #else
-        _httpClient = new HttpClient(new WinHttpHandler {
-            ServerCertificateValidationCallback =  delegate { return true; }
-        }) {
-            BaseAddress = address,
-        };
+		_httpClient = new HttpClient(new WinHttpHandler {
+			ServerCertificateValidationCallback =  delegate { return true; }
+		}) {
+			BaseAddress = address,
+		};
 #endif
 	}
 

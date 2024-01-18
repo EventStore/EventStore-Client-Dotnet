@@ -9,6 +9,8 @@ using Google.Protobuf;
 using EventStore.Client.Streams;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
+
 namespace EventStore.Client {
 	public partial class EventStoreClient {
 		/// <summary>
@@ -340,16 +342,15 @@ namespace EventStore.Client {
 				_channel.Writer.TryComplete();
 			}
 		}
-
-        private static async IAsyncEnumerable<T> ReadAllAsync<T>(ChannelReader<T> reader, [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
-            {
-                while (reader.TryRead(out T? item))
-                {
-                    yield return item;
-                }
-            }
-        }
+		private static async IAsyncEnumerable<T> ReadAllAsync<T>(ChannelReader<T> reader, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+		{
+			while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+			{
+				while (reader.TryRead(out T? item))
+				{
+					yield return item;
+				}
+			}
+		}
 	}
 }

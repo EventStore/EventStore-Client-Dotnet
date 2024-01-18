@@ -82,11 +82,11 @@ namespace EventStore.Client {
 			_lsb = BitConverterToInt64(data[8..]);
 		}
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static long BitConverterToInt64(ReadOnlySpan<byte> value) 
-            => Unsafe.ReadUnaligned<long>(ref MemoryMarshal.GetReference(value));
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private static long BitConverterToInt64(ReadOnlySpan<byte> value)
+			=> Unsafe.ReadUnaligned<long>(ref MemoryMarshal.GetReference(value));
 
-        private Uuid(string value) : this(value == null
+		private Uuid(string value) : this(value == null
 			? throw new ArgumentNullException(nameof(value))
 			: Guid.Parse(value)) {
 		}
@@ -104,7 +104,7 @@ namespace EventStore.Client {
 			new UUID {
 				Structured = new UUID.Types.Structured {
 					LeastSignificantBits = _lsb,
-					MostSignificantBits = _msb
+					MostSignificantBits  = _msb
 				}
 			};
 
@@ -168,7 +168,29 @@ namespace EventStore.Client {
 #if NET
 			return new Guid(data);
 #else
-            return new Guid(data.ToArray());
+			return new Guid(data.ToArray());
+#endif
+		}
+		private static bool TryWriteBytes(Span<byte> destination, long value)
+		{
+			if (destination.Length < sizeof(long))
+				return false;
+
+			Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(destination), value);
+			return true;
+		}
+
+		private bool TryWriteGuidBytes(Guid value, Span<byte> destination)
+		{
+#if NET
+                    return value.TryWriteBytes(destination);
+#else
+			if (destination.Length < 16)
+				return false;
+
+			var bytes = value.ToByteArray();
+			bytes.CopyTo(destination);
+			return true;
 #endif
 		}
         

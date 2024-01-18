@@ -31,7 +31,6 @@ namespace EventStore.Client {
 #else
 			using var stream = new MemoryStream();
 #endif
-
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
 			serializer.Write(writer, value, DefaultJsonSerializerOptions);
@@ -58,13 +57,11 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken = default) {
 			var value = await GetResultInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
-
 #if NET
 			await using var stream = new MemoryStream();
 #else
 			using var stream = new MemoryStream();
 #endif
-
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
 			serializer.Write(writer, value, DefaultJsonSerializerOptions);
@@ -109,7 +106,6 @@ namespace EventStore.Client {
 #else
 			using var stream = new MemoryStream();
 #endif
-
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
 			serializer.Write(writer, value, DefaultJsonSerializerOptions);
@@ -141,7 +137,6 @@ namespace EventStore.Client {
 #else
 			using var stream = new MemoryStream();
 #endif
-
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
 			serializer.Write(writer, value, DefaultJsonSerializerOptions);

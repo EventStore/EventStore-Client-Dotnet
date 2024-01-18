@@ -85,9 +85,9 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
 			catch (Exception ex) {
 				throw new FluentDockerException("Failed to stop container service", ex);
 			}
-			
+
 			await Task.Delay(delay);
-			
+
 			Logger.Information("Container service starting...");
 
 			try {
