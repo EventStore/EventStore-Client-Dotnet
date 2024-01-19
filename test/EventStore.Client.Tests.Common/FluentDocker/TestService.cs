@@ -12,11 +12,7 @@ public interface ITestService : IAsyncDisposable {
 	Task Stop();
 	Task Restart(TimeSpan delay);
 
-#if NET
-    Task Restart() => Restart(TimeSpan.Zero);
-#else
     Task Restart();
-#endif
 
     void ReportStatus();
 }
@@ -30,12 +26,10 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
 
 	INetworkService? Network { get; set; } = null!;
 
-#if !NET
-    Task ITestService.Restart()
+    public Task Restart()
     {
       return Restart(TimeSpan.Zero);
     }
-#endif
 
 	public virtual async Task Start() {
 		Logger.Information("Container service starting");
@@ -129,12 +123,6 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
 		}
 	}
 
-#if !NET
-    public virtual ValueTask DisposeAsync()
-    {
-        return DisposeAsync();
-    }
-#else
 	public virtual ValueTask DisposeAsync() {
 		try {
 			Network?.Dispose();
@@ -150,9 +138,8 @@ public abstract class TestService<TService, TBuilder> : ITestService where TServ
 			throw new FluentDockerException("Failed to dispose of container service", ex);
 		}
 
-		return ValueTask.CompletedTask;
+		return default;
 	}
-#endif
 
 	protected abstract TBuilder Configure();
 

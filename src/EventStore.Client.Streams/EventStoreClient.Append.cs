@@ -45,7 +45,7 @@ namespace EventStore.Client {
 						new AppendReq {
 							Options = new AppendReq.Types.Options {
 								StreamIdentifier = streamName,
-								Revision = expectedRevision
+								Revision         = expectedRevision
 							}
 						}, eventData, options, deadline, userCredentials, cancellationToken);
 
@@ -113,8 +113,8 @@ namespace EventStore.Client {
 						header.Options.StreamIdentifier, e.EventId, e.Type);
 					await call.RequestStream.WriteAsync(new AppendReq {
 						ProposedMessage = new AppendReq.Types.ProposedMessage {
-							Id = e.EventId.ToDto(),
-							Data = ByteString.CopyFrom(e.Data.Span),
+							Id             = e.EventId.ToDto(),
+							Data           = ByteString.CopyFrom(e.Data.Span),
 							CustomMetadata = ByteString.CopyFrom(e.Metadata.Span),
 							Metadata = {
 								{Constants.Metadata.Type, e.Type},
@@ -142,10 +142,10 @@ namespace EventStore.Client {
 				} else {
 					if (response.WrongExpectedVersion != null) {
 						var actualStreamRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase switch {
-								AppendResp.Types.WrongExpectedVersion.CurrentRevisionOptionOneofCase.CurrentNoStream =>
-									StreamRevision.None,
-								_ => new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
-							};
+							AppendResp.Types.WrongExpectedVersion.CurrentRevisionOptionOneofCase.CurrentNoStream =>
+								StreamRevision.None,
+							_ => new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
+						};
 
 						_log.LogDebug(
 							"Append to stream failed with Wrong Expected Version - {streamName}/{expectedRevision}/{currentRevision}",
@@ -154,7 +154,7 @@ namespace EventStore.Client {
 
 						if (operationOptions.ThrowOnAppendFailure) {
 							if (response.WrongExpectedVersion.ExpectedRevisionOptionCase == AppendResp.Types
-								.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedRevision) {
+								    .WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedRevision) {
 								throw new WrongExpectedVersionException(header.Options.StreamIdentifier!,
 									new StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
 									actualStreamRevision);
@@ -175,7 +175,7 @@ namespace EventStore.Client {
 						}
 
 						if (response.WrongExpectedVersion.ExpectedRevisionOptionCase == AppendResp.Types
-							.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedRevision) {
+							    .WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedRevision) {
 							writeResult = new WrongExpectedVersionResult(header.Options.StreamIdentifier!,
 								new StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
 								actualStreamRevision);
@@ -196,34 +196,34 @@ namespace EventStore.Client {
 
 
 		private class StreamAppender : IDisposable {
-			private readonly EventStoreClientSettings _settings;
-			private readonly CancellationToken _cancellationToken;
-			private readonly Action<Exception> _onException;
-			private readonly Channel<BatchAppendReq> _channel;
+			private readonly EventStoreClientSettings                                       _settings;
+			private readonly CancellationToken                                              _cancellationToken;
+			private readonly Action<Exception>                                              _onException;
+			private readonly Channel<BatchAppendReq>                                        _channel;
 			private readonly ConcurrentDictionary<Uuid, TaskCompletionSource<IWriteResult>> _pendingRequests;
 
 			private readonly Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>?> _callTask;
 
 			public StreamAppender(EventStoreClientSettings settings,
-				Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>?> callTask, CancellationToken cancellationToken,
-				Action<Exception> onException) {
-				_settings = settings;
-				_callTask = callTask;
+			                      Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>?> callTask, CancellationToken cancellationToken,
+			                      Action<Exception> onException) {
+				_settings          = settings;
+				_callTask          = callTask;
 				_cancellationToken = cancellationToken;
-				_onException = onException;
-				_channel = System.Threading.Channels.Channel.CreateBounded<BatchAppendReq>(10000);
-				_pendingRequests = new ConcurrentDictionary<Uuid, TaskCompletionSource<IWriteResult>>();
-				_ = Task.Factory.StartNew(Send);
-				_ = Task.Factory.StartNew(Receive);
+				_onException       = onException;
+				_channel           = System.Threading.Channels.Channel.CreateBounded<BatchAppendReq>(10000);
+				_pendingRequests   = new ConcurrentDictionary<Uuid, TaskCompletionSource<IWriteResult>>();
+				_                  = Task.Factory.StartNew(Send);
+				_                  = Task.Factory.StartNew(Receive);
 			}
 
 			public ValueTask<IWriteResult> Append(string streamName, StreamRevision expectedStreamPosition,
-				IEnumerable<EventData> events, TimeSpan? timeoutAfter, CancellationToken cancellationToken = default) =>
+			                                      IEnumerable<EventData> events, TimeSpan? timeoutAfter, CancellationToken cancellationToken = default) =>
 				AppendInternal(BatchAppendReq.Types.Options.Create(streamName, expectedStreamPosition, timeoutAfter),
 					events, cancellationToken);
 
 			public ValueTask<IWriteResult> Append(string streamName, StreamState expectedStreamState,
-				IEnumerable<EventData> events, TimeSpan? timeoutAfter, CancellationToken cancellationToken = default) =>
+			                                      IEnumerable<EventData> events, TimeSpan? timeoutAfter, CancellationToken cancellationToken = default) =>
 				AppendInternal(BatchAppendReq.Types.Options.Create(streamName, expectedStreamState, timeoutAfter),
 					events, cancellationToken);
 
@@ -242,7 +242,7 @@ namespace EventStore.Client {
 					}
 
 					await foreach (var response in call.ResponseStream.ReadAllAsync(_cancellationToken)
-						.ConfigureAwait(false)) {
+						               .ConfigureAwait(false)) {
 						if (!_pendingRequests.TryRemove(Uuid.FromDto(response.CorrelationId), out var writeResult)) {
 							continue; // TODO: Log?
 						}
@@ -271,7 +271,7 @@ namespace EventStore.Client {
 					throw new NotSupportedException("Server does not support batch append");
 
 				await foreach (var appendRequest in ReadAllAsync(_channel.Reader, _cancellationToken)
-					.ConfigureAwait(false)) {
+					               .ConfigureAwait(false)) {
 					await call.RequestStream.WriteAsync(appendRequest).ConfigureAwait(false);
 				}
 
@@ -279,9 +279,9 @@ namespace EventStore.Client {
 			}
 
 			private async ValueTask<IWriteResult> AppendInternal(BatchAppendReq.Types.Options options,
-				IEnumerable<EventData> events, CancellationToken cancellationToken) {
-				var batchSize = 0;
-				var correlationId = Uuid.NewUuid();
+			                                                     IEnumerable<EventData> events, CancellationToken cancellationToken) {
+				var batchSize        = 0;
+				var correlationId    = Uuid.NewUuid();
 				var correlationIdDto = correlationId.ToDto();
 
 				var complete = _pendingRequests.GetOrAdd(correlationId, new TaskCompletionSource<IWriteResult>());
@@ -298,13 +298,13 @@ namespace EventStore.Client {
 				return await complete.Task.ConfigureAwait(false);
 
 				IEnumerable<BatchAppendReq> GetRequests() {
-					bool first = true;
-					var proposedMessages = new List<BatchAppendReq.Types.ProposedMessage>();
+					bool first            = true;
+					var  proposedMessages = new List<BatchAppendReq.Types.ProposedMessage>();
 					foreach (var @event in events) {
 						var proposedMessage = new BatchAppendReq.Types.ProposedMessage {
-							Data = ByteString.CopyFrom(@event.Data.Span),
+							Data           = ByteString.CopyFrom(@event.Data.Span),
 							CustomMetadata = ByteString.CopyFrom(@event.Metadata.Span),
-							Id = @event.EventId.ToDto(),
+							Id             = @event.EventId.ToDto(),
 							Metadata = {
 								{Constants.Metadata.Type, @event.Type},
 								{Constants.Metadata.ContentType, @event.ContentType}
@@ -320,8 +320,8 @@ namespace EventStore.Client {
 
 						yield return new BatchAppendReq {
 							ProposedMessages = {proposedMessages},
-							CorrelationId = correlationIdDto,
-							Options = first ? options : null
+							CorrelationId    = correlationIdDto,
+							Options          = first ? options : null
 						};
 						first = false;
 						proposedMessages.Clear();
@@ -330,9 +330,9 @@ namespace EventStore.Client {
 
 					yield return new BatchAppendReq {
 						ProposedMessages = {proposedMessages},
-						IsFinal = true,
-						CorrelationId = correlationIdDto,
-						Options = first ? options : null
+						IsFinal          = true,
+						CorrelationId    = correlationIdDto,
+						Options          = first ? options : null
 					};
 				}
 			}
@@ -341,15 +341,18 @@ namespace EventStore.Client {
 				_channel.Writer.TryComplete();
 			}
 		}
-		private static async IAsyncEnumerable<T> ReadAllAsync<T>(ChannelReader<T> reader, [EnumeratorCancellation] CancellationToken cancellationToken = default)
-		{
-			while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
-			{
-				while (reader.TryRead(out T? item))
-				{
+
+		private static async IAsyncEnumerable<T> ReadAllAsync<T>(ChannelReader<T> reader, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
+#if NET
+			await foreach (var item in reader.ReadAllAsync(cancellationToken))
+				yield return item;
+#else
+			while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false)) {
+				while (reader.TryRead(out T? item)) {
 					yield return item;
 				}
 			}
+#endif
 		}
 	}
 }

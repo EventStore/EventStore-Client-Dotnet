@@ -84,7 +84,13 @@ namespace EventStore.Client {
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private static long BitConverterToInt64(ReadOnlySpan<byte> value)
-			=> Unsafe.ReadUnaligned<long>(ref MemoryMarshal.GetReference(value));
+		{
+#if NET
+			return BitConverter.ToInt64(value);
+#else
+			return Unsafe.ReadUnaligned<long>(ref MemoryMarshal.GetReference(value));
+#endif
+		}
 
 		private Uuid(string value) : this(value == null
 			? throw new ArgumentNullException(nameof(value))
@@ -183,7 +189,7 @@ namespace EventStore.Client {
 		private bool TryWriteGuidBytes(Guid value, Span<byte> destination)
 		{
 #if NET
-                    return value.TryWriteBytes(destination);
+			return value.TryWriteBytes(destination);
 #else
 			if (destination.Length < 16)
 				return false;
