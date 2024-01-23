@@ -11,7 +11,6 @@
         <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0"/>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
         <PackageReference Include="System.Linq.Async" Version="6.0.1"/>
-        <PackageReference Include="Grpc.Net.Client.Web" Version="2.60.0" />
     </ItemGroup>
     <ItemGroup>
         <Protobuf Include="..\EventStore.Client.Common\protos\shared.proto;..\EventStore.Client.Common\protos\status.proto;..\EventStore.Client.Common\protos\code.proto;" GrpcServices="Client" ProtoRoot="..\EventStore.Client.Common\protos"/>

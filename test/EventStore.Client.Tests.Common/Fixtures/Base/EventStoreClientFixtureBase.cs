@@ -14,7 +14,7 @@ namespace EventStore.Client;
 public abstract class EventStoreClientFixtureBase : IAsyncLifetime {
 	public const string TestEventType = "-";
 
-	const string ConnectionStringSingle  = "esdb://admin:changeit@localhost:2113/?tlsVerifyCert=false&tls=true";
+	const string ConnectionStringSingle  = "esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=false";
 	const string ConnectionStringCluster = "esdb://admin:changeit@localhost:2113,localhost:2112,localhost:2111?tls=true&tlsVerifyCert=false";
 
 	static readonly Subject<LogEvent> LogEventSubject = new();

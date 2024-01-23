@@ -18,7 +18,7 @@ public class EventStoreTestServerCluster : IEventStoreTestServer {
 		IDictionary<string, string>? envOverrides
 	) {
 		envOverrides                     ??= new Dictionary<string, string>();
-			envOverrides["ES_CERTS_CLUSTER"] =   hostCertificatePath;
+		envOverrides["ES_CERTS_CLUSTER"] =   hostCertificatePath;
 
 		_eventStoreCluster = BuildCluster(envOverrides);
 
