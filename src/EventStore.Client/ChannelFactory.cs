@@ -16,31 +16,49 @@ namespace EventStore.Client {
 				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 			}
 
-			var grpcChannelOptions =
-				new GrpcChannelOptions {
-					LoggerFactory         = settings.LoggerFactory,
-					Credentials           = settings.ChannelCredentials,
-					DisposeHttpClient     = true,
-					MaxReceiveMessageSize = MaxReceiveMessageLength
+			return TChannel.ForAddress(address, new GrpcChannelOptions {
+#if NET
+				HttpClient = new HttpClient(CreateHandler(), true) {
+					Timeout = System.Threading.Timeout.InfiniteTimeSpan,
+					DefaultRequestVersion = new Version(2, 0)
+				},
+#else
+				HttpHandler = CreateHandler(),
+#endif
+				LoggerFactory         = settings.LoggerFactory,
+				Credentials           = settings.ChannelCredentials,
+				DisposeHttpClient     = true,
+				MaxReceiveMessageSize = MaxReceiveMessageLength
+			});
+			
+			HttpMessageHandler CreateHandler() {
+				if (settings.CreateHttpMessageHandler != null) {
+					return settings.CreateHttpMessageHandler.Invoke();
+				}
+#if NET
+				var handler = new SocketsHttpHandler {
+					KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
+					KeepAlivePingTimeout           = settings.ConnectivitySettings.KeepAliveTimeout,
+					EnableMultipleHttp2Connections = true,
 				};
 
-			var httpMessageHandler = settings.CreateHttpMessageHandler?.Invoke()!;
-#if NET
-			grpcChannelOptions.HttpClient = new HttpClient(
-				httpMessageHandler,
-				true
-			) {
-				Timeout               = System.Threading.Timeout.InfiniteTimeSpan,
-				DefaultRequestVersion = new Version(2, 0),
-			};
+				if (!settings.ConnectivitySettings.TlsVerifyCert) {
+					handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+				}
 #else
-			grpcChannelOptions.HttpHandler = httpMessageHandler;
-#endif
+				var handler = new WinHttpHandler {
+					TcpKeepAliveEnabled = true,
+					TcpKeepAliveTime = settings.ConnectivitySettings.KeepAliveTimeout,
+					TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
+					EnableMultipleHttp2Connections = true
+				};
 
-			return TChannel.ForAddress(
-				address,
-				grpcChannelOptions
-			);
+				if (!settings.ConnectivitySettings.TlsVerifyCert) {
+					handler.ServerCertificateValidationCallback = delegate { return true; };
+				}
+#endif
+				return handler;
+			}
 		}
 	}
 }
