@@ -1,10 +1,7 @@
-using System;
-using System.Net;
-using EndPoint = System.Net.EndPoint;
 using System.Net.Http;
-using System.Security.Authentication;
 using Grpc.Net.Client;
-using Grpc.Net.Client.Web;
+using System.Net.Security;
+using EndPoint = System.Net.EndPoint;
 using TChannel = Grpc.Net.Client.GrpcChannel;
 
 namespace EventStore.Client {
@@ -19,44 +16,31 @@ namespace EventStore.Client {
 				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 			}
 
-			return TChannel.ForAddress(
-				address,
+			var grpcChannelOptions =
 				new GrpcChannelOptions {
-#if NET
-					HttpClient = new HttpClient(CreateHandler(), true) {
-						Timeout = System.Threading.Timeout.InfiniteTimeSpan,
-					DefaultRequestVersion = new Version(2, 0),
-					},
-#else
-					HttpHandler = CreateHandler(),
-#endif
 					LoggerFactory         = settings.LoggerFactory,
 					Credentials           = settings.ChannelCredentials,
 					DisposeHttpClient     = true,
 					MaxReceiveMessageSize = MaxReceiveMessageLength
-				}
-			);
+				};
 
-			HttpMessageHandler CreateHandler() {
-				if (settings.CreateHttpMessageHandler != null) {
-					return settings.CreateHttpMessageHandler.Invoke();
-				}
-
+			var httpMessageHandler = settings.CreateHttpMessageHandler?.Invoke()!;
 #if NET
-				return new SocketsHttpHandler {
-					KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,
-					KeepAlivePingTimeout = settings.ConnectivitySettings.KeepAliveTimeout,
-					EnableMultipleHttp2Connections = true
-				};
+			grpcChannelOptions.HttpClient = new HttpClient(
+				httpMessageHandler,
+				true
+			) {
+				Timeout               = System.Threading.Timeout.InfiniteTimeSpan,
+				DefaultRequestVersion = new Version(2, 0),
+			};
 #else
-				return new WinHttpHandler {
-					TcpKeepAliveEnabled            = true,
-					TcpKeepAliveTime               = settings.ConnectivitySettings.KeepAliveTimeout,
-					TcpKeepAliveInterval           = settings.ConnectivitySettings.KeepAliveInterval,
-					EnableMultipleHttp2Connections = true,
-				};
+			grpcChannelOptions.HttpHandler = httpMessageHandler;
 #endif
-			}
+
+			return TChannel.ForAddress(
+				address,
+				grpcChannelOptions
+			);
 		}
 	}
 }
