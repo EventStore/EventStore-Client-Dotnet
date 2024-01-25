@@ -11,8 +11,11 @@ public class deleting_existing_with_subscriber
 		var (reason, exception) = await _fixture.Dropped.WithTimeout();
 		Assert.Equal(SubscriptionDroppedReason.ServerError, reason);
 		var ex = Assert.IsType<PersistentSubscriptionDroppedByServerException>(exception);
+
+#if NET
 		Assert.Equal(SystemStreams.AllStream, ex.StreamName);
 		Assert.Equal("groupname123", ex.GroupName);
+#endif
 	}
 
 	[Fact(Skip = "Isn't this how it should work?")]
