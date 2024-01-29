@@ -32,24 +32,33 @@ namespace EventStore.Client {
 		/// <param name="name"></param>
 		/// <param name="query"></param>
 		/// <param name="trackEmittedStreams"></param>
+		/// <param name="checkpointsEnabled"></param>
+		/// <param name="enabled"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task CreateContinuousAsync(string name, string query, bool trackEmittedStreams = false,
+		public async Task CreateContinuousAsync(
+			string name, string query, bool trackEmittedStreams = false, bool checkpointsEnabled = false, bool enabled = true,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+			CancellationToken cancellationToken = default
+		) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Projections.Projections.ProjectionsClient(
-				channelInfo.CallInvoker).CreateAsync(new CreateReq {
-				Options = new CreateReq.Types.Options {
-					Continuous = new CreateReq.Types.Options.Types.Continuous {
-						Name = name,
-						TrackEmittedStreams = trackEmittedStreams
-					},
-					Query = query
-				}
-			}, EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			using var call = new Projections.Projections.ProjectionsClient(channelInfo.CallInvoker).CreateAsync(
+				new CreateReq {
+					Options = new CreateReq.Types.Options {
+						Continuous = new CreateReq.Types.Options.Types.Continuous {
+							Name                = name,
+							TrackEmittedStreams = trackEmittedStreams,
+							CheckpointsEnabled  = checkpointsEnabled,
+							Enabled             = enabled
+						},
+						Query = query
+					}
+				},
+				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken)
+			);
+
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 

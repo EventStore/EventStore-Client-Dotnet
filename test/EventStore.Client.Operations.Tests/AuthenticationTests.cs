@@ -3,8 +3,6 @@
 public class AuthenticationTests : IClassFixture<InsecureClientTestFixture> {
 	public AuthenticationTests(ITestOutputHelper output, InsecureClientTestFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	InsecureClientTestFixture Fixture { get; }
-	
 	public enum CredentialsCase { None, TestUser, RootUser }
 
 	public static IEnumerable<object?[]> InvalidAuthenticationCases() {
