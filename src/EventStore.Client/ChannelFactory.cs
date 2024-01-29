@@ -8,6 +8,9 @@ namespace EventStore.Client {
 	internal static class ChannelFactory {
 		private const int MaxReceiveMessageLength = 17 * 1024 * 1024;
 
+
+
+
 		public static TChannel CreateChannel(EventStoreClientSettings settings, EndPoint endPoint) {
 			var address = endPoint.ToUri(!settings.ConnectivitySettings.Insecure);
 

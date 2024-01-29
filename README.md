@@ -1,5 +1,7 @@
 # EventStoreDB .NET Client
 
+Hello World
+
 EventStoreDB is the open-source, functional database with Complex Event Processing in JavaScript.
 
 This is the repository for the .NET client for EventStoreDB version 20+ and uses gRPC as the communication protocol.
