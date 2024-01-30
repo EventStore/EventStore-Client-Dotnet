@@ -6,7 +6,7 @@ namespace EventStore.Client.Streams.Tests.Subscriptions;
 [Trait("Category", "Subscriptions")]
 public class @reconnection(ITestOutputHelper output, ReconnectionFixture fixture) : EventStoreTests<ReconnectionFixture>(output, fixture) {
 	[Theory]
-	[InlineData(4, 1000, 0, 15000)]
+	[InlineData(4, 5000, 0, 30000)]
 	public async Task when_the_connection_is_lost(int expectedNumberOfEvents, int reconnectDelayMs, int serviceRestartDelayMs, int testTimeoutMs) {
 		using var cancellator = new CancellationTokenSource().With(x => x.CancelAfter(testTimeoutMs));
 

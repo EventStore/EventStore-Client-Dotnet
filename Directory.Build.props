@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net48;net6.0;net7.0;net8.0</TargetFrameworks>
         <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
         <Nullable>enable</Nullable>
         <NullableContextOptions>enable</NullableContextOptions>
@@ -16,4 +16,9 @@
         <GrpcPackageVersion>2.59.0</GrpcPackageVersion>
         <GrpcToolsPackageVersion>2.59.0</GrpcToolsPackageVersion>
     </PropertyGroup>
+
+		<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+			<Reference Include="System.Net.Http"/>
+			<Reference Include="System.Web"/>
+		</ItemGroup>
 </Project>

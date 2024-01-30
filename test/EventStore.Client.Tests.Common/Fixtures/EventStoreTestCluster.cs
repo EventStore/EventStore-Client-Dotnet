@@ -24,7 +24,6 @@ public class EventStoreTestCluster(EventStoreFixtureOptions options) : TestCompo
 			["EVENTSTORE_INT_TCP_PORT"]                 = "1112",
 			["EVENTSTORE_HTTP_PORT"]                    = "2113",
 			["EVENTSTORE_DISCOVER_VIA_DNS"]             = "false",
-			["EVENTSTORE_ENABLE_EXTERNAL_TCP"]          = "false",
 			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"] = "10000",
 			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]   = "10000"
 		};

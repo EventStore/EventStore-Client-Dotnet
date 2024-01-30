@@ -25,7 +25,7 @@ public static class Application {
 
 		var builder = new ConfigurationBuilder()
 			.AddJsonFile("appsettings.json", true)
-			.AddJsonFile($"appsettings.{Environment}.json", true)                    // Accept default naming convention
+			.AddJsonFile($"appsettings.{Environment}.json", true) // Accept default naming convention
 			.AddJsonFile($"appsettings.{Environment.ToLowerInvariant()}.json", true) // Linux is case sensitive
 			.AddEnvironmentVariables();
 
@@ -33,7 +33,7 @@ public static class Application {
 
 		WriteLine($"APP: {Environment} configuration loaded "
 		        + $"with {Configuration.AsEnumerable().Count()} entries "
-		        + $"from {builder.Sources.Count} sources.");
+		        + $"from {builder.Sources.Count()} sources.");
 
 		IsDevelopment = IsEnvironment(Environments.Development);
 		IsStaging     = IsEnvironment(Environments.Staging);

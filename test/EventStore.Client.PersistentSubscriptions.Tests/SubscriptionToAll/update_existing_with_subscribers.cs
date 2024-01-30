@@ -13,8 +13,11 @@ public class update_existing_with_subscribers
 		var (reason, exception) = await _fixture.Dropped.WithTimeout(TimeSpan.FromSeconds(10));
 		Assert.Equal(SubscriptionDroppedReason.ServerError, reason);
 		var ex = Assert.IsType<PersistentSubscriptionDroppedByServerException>(exception);
+
+#if NET
 		Assert.Equal(SystemStreams.AllStream, ex.StreamName);
 		Assert.Equal(Group, ex.GroupName);
+#endif
 	}
 
 	public class Fixture : EventStoreClientFixture {

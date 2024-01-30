@@ -25,7 +25,7 @@ public class TestBypassService : TestService<BypassService, BypassBuilder> {
 		}
 	}
 
-	public override ValueTask DisposeAsync() => ValueTask.CompletedTask;
+	public override ValueTask DisposeAsync() => new ValueTask();
 }
 
 public sealed class BypassService : IService {

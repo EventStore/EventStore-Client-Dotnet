@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Common;
@@ -31,7 +32,6 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			.With(x => x.ConnectivitySettings.DiscoveryInterval = FromSeconds(1));
 
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
-			["EVENTSTORE_ENABLE_EXTERNAL_TCP"]              = "false",
 			["EVENTSTORE_MEM_DB"]                           = "true",
 			["EVENTSTORE_CHUNK_SIZE"]                       = (1024 * 1024).ToString(),
 			["EVENTSTORE_CERTIFICATE_FILE"]                 = "/etc/eventstore/certs/node/node.crt",
@@ -82,7 +82,11 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 
 	protected override async Task OnServiceStarted() {
 		using var http = new HttpClient(
+#if NET
 			new SocketsHttpHandler { SslOptions = { RemoteCertificateValidationCallback = delegate { return true; } } }
+#else
+            new WinHttpHandler { ServerCertificateValidationCallback = delegate { return true; } }
+#endif
 		) {
 			BaseAddress = Options.ClientSettings.ConnectivitySettings.Address
 		};
@@ -132,7 +136,11 @@ class NetworkPortProvider(int port = 2114) {
 					await Task.Delay(delay);
 				}
 				finally {
+#if NET
 					if (socket.Connected) await socket.DisconnectAsync(true);
+#else
+                    if (socket.Connected) socket.Disconnect(true);
+#endif
 				}
 			}
 		}

@@ -52,11 +52,11 @@ public static class GlobalEnvironment {
 			["EVENTSTORE_DB_LOG_FORMAT"] = "V2",
 		};
 
-		foreach (var (key, value) in overrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
-			if (key.StartsWith("EVENTSTORE") && !SharedEnv.Contains(key))
-				throw new Exception($"Add {key} to shared.env and _sharedEnv to pass it to the cluster containers");
+		foreach (var @override in overrides ?? Enumerable.Empty<KeyValuePair<string, string>>()) {
+			if (@override.Key.StartsWith("EVENTSTORE") && !SharedEnv.Contains(@override.Key))
+				throw new Exception($"Add {@override.Key} to shared.env and _sharedEnv to pass it to the cluster containers");
 
-			env[key] = value;
+			env[@override.Key] = @override.Value;
 		}
 
 		return env;

@@ -14,7 +14,7 @@ namespace EventStore.Client;
 public abstract class EventStoreClientFixtureBase : IAsyncLifetime {
 	public const string TestEventType = "-";
 
-	const string ConnectionStringSingle  = "esdb://admin:changeit@localhost:2113/?tlsVerifyCert=false";
+	const string ConnectionStringSingle  = "esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=false";
 	const string ConnectionStringCluster = "esdb://admin:changeit@localhost:2113,localhost:2112,localhost:2111?tls=true&tlsVerifyCert=false";
 
 	static readonly Subject<LogEvent> LogEventSubject = new();
@@ -88,9 +88,6 @@ public abstract class EventStoreClientFixtureBase : IAsyncLifetime {
 			.WriteTo.Seq("http://localhost:5341/", period: TimeSpan.FromMilliseconds(1));
 
 		Log.Logger = loggerConfiguration.CreateLogger();
-#if GRPC_CORE
-			GrpcEnvironment.SetLogger(new GrpcCoreSerilogLogger(Log.Logger.ForContext<GrpcCoreSerilogLogger>()));
-#endif
 		AppDomain.CurrentDomain.DomainUnload += (_, e) => Log.CloseAndFlush();
 	}
 
