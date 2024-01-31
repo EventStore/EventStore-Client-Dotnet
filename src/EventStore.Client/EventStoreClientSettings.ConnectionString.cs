@@ -40,7 +40,7 @@ namespace EventStore.Client {
 			private const string UriSchemeDiscover = "esdb+discover";
 
 			private static readonly string[] Schemes = {"esdb", UriSchemeDiscover};
-			private static readonly int DefaultPort = EventStoreClientConnectivitySettings.Default.Address.Port;
+			private static readonly int DefaultPort = EventStoreClientConnectivitySettings.Default.ResolvedAddressOrDefault.Port;
 			private static readonly bool DefaultUseTls = true;
 
 			private static readonly Dictionary<string, Type> SettingsType =
@@ -190,7 +190,7 @@ namespace EventStore.Client {
 
 				connSettings.Insecure = !useTls;
 
-				if (hosts.Length == 1 && scheme != UriSchemeDiscover) {
+				if (hosts.Length == 1) {
 					connSettings.Address = hosts[0].ToUri(useTls);
 				} else {
 					if (hosts.Any(x => x is DnsEndPoint))

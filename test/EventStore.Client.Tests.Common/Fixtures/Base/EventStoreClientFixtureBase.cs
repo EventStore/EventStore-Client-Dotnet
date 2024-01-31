@@ -55,8 +55,8 @@ public abstract class EventStoreClientFixtureBase : IAsyncLifetime {
 			TestServer = new EventStoreTestServerExternal();
 		else
 			TestServer = GlobalEnvironment.UseCluster
-				? new EventStoreTestServerCluster(hostCertificatePath, Settings.ConnectivitySettings.Address, env)
-				: new EventStoreTestServer(hostCertificatePath, Settings.ConnectivitySettings.Address, env);
+				? new EventStoreTestServerCluster(hostCertificatePath, Settings.ConnectivitySettings.ResolvedAddressOrDefault, env)
+				: new EventStoreTestServer(hostCertificatePath, Settings.ConnectivitySettings.ResolvedAddressOrDefault, env);
 	}
 
 	public    IEventStoreTestServer    TestServer { get; }

@@ -57,7 +57,7 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 	protected override ContainerBuilder Configure() {
 		var env = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
 
-		var port      = Options.ClientSettings.ConnectivitySettings.Address.Port;
+		var port      = Options.ClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
 
 		var containerName = port == 2113

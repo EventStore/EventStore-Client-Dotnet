@@ -20,7 +20,7 @@ namespace EventStore.Client {
 
 			_channelCache = channelCache;
 			
-			var uri = settings.ConnectivitySettings.Address;
+			var uri = settings.ConnectivitySettings.ResolvedAddressOrDefault;
 			_endPoint = new DnsEndPoint(host: uri.Host, port: uri.Port);
 		}
 
