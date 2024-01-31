@@ -72,6 +72,15 @@ public class read_all_events_backward(ITestOutputHelper output, ReadAllEventsFix
 		ex.StatusCode.ShouldBe(StatusCode.DeadlineExceeded);
 	}
 	
+	[Fact]
+	public async Task filter_events_by_type() {
+		var result = await Fixture.Streams
+			.ReadAllAsync(Direction.Backwards, Position.End, EventTypeFilter.Prefix(EventStoreFixture.AnotherTestEventTypePrefix))
+			.ToListAsync();
+			
+		result.ForEach(x => x.Event.EventType.ShouldStartWith(EventStoreFixture.AnotherTestEventTypePrefix));
+	}
+	
 	[Fact(Skip = "Not Implemented")]
 	public Task be_able_to_read_all_one_by_one_until_end_of_stream() => throw new NotImplementedException();
 
