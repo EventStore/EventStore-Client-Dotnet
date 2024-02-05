@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Security;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using Timeout_ = System.Threading.Timeout;
 
 namespace EventStore.Client {
@@ -16,90 +19,99 @@ namespace EventStore.Client {
 			ConnectionStringParser.Parse(connectionString);
 
 		private static class ConnectionStringParser {
-			private const string SchemeSeparator = "://";
+			private const string SchemeSeparator   = "://";
 			private const string UserInfoSeparator = "@";
-			private const string Colon = ":";
-			private const string Slash = "/";
-			private const string Comma = ",";
-			private const string Ampersand = "&";
-			private const string Equal = "=";
-			private const string QuestionMark = "?";
+			private const string Colon             = ":";
+			private const string Slash             = "/";
+			private const string Comma             = ",";
+			private const string Ampersand         = "&";
+			private const string Equal             = "=";
+			private const string QuestionMark      = "?";
 
-			private const string Tls = nameof(Tls);
-			private const string ConnectionName = nameof(ConnectionName);
-			private const string MaxDiscoverAttempts = nameof(MaxDiscoverAttempts);
-			private const string DiscoveryInterval = nameof(DiscoveryInterval);
-			private const string GossipTimeout = nameof(GossipTimeout);
-			private const string NodePreference = nameof(NodePreference);
-			private const string TlsVerifyCert = nameof(TlsVerifyCert);
-			private const string DefaultDeadline = nameof(DefaultDeadline);
+			private const string Tls                  = nameof(Tls);
+			private const string ConnectionName       = nameof(ConnectionName);
+			private const string MaxDiscoverAttempts  = nameof(MaxDiscoverAttempts);
+			private const string DiscoveryInterval    = nameof(DiscoveryInterval);
+			private const string GossipTimeout        = nameof(GossipTimeout);
+			private const string NodePreference       = nameof(NodePreference);
+			private const string TlsVerifyCert        = nameof(TlsVerifyCert);
+			private const string TlsCaFile            = nameof(TlsCaFile);
+			private const string DefaultDeadline      = nameof(DefaultDeadline);
 			private const string ThrowOnAppendFailure = nameof(ThrowOnAppendFailure);
-			private const string KeepAliveInterval = nameof(KeepAliveInterval);
-			private const string KeepAliveTimeout = nameof(KeepAliveTimeout);
+			private const string KeepAliveInterval    = nameof(KeepAliveInterval);
+			private const string KeepAliveTimeout     = nameof(KeepAliveTimeout);
 
 			private const string UriSchemeDiscover = "esdb+discover";
 
-			private static readonly string[] Schemes = {"esdb", UriSchemeDiscover};
-			private static readonly int DefaultPort = EventStoreClientConnectivitySettings.Default.Address.Port;
-			private static readonly bool DefaultUseTls = true;
+			private static readonly string[] Schemes       = { "esdb", UriSchemeDiscover };
+			private static readonly int      DefaultPort   = EventStoreClientConnectivitySettings.Default.Address.Port;
+			private static readonly bool     DefaultUseTls = true;
 
 			private static readonly Dictionary<string, Type> SettingsType =
 				new(StringComparer.InvariantCultureIgnoreCase) {
-					{ConnectionName, typeof(string)},
-					{MaxDiscoverAttempts, typeof(int)},
-					{DiscoveryInterval, typeof(int)},
-					{GossipTimeout, typeof(int)},
-					{NodePreference, typeof(string)},
-					{Tls, typeof(bool)},
-					{TlsVerifyCert, typeof(bool)},
-					{DefaultDeadline, typeof(int)},
-					{ThrowOnAppendFailure, typeof(bool)},
-					{KeepAliveInterval, typeof(int)},
-					{KeepAliveTimeout, typeof(int)},
+					{ ConnectionName, typeof(string) },
+					{ MaxDiscoverAttempts, typeof(int) },
+					{ DiscoveryInterval, typeof(int) },
+					{ GossipTimeout, typeof(int) },
+					{ NodePreference, typeof(string) },
+					{ Tls, typeof(bool) },
+					{ TlsVerifyCert, typeof(bool) },
+					{ TlsCaFile, typeof(string) },
+					{ DefaultDeadline, typeof(int) },
+					{ ThrowOnAppendFailure, typeof(bool) },
+					{ KeepAliveInterval, typeof(int) },
+					{ KeepAliveTimeout, typeof(int) },
 				};
 
 			public static EventStoreClientSettings Parse(string connectionString) {
 				var currentIndex = 0;
-				var schemeIndex = connectionString.IndexOf(SchemeSeparator, currentIndex, StringComparison.Ordinal);
+				var schemeIndex  = connectionString.IndexOf(SchemeSeparator, currentIndex, StringComparison.Ordinal);
 				if (schemeIndex == -1)
 					throw new NoSchemeException();
+
 				var scheme = ParseScheme(connectionString.Substring(0, schemeIndex));
 
 				currentIndex = schemeIndex + SchemeSeparator.Length;
-				var userInfoIndex = connectionString.IndexOf(UserInfoSeparator, currentIndex, StringComparison.Ordinal);
-				(string user, string pass)? userInfo = null;
+				var                         userInfoIndex = connectionString.IndexOf(UserInfoSeparator, currentIndex, StringComparison.Ordinal);
+				(string user, string pass)? userInfo      = null;
 				if (userInfoIndex != -1) {
-					userInfo = ParseUserInfo(connectionString.Substring(currentIndex, userInfoIndex - currentIndex));
+					userInfo     = ParseUserInfo(connectionString.Substring(currentIndex, userInfoIndex - currentIndex));
 					currentIndex = userInfoIndex + UserInfoSeparator.Length;
 				}
 
-
 				var slashIndex = connectionString.IndexOf(Slash, currentIndex, StringComparison.Ordinal);
-				var questionMarkIndex = connectionString.IndexOf(QuestionMark, Math.Max(currentIndex, slashIndex),
-					StringComparison.Ordinal);
+				var questionMarkIndex = connectionString.IndexOf(
+					QuestionMark,
+					Math.Max(currentIndex, slashIndex),
+					StringComparison.Ordinal
+				);
+
 				var endIndex = connectionString.Length;
 
 				//for simpler substring operations:
-				if (slashIndex == -1) slashIndex = int.MaxValue;
+				if (slashIndex == -1) slashIndex               = int.MaxValue;
 				if (questionMarkIndex == -1) questionMarkIndex = int.MaxValue;
 
 				var hostSeparatorIndex = Math.Min(Math.Min(slashIndex, questionMarkIndex), endIndex);
-				var hosts = ParseHosts(connectionString.Substring(currentIndex, hostSeparatorIndex - currentIndex));
+				var hosts              = ParseHosts(connectionString.Substring(currentIndex, hostSeparatorIndex - currentIndex));
 				currentIndex = hostSeparatorIndex;
 
 				string path = "";
 				if (slashIndex != int.MaxValue)
-					path = connectionString.Substring(currentIndex,
-						Math.Min(questionMarkIndex, endIndex) - currentIndex);
+					path = connectionString.Substring(
+						currentIndex,
+						Math.Min(questionMarkIndex, endIndex) - currentIndex
+					);
 
 				if (path != "" && path != "/")
 					throw new ConnectionStringParseException(
-						$"The specified path must be either an empty string or a forward slash (/) but the following path was found instead: '{path}'");
+						$"The specified path must be either an empty string or a forward slash (/) but the following path was found instead: '{path}'"
+					);
 
 				var options = new Dictionary<string, string>();
 				if (questionMarkIndex != int.MaxValue) {
 					currentIndex = questionMarkIndex + QuestionMark.Length;
-					options = ParseKeyValuePairs(connectionString.Substring(currentIndex));
+					options      = ParseKeyValuePairs(connectionString.Substring(currentIndex));
 				}
 
 				return CreateSettings(scheme, userInfo, hosts, options);
@@ -127,12 +139,14 @@ namespace EventStore.Client {
 							throw new InvalidSettingException($"{kv.Key} must be an integer value");
 
 						typedOptions.Add(kv.Key, intValue);
-					} else if (type == typeof(bool)) {
+					}
+					else if (type == typeof(bool)) {
 						if (!bool.TryParse(kv.Value, out var boolValue))
 							throw new InvalidSettingException($"{kv.Key} must be either true or false");
 
 						typedOptions.Add(kv.Key, boolValue);
-					} else if (type == typeof(string)) {
+					}
+					else if (type == typeof(string)) {
 						typedOptions.Add(kv.Key, kv.Value);
 					}
 				}
@@ -153,11 +167,11 @@ namespace EventStore.Client {
 
 				if (typedOptions.TryGetValue(NodePreference, out object? nodePreference)) {
 					connSettings.NodePreference = ((string)nodePreference).ToLowerInvariant() switch {
-						"leader" => EventStore.Client.NodePreference.Leader,
-						"follower" => EventStore.Client.NodePreference.Follower,
-						"random" => EventStore.Client.NodePreference.Random,
+						"leader"          => EventStore.Client.NodePreference.Leader,
+						"follower"        => EventStore.Client.NodePreference.Follower,
+						"random"          => EventStore.Client.NodePreference.Random,
 						"readonlyreplica" => EventStore.Client.NodePreference.ReadOnlyReplica,
-						_ => throw new InvalidSettingException($"Invalid NodePreference: {nodePreference}")
+						_                 => throw new InvalidSettingException($"Invalid NodePreference: {nodePreference}")
 					};
 				}
 
@@ -174,17 +188,17 @@ namespace EventStore.Client {
 
 				if (typedOptions.TryGetValue(KeepAliveInterval, out var keepAliveIntervalMs)) {
 					settings.ConnectivitySettings.KeepAliveInterval = keepAliveIntervalMs switch {
-						-1 => Timeout_.InfiniteTimeSpan,
+						-1                 => Timeout_.InfiniteTimeSpan,
 						int value and >= 0 => TimeSpan.FromMilliseconds(value),
-						_ => throw new InvalidSettingException($"Invalid KeepAliveInterval: {keepAliveIntervalMs}")
+						_                  => throw new InvalidSettingException($"Invalid KeepAliveInterval: {keepAliveIntervalMs}")
 					};
 				}
 
 				if (typedOptions.TryGetValue(KeepAliveTimeout, out var keepAliveTimeoutMs)) {
 					settings.ConnectivitySettings.KeepAliveTimeout = keepAliveTimeoutMs switch {
-						-1 => Timeout_.InfiniteTimeSpan,
+						-1                 => Timeout_.InfiniteTimeSpan,
 						int value and >= 0 => TimeSpan.FromMilliseconds(value),
-						_ => throw new InvalidSettingException($"Invalid KeepAliveTimeout: {keepAliveTimeoutMs}")
+						_                  => throw new InvalidSettingException($"Invalid KeepAliveTimeout: {keepAliveTimeoutMs}")
 					};
 				}
 
@@ -192,7 +206,8 @@ namespace EventStore.Client {
 
 				if (hosts.Length == 1 && scheme != UriSchemeDiscover) {
 					connSettings.Address = hosts[0].ToUri(useTls);
-				} else {
+				}
+				else {
 					if (hosts.Any(x => x is DnsEndPoint))
 						connSettings.DnsGossipSeeds =
 							Array.ConvertAll(hosts, x => new DnsEndPoint(x.GetHost(), x.GetPort()));
@@ -204,6 +219,15 @@ namespace EventStore.Client {
 					settings.ConnectivitySettings.TlsVerifyCert = (bool)tlsVerifyCert;
 				}
 
+				if (typedOptions.TryGetValue(TlsCaFile, out var tlsCaFile)) {
+					var tlsCaFilePath = (string)tlsCaFile;
+					if (!string.IsNullOrEmpty(tlsCaFilePath) && !File.Exists(tlsCaFilePath)) {
+						throw new FileNotFoundException($"Failed to load certificate. File was not found");
+					}
+
+					settings.ConnectivitySettings.TlsCaFile = (string)tlsCaFile;
+				}
+
 				settings.CreateHttpMessageHandler = CreateDefaultHandler;
 
 				return settings;
@@ -211,14 +235,24 @@ namespace EventStore.Client {
 				HttpMessageHandler CreateDefaultHandler() {
 #if NET
 					var handler = new SocketsHttpHandler {
-						KeepAlivePingDelay = settings.ConnectivitySettings.KeepAliveInterval,
-						KeepAlivePingTimeout = settings.ConnectivitySettings.KeepAliveTimeout,
+						KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
+						KeepAlivePingTimeout           = settings.ConnectivitySettings.KeepAliveTimeout,
 						EnableMultipleHttp2Connections = true,
 					};
 
-					if (!settings.ConnectivitySettings.TlsVerifyCert) {
-						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+					var sslOptions = new SslClientAuthenticationOptions();
+
+					if (settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false }) {
+						sslOptions.ClientCertificates = new X509Certificate2Collection {
+							new X509Certificate2(settings.ConnectivitySettings.TlsCaFile)
+						};
 					}
+
+					if (!settings.ConnectivitySettings.TlsVerifyCert) {
+						sslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+					}
+
+					handler.SslOptions = sslOptions;
 #else
 					var handler = new WinHttpHandler {
 						TcpKeepAliveEnabled = true,
@@ -226,6 +260,12 @@ namespace EventStore.Client {
 						TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
 						EnableMultipleHttp2Connections = true
 					};
+
+
+					if (settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false }) {
+						var clientCertificate = new X509Certificate2(settings.ConnectivitySettings.TlsCaFile);
+						handler.ClientCertificates.Add(clientCertificate);
+					}
 
 					if (!settings.ConnectivitySettings.TlsVerifyCert) {
 						handler.ServerCertificateValidationCallback = delegate { return true; };
@@ -241,27 +281,31 @@ namespace EventStore.Client {
 			private static (string, string) ParseUserInfo(string s) {
 				var tokens = s.Split(Colon[0]);
 				if (tokens.Length != 2) throw new InvalidUserCredentialsException(s);
+
 				return (tokens[0], tokens[1]);
 			}
 
 			private static EndPoint[] ParseHosts(string s) {
 				var hostsTokens = s.Split(Comma[0]);
-				var hosts = new List<EndPoint>();
+				var hosts       = new List<EndPoint>();
 				foreach (var hostToken in hostsTokens) {
-					var hostPortToken = hostToken.Split(Colon[0]);
+					var    hostPortToken = hostToken.Split(Colon[0]);
 					string host;
-					int port;
+					int    port;
 					switch (hostPortToken.Length) {
 						case 1:
 							host = hostPortToken[0];
 							port = DefaultPort;
 							break;
+
 						case 2: {
 							host = hostPortToken[0];
 							if (!int.TryParse(hostPortToken[1], out port))
 								throw new InvalidHostException(hostToken);
+
 							break;
 						}
+
 						default:
 							throw new InvalidHostException(hostToken);
 					}
@@ -272,7 +316,8 @@ namespace EventStore.Client {
 
 					if (IPAddress.TryParse(host, out IPAddress? ip)) {
 						hosts.Add(new IPEndPoint(ip, port));
-					} else {
+					}
+					else {
 						hosts.Add(new DnsEndPoint(host, port));
 					}
 				}
@@ -281,13 +326,14 @@ namespace EventStore.Client {
 			}
 
 			private static Dictionary<string, string> ParseKeyValuePairs(string s) {
-				var options = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+				var options       = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
 				var optionsTokens = s.Split(Ampersand[0]);
 				foreach (var optionToken in optionsTokens) {
 					var (key, val) = ParseKeyValuePair(optionToken);
 					try {
 						options.Add(key, val);
-					} catch (ArgumentException) {
+					}
+					catch (ArgumentException) {
 						throw new DuplicateKeyException(key);
 					}
 				}
