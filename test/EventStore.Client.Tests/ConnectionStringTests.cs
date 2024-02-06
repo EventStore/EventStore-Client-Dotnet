@@ -145,6 +145,22 @@ public class ConnectionStringTests {
 #endif
 
 	[Fact]
+	public void should_throw_error_when_tls_ca_file_does_not_exists() {
+		var certificateFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "path", "not", "found");
+
+		var connectionString = $"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&tlsCAFile={certificateFilePath}";
+
+		var exception = Assert.ThrowsAsync<FileNotFoundException>(
+			() => {
+				EventStoreClientSettings.Create(connectionString);
+				return Task.CompletedTask;
+			}
+		);
+
+		Assert.NotNull(exception);
+	}
+
+	[Fact]
 	public void infinite_grpc_timeouts() {
 		var result = EventStoreClientSettings.Create("esdb://localhost:2113?keepAliveInterval=-1&keepAliveTimeout=-1");
 
