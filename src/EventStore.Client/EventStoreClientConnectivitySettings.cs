@@ -20,7 +20,7 @@ namespace EventStore.Client {
 
 		internal Uri ResolvedAddressOrDefault => Address ?? DefaultAddress;
 
-		Uri DefaultAddress =>
+		private Uri DefaultAddress =>
 			new UriBuilder {
 				Scheme = _insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps,
 				Port   = DefaultPort
