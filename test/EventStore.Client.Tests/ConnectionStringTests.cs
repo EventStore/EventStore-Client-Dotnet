@@ -340,7 +340,7 @@ public class ConnectionStringTests {
 	[Theory]
 	[InlineData("esdb://localhost:1234", "localhost", 1234)]
 	[InlineData("esdb://localhost:1234,localhost:4567", null, null)]
-	[InlineData("esdb+discover://localhost:1234", "localhost", 1234)]
+	[InlineData("esdb+discover://localhost:1234", null, null)]
 	[InlineData("esdb+discover://localhost:1234,localhost:4567", null, null)]
 	public void connection_string_with_custom_ports(string connectionString, string? expectedHost, int? expectedPort) {
 		var result               = EventStoreClientSettings.Create(connectionString);

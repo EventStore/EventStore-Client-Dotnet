@@ -190,7 +190,7 @@ namespace EventStore.Client {
 
 				connSettings.Insecure = !useTls;
 
-				if (hosts.Length == 1) {
+				if (hosts.Length == 1 && scheme != UriSchemeDiscover) {
 					connSettings.Address = hosts[0].ToUri(useTls);
 				} else {
 					if (hosts.Any(x => x is DnsEndPoint))

@@ -14,7 +14,7 @@ namespace EventStore.Client {
 		/// The <see cref="Uri"/> of the EventStoreDB. Use this when connecting to a single node.
 		/// </summary>
 		public Uri? Address {
-			get => (GossipSeeds.Length <= 1) ? _address ?? DefaultAddress : null;
+			get => IsSingleNode ? _address : null;
 			set => _address = value;
 		}
 
@@ -96,7 +96,7 @@ namespace EventStore.Client {
 		}
 
 		/// <summary>
-		/// True if certificates will be validated; otherwise false. 
+		/// True if certificates will be validated; otherwise false.
 		/// </summary>
 		public bool TlsVerifyCert { get; set; } = true;
 
