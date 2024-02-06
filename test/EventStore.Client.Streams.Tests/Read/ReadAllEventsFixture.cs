@@ -10,11 +10,9 @@ public class ReadAllEventsFixture : EventStoreFixture {
 				userCredentials: TestCredentials.Root
 			);
 			
-			Events = Enumerable
-				.Concat(
-					CreateTestEvents(20),
-					CreateTestEvents(2, metadataSize: 1_000_000)
-				)
+			Events = CreateTestEvents(20)
+				.Concat(CreateTestEvents(2, metadataSize: 1_000_000))
+				.Concat(CreateTestEvents(2, AnotherTestEventType))
 				.ToArray();
 
 			ExpectedStreamName = GetStreamName();
