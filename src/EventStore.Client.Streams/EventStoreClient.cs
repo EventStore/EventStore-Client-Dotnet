@@ -73,13 +73,10 @@ namespace EventStore.Client {
 			}
 		}
 
-		private static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(
-			SubscriptionFilterOptions? filterOptions) {
-			if (filterOptions == null) {
+		private static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(IEventFilter? filter, uint checkpointInterval = 0) {
+			if (filter == null) {
 				return null;
 			}
-
-			var filter = filterOptions.Filter;
 
 			var options = filter switch {
 				StreamFilter => new ReadReq.Types.Options.Types.FilterOptions {
@@ -127,10 +124,13 @@ namespace EventStore.Client {
 				options.Count = new Empty();
 			}
 
-			options.CheckpointIntervalMultiplier = filterOptions.CheckpointInterval;
+			options.CheckpointIntervalMultiplier = checkpointInterval;
 
 			return options;
 		}
+
+		private static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(SubscriptionFilterOptions? filterOptions)
+			=> filterOptions == null ? null : GetFilterOptions(filterOptions.Filter, filterOptions.CheckpointInterval);
 
 		/// <inheritdoc />
 		public override void Dispose() {
