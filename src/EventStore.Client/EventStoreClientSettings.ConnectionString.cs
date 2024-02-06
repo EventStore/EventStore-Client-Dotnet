@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Security;
 using System.Security.Authentication;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Timeout_ = System.Threading.Timeout;
 
@@ -220,12 +221,17 @@ namespace EventStore.Client {
 				}
 
 				if (typedOptions.TryGetValue(TlsCaFile, out var tlsCaFile)) {
-					var tlsCaFilePath = (string)tlsCaFile;
+					var tlsCaFilePath = Path.GetFullPath((string)tlsCaFile);
 					if (!string.IsNullOrEmpty(tlsCaFilePath) && !File.Exists(tlsCaFilePath)) {
-						throw new FileNotFoundException($"Failed to load certificate. File was not found");
+						throw new FileNotFoundException($"Failed to load certificate. File was not found.");
 					}
 
-					settings.ConnectivitySettings.TlsCaFile = (string)tlsCaFile;
+					try {
+						using var x509Certificate2 = new X509Certificate2(tlsCaFilePath);
+						settings.ConnectivitySettings.TlsCaFile = tlsCaFilePath;
+					} catch (CryptographicException) {
+						throw new Exception("Failed to load certificate. Invalid file format.");
+					}
 				}
 
 				settings.CreateHttpMessageHandler = CreateDefaultHandler;

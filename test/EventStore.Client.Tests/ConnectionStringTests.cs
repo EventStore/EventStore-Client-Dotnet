@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http;
 using AutoFixture;
+using System.Reflection;
 
 namespace EventStore.Client.Tests;
 
@@ -158,6 +159,26 @@ public class ConnectionStringTests {
 		);
 
 		Assert.NotNull(exception);
+		Assert.Equal("Failed to load certificate. File was not found.", exception.Result.Message);
+	}
+
+	[Fact]
+	public void should_throw_exception_when_wrong_format_is_used_for_certificate_file_in_connection_string() {
+		// We are using a file that is not a certificate.
+		string certificateFilePath = Assembly.GetExecutingAssembly().Location;
+
+		var connectionString =
+			$"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&tlsCAFile={certificateFilePath}";
+
+		var exception = Assert.ThrowsAsync<Exception>(
+			() => {
+				EventStoreClientSettings.Create(connectionString);
+				return Task.CompletedTask;
+			}
+		);
+
+		Assert.NotNull(exception);
+		Assert.Equal("Failed to load certificate. Invalid file format.", exception.Result.Message);
 	}
 
 	[Fact]
