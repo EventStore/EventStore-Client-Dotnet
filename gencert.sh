@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+unameOutput="$(uname -sr)"
+case "${unameOutput}" in
+    Linux*Microsoft*) machine=WSL;;
+    Linux*)           machine=Linux;;
+    Darwin*)          machine=MacOS;;
+    *)                machine="${unameOutput}"
+esac
+
+echo ">> Generating certificate..."
 mkdir -p certs
 
 chmod 0755 ./certs
@@ -12,6 +21,18 @@ docker run --rm --volume $PWD/certs:/tmp --user $(id -u):$(id -g) eventstore/es-
 
 chmod -R 0755 ./certs
 
+echo ">> Copying certificate..."
 cp certs/ca/ca.crt /usr/local/share/ca-certificates/eventstore_ca.crt
 
-sudo update-ca-certificates
+if [ "${machine}" == "MacOS" ]; then
+  echo ">> Installing certificate on ${machine}..."
+  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain /usr/local/share/ca-certificates/eventstore_ca.crt   
+elif [ "$machine" == "Linux" ]; then
+  echo ">> Installing certificate on ${machine}..."
+  sudo update-ca-certificates    
+elif [ "$machine" == "WSL" ]; then
+  echo ">> Installing certificate on ${machine}..."
+  sudo update-ca-certificates    
+else
+  echo ">> Unknown platform. Please install the certificate manually."   
+fi

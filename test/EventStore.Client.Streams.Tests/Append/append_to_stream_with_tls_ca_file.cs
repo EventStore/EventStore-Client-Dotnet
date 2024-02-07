@@ -6,10 +6,7 @@ public class append_to_stream_with_tls_ca_file(ITestOutputHelper output, EventSt
 	: EventStoreTests<EventStoreFixture>(output, fixture) {
 	public static IEnumerable<object[]> CertPaths =>
 		new List<object[]> {
-			// relative
 			new object[] { Path.Combine("certs", "ca", "ca.crt") },
-
-			// absolute
 			new object[] { Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "certs", "ca", "ca.crt") },
 		};
 

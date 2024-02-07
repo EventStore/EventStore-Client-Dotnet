@@ -30,7 +30,7 @@ namespace EventStore.Client {
 				DisposeHttpClient     = true,
 				MaxReceiveMessageSize = MaxReceiveMessageLength
 			});
-			
+
 			HttpMessageHandler CreateHandler() {
 				if (settings.CreateHttpMessageHandler != null) {
 					return settings.CreateHttpMessageHandler.Invoke();
@@ -42,9 +42,17 @@ namespace EventStore.Client {
 					EnableMultipleHttp2Connections = true,
 				};
 
-				if (!settings.ConnectivitySettings.TlsVerifyCert) {
-					handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+				var sslOptions = new SslClientAuthenticationOptions();
+
+				if (settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false }) {
+					sslOptions.ClientCertificates?.Add(settings.ConnectivitySettings.TlsCaFile);
 				}
+
+				if (!settings.ConnectivitySettings.TlsVerifyCert) {
+					sslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+				}
+
+				handler.SslOptions = sslOptions;
 #else
 				var handler = new WinHttpHandler {
 					TcpKeepAliveEnabled = true,
@@ -52,6 +60,10 @@ namespace EventStore.Client {
 					TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
 					EnableMultipleHttp2Connections = true
 				};
+
+				if (settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false }) {
+					handler.ClientCertificates.Add(settings.ConnectivitySettings.TlsCaFile);
+				}
 
 				if (!settings.ConnectivitySettings.TlsVerifyCert) {
 					handler.ServerCertificateValidationCallback = delegate { return true; };

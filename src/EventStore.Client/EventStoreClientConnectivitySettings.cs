@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 
 namespace EventStore.Client {
 	/// <summary>
@@ -111,7 +112,7 @@ namespace EventStore.Client {
 		/// Path to a certificate file for secure connection. Not required for enabling secure connection. Useful for self-signed certificate
 		/// that are not installed on the system trust store.
 		/// </summary>
-		public string? TlsCaFile { get; set; }
+		public X509Certificate2? TlsCaFile { get; set; }
 
 		/// <summary>
 		/// The default <see cref="EventStoreClientConnectivitySettings"/>.

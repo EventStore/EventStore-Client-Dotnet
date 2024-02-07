@@ -155,19 +155,17 @@ namespace EventStore.Client {
 				if (typedOptions.TryGetValue(ConnectionName, out object? connectionName))
 					settings.ConnectionName = (string)connectionName;
 
-				var connSettings = settings.ConnectivitySettings;
-
 				if (typedOptions.TryGetValue(MaxDiscoverAttempts, out object? maxDiscoverAttempts))
-					connSettings.MaxDiscoverAttempts = (int)maxDiscoverAttempts;
+					settings.ConnectivitySettings.MaxDiscoverAttempts = (int)maxDiscoverAttempts;
 
 				if (typedOptions.TryGetValue(DiscoveryInterval, out object? discoveryInterval))
-					connSettings.DiscoveryInterval = TimeSpan.FromMilliseconds((int)discoveryInterval);
+					settings.ConnectivitySettings.DiscoveryInterval = TimeSpan.FromMilliseconds((int)discoveryInterval);
 
 				if (typedOptions.TryGetValue(GossipTimeout, out object? gossipTimeout))
-					connSettings.GossipTimeout = TimeSpan.FromMilliseconds((int)gossipTimeout);
+					settings.ConnectivitySettings.GossipTimeout = TimeSpan.FromMilliseconds((int)gossipTimeout);
 
 				if (typedOptions.TryGetValue(NodePreference, out object? nodePreference)) {
-					connSettings.NodePreference = ((string)nodePreference).ToLowerInvariant() switch {
+					settings.ConnectivitySettings.NodePreference = ((string)nodePreference).ToLowerInvariant() switch {
 						"leader"          => EventStore.Client.NodePreference.Leader,
 						"follower"        => EventStore.Client.NodePreference.Follower,
 						"random"          => EventStore.Client.NodePreference.Random,
@@ -203,17 +201,17 @@ namespace EventStore.Client {
 					};
 				}
 
-				connSettings.Insecure = !useTls;
+				settings.ConnectivitySettings.Insecure = !useTls;
 
 				if (hosts.Length == 1 && scheme != UriSchemeDiscover) {
-					connSettings.Address = hosts[0].ToUri(useTls);
+					settings.ConnectivitySettings.Address = hosts[0].ToUri(useTls);
 				}
 				else {
 					if (hosts.Any(x => x is DnsEndPoint))
-						connSettings.DnsGossipSeeds =
+						settings.ConnectivitySettings.DnsGossipSeeds =
 							Array.ConvertAll(hosts, x => new DnsEndPoint(x.GetHost(), x.GetPort()));
 					else
-						connSettings.IpGossipSeeds = Array.ConvertAll(hosts, x => (IPEndPoint)x);
+						settings.ConnectivitySettings.IpGossipSeeds = Array.ConvertAll(hosts, x => (IPEndPoint)x);
 				}
 
 				if (typedOptions.TryGetValue(TlsVerifyCert, out var tlsVerifyCert)) {
@@ -223,14 +221,13 @@ namespace EventStore.Client {
 				if (typedOptions.TryGetValue(TlsCaFile, out var tlsCaFile)) {
 					var tlsCaFilePath = Path.GetFullPath((string)tlsCaFile);
 					if (!string.IsNullOrEmpty(tlsCaFilePath) && !File.Exists(tlsCaFilePath)) {
-						throw new FileNotFoundException($"Failed to load certificate. File was not found.");
+						throw new InvalidClientCertificateException($"Failed to load certificate. File was not found.");
 					}
 
 					try {
-						using var x509Certificate2 = new X509Certificate2(tlsCaFilePath);
-						settings.ConnectivitySettings.TlsCaFile = tlsCaFilePath;
+						settings.ConnectivitySettings.TlsCaFile = new X509Certificate2(tlsCaFilePath);
 					} catch (CryptographicException) {
-						throw new Exception("Failed to load certificate. Invalid file format.");
+						throw new InvalidClientCertificateException("Failed to load certificate. Invalid file format.");
 					}
 				}
 
@@ -249,9 +246,7 @@ namespace EventStore.Client {
 					var sslOptions = new SslClientAuthenticationOptions();
 
 					if (settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false }) {
-						sslOptions.ClientCertificates = new X509Certificate2Collection {
-							new X509Certificate2(settings.ConnectivitySettings.TlsCaFile)
-						};
+						sslOptions.ClientCertificates?.Add(settings.ConnectivitySettings.TlsCaFile);
 					}
 
 					if (!settings.ConnectivitySettings.TlsVerifyCert) {
@@ -267,10 +262,8 @@ namespace EventStore.Client {
 						EnableMultipleHttp2Connections = true
 					};
 
-
 					if (settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false }) {
-						var clientCertificate = new X509Certificate2(settings.ConnectivitySettings.TlsCaFile);
-						handler.ClientCertificates.Add(clientCertificate);
+						handler.ClientCertificates.Add(settings.ConnectivitySettings.TlsCaFile);
 					}
 
 					if (!settings.ConnectivitySettings.TlsVerifyCert) {

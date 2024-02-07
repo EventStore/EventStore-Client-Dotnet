@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http;
 using AutoFixture;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 
 namespace EventStore.Client.Tests;
 
@@ -17,6 +18,8 @@ public class ConnectionStringTests {
 				}.Uri
 			)
 		);
+
+		fixture.Register<X509Certificate2>(() => null!);
 
 		return Enumerable.Range(0, 3).SelectMany(GetTestCases);
 
@@ -91,6 +94,11 @@ public class ConnectionStringTests {
 		static string MockingTone(string key) => new(key.Select((c, i) => i % 2 == 0 ? char.ToUpper(c) : char.ToLower(c)).ToArray());
 	}
 
+	public static IEnumerable<object?[]> InvalidClientCertificates() {
+		yield return new object?[] { Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "path", "not", "found") };
+		yield return new object?[] { Assembly.GetExecutingAssembly().Location };
+	}
+
 	[Theory]
 	[MemberData(nameof(ValidCases))]
 	public void valid_connection_string(string connectionString, EventStoreClientSettings expected) {
@@ -145,40 +153,14 @@ public class ConnectionStringTests {
 
 #endif
 
-	[Fact]
-	public void should_throw_error_when_tls_ca_file_does_not_exists() {
-		var certificateFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "path", "not", "found");
-
-		var connectionString = $"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&tlsCAFile={certificateFilePath}";
-
-		var exception = Assert.ThrowsAsync<FileNotFoundException>(
-			() => {
-				EventStoreClientSettings.Create(connectionString);
-				return Task.CompletedTask;
-			}
+	[Theory]
+	[MemberData(nameof(InvalidClientCertificates))]
+	public void connection_string_with_invalid_client_certificate_should_throw(string clientCertificatePath) {
+		Assert.Throws<InvalidClientCertificateException >(
+			() => EventStoreClientSettings.Create(
+				$"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&tlsCAFile={clientCertificatePath}"
+			)
 		);
-
-		Assert.NotNull(exception);
-		Assert.Equal("Failed to load certificate. File was not found.", exception.Result.Message);
-	}
-
-	[Fact]
-	public void should_throw_exception_when_wrong_format_is_used_for_certificate_file_in_connection_string() {
-		// We are using a file that is not a certificate.
-		string certificateFilePath = Assembly.GetExecutingAssembly().Location;
-
-		var connectionString =
-			$"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&tlsCAFile={certificateFilePath}";
-
-		var exception = Assert.ThrowsAsync<Exception>(
-			() => {
-				EventStoreClientSettings.Create(connectionString);
-				return Task.CompletedTask;
-			}
-		);
-
-		Assert.NotNull(exception);
-		Assert.Equal("Failed to load certificate. Invalid file format.", exception.Result.Message);
 	}
 
 	[Fact]
