@@ -293,7 +293,7 @@ namespace EventStore.Client {
 				if (call is null)
 					throw new NotSupportedException("Server does not support batch append");
 
-				await foreach (var appendRequest in ReadAllAsync(_channel.Reader, _cancellationToken)
+				await foreach (var appendRequest in _channel.Reader.ReadAllAsync(_cancellationToken)
 					               .ConfigureAwait(false)) {
 					await call.RequestStream.WriteAsync(appendRequest).ConfigureAwait(false);
 				}
@@ -363,19 +363,6 @@ namespace EventStore.Client {
 			public void Dispose() {
 				_channel.Writer.TryComplete();
 			}
-		}
-
-		private static async IAsyncEnumerable<T> ReadAllAsync<T>(ChannelReader<T> reader, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
-#if NET
-			await foreach (var item in reader.ReadAllAsync(cancellationToken))
-				yield return item;
-#else
-			while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false)) {
-				while (reader.TryRead(out T? item)) {
-					yield return item;
-				}
-			}
-#endif
 		}
 	}
 }

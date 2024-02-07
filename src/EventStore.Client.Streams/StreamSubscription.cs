@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
@@ -10,12 +6,13 @@ namespace EventStore.Client {
 	/// A class representing a <see cref="StreamSubscription"/>.
 	/// </summary>
 	public class StreamSubscription : IDisposable {
-		private readonly IAsyncEnumerable<ResolvedEvent> _events;
+		private readonly EventStoreClient.StreamSubscriptionResult _subscription;
+		private readonly IAsyncEnumerator<StreamMessage> _messages;
 		private readonly Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> _eventAppeared;
 		private readonly Func<StreamSubscription, Position, CancellationToken, Task> _checkpointReached;
 		private readonly Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? _subscriptionDropped;
 		private readonly ILogger _log;
-		private readonly CancellationTokenSource _disposed;
+		private readonly CancellationTokenSource _cts;
 		private int _subscriptionDroppedInvoked;
 
 		/// <summary>
@@ -23,58 +20,69 @@ namespace EventStore.Client {
 		/// </summary>
 		public string SubscriptionId { get; }
 
-		internal static async Task<StreamSubscription> Confirm(
-			IAsyncEnumerable<(SubscriptionConfirmation confirmation, Position?, ResolvedEvent)> read,
+		internal static async Task<StreamSubscription> Confirm(EventStoreClient.StreamSubscriptionResult subscription,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped,
 			ILogger log,
 			Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached = null,
 			CancellationToken cancellationToken = default) {
+			var messages = subscription.Messages;
 
-			var enumerator = read.GetAsyncEnumerator(cancellationToken);
-			if (await enumerator.MoveNextAsync(cancellationToken).ConfigureAwait(false) &&
-			    enumerator.Current.confirmation != SubscriptionConfirmation.None)
-				return new StreamSubscription(enumerator, eventAppeared, subscriptionDropped, log,
-					checkpointReached, cancellationToken);
-			throw new InvalidOperationException($"Subscription to {enumerator} could not be confirmed.");
+			var enumerator = messages.GetAsyncEnumerator(cancellationToken);
+			if (!await enumerator.MoveNextAsync().ConfigureAwait(false) ||
+			    enumerator.Current is not StreamMessage.SubscriptionConfirmation(var subscriptionId)) {
+				throw new InvalidOperationException($"Subscription to {enumerator} could not be confirmed.");
+			}
+
+			return new StreamSubscription(subscription, enumerator, subscriptionId, eventAppeared, subscriptionDropped,
+				log, checkpointReached, cancellationToken);
 		}
 
-		private StreamSubscription(
-			IAsyncEnumerator<(SubscriptionConfirmation confirmation, Position?, ResolvedEvent)> events,
+		private StreamSubscription(EventStoreClient.StreamSubscriptionResult subscription,
+			IAsyncEnumerator<StreamMessage> messages, string subscriptionId,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped,
 			ILogger log,
 			Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached,
 			CancellationToken cancellationToken = default) {
-			_disposed = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-			_events = new Enumerable(events, CheckpointReached, _disposed.Token);
+			_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+			_subscription = subscription;
+			_messages = messages;
 			_eventAppeared = eventAppeared;
-			_checkpointReached = checkpointReached ?? ((_, __, ct) => Task.CompletedTask);
+			_checkpointReached = checkpointReached ?? ((_, _, _) => Task.CompletedTask);
 			_subscriptionDropped = subscriptionDropped;
 			_log = log;
 			_subscriptionDroppedInvoked = 0;
-			SubscriptionId = events.Current.confirmation.SubscriptionId;
+			SubscriptionId = subscriptionId;
 
-			Task.Run(Subscribe);
+			_log.LogDebug("Subscription {subscriptionId} confirmed.", SubscriptionId);
+
+			Task.Run(Subscribe, cancellationToken);
 		}
 
-		private Task CheckpointReached(Position position) => _checkpointReached(this, position, _disposed.Token);
-
 		private async Task Subscribe() {
-			_log.LogDebug("Subscription {subscriptionId} confirmed.", SubscriptionId);
-			using var _ = _disposed;
+			using var _ = _cts;
 
 			try {
-				await foreach (var resolvedEvent in _events.ConfigureAwait(false)) {
+				while (await _messages.MoveNextAsync().ConfigureAwait(false)) {
+					var message = _messages.Current;
 					try {
-						_log.LogTrace(
-							"Subscription {subscriptionId} received event {streamName}@{streamRevision} {position}",
-							SubscriptionId,
-							resolvedEvent.OriginalEvent.EventStreamId,
-							resolvedEvent.OriginalEvent.EventNumber,
-							resolvedEvent.OriginalEvent.Position
-						);
-						await _eventAppeared(this, resolvedEvent, _disposed.Token).ConfigureAwait(false);
+						switch (message) {
+							case StreamMessage.Event(var resolvedEvent):
+								_log.LogTrace(
+									"Subscription {subscriptionId} received event {streamName}@{streamRevision} {position}",
+									SubscriptionId,
+									resolvedEvent.OriginalEvent.EventStreamId,
+									resolvedEvent.OriginalEvent.EventNumber,
+									resolvedEvent.OriginalEvent.Position
+								);
+								await _eventAppeared(this, resolvedEvent, _cts.Token).ConfigureAwait(false);
+								break;
+							case StreamMessage.AllStreamCheckpointReached (var position):
+								await _checkpointReached(this, position, _cts.Token)
+									.ConfigureAwait(false);
+								break;
+						}
 					} catch (Exception ex) when
 						(ex is ObjectDisposedException or OperationCanceledException) {
 						if (_subscriptionDroppedInvoked != 0) {
@@ -104,11 +112,10 @@ namespace EventStore.Client {
 			} catch (RpcException ex) when (ex.Status.StatusCode == StatusCode.Cancelled &&
 			                                ex.Status.Detail.Contains("Call canceled by the client.")) {
 				_log.LogInformation(
-					"Subscription {subscriptionId} was dropped because cancellation was requested by the client.", 
+					"Subscription {subscriptionId} was dropped because cancellation was requested by the client.",
 					SubscriptionId);
-				 SubscriptionDropped(SubscriptionDroppedReason.Disposed, ex);
-			}
-			catch (Exception ex) {
+				SubscriptionDropped(SubscriptionDroppedReason.Disposed, ex);
+			} catch (Exception ex) {
 				if (_subscriptionDroppedInvoked == 0) {
 					_log.LogError(ex,
 						"Subscription {subscriptionId} was dropped because an error occurred on the server.",
@@ -129,80 +136,8 @@ namespace EventStore.Client {
 			try {
 				_subscriptionDropped?.Invoke(this, reason, ex);
 			} finally {
-				_disposed.Dispose();
-			}
-		}
-
-		private class Enumerable : IAsyncEnumerable<ResolvedEvent> {
-			private readonly IAsyncEnumerator<(SubscriptionConfirmation, Position?, ResolvedEvent)> _inner;
-			private readonly Func<Position, Task> _checkpointReached;
-			private readonly CancellationToken _cancellationToken;
-
-			public Enumerable(IAsyncEnumerator<(SubscriptionConfirmation, Position?, ResolvedEvent)> inner,
-				Func<Position, Task> checkpointReached, CancellationToken cancellationToken) {
-				if (inner == null) {
-					throw new ArgumentNullException(nameof(inner));
-				}
-
-				if (checkpointReached == null) {
-					throw new ArgumentNullException(nameof(checkpointReached));
-				}
-
-				_inner = inner;
-				_checkpointReached = checkpointReached;
-				_cancellationToken = cancellationToken;
-			}
-
-			public IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(CancellationToken cancellationToken = default)
-				=> new Enumerator(_inner, _checkpointReached, _cancellationToken);
-
-			private class Enumerator : IAsyncEnumerator<ResolvedEvent> {
-				private readonly IAsyncEnumerator<(SubscriptionConfirmation, Position? position, ResolvedEvent
-					resolvedEvent)> _inner;
-
-				private readonly Func<Position, Task> _checkpointReached;
-				private readonly CancellationToken _cancellationToken;
-
-				public Enumerator(IAsyncEnumerator<(SubscriptionConfirmation, Position?, ResolvedEvent)> inner,
-					Func<Position, Task> checkpointReached, CancellationToken cancellationToken) {
-					if (inner == null) {
-						throw new ArgumentNullException(nameof(inner));
-					}
-
-					if (checkpointReached == null) {
-						throw new ArgumentNullException(nameof(checkpointReached));
-					}
-
-					_inner = inner;
-					_checkpointReached = checkpointReached;
-					_cancellationToken = cancellationToken;
-				}
-
-				public ValueTask DisposeAsync() => _inner.DisposeAsync();
-
-				public async ValueTask<bool> MoveNextAsync() {
-					ReadLoop:
-					if (_cancellationToken.IsCancellationRequested) {
-						return false;
-					}
-
-					if (!await _inner.MoveNextAsync().ConfigureAwait(false)) {
-						return false;
-					}
-
-					if (_cancellationToken.IsCancellationRequested) {
-						return false;
-					}
-
-					if (!_inner.Current.position.HasValue) {
-						return true;
-					}
-
-					await _checkpointReached(_inner.Current.position.Value).ConfigureAwait(false);
-					goto ReadLoop;
-				}
-
-				public ResolvedEvent Current => _inner.Current.resolvedEvent;
+				_subscription.Dispose();
+				_cts.Dispose();
 			}
 		}
 	}

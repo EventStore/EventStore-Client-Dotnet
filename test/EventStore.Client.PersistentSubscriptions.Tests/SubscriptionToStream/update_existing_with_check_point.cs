@@ -17,7 +17,6 @@ public class update_existing_with_check_point
 	public class Fixture : EventStoreClientFixture {
 		readonly TaskCompletionSource<bool>          _appeared;
 		readonly List<ResolvedEvent>                 _appearedEvents;
-		readonly TaskCompletionSource<ResolvedEvent> _checkPointSource;
 
 		readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception?)> _droppedSource;
 		readonly EventData[]                                                   _events;
@@ -28,7 +27,6 @@ public class update_existing_with_check_point
 		public Fixture() {
 			_droppedSource    = new();
 			_resumedSource    = new();
-			_checkPointSource = new();
 			_appeared         = new();
 			_appearedEvents   = new();
 			_events           = CreateTestEvents(5).ToArray();
@@ -52,21 +50,6 @@ public class update_existing_with_check_point
 			);
 
 			var checkPointStream = $"$persistentsubscription-{Stream}::{Group}-checkpoint";
-			await StreamsClient.SubscribeToStreamAsync(
-				checkPointStream,
-				FromStream.Start,
-				(_, e, _) => {
-					_checkPointSource.TrySetResult(e);
-					return Task.CompletedTask;
-				},
-				subscriptionDropped: (_, _, ex) => {
-					if (ex != null)
-						_checkPointSource.TrySetException(ex);
-					else
-						_checkPointSource.TrySetResult(default);
-				},
-				userCredentials: TestCredentials.Root
-			);
 
 			_firstSubscription = await Client.SubscribeToStreamAsync(
 				Stream,
@@ -82,9 +65,23 @@ public class update_existing_with_check_point
 				TestCredentials.Root
 			);
 
-			await Task.WhenAll(_appeared.Task, _checkPointSource.Task).WithTimeout();
+			await Task.WhenAll(_appeared.Task.WithTimeout(), Checkpointed());
 
-			CheckPoint = _checkPointSource.Task.Result.Event.Data.ParseStreamPosition();
+			return;
+
+			async Task Checkpointed() {
+				await using var subscription = StreamsClient.SubscribeToStream(checkPointStream, FromStream.Start,
+					userCredentials: TestCredentials.Root);
+				await foreach (var message in subscription.Messages) {
+					if (message is not StreamMessage.Event(var resolvedEvent)) {
+						continue;
+					}
+					CheckPoint = resolvedEvent.Event.Data.ParseStreamPosition();
+					return;
+				}
+
+				throw new InvalidOperationException();
+			}
 		}
 
 		protected override async Task When() {

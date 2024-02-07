@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Threading.Channels;
 using EventStore.Client.Streams;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
@@ -23,6 +19,12 @@ namespace EventStore.Client {
 			},
 		};
 
+		private static BoundedChannelOptions ReadBoundedChannelOptions = new (1) {
+			SingleReader = true,
+			SingleWriter = true,
+			AllowSynchronousContinuations = true
+		};
+		
 		private readonly ILogger<EventStoreClient> _log;
 		private Lazy<StreamAppender> _streamAppenderLazy;
 		private StreamAppender _streamAppender => _streamAppenderLazy.Value;

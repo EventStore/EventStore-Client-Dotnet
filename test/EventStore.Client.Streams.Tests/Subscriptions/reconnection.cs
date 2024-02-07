@@ -4,6 +4,7 @@ using static System.TimeSpan;
 namespace EventStore.Client.Streams.Tests.Subscriptions; 
 
 [Trait("Category", "Subscriptions")]
+[Obsolete]
 public class @reconnection(ITestOutputHelper output, ReconnectionFixture fixture) : EventStoreTests<ReconnectionFixture>(output, fixture) {
 	[Theory]
 	[InlineData(4, 5000, 0, 30000)]

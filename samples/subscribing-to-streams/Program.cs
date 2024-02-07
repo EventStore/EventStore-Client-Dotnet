@@ -5,91 +5,159 @@
 
 await using var client = new EventStoreClient(EventStoreClientSettings.Create("esdb://localhost:2113?tls=false"));
 
-await SubscribeToStream(client);
-await SubscribeToAll(client);
-await OverridingUserCredentials(client);
+await Task.WhenAll(YieldSamples().Select(async sample => {
+	try {
+		await sample;
+	} catch (OperationCanceledException) { }
+}));
+
 
 return;
 
-static async Task SubscribeToStream(EventStoreClient client) {
-	#region subscribe-to-stream
+IEnumerable<Task> YieldSamples() {
+	yield return SubscribeToStream(client, GetCT());
+	yield return SubscribeToStreamFromPosition(client, GetCT());
+	yield return SubscribeToStreamLive(client, GetCT());
+	yield return SubscribeToStreamResolvingLinkTos(client, GetCT());
+	yield return SubscribeToStreamSubscriptionDropped(client, GetCT());
+	yield return SubscribeToAll(client, GetCT());
+	yield return SubscribeToAllFromPosition(client, GetCT());
+	yield return SubscribeToAllLive(client, GetCT());
+	yield return SubscribeToAllSubscriptionDropped(client, GetCT());
+	yield return OverridingUserCredentials(client, GetCT());
+}
 
-	await client.SubscribeToStreamAsync(
-		"some-stream",
-		FromStream.Start,
-		async (subscription, evnt, cancellationToken) => {
-			Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
-			await HandleEvent(evnt);
-		}
-	);
-
-	#endregion subscribe-to-stream
-
+static async Task SubscribeToStreamFromPosition(EventStoreClient client, CancellationToken ct) {
 	#region subscribe-to-stream-from-position
 
-	await client.SubscribeToStreamAsync(
+	await using var subscription = client.SubscribeToStream(
 		"some-stream",
 		FromStream.After(StreamPosition.FromInt64(20)),
-		EventAppeared
-	);
+		cancellationToken: ct);
+	await foreach (var message in subscription.Messages) {
+		switch (message) {
+			case StreamMessage.Event(var evnt):
+				Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
+				await HandleEvent(evnt);
+				break;
+		}
+	}
 
 	#endregion subscribe-to-stream-from-position
+}
 
+static async Task SubscribeToStreamLive(EventStoreClient client, CancellationToken ct) {
 	#region subscribe-to-stream-live
 
-	await client.SubscribeToStreamAsync(
+	await using var subscription = client.SubscribeToStream(
 		"some-stream",
 		FromStream.End,
-		EventAppeared
-	);
+		cancellationToken: ct);
+	await foreach (var message in subscription.Messages) {
+		switch (message) {
+			case StreamMessage.Event(var evnt):
+				Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
+				await HandleEvent(evnt);
+				break;
+		}
+	}
 
 	#endregion subscribe-to-stream-live
+}
 
+static async Task SubscribeToStreamResolvingLinkTos(EventStoreClient client, CancellationToken ct) {
 	#region subscribe-to-stream-resolving-linktos
 
-	await client.SubscribeToStreamAsync(
+	await using var subscription = client.SubscribeToStream(
 		"$et-myEventType",
 		FromStream.Start,
-		EventAppeared,
-		true
-	);
+		true,
+		cancellationToken: ct);
+	await foreach (var message in subscription.Messages) {
+		switch (message) {
+			case StreamMessage.Event(var evnt):
+				Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
+				await HandleEvent(evnt);
+				break;
+		}
+	}
 
 	#endregion subscribe-to-stream-resolving-linktos
+}
 
+static async Task SubscribeToStreamSubscriptionDropped(EventStoreClient client, CancellationToken ct) {
 	#region subscribe-to-stream-subscription-dropped
 
-	var checkpoint = await ReadStreamCheckpointAsync();
-	await client.SubscribeToStreamAsync(
-		"some-stream",
-		checkpoint is null ? FromStream.Start : FromStream.After(checkpoint.Value),
-		async (subscription, evnt, cancellationToken) => {
-			await HandleEvent(evnt);
-			checkpoint = evnt.OriginalEventNumber;
-		},
-		subscriptionDropped: (subscription, reason, exception) => {
-			Console.WriteLine($"Subscription was dropped due to {reason}. {exception}");
-			if (reason != SubscriptionDroppedReason.Disposed)
-				// Resubscribe if the client didn't stop the subscription
-				ResubscribeToStream(checkpoint);
+	var checkpoint = await ReadStreamCheckpointAsync() switch {
+		null => FromStream.Start,
+		var position => FromStream.After(position.Value)
+	};
+
+	Subscribe:
+	try {
+		await using var subscription = client.SubscribeToStream(
+			"some-stream",
+			checkpoint,
+			cancellationToken: ct);
+		await foreach (var message in subscription.Messages) {
+			switch (message) {
+				case StreamMessage.Event(var evnt):
+					Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
+					await HandleEvent(evnt);
+					checkpoint = FromStream.After(evnt.OriginalEventNumber);
+					break;
+			}
 		}
-	);
+	} catch (OperationCanceledException) {
+		Console.WriteLine($"Subscription was canceled.");
+	} catch (ObjectDisposedException) {
+		Console.WriteLine($"Subscription was canceled by the user.");
+	} catch (Exception ex) {
+		Console.WriteLine($"Subscription was dropped: {ex}");
+		goto Subscribe;
+	}
 
 	#endregion subscribe-to-stream-subscription-dropped
 }
 
-static async Task SubscribeToAll(EventStoreClient client) {
+static async Task SubscribeToStream(EventStoreClient client, CancellationToken ct) {
+	#region subscribe-to-stream
+
+	await using var subscription = client.SubscribeToStream(
+		"some-stream",
+		FromStream.Start,
+		cancellationToken: ct);
+	await foreach (var message in subscription.Messages.WithCancellation(ct)) {
+		switch (message) {
+			case StreamMessage.Event(var evnt):
+				Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
+				await HandleEvent(evnt);
+				break;
+		}
+	}
+
+	#endregion subscribe-to-stream
+}
+
+static async Task SubscribeToAll(EventStoreClient client, CancellationToken ct) {
 	#region subscribe-to-all
 
-	await client.SubscribeToAllAsync(
+	await using var subscription = client.SubscribeToAll(
 		FromAll.Start,
-		async (subscription, evnt, cancellationToken) => {
-			Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
-			await HandleEvent(evnt);
+		cancellationToken: ct);
+	await foreach (var message in subscription.Messages) {
+		switch (message) {
+			case StreamMessage.Event(var evnt):
+				Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
+				await HandleEvent(evnt);
+				break;
 		}
-	);
+	}
 
 	#endregion subscribe-to-all
+}
 
+static async Task SubscribeToAllFromPosition(EventStoreClient client, CancellationToken ct) {
 	#region subscribe-to-all-from-position
 
 	var result = await client.AppendToStreamAsync(
@@ -97,54 +165,98 @@ static async Task SubscribeToAll(EventStoreClient client) {
 		StreamState.NoStream,
 		new[] {
 			new EventData(Uuid.NewUuid(), "-", ReadOnlyMemory<byte>.Empty)
-		}
-	);
+		});
 
-	await client.SubscribeToAllAsync(
+	await using var subscription = client.SubscribeToAll(
 		FromAll.After(result.LogPosition),
-		EventAppeared
-	);
+		cancellationToken: ct);
+	await foreach (var message in subscription.Messages) {
+		switch (message) {
+			case StreamMessage.Event(var evnt):
+				Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
+				await HandleEvent(evnt);
+				break;
+		}
+	}
 
 	#endregion subscribe-to-all-from-position
+}
 
+static async Task SubscribeToAllLive(EventStoreClient client, CancellationToken ct) {
 	#region subscribe-to-all-live
 
-	await client.SubscribeToAllAsync(
+	var subscription = client.SubscribeToAll(
 		FromAll.End,
-		EventAppeared
-	);
+		cancellationToken: ct);
+	await foreach (var message in subscription.Messages) {
+		switch (message) {
+			case StreamMessage.Event(var evnt):
+				Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
+				await HandleEvent(evnt);
+				break;
+		}
+	}
 
 	#endregion subscribe-to-all-live
+}
 
+static async Task SubscribeToAllSubscriptionDropped(EventStoreClient client, CancellationToken ct) {
 	#region subscribe-to-all-subscription-dropped
 
-	var checkpoint = await ReadCheckpointAsync();
-	await client.SubscribeToAllAsync(
-		checkpoint is null ? FromAll.Start : FromAll.After(checkpoint.Value),
-		async (subscription, evnt, cancellationToken) => {
-			await HandleEvent(evnt);
-			checkpoint = evnt.OriginalPosition!.Value;
-		},
-		subscriptionDropped: (subscription, reason, exception) => {
-			Console.WriteLine($"Subscription was dropped due to {reason}. {exception}");
-			if (reason != SubscriptionDroppedReason.Disposed)
-				// Resubscribe if the client didn't stop the subscription
-				Resubscribe(checkpoint);
+	var checkpoint = await ReadCheckpointAsync() switch {
+		null => FromAll.Start,
+		var position => FromAll.After(position.Value)
+	};
+
+	Subscribe:
+	try {
+		await using var subscription = client.SubscribeToAll(
+			checkpoint,
+			cancellationToken: ct);
+		await foreach (var message in subscription.Messages) {
+			switch (message) {
+				case StreamMessage.Event(var evnt):
+					Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
+					await HandleEvent(evnt);
+					if (evnt.OriginalPosition is not null) {
+						checkpoint = FromAll.After(evnt.OriginalPosition.Value);
+					}
+
+					break;
+			}
 		}
-	);
+	} catch (OperationCanceledException) {
+		Console.WriteLine($"Subscription was canceled.");
+	} catch (ObjectDisposedException) {
+		Console.WriteLine($"Subscription was canceled by the user.");
+	} catch (Exception ex) {
+		Console.WriteLine($"Subscription was dropped: {ex}");
+		goto Subscribe;
+	}
 
 	#endregion subscribe-to-all-subscription-dropped
 }
 
-static async Task SubscribeToFiltered(EventStoreClient client) {
+static async Task SubscribeToFiltered(EventStoreClient client, CancellationToken ct) {
 	#region stream-prefix-filtered-subscription
 
 	var prefixStreamFilter = new SubscriptionFilterOptions(StreamFilter.Prefix("test-", "other-"));
-	await client.SubscribeToAllAsync(
+	await using var subscription = client.SubscribeToAll(
 		FromAll.Start,
-		EventAppeared,
-		filterOptions: prefixStreamFilter
-	);
+		filterOptions: prefixStreamFilter,
+		cancellationToken: ct);
+	await foreach (var message in subscription.Messages) {
+		switch (message) {
+			case StreamMessage.Event(var evnt):
+				Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
+				await HandleEvent(evnt);
+
+				break;
+			case StreamMessage.AllStreamCheckpointReached(var position):
+				Console.WriteLine($"Checkpoint reached: {position}");
+				break;
+		}
+	}
 
 	#endregion stream-prefix-filtered-subscription
 
@@ -155,31 +267,33 @@ static async Task SubscribeToFiltered(EventStoreClient client) {
 	#endregion stream-regex-filtered-subscription
 }
 
-static async Task OverridingUserCredentials(EventStoreClient client) {
+static async Task OverridingUserCredentials(EventStoreClient client, CancellationToken ct) {
 	#region overriding-user-credentials
 
-	await client.SubscribeToAllAsync(
+	await using var subscription = client.SubscribeToAll(
 		FromAll.Start,
-		EventAppeared,
-		userCredentials: new UserCredentials("admin", "changeit")
-	);
+		userCredentials: new UserCredentials("admin", "changeit"),
+		cancellationToken: ct);
+	await foreach (var message in subscription.Messages) {
+		switch (message) {
+			case StreamMessage.Event(var evnt):
+				Console.WriteLine($"Received event {evnt.OriginalEventNumber}@{evnt.OriginalStreamId}");
+				await HandleEvent(evnt);
+
+				break;
+		}
+	}
 
 	#endregion overriding-user-credentials
 }
 
-static Task EventAppeared(StreamSubscription subscription, ResolvedEvent evnt, CancellationToken cancellationToken) =>
-	Task.CompletedTask;
-
-static void SubscriptionDropped(StreamSubscription subscription, SubscriptionDroppedReason reason, Exception ex) { }
-
 static Task HandleEvent(ResolvedEvent evnt) => Task.CompletedTask;
-
-static void ResubscribeToStream(StreamPosition? checkpoint) { }
-
-static void Resubscribe(Position? checkpoint) { }
 
 static Task<StreamPosition?> ReadStreamCheckpointAsync() =>
 	Task.FromResult(new StreamPosition?());
 
 static Task<Position?> ReadCheckpointAsync() =>
 	Task.FromResult(new Position?());
+
+// ensures that samples exit in a timely manner on CI
+static CancellationToken GetCT() => new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token;

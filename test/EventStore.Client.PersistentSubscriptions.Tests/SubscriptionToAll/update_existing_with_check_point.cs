@@ -17,20 +17,17 @@ public class update_existing_with_check_point
 	public class Fixture : EventStoreClientFixture {
 		readonly TaskCompletionSource<bool>          _appeared;
 		readonly List<ResolvedEvent>                 _appearedEvents;
-		readonly TaskCompletionSource<ResolvedEvent> _checkPointSource;
 
 		readonly TaskCompletionSource<(SubscriptionDroppedReason, Exception?)> _droppedSource;
 		readonly EventData[]                                                   _events;
 		readonly TaskCompletionSource<ResolvedEvent>                           _resumedSource;
 
-		StreamSubscription?     _checkPointSubscription;
 		PersistentSubscription? _firstSubscription;
 		PersistentSubscription? _secondSubscription;
 
 		public Fixture() {
 			_droppedSource    = new();
 			_resumedSource    = new();
-			_checkPointSource = new();
 			_appeared         = new();
 			_appearedEvents   = new();
 			_events           = CreateTestEvents(5).ToArray();
@@ -53,23 +50,6 @@ public class update_existing_with_check_point
 				userCredentials: TestCredentials.Root
 			);
 
-			var checkPointStream = $"$persistentsubscription-$all::{Group}-checkpoint";
-			_checkPointSubscription = await StreamsClient.SubscribeToStreamAsync(
-				checkPointStream,
-				FromStream.Start,
-				(_, e, _) => {
-					_checkPointSource.TrySetResult(e);
-					return Task.CompletedTask;
-				},
-				subscriptionDropped: (_, reason, ex) => {
-					if (ex is not null)
-						_checkPointSource.TrySetException(ex);
-					else
-						_checkPointSource.TrySetResult(default);
-				},
-				userCredentials: TestCredentials.Root
-			);
-
 			_firstSubscription = await Client.SubscribeToAllAsync(
 				Group,
 				async (s, e, r, ct) => {
@@ -83,10 +63,24 @@ public class update_existing_with_check_point
 				(subscription, reason, ex) => _droppedSource.TrySetResult((reason, ex)),
 				TestCredentials.Root
 			);
+			
+			await Task.WhenAll(_appeared.Task, Checkpointed()).WithTimeout();
 
-			await Task.WhenAll(_appeared.Task, _checkPointSource.Task).WithTimeout();
+			return;
 
-			CheckPoint = _checkPointSource.Task.Result.Event.Data.ParsePosition();
+			async Task Checkpointed() {
+				await using var subscription = StreamsClient.SubscribeToStream(
+					$"$persistentsubscription-$all::{Group}-checkpoint",
+					FromStream.Start,
+					userCredentials: TestCredentials.Root);
+				await foreach (var message in subscription.Messages) {
+					if (message is not StreamMessage.Event(var resolvedEvent)) {
+						continue;
+					}
+					CheckPoint = resolvedEvent.Event.Data.ParsePosition();
+					return;
+				}
+			}
 		}
 
 		protected override async Task When() {
@@ -117,7 +111,6 @@ public class update_existing_with_check_point
 		public override Task DisposeAsync() {
 			_firstSubscription?.Dispose();
 			_secondSubscription?.Dispose();
-			_checkPointSubscription?.Dispose();
 			return base.DisposeAsync();
 		}
 	}

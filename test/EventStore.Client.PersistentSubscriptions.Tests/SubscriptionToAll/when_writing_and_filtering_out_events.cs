@@ -10,9 +10,8 @@ public class when_writing_and_filtering_out_events
 
 	[SupportsPSToAll.Fact]
 	public async Task it_should_write_a_check_point() {
-		await _fixture.SecondCheckPoint.WithTimeout();
-		var secondCheckPoint = _fixture.SecondCheckPoint.Result.Event.Data.ParsePosition();
-		Assert.True(secondCheckPoint > _fixture.FirstCheckPoint);
+		await Task.Yield();
+		Assert.True(_fixture.SecondCheckPoint > _fixture.FirstCheckPoint);
 		Assert.Equal(
 			_fixture.Events.Select(e => e.EventId),
 			_fixture.AppearedEvents.Select(e => e.Event.EventId)
@@ -22,23 +21,18 @@ public class when_writing_and_filtering_out_events
 	public class Fixture : EventStoreClientFixture {
 		readonly TaskCompletionSource<bool> _appeared;
 		readonly List<ResolvedEvent>        _appearedEvents, _checkPoints;
-		readonly string                     _checkPointStream = $"$persistentsubscription-$all::{Group}-checkpoint";
 		readonly EventData[]                _events;
 
-		readonly TaskCompletionSource<ResolvedEvent> _firstCheckPointSource, _secondCheckPointSource;
-		StreamSubscription?                          _checkPointSubscription;
 		PersistentSubscription?                      _subscription;
 
 		public Fixture() {
-			_firstCheckPointSource  = new();
-			_secondCheckPointSource = new();
 			_appeared               = new();
 			_appearedEvents         = new();
 			_checkPoints            = new();
-			_events                 = CreateTestEvents(5).ToArray();
+			_events                 = CreateTestEvents(10).ToArray();
 		}
 
-		public Task<ResolvedEvent> SecondCheckPoint => _secondCheckPointSource.Task;
+		public Position SecondCheckPoint { get; private set; }
 		public Position            FirstCheckPoint  { get; private set; }
 		public EventData[]         Events           => _events.ToArray();
 		public ResolvedEvent[]     AppearedEvents   => _appearedEvents.ToArray();
@@ -51,25 +45,11 @@ public class when_writing_and_filtering_out_events
 				Group,
 				StreamFilter.Prefix("test"),
 				new(
-					checkPointLowerBound: 5,
+					checkPointLowerBound: 1,
+					checkPointUpperBound: 5,
 					checkPointAfter: TimeSpan.FromSeconds(1),
 					startFrom: Position.Start
 				),
-				userCredentials: TestCredentials.Root
-			);
-
-			_checkPointSubscription = await StreamsClient.SubscribeToStreamAsync(
-				_checkPointStream,
-				FromStream.Start,
-				(_, e, _) => {
-					if (_checkPoints.Count == 0)
-						_firstCheckPointSource.TrySetResult(e);
-					else
-						_secondCheckPointSource.TrySetResult(e);
-
-					_checkPoints.Add(e);
-					return Task.CompletedTask;
-				},
 				userCredentials: TestCredentials.Root
 			);
 
@@ -86,9 +66,28 @@ public class when_writing_and_filtering_out_events
 				userCredentials: TestCredentials.Root
 			);
 
-			await Task.WhenAll(_appeared.Task, _firstCheckPointSource.Task).WithTimeout();
+			await Task.WhenAll(_appeared.Task, Checkpointed()).WithTimeout();
+			
+			async Task Checkpointed() {
+				bool firstCheckpointSet = false;
+				await using var subscription = StreamsClient.SubscribeToStream(
+					$"$persistentsubscription-$all::{Group}-checkpoint",
+					FromStream.Start,
+					userCredentials: TestCredentials.Root);
+				await foreach (var message in subscription.Messages) {
+					if (message is not StreamMessage.Event(var resolvedEvent)) {
+						continue;
+					}
 
-			FirstCheckPoint = _firstCheckPointSource.Task.Result.Event.Data.ParsePosition();
+					if (!firstCheckpointSet) {
+						FirstCheckPoint = resolvedEvent.Event.Data.ParsePosition();
+						firstCheckpointSet = true;
+					} else {
+						SecondCheckPoint = resolvedEvent.Event.Data.ParsePosition();
+						return;
+					}
+				}
+			}
 		}
 
 		protected override async Task When() {
@@ -102,7 +101,6 @@ public class when_writing_and_filtering_out_events
 
 		public override Task DisposeAsync() {
 			_subscription?.Dispose();
-			_checkPointSubscription?.Dispose();
 			return base.DisposeAsync();
 		}
 	}
