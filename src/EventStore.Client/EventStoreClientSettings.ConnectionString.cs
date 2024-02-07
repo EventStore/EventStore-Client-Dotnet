@@ -73,10 +73,10 @@ namespace EventStore.Client {
 				var scheme = ParseScheme(connectionString.Substring(0, schemeIndex));
 
 				currentIndex = schemeIndex + SchemeSeparator.Length;
-				var                         userInfoIndex = connectionString.IndexOf(UserInfoSeparator, currentIndex, StringComparison.Ordinal);
-				(string user, string pass)? userInfo      = null;
+				var userInfoIndex = connectionString.IndexOf(UserInfoSeparator, currentIndex, StringComparison.Ordinal);
+				(string user, string pass)? userInfo = null;
 				if (userInfoIndex != -1) {
-					userInfo     = ParseUserInfo(connectionString.Substring(currentIndex, userInfoIndex - currentIndex));
+					userInfo = ParseUserInfo(connectionString.Substring(currentIndex, userInfoIndex - currentIndex));
 					currentIndex = userInfoIndex + UserInfoSeparator.Length;
 				}
 
@@ -94,7 +94,7 @@ namespace EventStore.Client {
 				if (questionMarkIndex == -1) questionMarkIndex = int.MaxValue;
 
 				var hostSeparatorIndex = Math.Min(Math.Min(slashIndex, questionMarkIndex), endIndex);
-				var hosts              = ParseHosts(connectionString.Substring(currentIndex, hostSeparatorIndex - currentIndex));
+				var hosts = ParseHosts(connectionString.Substring(currentIndex, hostSeparatorIndex - currentIndex));
 				currentIndex = hostSeparatorIndex;
 
 				string path = "";
@@ -140,14 +140,12 @@ namespace EventStore.Client {
 							throw new InvalidSettingException($"{kv.Key} must be an integer value");
 
 						typedOptions.Add(kv.Key, intValue);
-					}
-					else if (type == typeof(bool)) {
+					} else if (type == typeof(bool)) {
 						if (!bool.TryParse(kv.Value, out var boolValue))
 							throw new InvalidSettingException($"{kv.Key} must be either true or false");
 
 						typedOptions.Add(kv.Key, boolValue);
-					}
-					else if (type == typeof(string)) {
+					} else if (type == typeof(string)) {
 						typedOptions.Add(kv.Key, kv.Value);
 					}
 				}
@@ -166,11 +164,11 @@ namespace EventStore.Client {
 
 				if (typedOptions.TryGetValue(NodePreference, out object? nodePreference)) {
 					settings.ConnectivitySettings.NodePreference = ((string)nodePreference).ToLowerInvariant() switch {
-						"leader"          => EventStore.Client.NodePreference.Leader,
-						"follower"        => EventStore.Client.NodePreference.Follower,
-						"random"          => EventStore.Client.NodePreference.Random,
+						"leader" => EventStore.Client.NodePreference.Leader,
+						"follower" => EventStore.Client.NodePreference.Follower,
+						"random" => EventStore.Client.NodePreference.Random,
 						"readonlyreplica" => EventStore.Client.NodePreference.ReadOnlyReplica,
-						_                 => throw new InvalidSettingException($"Invalid NodePreference: {nodePreference}")
+						_ => throw new InvalidSettingException($"Invalid NodePreference: {nodePreference}")
 					};
 				}
 
@@ -187,17 +185,17 @@ namespace EventStore.Client {
 
 				if (typedOptions.TryGetValue(KeepAliveInterval, out var keepAliveIntervalMs)) {
 					settings.ConnectivitySettings.KeepAliveInterval = keepAliveIntervalMs switch {
-						-1                 => Timeout_.InfiniteTimeSpan,
+						-1 => Timeout_.InfiniteTimeSpan,
 						int value and >= 0 => TimeSpan.FromMilliseconds(value),
-						_                  => throw new InvalidSettingException($"Invalid KeepAliveInterval: {keepAliveIntervalMs}")
+						_ => throw new InvalidSettingException($"Invalid KeepAliveInterval: {keepAliveIntervalMs}")
 					};
 				}
 
 				if (typedOptions.TryGetValue(KeepAliveTimeout, out var keepAliveTimeoutMs)) {
 					settings.ConnectivitySettings.KeepAliveTimeout = keepAliveTimeoutMs switch {
-						-1                 => Timeout_.InfiniteTimeSpan,
+						-1 => Timeout_.InfiniteTimeSpan,
 						int value and >= 0 => TimeSpan.FromMilliseconds(value),
-						_                  => throw new InvalidSettingException($"Invalid KeepAliveTimeout: {keepAliveTimeoutMs}")
+						_ => throw new InvalidSettingException($"Invalid KeepAliveTimeout: {keepAliveTimeoutMs}")
 					};
 				}
 
@@ -205,8 +203,7 @@ namespace EventStore.Client {
 
 				if (hosts.Length == 1 && scheme != UriSchemeDiscover) {
 					settings.ConnectivitySettings.Address = hosts[0].ToUri(useTls);
-				}
-				else {
+				} else {
 					if (hosts.Any(x => x is DnsEndPoint))
 						settings.ConnectivitySettings.DnsGossipSeeds =
 							Array.ConvertAll(hosts, x => new DnsEndPoint(x.GetHost(), x.GetPort()));
@@ -244,17 +241,12 @@ namespace EventStore.Client {
 						EnableMultipleHttp2Connections = true,
 					};
 
-					var sslOptions = new SslClientAuthenticationOptions();
-
-					if (configureClientCert) {
+					if (configureClientCert)
 						handler.SslOptions.ClientCertificates = [settings.ConnectivitySettings.TlsCaFile!];
-					}
 
 					if (!settings.ConnectivitySettings.TlsVerifyCert) {
-						sslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
 					}
-
-					handler.SslOptions = sslOptions;
 #else
 					var handler = new WinHttpHandler {
 						TcpKeepAliveEnabled = true,
@@ -263,9 +255,8 @@ namespace EventStore.Client {
 						EnableMultipleHttp2Connections = true
 					};
 
-					if (configureClientCert) {
-						handler.ClientCertificates.Add(settings.ConnectivitySettings.TlsCaFile);
-					}
+					if (configureClientCert)
+						handler.ClientCertificates.Add(settings.ConnectivitySettings.TlsCaFile!);
 
 					if (!settings.ConnectivitySettings.TlsVerifyCert) {
 						handler.ServerCertificateValidationCallback = delegate { return true; };
@@ -316,8 +307,7 @@ namespace EventStore.Client {
 
 					if (IPAddress.TryParse(host, out IPAddress? ip)) {
 						hosts.Add(new IPEndPoint(ip, port));
-					}
-					else {
+					} else {
 						hosts.Add(new DnsEndPoint(host, port));
 					}
 				}
@@ -332,8 +322,7 @@ namespace EventStore.Client {
 					var (key, val) = ParseKeyValuePair(optionToken);
 					try {
 						options.Add(key, val);
-					}
-					catch (ArgumentException) {
+					} catch (ArgumentException) {
 						throw new DuplicateKeyException(key);
 					}
 				}
