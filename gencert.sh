@@ -21,13 +21,12 @@ docker run --rm --volume $PWD/certs:/tmp --user $(id -u):$(id -g) eventstore/es-
 
 chmod -R 0755 ./certs
 
-echo ">> Copying certificate..."
-cp certs/ca/ca.crt /usr/local/share/ca-certificates/eventstore_ca.crt
-
 if [ "${machine}" == "MacOS" ]; then
   echo ">> Installing certificate on ${machine}..."
-  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain /usr/local/share/ca-certificates/eventstore_ca.crt   
+  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain certs/ca/ca.crt   
 elif [ "$machine" == "Linux" ] || [ "$machine" == "WSL" ]; then
+  echo ">> Copying certificate..."
+  cp certs/ca/ca.crt /usr/local/share/ca-certificates/eventstore_ca.crt
   echo ">> Installing certificate on ${machine}..."
   sudo update-ca-certificates    
 else
