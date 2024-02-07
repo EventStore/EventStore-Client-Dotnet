@@ -27,12 +27,8 @@ cp certs/ca/ca.crt /usr/local/share/ca-certificates/eventstore_ca.crt
 if [ "${machine}" == "MacOS" ]; then
   echo ">> Installing certificate on ${machine}..."
   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain /usr/local/share/ca-certificates/eventstore_ca.crt   
-elif [ "$machine" == "Linux" ]; then
-  echo ">> Installing certificate on ${machine}..."
-  sudo update-ca-certificates    
-elif [ "$machine" == "WSL" ]; then
+elif [ "$machine" == "Linux" ] || [ "$machine" == "WSL" ]; then
   echo ">> Installing certificate on ${machine}..."
   sudo update-ca-certificates    
 else
   echo ">> Unknown platform. Please install the certificate manually."   
-fi

@@ -236,6 +236,7 @@ namespace EventStore.Client {
 				return settings;
 
 				HttpMessageHandler CreateDefaultHandler() {
+					var configureClientCert = settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false };
 #if NET
 					var handler = new SocketsHttpHandler {
 						KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
@@ -245,8 +246,8 @@ namespace EventStore.Client {
 
 					var sslOptions = new SslClientAuthenticationOptions();
 
-					if (settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false }) {
-						sslOptions.ClientCertificates?.Add(settings.ConnectivitySettings.TlsCaFile);
+					if (configureClientCert) {
+						handler.SslOptions.ClientCertificates = [settings.ConnectivitySettings.TlsCaFile!];
 					}
 
 					if (!settings.ConnectivitySettings.TlsVerifyCert) {
@@ -262,7 +263,7 @@ namespace EventStore.Client {
 						EnableMultipleHttp2Connections = true
 					};
 
-					if (settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false }) {
+					if (configureClientCert) {
 						handler.ClientCertificates.Add(settings.ConnectivitySettings.TlsCaFile);
 					}
 

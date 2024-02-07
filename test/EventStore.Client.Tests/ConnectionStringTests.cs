@@ -94,11 +94,6 @@ public class ConnectionStringTests {
 		static string MockingTone(string key) => new(key.Select((c, i) => i % 2 == 0 ? char.ToUpper(c) : char.ToLower(c)).ToArray());
 	}
 
-	public static IEnumerable<object?[]> InvalidClientCertificates() {
-		yield return new object?[] { Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "path", "not", "found") };
-		yield return new object?[] { Assembly.GetExecutingAssembly().Location };
-	}
-
 	[Theory]
 	[MemberData(nameof(ValidCases))]
 	public void valid_connection_string(string connectionString, EventStoreClientSettings expected) {
@@ -152,6 +147,11 @@ public class ConnectionStringTests {
 	}
 
 #endif
+
+	public static IEnumerable<object?[]> InvalidClientCertificates() {
+		yield return new object?[] { Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "path", "not", "found") };
+		yield return new object?[] { Assembly.GetExecutingAssembly().Location };
+	}
 
 	[Theory]
 	[MemberData(nameof(InvalidClientCertificates))]
