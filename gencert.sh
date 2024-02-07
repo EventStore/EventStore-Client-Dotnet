@@ -32,3 +32,4 @@ elif [ "$machine" == "Linux" ] || [ "$machine" == "WSL" ]; then
   sudo update-ca-certificates    
 else
   echo ">> Unknown platform. Please install the certificate manually."   
+fi
