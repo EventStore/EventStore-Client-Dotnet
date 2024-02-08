@@ -1,3 +1,4 @@
+using System.Text;
 using Grpc.Core;
 
 namespace EventStore.Client.Streams.Tests.Append;
@@ -421,6 +422,51 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 		).ShouldThrowAsync<RpcException>();
 
 		ex.StatusCode.ShouldBe(StatusCode.DeadlineExceeded);
+	}
+
+	[Fact]
+	public async Task should_not_append_to_stream_when_error_thrown_midway() {
+		var       streamName            = Fixture.GetStreamName();
+		const int initialNumberOfEvents = 5;
+
+		// Append some events before
+		await Fixture.Streams.AppendToStreamAsync(
+			streamName,
+			StreamState.Any,
+			Fixture.CreateTestEvents(initialNumberOfEvents)
+		);
+
+		// Force regular append by passing credentials
+		await Assert.ThrowsAsync<EnumerationFailedException>(
+			async () =>{
+				await Fixture.Streams.AppendToStreamAsync(
+					streamName,
+					StreamState.StreamExists,
+					GetEvents(),
+					userCredentials: new UserCredentials("admin", "changeit")
+				);
+			}
+		);
+
+		// No more events should be appended to the stream
+		var result = Fixture.Streams.ReadStreamAsync(Direction.Forwards, streamName, StreamPosition.Start);
+		var eventsCount = await result.CountAsync();
+		eventsCount.ShouldBe(initialNumberOfEvents, "No more events should be appended to the stream");
+
+		return;
+
+		// Throw an exception after 5 events
+		IEnumerable<EventData> GetEvents() {
+			for (var i = 0; i < 5; i++) {
+				yield return new EventData(
+					Uuid.NewUuid(),
+					"test-event",
+					Encoding.UTF8.GetBytes(i.ToString())
+				);
+			}
+
+			throw new EnumerationFailedException();
+		}
 	}
 
 	[Fact]
