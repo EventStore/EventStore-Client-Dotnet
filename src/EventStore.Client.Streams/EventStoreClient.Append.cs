@@ -105,37 +105,27 @@ namespace EventStore.Client {
 			);
 
 			IWriteResult writeResult;
-			try {
-				await call.RequestStream.WriteAsync(header).ConfigureAwait(false);
+			await call.RequestStream.WriteAsync(header).ConfigureAwait(false);
 
-				foreach (var e in eventData) {
-					await call.RequestStream.WriteAsync(
-						new AppendReq {
-							ProposedMessage = new AppendReq.Types.ProposedMessage {
-								Id             = e.EventId.ToDto(),
-								Data           = ByteString.CopyFrom(e.Data.Span),
-								CustomMetadata = ByteString.CopyFrom(e.Metadata.Span),
-								Metadata = {
-									{ Constants.Metadata.Type, e.Type },
-									{ Constants.Metadata.ContentType, e.ContentType }
-								}
-							},
-						}
-					).ConfigureAwait(false);
-				}
-
-				await call.RequestStream.CompleteAsync().ConfigureAwait(false);
-			} catch (Exception ex) {
-				if (ex is not RpcException) {
-					_log.LogError(
-						ex,
-						"Append to stream failed with unexpected error - {streamName}@{expectedRevision}",
-						header.Options.StreamIdentifier,
-						header.Options.Revision
-					);
-					throw;
-				}
+			foreach (var e in eventData) {
+				_log.LogTrace("Appending event to stream - {streamName}@{eventId} {eventType}.",
+					header.Options.StreamIdentifier, e.EventId, e.Type);
+				await call.RequestStream.WriteAsync(
+					new AppendReq {
+						ProposedMessage = new AppendReq.Types.ProposedMessage {
+							Id             = e.EventId.ToDto(),
+							Data           = ByteString.CopyFrom(e.Data.Span),
+							CustomMetadata = ByteString.CopyFrom(e.Metadata.Span),
+							Metadata = {
+								{ Constants.Metadata.Type, e.Type },
+								{ Constants.Metadata.ContentType, e.ContentType }
+							}
+						},
+					}
+				).ConfigureAwait(false);
 			}
+
+			await call.RequestStream.CompleteAsync().ConfigureAwait(false);
 
 			var response = await call.ResponseAsync.ConfigureAwait(false);
 
