@@ -92,37 +92,40 @@ namespace EventStore.Client {
 		}
 
 		private async ValueTask<IWriteResult> AppendToStreamInternal(
-			CallInvoker callInvoker,
-			AppendReq header,
-			IEnumerable<EventData> eventData,
-			EventStoreClientOperationOptions operationOptions,
-			TimeSpan? deadline,
-			UserCredentials? userCredentials,
-			CancellationToken cancellationToken
-		) {
+				CallInvoker callInvoker,
+				AppendReq header,
+				IEnumerable<EventData> eventData,
+				EventStoreClientOperationOptions operationOptions,
+				TimeSpan? deadline,
+				UserCredentials? userCredentials,
+				CancellationToken cancellationToken
+				) {
 			using var call = new Streams.Streams.StreamsClient(callInvoker).Append(
-				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken)
-			);
+					EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken)
+					);
 
 			IWriteResult writeResult;
-			await call.RequestStream.WriteAsync(header).ConfigureAwait(false);
 
-			foreach (var e in eventData) {
-				_log.LogTrace("Appending event to stream - {streamName}@{eventId} {eventType}.",
-					header.Options.StreamIdentifier, e.EventId, e.Type);
-				await call.RequestStream.WriteAsync(
-					new AppendReq {
-						ProposedMessage = new AppendReq.Types.ProposedMessage {
-							Id             = e.EventId.ToDto(),
-							Data           = ByteString.CopyFrom(e.Data.Span),
-							CustomMetadata = ByteString.CopyFrom(e.Metadata.Span),
-							Metadata = {
-								{ Constants.Metadata.Type, e.Type },
-								{ Constants.Metadata.ContentType, e.ContentType }
-							}
-						},
-					}
-				).ConfigureAwait(false);
+			try {
+				await call.RequestStream.WriteAsync(header).ConfigureAwait(false);
+
+				foreach (var e in eventData) {
+					await call.RequestStream.WriteAsync(
+						new AppendReq {
+							ProposedMessage = new AppendReq.Types.ProposedMessage {
+								Id             = e.EventId.ToDto(),
+								Data           = ByteString.CopyFrom(e.Data.Span),
+								CustomMetadata = ByteString.CopyFrom(e.Metadata.Span),
+								Metadata = {
+									{ Constants.Metadata.Type, e.Type },
+									{ Constants.Metadata.ContentType, e.ContentType }
+								}
+							},
+						}
+					).ConfigureAwait(false);
+				}
+			} catch (RpcException) {
+				// Do nothing so that RpcExceptions propagate to the call.ResponseAsync and be translated by the TypedInterceptor
 			}
 
 			await call.RequestStream.CompleteAsync().ConfigureAwait(false);
@@ -152,11 +155,13 @@ namespace EventStore.Client {
 				);
 			} else {
 				if (response.WrongExpectedVersion != null) {
-					var actualStreamRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase switch {
-						AppendResp.Types.WrongExpectedVersion.CurrentRevisionOptionOneofCase.CurrentNoStream =>
-							StreamRevision.None,
-						_ => new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
-					};
+					var actualStreamRevision =
+						response.WrongExpectedVersion.CurrentRevisionOptionCase switch {
+							AppendResp.Types.WrongExpectedVersion.CurrentRevisionOptionOneofCase
+									.CurrentNoStream =>
+								StreamRevision.None,
+							_ => new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
+						};
 
 					_log.LogDebug(
 						"Append to stream failed with Wrong Expected Version - {streamName}/{expectedRevision}/{currentRevision}",
@@ -167,7 +172,8 @@ namespace EventStore.Client {
 
 					if (operationOptions.ThrowOnAppendFailure) {
 						if (response.WrongExpectedVersion.ExpectedRevisionOptionCase == AppendResp.Types
-							    .WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedRevision) {
+							    .WrongExpectedVersion.ExpectedRevisionOptionOneofCase
+							    .ExpectedRevision) {
 							throw new WrongExpectedVersionException(
 								header.Options.StreamIdentifier!,
 								new StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
@@ -214,6 +220,7 @@ namespace EventStore.Client {
 					throw new InvalidOperationException("The operation completed with an unexpected result.");
 				}
 			}
+
 
 			return writeResult;
 		}
