@@ -98,24 +98,17 @@ namespace EventStore.Client {
 			EventStoreClientOperationOptions operationOptions,
 			TimeSpan? deadline,
 			UserCredentials? userCredentials,
-			CancellationToken cancellationToken) {
-
-			using var call = new Streams.Streams.StreamsClient(
-				callInvoker).Append(EventStoreCallOptions.CreateNonStreaming(
-				Settings, deadline, userCredentials, cancellationToken));
+			CancellationToken cancellationToken
+		) {
+			using var call = new Streams.Streams.StreamsClient(callInvoker).Append(
+				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken)
+			);
 
 			IWriteResult writeResult;
 			try {
 				await call.RequestStream.WriteAsync(header).ConfigureAwait(false);
 
 				foreach (var e in eventData) {
-					_log.LogTrace(
-						"Appending event to stream - {streamName}@{eventId} {eventType}.",
-						header.Options.StreamIdentifier,
-						e.EventId,
-						e.Type
-					);
-
 					await call.RequestStream.WriteAsync(
 						new AppendReq {
 							ProposedMessage = new AppendReq.Types.ProposedMessage {
@@ -126,14 +119,22 @@ namespace EventStore.Client {
 									{ Constants.Metadata.Type, e.Type },
 									{ Constants.Metadata.ContentType, e.ContentType }
 								}
-							}
+							},
 						}
 					).ConfigureAwait(false);
 				}
+
 				await call.RequestStream.CompleteAsync().ConfigureAwait(false);
 			} catch (Exception ex) {
-				_log.LogError(ex, "Failed to append to stream - {StreamName}.", header.Options.StreamIdentifier);
-				throw;
+				if (ex is not RpcException) {
+					_log.LogError(
+						ex,
+						"Append to stream failed with unexpected error - {streamName}@{expectedRevision}",
+						header.Options.StreamIdentifier,
+						header.Options.Revision
+					);
+					throw;
+				}
 			}
 
 			var response = await call.ResponseAsync.ConfigureAwait(false);
@@ -144,7 +145,8 @@ namespace EventStore.Client {
 					AppendResp.Types.Success.CurrentRevisionOptionOneofCase.NoStream
 						? StreamRevision.None
 						: new StreamRevision(response.Success.CurrentRevision),
-					response.Success.PositionOptionCase == AppendResp.Types.Success.PositionOptionOneofCase.Position
+					response.Success.PositionOptionCase
+				 == AppendResp.Types.Success.PositionOptionOneofCase.Position
 						? new Position(
 							response.Success.Position.CommitPosition,
 							response.Success.Position.PreparePosition
@@ -183,16 +185,19 @@ namespace EventStore.Client {
 							);
 						}
 
-						var expectedStreamState = response.WrongExpectedVersion.ExpectedRevisionOptionCase switch {
-							AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedAny =>
-								StreamState.Any,
-							AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedNoStream =>
-								StreamState.NoStream,
-							AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase
-									.ExpectedStreamExists =>
-								StreamState.StreamExists,
-							_ => StreamState.Any
-						};
+						var expectedStreamState =
+							response.WrongExpectedVersion.ExpectedRevisionOptionCase switch {
+								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase
+										.ExpectedAny =>
+									StreamState.Any,
+								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase
+										.ExpectedNoStream =>
+									StreamState.NoStream,
+								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase
+										.ExpectedStreamExists =>
+									StreamState.StreamExists,
+								_ => StreamState.Any
+							};
 
 						throw new WrongExpectedVersionException(
 							header.Options.StreamIdentifier!,

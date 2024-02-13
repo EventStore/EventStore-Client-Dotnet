@@ -458,11 +458,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 		// Throw an exception after 5 events
 		IEnumerable<EventData> GetEvents() {
 			for (var i = 0; i < 5; i++) {
-				yield return new EventData(
-					Uuid.NewUuid(),
-					"test-event",
-					Encoding.UTF8.GetBytes(i.ToString())
-				);
+				yield return Fixture.CreateTestEvents(1).First();
 			}
 
 			throw new EnumerationFailedException();
