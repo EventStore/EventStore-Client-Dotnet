@@ -124,11 +124,11 @@ namespace EventStore.Client {
 						}
 					).ConfigureAwait(false);
 				}
+
+				await call.RequestStream.CompleteAsync().ConfigureAwait(false);
 			} catch (RpcException) {
 				// Do nothing so that RpcExceptions propagate to the call.ResponseAsync and be translated by the TypedInterceptor
 			}
-
-			await call.RequestStream.CompleteAsync().ConfigureAwait(false);
 
 			var response = await call.ResponseAsync.ConfigureAwait(false);
 
