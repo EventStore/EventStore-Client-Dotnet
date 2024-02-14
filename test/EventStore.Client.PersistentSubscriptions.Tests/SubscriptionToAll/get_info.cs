@@ -1,9 +1,9 @@
 namespace EventStore.Client.PersistentSubscriptions.Tests.SubscriptionToAll;
 
 public class get_info : IClassFixture<get_info.Fixture> {
-	const string GroupName = nameof(get_info);
+	private const string GroupName = nameof(get_info);
 
-	static readonly PersistentSubscriptionSettings Settings = new(
+	private static readonly PersistentSubscriptionSettings Settings = new(
 		resolveLinkTos: true,
 		startFrom: Position.Start,
 		extraStatistics: true,
@@ -16,19 +16,18 @@ public class get_info : IClassFixture<get_info.Fixture> {
 		checkPointLowerBound: 1,
 		checkPointUpperBound: 1,
 		maxSubscriberCount: 500,
-		consumerStrategyName: SystemConsumerStrategies.Pinned
-	);
+		consumerStrategyName: SystemConsumerStrategies.Pinned);
 
-	readonly Fixture _fixture;
+	private readonly Fixture _fixture;
 
 	public get_info(Fixture fixture) => _fixture = fixture;
 
 	[Fact]
 	public async Task throws_when_not_supported() {
-		if (SupportsPSToAll.No)
-			await Assert.ThrowsAsync<NotSupportedException>(
-				async () => { await _fixture.Client.GetInfoToAllAsync(GroupName, userCredentials: TestCredentials.Root); }
-			);
+		if (SupportsPSToAll.No) {
+			await Assert.ThrowsAsync<NotSupportedException>(async () =>
+				await _fixture.Client.GetInfoToAllAsync(GroupName, userCredentials: TestCredentials.Root));
+		}
 	}
 
 	[SupportsPSToAll.Fact]
@@ -100,56 +99,45 @@ public class get_info : IClassFixture<get_info.Fixture> {
 	[SupportsPSToAll.Fact]
 	public async Task throws_with_non_existing_subscription() =>
 		await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
-			async () => {
-				await _fixture.Client.GetInfoToAllAsync(
-					"NonExisting",
-					userCredentials: TestCredentials.Root
-				);
-			}
-		);
+			async () => await _fixture.Client.GetInfoToAllAsync("NonExisting", userCredentials: TestCredentials.Root));
 
 	[SupportsPSToAll.Fact]
 	public async Task throws_with_no_credentials() =>
-		await Assert.ThrowsAsync<AccessDeniedException>(async () => { await _fixture.Client.GetInfoToAllAsync("NonExisting"); });
+		await Assert.ThrowsAsync<AccessDeniedException>(async () =>
+			await _fixture.Client.GetInfoToAllAsync("NonExisting"));
 
 	[SupportsPSToAll.Fact]
 	public async Task throws_with_non_existing_user() =>
-		await Assert.ThrowsAsync<NotAuthenticatedException>(
-			async () => {
-				await _fixture.Client.GetInfoToAllAsync(
-					"NonExisting",
-					userCredentials: TestCredentials.TestBadUser
-				);
-			}
-		);
+		await Assert.ThrowsAsync<NotAuthenticatedException>(async () =>
+			await _fixture.Client.GetInfoToAllAsync("NonExisting", userCredentials: TestCredentials.TestBadUser));
 
 	[SupportsPSToAll.Fact]
 	public async Task returns_result_with_normal_user_credentials() {
-		var result = await _fixture.Client.GetInfoToAllAsync(
-			GroupName,
-			userCredentials: TestCredentials.TestUser1
-		);
+		var result = await _fixture.Client.GetInfoToAllAsync(GroupName, userCredentials: TestCredentials.TestUser1);
 
 		Assert.Equal("$all", result.EventSource);
 	}
 
-	void AssertKeyAndValue(IDictionary<string, long> items, string key) {
+	private void AssertKeyAndValue(IDictionary<string, long> items, string key) {
 		Assert.True(items.ContainsKey(key));
 		Assert.True(items[key] > 0);
 	}
 
 	public class Fixture : EventStoreClientFixture {
+		private EventStorePersistentSubscriptionsClient.PersistentSubscriptionResult? _subscription;
+		private IAsyncEnumerator<PersistentSubscriptionMessage>? _enumerator;
 		public Fixture() : base(noDefaultCredentials: true) { }
 
 		protected override async Task Given() {
 			if (SupportsPSToAll.No)
 				return;
 
-			await Client.CreateToAllAsync(
-				GroupName,
-				get_info.Settings,
-				userCredentials: TestCredentials.Root
-			);
+			await Client.CreateToAllAsync(GroupName, get_info.Settings, userCredentials: TestCredentials.Root);
+
+			foreach (var eventData in CreateTestEvents(20)) {
+				await StreamsClient.AppendToStreamAsync($"test-{Guid.NewGuid():n}", StreamState.NoStream,
+					new[] { eventData }, userCredentials: TestCredentials.Root);
+			}
 		}
 
 		protected override async Task When() {
@@ -157,26 +145,37 @@ public class get_info : IClassFixture<get_info.Fixture> {
 				return;
 
 			var counter = 0;
-			var tcs     = new TaskCompletionSource();
 
-			await Client.SubscribeToAllAsync(
-				GroupName,
-				(s, e, r, ct) => {
-					counter++;
+			_subscription = Client.SubscribeToAll(GroupName, userCredentials: TestCredentials.Root);
+			_enumerator = _subscription.Messages.GetAsyncEnumerator();
 
-					switch (counter) {
-						case 1: s.Nack(PersistentSubscriptionNakEventAction.Park, "Test", e);
-							break;
-						case > 10:
-							tcs.TrySetResult();
-							break;
-					}
-					return Task.CompletedTask;
-				},
-				userCredentials: TestCredentials.Root
-			);
+			while (await _enumerator.MoveNextAsync()) {
+				if (_enumerator.Current is not PersistentSubscriptionMessage.Event (var resolvedEvent, _)) {
+					continue;
+				}
 
-			await tcs.Task;
+				counter++;
+
+				if (counter == 1) {
+					await _subscription.Nack(PersistentSubscriptionNakEventAction.Park, "Test", resolvedEvent);
+				}
+
+				if (counter > 10) {
+					return;
+				}
+			}
+		}
+
+		public override async Task DisposeAsync() {
+			if (_enumerator is not null) {
+				await _enumerator.DisposeAsync();
+			}
+
+			if (_subscription is not null) {
+				await _subscription.DisposeAsync();
+			}
+
+			await base.DisposeAsync();
 		}
 	}
 }

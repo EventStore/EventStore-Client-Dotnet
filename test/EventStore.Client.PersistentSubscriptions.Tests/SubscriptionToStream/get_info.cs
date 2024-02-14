@@ -1,10 +1,10 @@
 namespace EventStore.Client.PersistentSubscriptions.Tests.SubscriptionToStream;
 
 public class get_info : IClassFixture<get_info.Fixture> {
-	const string GroupName  = nameof(get_info);
-	const string StreamName = nameof(get_info);
+	private const string GroupName = nameof(get_info);
+	private const string StreamName = nameof(get_info);
 
-	static readonly PersistentSubscriptionSettings _settings = new(
+	private static readonly PersistentSubscriptionSettings _settings = new(
 		true,
 		StreamPosition.Start,
 		true,
@@ -20,7 +20,7 @@ public class get_info : IClassFixture<get_info.Fixture> {
 		SystemConsumerStrategies.RoundRobin
 	);
 
-	readonly Fixture _fixture;
+	private readonly Fixture _fixture;
 
 	public get_info(Fixture fixture) => _fixture = fixture;
 
@@ -32,11 +32,7 @@ public class get_info : IClassFixture<get_info.Fixture> {
 	[Theory]
 	[MemberData(nameof(AllowedUsers))]
 	public async Task returns_expected_result(UserCredentials credentials) {
-		var result = await _fixture.Client.GetInfoToStreamAsync(
-			StreamName,
-			GroupName,
-			userCredentials: credentials
-		);
+		var result = await _fixture.Client.GetInfoToStreamAsync(StreamName, GroupName, userCredentials: credentials);
 
 		Assert.Equal(StreamName, result.EventSource);
 		Assert.Equal(GroupName, result.GroupName);
@@ -145,54 +141,58 @@ public class get_info : IClassFixture<get_info.Fixture> {
 		Assert.NotNull(result);
 	}
 
-	void AssertKeyAndValue(IDictionary<string, long> items, string key) {
+	private void AssertKeyAndValue(IDictionary<string, long> items, string key) {
 		Assert.True(items.ContainsKey(key));
 		Assert.True(items[key] > 0);
 	}
 
 	public class Fixture : EventStoreClientFixture {
+		private EventStorePersistentSubscriptionsClient.PersistentSubscriptionResult? _subscription;
+		private IAsyncEnumerator<PersistentSubscriptionMessage>? _enumerator;
 		public Fixture() : base(noDefaultCredentials: true) { }
 
 		protected override Task Given() =>
-			Client.CreateToStreamAsync(
-				groupName: GroupName,
-				streamName: StreamName,
-				settings: _settings,
-				userCredentials: TestCredentials.Root
-			);
+			Client.CreateToStreamAsync(groupName: GroupName, streamName: StreamName, settings: _settings,
+				userCredentials: TestCredentials.Root);
 
 		protected override async Task When() {
 			var counter = 0;
-			var tcs     = new TaskCompletionSource();
+			_subscription = Client.SubscribeToStream(StreamName, GroupName, userCredentials: TestCredentials.Root);
+			_enumerator = _subscription.Messages.GetAsyncEnumerator();
 
-			await Client.SubscribeToStreamAsync(
-				StreamName,
-				GroupName,
-				(s, e, r, ct) => {
-					counter++;
+			for (var i = 0; i < 15; i++) {
+				await StreamsClient.AppendToStreamAsync(StreamName, StreamState.Any,
+					new[] { new EventData(Uuid.NewUuid(), "test-event", ReadOnlyMemory<byte>.Empty) },
+					userCredentials: TestCredentials.Root);
+			}
 
-					if (counter == 1)
-						s.Nack(PersistentSubscriptionNakEventAction.Park, "Test", e);
+			while (await _enumerator.MoveNextAsync()) {
+				if (_enumerator.Current is not PersistentSubscriptionMessage.Event(var resolvedEvent, _)) {
+					continue;
+				}
 
-					if (counter > 10)
-						tcs.TrySetResult();
+				counter++;
 
-					return Task.CompletedTask;
-				},
-				userCredentials: TestCredentials.Root
-			);
+				if (counter == 1) {
+					await _subscription.Nack(PersistentSubscriptionNakEventAction.Park, "Test", resolvedEvent);
+				}
 
-			for (var i = 0; i < 15; i++)
-				await StreamsClient.AppendToStreamAsync(
-					StreamName,
-					StreamState.Any,
-					new[] {
-						new EventData(Uuid.NewUuid(), "test-event", ReadOnlyMemory<byte>.Empty)
-					},
-					userCredentials: TestCredentials.Root
-				);
+				if (counter > 10) {
+					return;
+				}
+			}
+		}
 
-			await tcs.Task;
+		public override async Task DisposeAsync() {
+			if (_enumerator is not null) {
+				await _enumerator.DisposeAsync();
+			}
+
+			if (_subscription is not null) {
+				await _subscription.DisposeAsync();
+			}
+
+			await base.DisposeAsync();
 		}
 	}
 }
