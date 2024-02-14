@@ -46,7 +46,10 @@ jobs:
         framework: [ net8.0 ]
     services:
       esdb:
-        image: ghcr.io/eventstore/eventstore:lts
+        image: docker.eventstore.com/eventstore-ce/eventstoredb-ce:lts
+        credentials:
+          username: ${{ secrets.CLOUDSMITH_CICD_USER }}
+          password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
         env:
           EVENTSTORE_INSECURE: true
           EVENTSTORE_MEM_DB: false
