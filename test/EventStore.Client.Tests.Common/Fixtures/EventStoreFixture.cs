@@ -5,6 +5,7 @@ using Ductus.FluentDocker.Services.Extensions;
 using EventStore.Client.Tests.FluentDocker;
 using Serilog;
 using static System.TimeSpan;
+using Semver;
 
 namespace EventStore.Client.Tests;
 
@@ -24,7 +25,7 @@ public record EventStoreFixtureOptions(EventStoreClientSettings ClientSettings, 
 
 	public EventStoreFixtureOptions WithoutDefaultCredentials() =>
 		this with { ClientSettings = ClientSettings.With(x => x.DefaultCredentials = null) };
-	
+
 	public EventStoreFixtureOptions WithMaxAppendSize(uint maxAppendSize) =>
 		this with { Environment = Environment.With(x => x["EVENTSTORE_MAX_APPEND_SIZE"] = $"{maxAppendSize}") };
 }
@@ -64,12 +65,12 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	List<Guid> TestRuns { get; } = new();
 
 	public ILogger Log => Logger;
-	
+
 	public ITestService             Service { get; }
 	public EventStoreFixtureOptions Options { get; }
 	public Faker                    Faker   { get; } = new Faker();
 
-	public Version EventStoreVersion               { get; private set; } = null!;
+	public SemVersion EventStoreVersion               { get; private set; } = null!;
 	public bool    EventStoreHasLastStreamPosition { get; private set; }
 
 	public EventStoreClient                        Streams       { get; private set; } = null!;
@@ -80,7 +81,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 
 	public Func<Task> OnSetup    { get; init; } = () => Task.CompletedTask;
 	public Func<Task> OnTearDown { get; init; } = () => Task.CompletedTask;
-	
+
 	/// <summary>
 	/// must test this
 	/// </summary>
@@ -96,7 +97,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 			DefaultCredentials       = Options.ClientSettings.DefaultCredentials,
 			DefaultDeadline          = Options.ClientSettings.DefaultDeadline
 		};
-	
+
 	InterlockedBoolean WarmUpCompleted  { get; } = new InterlockedBoolean();
 	SemaphoreSlim      WarmUpGatekeeper { get; } = new(1, 1);
 
@@ -107,15 +108,15 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 		Logger.Information(">>> Test Run {TestRunId} {Operation} <<<", testRunId, "starting");
 		Service.ReportStatus();
 	}
-	
+
 	public async Task InitializeAsync() {
 		await Service.Start();
 
 		EventStoreVersion               = GetEventStoreVersion();
 		EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
-		
+
 		await WarmUpGatekeeper.WaitAsync();
-		
+
 		try {
 			if (!WarmUpCompleted.CurrentValue) {
 				Logger.Warning("*** Warmup started ***");
@@ -127,9 +128,9 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 					InitClient<EventStorePersistentSubscriptionsClient>(async x => Subscriptions = await x.WarmUp()),
 					InitClient<EventStoreOperationsClient>(async x => Operations = await x.WarmUp())
 				);
-				
+
 				WarmUpCompleted.EnsureCalledOnce();
-				
+
 				Logger.Warning("*** Warmup completed ***");
 			}
 			else {
@@ -139,9 +140,9 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 		finally {
 			WarmUpGatekeeper.Release();
 		}
-		
+
 		await OnSetup();
-		
+
 		return;
 
 		async Task<T> InitClient<T>(Func<T, Task> action, bool execute = true) where T : EventStoreClientBase {
@@ -150,9 +151,9 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 			await action(client);
 			return client;
 		}
-		
-		
-		static Version GetEventStoreVersion() {
+
+
+		static SemVersion GetEventStoreVersion() {
 			const string versionPrefix = "EventStoreDB version";
 
 			using var cancellator = new CancellationTokenSource(FromSeconds(30));
@@ -165,9 +166,12 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 
 			using var log = eventstore.Logs(true, cancellator.Token);
 			foreach (var line in log.ReadToEnd())
-				if (line.StartsWith(versionPrefix) &&
-				    Version.TryParse(line[(versionPrefix.Length + 1)..].Split(' ')[0], out var version))
-					return version;
+				if (line.StartsWith(versionPrefix)) {
+					var versionString = line[(versionPrefix.Length + 1)..].Split(' ')[0];
+					if (SemVersion.TryParse(versionString, SemVersionStyles.Strict, out var version)) {
+						return version;
+					}
+				}
 
 			throw new InvalidOperationException("Could not determine server version.");
 		}

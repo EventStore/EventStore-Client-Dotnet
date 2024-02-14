@@ -1,18 +1,20 @@
 ﻿using System.Net;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
 using Ductus.FluentDocker.Services;
 using Ductus.FluentDocker.Services.Extensions;
 using Polly;
+using Semver;
 
 namespace EventStore.Client.Tests;
 
 public class EventStoreTestServer : IEventStoreTestServer {
 	static readonly string ContainerName = "es-client-dotnet-test";
 
-	static   Version?          _version;
+	static   SemVersion?       _version;
 	readonly IContainerService _eventStore;
 	readonly string            _hostCertificatePath;
 	readonly HttpClient        _httpClient;
@@ -69,7 +71,7 @@ public class EventStoreTestServer : IEventStoreTestServer {
 			.Build();
 	}
 
-	public static Version Version => _version ??= GetVersion();
+	public static SemVersion Version => _version ??= GetVersion();
 
 	public async Task StartAsync(CancellationToken cancellationToken = default) {
 		_eventStore.Start();
@@ -99,7 +101,7 @@ public class EventStoreTestServer : IEventStoreTestServer {
         return new ValueTask(Task.CompletedTask);
 	}
 
-	static Version GetVersion() {
+	static SemVersion GetVersion() {
 		const string versionPrefix = "EventStoreDB version";
 
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
@@ -111,9 +113,12 @@ public class EventStoreTestServer : IEventStoreTestServer {
 
 		using var log = eventstore.Logs(true, cts.Token);
 		foreach (var line in log.ReadToEnd())
-			if (line.StartsWith(versionPrefix) &&
-			    Version.TryParse(line[(versionPrefix.Length + 1)..].Split(' ')[0], out var version))
-				return version;
+			if (line.StartsWith(versionPrefix)) {
+				var versionString = line[(versionPrefix.Length + 1)..].Split(' ')[0];
+				if (SemVersion.TryParse(versionString, SemVersionStyles.Strict, out var version)) {
+					return version;
+				}
+			}
 
 		throw new InvalidOperationException("Could not determine server version.");
 	}
