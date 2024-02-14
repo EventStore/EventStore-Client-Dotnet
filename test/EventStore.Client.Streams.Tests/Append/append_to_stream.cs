@@ -449,8 +449,8 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 		);
 
 		// No more events should be appended to the stream
-		var result = Fixture.Streams.ReadStreamAsync(Direction.Forwards, streamName, StreamPosition.Start);
-		var eventsCount = await result.CountAsync();
+		var eventsCount = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, streamName, StreamPosition.Start)
+			.CountAsync();
 		eventsCount.ShouldBe(initialNumberOfEvents, "No more events should be appended to the stream");
 
 		return;

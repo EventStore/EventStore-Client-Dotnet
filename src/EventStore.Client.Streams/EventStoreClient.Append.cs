@@ -104,11 +104,8 @@ namespace EventStore.Client {
 					EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken)
 					);
 
-			IWriteResult writeResult;
-
 			try {
 				await call.RequestStream.WriteAsync(header).ConfigureAwait(false);
-
 				foreach (var e in eventData) {
 					await call.RequestStream.WriteAsync(
 						new AppendReq {
@@ -126,105 +123,113 @@ namespace EventStore.Client {
 				}
 
 				await call.RequestStream.CompleteAsync().ConfigureAwait(false);
-			} catch (RpcException) {
-				// Do nothing so that RpcExceptions propagate to the call.ResponseAsync and be translated by the TypedInterceptor
+			} catch (InvalidOperationException exc) {
+				_log.LogDebug(
+					exc,
+					"Got InvalidOperationException when appending events to stream - {streamName}. This is perfectly normal if the connection was closed from the server-side.",
+					header.Options.StreamIdentifier
+				);
+			} catch (RpcException exc) {
+				_log.LogDebug(
+					exc,
+					"Got RpcException when appending events to stream - {streamName}. This is perfectly normal if the connection was closed from the server-side.",
+					header.Options.StreamIdentifier
+				);
 			}
 
 			var response = await call.ResponseAsync.ConfigureAwait(false);
 
-			if (response.Success != null) {
-				writeResult = new SuccessResult(
-					response.Success.CurrentRevisionOptionCase ==
-					AppendResp.Types.Success.CurrentRevisionOptionOneofCase.NoStream
-						? StreamRevision.None
-						: new StreamRevision(response.Success.CurrentRevision),
-					response.Success.PositionOptionCase
-				 == AppendResp.Types.Success.PositionOptionOneofCase.Position
-						? new Position(
-							response.Success.Position.CommitPosition,
-							response.Success.Position.PreparePosition
-						)
-						: default
-				);
+			if (response.Success != null)
+				return HandleSuccessAppend(response, header);
 
-				_log.LogDebug(
-					"Append to stream succeeded - {streamName}@{logPosition}/{nextExpectedVersion}.",
-					header.Options.StreamIdentifier,
-					writeResult.LogPosition,
-					writeResult.NextExpectedStreamRevision
-				);
-			} else {
-				if (response.WrongExpectedVersion != null) {
-					var actualStreamRevision =
-						response.WrongExpectedVersion.CurrentRevisionOptionCase switch {
-							AppendResp.Types.WrongExpectedVersion.CurrentRevisionOptionOneofCase
-									.CurrentNoStream =>
-								StreamRevision.None,
-							_ => new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
-						};
+			if (response.WrongExpectedVersion == null)
+				throw new InvalidOperationException("The operation completed with an unexpected result.");
 
-					_log.LogDebug(
-						"Append to stream failed with Wrong Expected Version - {streamName}/{expectedRevision}/{currentRevision}",
-						header.Options.StreamIdentifier,
-						new StreamRevision(header.Options.Revision),
-						actualStreamRevision
-					);
-
-					if (operationOptions.ThrowOnAppendFailure) {
-						if (response.WrongExpectedVersion.ExpectedRevisionOptionCase == AppendResp.Types
-							    .WrongExpectedVersion.ExpectedRevisionOptionOneofCase
-							    .ExpectedRevision) {
-							throw new WrongExpectedVersionException(
-								header.Options.StreamIdentifier!,
-								new StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
-								actualStreamRevision
-							);
-						}
-
-						var expectedStreamState =
-							response.WrongExpectedVersion.ExpectedRevisionOptionCase switch {
-								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase
-										.ExpectedAny =>
-									StreamState.Any,
-								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase
-										.ExpectedNoStream =>
-									StreamState.NoStream,
-								AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase
-										.ExpectedStreamExists =>
-									StreamState.StreamExists,
-								_ => StreamState.Any
-							};
-
-						throw new WrongExpectedVersionException(
-							header.Options.StreamIdentifier!,
-							expectedStreamState,
-							actualStreamRevision
-						);
-					}
-
-					if (response.WrongExpectedVersion.ExpectedRevisionOptionCase == AppendResp.Types
-						    .WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedRevision) {
-						writeResult = new WrongExpectedVersionResult(
-							header.Options.StreamIdentifier!,
-							new StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
-							actualStreamRevision
-						);
-					} else {
-						writeResult = new WrongExpectedVersionResult(
-							header.Options.StreamIdentifier!,
-							StreamRevision.None,
-							actualStreamRevision
-						);
-					}
-				} else {
-					throw new InvalidOperationException("The operation completed with an unexpected result.");
-				}
-			}
-
-
-			return writeResult;
+			return HandleWrongExpectedRevision(response, header, operationOptions);
 		}
 
+		private IWriteResult HandleSuccessAppend(AppendResp response, AppendReq header) {
+			var currentRevision = response.Success.CurrentRevisionOptionCase ==
+			                      AppendResp.Types.Success.CurrentRevisionOptionOneofCase.NoStream
+				? StreamRevision.None
+				: new StreamRevision(response.Success.CurrentRevision);
+
+			var position = response.Success.PositionOptionCase ==
+			               AppendResp.Types.Success.PositionOptionOneofCase.Position
+				? new Position(response.Success.Position.CommitPosition, response.Success.Position.PreparePosition)
+				: default;
+
+			_log.LogDebug(
+				"Append to stream succeeded - {streamName}@{logPosition}/{nextExpectedVersion}.",
+				header.Options.StreamIdentifier,
+				position,
+				currentRevision);
+
+			return new SuccessResult(currentRevision, position);
+		}
+
+		private IWriteResult HandleWrongExpectedRevision(
+			AppendResp response, AppendReq header, EventStoreClientOperationOptions operationOptions
+		) {
+			var actualStreamRevision =
+				response.WrongExpectedVersion.CurrentRevisionOptionCase switch {
+					AppendResp.Types.WrongExpectedVersion.CurrentRevisionOptionOneofCase
+							.CurrentNoStream =>
+						StreamRevision.None,
+					_ => new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
+				};
+
+			_log.LogDebug(
+				"Append to stream failed with Wrong Expected Version - {streamName}/{expectedRevision}/{currentRevision}",
+				header.Options.StreamIdentifier,
+				new StreamRevision(header.Options.Revision),
+				actualStreamRevision
+			);
+
+			if (operationOptions.ThrowOnAppendFailure) {
+				if (response.WrongExpectedVersion.ExpectedRevisionOptionCase == AppendResp.Types
+					    .WrongExpectedVersion.ExpectedRevisionOptionOneofCase
+					    .ExpectedRevision) {
+					throw new WrongExpectedVersionException(
+						header.Options.StreamIdentifier!,
+						new StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
+						actualStreamRevision
+					);
+				}
+
+				var expectedStreamState =
+					response.WrongExpectedVersion.ExpectedRevisionOptionCase switch {
+						AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase
+								.ExpectedAny =>
+							StreamState.Any,
+						AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase
+								.ExpectedNoStream =>
+							StreamState.NoStream,
+						AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase
+								.ExpectedStreamExists =>
+							StreamState.StreamExists,
+						_ => StreamState.Any
+					};
+
+				throw new WrongExpectedVersionException(
+					header.Options.StreamIdentifier!,
+					expectedStreamState,
+					actualStreamRevision
+				);
+			}
+
+			var expectedRevision = response.WrongExpectedVersion.ExpectedRevisionOptionCase
+			                    == AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase
+				                       .ExpectedRevision
+				? new StreamRevision(response.WrongExpectedVersion.ExpectedRevision)
+				: StreamRevision.None;
+
+			return new WrongExpectedVersionResult(
+				header.Options.StreamIdentifier!,
+				expectedRevision,
+				actualStreamRevision
+			);
+		}
 
 		private class StreamAppender : IDisposable {
 			private readonly EventStoreClientSettings                                       _settings;
