@@ -139,6 +139,7 @@ public class ReconnectionFixture()
 		}
 	}
 	
+	[Obsolete]
 	async Task SubscribeToStream(
 		string stream, 
 		StreamPosition? checkpoint, 
