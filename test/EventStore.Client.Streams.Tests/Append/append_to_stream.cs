@@ -425,47 +425,6 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 	}
 
 	[Fact]
-	public async Task should_not_append_to_stream_when_error_thrown_midway() {
-		var       streamName            = Fixture.GetStreamName();
-		const int initialNumberOfEvents = 5;
-
-		// Append some events before
-		await Fixture.Streams.AppendToStreamAsync(
-			streamName,
-			StreamState.Any,
-			Fixture.CreateTestEvents(initialNumberOfEvents)
-		);
-
-		// Force regular append by passing credentials
-		await Assert.ThrowsAsync<EnumerationFailedException>(
-			async () =>{
-				await Fixture.Streams.AppendToStreamAsync(
-					streamName,
-					StreamState.StreamExists,
-					GetEvents(),
-					userCredentials: new UserCredentials("admin", "changeit")
-				);
-			}
-		);
-
-		// No more events should be appended to the stream
-		var eventsCount = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, streamName, StreamPosition.Start)
-			.CountAsync();
-		eventsCount.ShouldBe(initialNumberOfEvents, "No more events should be appended to the stream");
-
-		return;
-
-		// Throw an exception after 5 events
-		IEnumerable<EventData> GetEvents() {
-			for (var i = 0; i < 5; i++) {
-				yield return Fixture.CreateTestEvents(1).First();
-			}
-
-			throw new EnumerationFailedException();
-		}
-	}
-
-	[Fact]
 	public async Task with_timeout_stream_revision_fails_when_operation_expired() {
 		var stream = Fixture.GetStreamName();
 
@@ -480,36 +439,39 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		ex.StatusCode.ShouldBe(StatusCode.DeadlineExceeded);
 	}
-	
+
 	[Fact]
 	public async Task when_events_enumerator_throws_the_write_does_not_succeed() {
 		var streamName = Fixture.GetStreamName();
 
 		await Fixture.Streams
-			.AppendToStreamAsync(streamName, StreamRevision.None, GetEvents())
+			.AppendToStreamAsync(
+				streamName,
+				StreamRevision.None,
+				GetEvents(),
+				userCredentials: new UserCredentials(TestCredentials.Root.Username!, TestCredentials.Root.Password!)
+			)
 			.ShouldThrowAsync<EnumerationFailedException>();
 
-		var result = Fixture.Streams.ReadStreamAsync(Direction.Forwards, streamName, StreamPosition.Start);
-
-		var state = await result.ReadState;
+		var state = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, streamName, StreamPosition.Start)
+			.ReadState;
 
 		state.ShouldBe(ReadState.StreamNotFound);
-		
+
 		return;
 
 		IEnumerable<EventData> GetEvents() {
-			var i = 0;
-			foreach (var evt in Fixture.CreateTestEvents(5)) {
-				if (i++ % 3 == 0)
+			for (var i = 0; i < 5; i++) {
+				if (i % 3 == 0)
 					throw new EnumerationFailedException();
 
-				yield return evt;
+				yield return Fixture.CreateTestEvents(1).First();
 			}
 		}
 	}
 
 	class EnumerationFailedException : Exception { }
-	
+
 	public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
 		yield return new object?[] { StreamState.Any };
 		yield return new object?[] { ulong.MaxValue - 1UL };

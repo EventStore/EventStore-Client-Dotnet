@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using static EventStore.Client.Constants;
@@ -55,7 +54,7 @@ class TypedExceptionInterceptor : Interceptor {
 		var response = continuation(context);
 
 		return new AsyncClientStreamingCall<TRequest, TResponse>(
-			response.RequestStream,
+			response.RequestStream.Apply(ConvertRpcException),
 			response.ResponseAsync.Apply(ConvertRpcException),
 			response.ResponseHeadersAsync,
 			response.GetStatus,
@@ -103,7 +102,15 @@ static class RpcExceptionConversionExtensions {
 
 	public static Task<TResponse> Apply<TResponse>(this Task<TResponse> task, Func<RpcException, Exception> convertException) => 
 		task.ContinueWith(t => t.Exception?.InnerException is RpcException ex ? throw convertException(ex) : t.Result);
-	
+
+	public static IClientStreamWriter<TRequest> Apply<TRequest>(
+		this IClientStreamWriter<TRequest> writer, Func<RpcException, Exception> convertException
+	) =>
+		new ExceptionConverterStreamWriter<TRequest>(writer, convertException);
+
+	public static Task Apply(this Task task, Func<RpcException, Exception> convertException) =>
+		task.ContinueWith(t => t.Exception?.InnerException is RpcException ex ? throw convertException(ex) : t);
+
 	public static AccessDeniedException ToAccessDeniedException(this RpcException exception) => 
 		new(exception.Message, exception);
 
@@ -141,4 +148,18 @@ class ExceptionConverterStreamReader<TResponse>(IAsyncStreamReader<TResponse> re
 			throw convertException(ex);
 		}
 	}
+}
+
+class ExceptionConverterStreamWriter<TRequest>(
+	IClientStreamWriter<TRequest> writer,
+	Func<RpcException, Exception> convertException
+)
+	: IClientStreamWriter<TRequest> {
+	public WriteOptions? WriteOptions {
+		get => writer.WriteOptions;
+		set => writer.WriteOptions = value;
+	}
+
+	public Task WriteAsync(TRequest message) => writer.WriteAsync(message).Apply(convertException);
+	public Task CompleteAsync() => writer.CompleteAsync().Apply(convertException);
 }

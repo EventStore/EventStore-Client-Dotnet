@@ -92,50 +92,37 @@ namespace EventStore.Client {
 		}
 
 		private async ValueTask<IWriteResult> AppendToStreamInternal(
-				CallInvoker callInvoker,
-				AppendReq header,
-				IEnumerable<EventData> eventData,
-				EventStoreClientOperationOptions operationOptions,
-				TimeSpan? deadline,
-				UserCredentials? userCredentials,
-				CancellationToken cancellationToken
-				) {
+			CallInvoker callInvoker,
+			AppendReq header,
+			IEnumerable<EventData> eventData,
+			EventStoreClientOperationOptions operationOptions,
+			TimeSpan? deadline,
+			UserCredentials? userCredentials,
+			CancellationToken cancellationToken
+		) {
 			using var call = new Streams.Streams.StreamsClient(callInvoker).Append(
-					EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken)
-					);
+				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken)
+			);
 
-			try {
-				await call.RequestStream.WriteAsync(header).ConfigureAwait(false);
-				foreach (var e in eventData) {
-					await call.RequestStream.WriteAsync(
-						new AppendReq {
-							ProposedMessage = new AppendReq.Types.ProposedMessage {
-								Id             = e.EventId.ToDto(),
-								Data           = ByteString.CopyFrom(e.Data.Span),
-								CustomMetadata = ByteString.CopyFrom(e.Metadata.Span),
-								Metadata = {
-									{ Constants.Metadata.Type, e.Type },
-									{ Constants.Metadata.ContentType, e.ContentType }
-								}
-							},
-						}
-					).ConfigureAwait(false);
-				}
+			await call.RequestStream.WriteAsync(header).ConfigureAwait(false);
 
-				await call.RequestStream.CompleteAsync().ConfigureAwait(false);
-			} catch (InvalidOperationException exc) {
-				_log.LogDebug(
-					exc,
-					"Got InvalidOperationException when appending events to stream - {streamName}. This is perfectly normal if the connection was closed from the server-side.",
-					header.Options.StreamIdentifier
-				);
-			} catch (RpcException exc) {
-				_log.LogDebug(
-					exc,
-					"Got RpcException when appending events to stream - {streamName}. This is perfectly normal if the connection was closed from the server-side.",
-					header.Options.StreamIdentifier
-				);
+			foreach (var e in eventData) {
+				await call.RequestStream.WriteAsync(
+					new AppendReq {
+						ProposedMessage = new AppendReq.Types.ProposedMessage {
+							Id             = e.EventId.ToDto(),
+							Data           = ByteString.CopyFrom(e.Data.Span),
+							CustomMetadata = ByteString.CopyFrom(e.Metadata.Span),
+							Metadata = {
+								{ Constants.Metadata.Type, e.Type },
+								{ Constants.Metadata.ContentType, e.ContentType }
+							}
+						},
+					}
+				).ConfigureAwait(false);
 			}
+
+			await call.RequestStream.CompleteAsync().ConfigureAwait(false);
 
 			var response = await call.ResponseAsync.ConfigureAwait(false);
 
