@@ -23,7 +23,7 @@ public static class GlobalEnvironment {
 			configuration.EnsureValue("ES_USE_EXTERNAL_SERVER", "false");
 
 			configuration.EnsureValue("ES_DOCKER_REGISTRY", "ghcr.io/eventstore/eventstore");
-			configuration.EnsureValue("ES_DOCKER_TAG", "latest");
+			configuration.EnsureValue("ES_DOCKER_TAG", "ci");
 			configuration.EnsureValue("ES_DOCKER_IMAGE", $"{configuration["ES_DOCKER_REGISTRY"]}:{configuration["ES_DOCKER_TAG"]}");
 
 			configuration.EnsureValue("EVENTSTORE_MEM_DB", "false");

@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Net.Http;
-using System.Text.RegularExpressions;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
@@ -102,7 +101,6 @@ public class EventStoreTestServer : IEventStoreTestServer {
 
 	static Version GetVersion() {
 		const string versionPrefix = "EventStoreDB version";
-		var          versionRegex  = new Regex(@"\d+(\.\d+)*", RegexOptions.Compiled);
 
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 		using var eventstore = new Builder().UseContainer()
@@ -112,14 +110,20 @@ public class EventStoreTestServer : IEventStoreTestServer {
 			.Start();
 
 		using var log = eventstore.Logs(true, cts.Token);
-		foreach (var line in log.ReadToEnd())
-			if (line.StartsWith(versionPrefix)) {
-				var versionMatch = versionRegex.Match(line);
-				if (versionMatch.Success && Version.TryParse(versionMatch.Value, out var version))
-					return version;
+		foreach (var line in log.ReadToEnd()) {
+			if (line.StartsWith(versionPrefix) &&
+			    Version.TryParse(new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()), out var version)) {
+				return version;
 			}
+		}
 
 		throw new InvalidOperationException("Could not determine server version.");
+
+		IEnumerable<char> ReadVersion(string s) {
+			foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) {
+				yield return c;
+			}
+		}
 	}
 
 	void VerifyCertificatesExist() {

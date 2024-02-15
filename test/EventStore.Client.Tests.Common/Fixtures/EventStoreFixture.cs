@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text.RegularExpressions;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Services.Extensions;
@@ -155,7 +154,6 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 		
 		static Version GetEventStoreVersion() {
 			const string versionPrefix = "EventStoreDB version";
-			var          versionRegex  = new Regex(@"\d+(\.\d+)*", RegexOptions.Compiled);
 
 			using var cancellator = new CancellationTokenSource(FromSeconds(30));
 			using var eventstore = new Builder()
@@ -166,14 +164,20 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 				.Start();
 
 			using var log = eventstore.Logs(true, cancellator.Token);
-			foreach (var line in log.ReadToEnd())
-				if (line.StartsWith(versionPrefix)) {
-					var versionMatch = versionRegex.Match(line);
-					if (versionMatch.Success && Version.TryParse(versionMatch.Value, out var version))
-						return version;
+			foreach (var line in log.ReadToEnd()) {
+				if (line.StartsWith(versionPrefix) &&
+				    Version.TryParse(new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()), out var version)) {
+					return version;
 				}
+			}
 
 			throw new InvalidOperationException("Could not determine server version.");
+
+			IEnumerable<char> ReadVersion(string s) {
+				foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) {
+					yield return c;
+				}
+			}
 		}
 	}
 
