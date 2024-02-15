@@ -1,6 +1,5 @@
 namespace EventStore.Client.PersistentSubscriptions.Tests.SubscriptionToStream;
 
-[Obsolete]
 public class connect_to_existing_with_start_from_not_set_and_events_in_it
 	: IClassFixture<connect_to_existing_with_start_from_not_set_and_events_in_it.Fixture> {
 	private const string Group = "startinbeginning1";

@@ -6,7 +6,7 @@ namespace EventStore.Client {
 	/// </summary>
 	public sealed class PersistentSubscriptionSettings {
 		/// <summary>
-		/// Whether the <see cref="PersistentSubscription"></see> should resolve linkTo events to their linked events.
+		/// Whether the <see cref="EventStorePersistentSubscriptionsClient.PersistentSubscriptionResult"></see> should resolve linkTo events to their linked events.
 		/// </summary>
 		public readonly bool ResolveLinkTos;
 

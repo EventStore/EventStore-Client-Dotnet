@@ -56,13 +56,7 @@ namespace EventStore.Client {
 		/// The <see cref="TimeSpan"/> after which an attempt to discover gossip will fail.
 		/// </summary>
 		public TimeSpan GossipTimeout { get; set; }
-
-		/// <summary>
-		/// Whether or not to use HTTPS when communicating via gossip.
-		/// </summary>
-		[Obsolete]
-		public bool GossipOverHttps { get; set; } = true;
-
+		
 		/// <summary>
 		/// The polling interval used to discover the <see cref="EndPoint"/>.
 		/// </summary>

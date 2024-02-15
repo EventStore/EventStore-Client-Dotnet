@@ -61,16 +61,6 @@ namespace EventStore.Client {
 		/// Updates a persistent subscription.
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
-		[Obsolete("UpdateAsync is no longer supported. Use UpdateToStreamAsync instead.", false)]
-		public Task UpdateAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) => 
-			UpdateToStreamAsync(streamName, groupName, settings, deadline, userCredentials, cancellationToken);
-
-		/// <summary>
-		/// Updates a persistent subscription.
-		/// </summary>
-		/// <exception cref="ArgumentNullException"></exception>
 		public async Task UpdateToStreamAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {

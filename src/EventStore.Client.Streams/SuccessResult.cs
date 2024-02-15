@@ -6,9 +6,6 @@ namespace EventStore.Client {
 	/// </summary>
 	public readonly struct SuccessResult : IWriteResult, IEquatable<SuccessResult> {
 		/// <inheritdoc />
-		public long NextExpectedVersion { get; }
-
-		/// <inheritdoc />
 		public Position LogPosition { get; }
 
 		/// <inheritdoc />
@@ -22,7 +19,7 @@ namespace EventStore.Client {
 		public SuccessResult(StreamRevision nextExpectedStreamRevision, Position logPosition) {
 			NextExpectedStreamRevision = nextExpectedStreamRevision;
 			LogPosition = logPosition;
-			NextExpectedVersion = nextExpectedStreamRevision.ToInt64();
+			nextExpectedStreamRevision.ToInt64();
 		}
 
 		/// <inheritdoc />
@@ -49,7 +46,7 @@ namespace EventStore.Client {
 		public static bool operator !=(SuccessResult left, SuccessResult right) => !left.Equals(right);
 
 		/// <inheritdoc />
-		public override int GetHashCode() => HashCode.Hash.Combine(NextExpectedVersion).Combine(LogPosition);
+		public override int GetHashCode() => HashCode.Hash.Combine(LogPosition);
 
 		/// <inheritdoc />
 		public override string ToString() => $"{NextExpectedStreamRevision}:{LogPosition}";

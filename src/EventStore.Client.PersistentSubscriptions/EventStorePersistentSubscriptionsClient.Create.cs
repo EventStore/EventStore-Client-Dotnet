@@ -124,19 +124,7 @@ namespace EventStore.Client {
 			await CreateInternalAsync(streamName, groupName, null, settings, deadline, userCredentials,
 					cancellationToken)
 				.ConfigureAwait(false);
-		
-		/// <summary>
-		/// Creates a persistent subscription.
-		/// </summary>
-		/// <exception cref="ArgumentNullException"></exception>
-		[Obsolete("CreateAsync is no longer supported. Use CreateToStreamAsync instead.", false)]
-		public async Task CreateAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) =>
-			await CreateInternalAsync(streamName, groupName, null, settings, deadline, userCredentials,
-					cancellationToken)
-				.ConfigureAwait(false);
-		
+
 		/// <summary>
 		/// Creates a filtered persistent subscription to $all.
 		/// </summary>

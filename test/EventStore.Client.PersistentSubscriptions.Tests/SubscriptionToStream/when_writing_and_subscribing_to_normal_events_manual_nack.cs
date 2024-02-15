@@ -1,6 +1,5 @@
 namespace EventStore.Client.PersistentSubscriptions.Tests.SubscriptionToStream;
 
-[Obsolete]
 public class when_writing_and_subscribing_to_normal_events_manual_nack
 	: IClassFixture<when_writing_and_subscribing_to_normal_events_manual_nack.Fixture> {
 	private const string Stream = nameof(when_writing_and_subscribing_to_normal_events_manual_nack);
