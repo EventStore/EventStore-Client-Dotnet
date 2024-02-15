@@ -14,10 +14,8 @@ public class update_existing_with_subscribers : IClassFixture<update_existing_wi
 			}
 		}).WithTimeout();
 
-#if NET
 		Assert.Equal(Stream, ex.StreamName);
 		Assert.Equal(Group, ex.GroupName);
-#endif
 	}
 
 	public class Fixture : EventStoreClientFixture {

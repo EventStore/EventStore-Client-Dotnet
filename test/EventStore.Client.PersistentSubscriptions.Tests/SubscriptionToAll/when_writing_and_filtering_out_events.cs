@@ -16,8 +16,6 @@ public class when_writing_and_filtering_out_events : IClassFixture<when_writing_
 	public class Fixture : EventStoreClientFixture {
 		private readonly List<ResolvedEvent> _appearedEvents;
 
-		public EventStorePersistentSubscriptionsClient.PersistentSubscriptionResult? Subscription { get; private set; }
-
 		public Fixture() {
 			Events = CreateTestEvents(10).ToArray();
 			_appearedEvents = new();
@@ -84,14 +82,6 @@ public class when_writing_and_filtering_out_events : IClassFixture<when_writing_
 				await StreamsClient.AppendToStreamAsync("filtered-out-stream-" + Guid.NewGuid(), StreamState.Any,
 					new[] { e });
 			}
-		}
-
-		public override async Task DisposeAsync() {
-			if (Subscription is not null) {
-				await Subscription.DisposeAsync();
-			}
-
-			await base.DisposeAsync();
 		}
 	}
 }

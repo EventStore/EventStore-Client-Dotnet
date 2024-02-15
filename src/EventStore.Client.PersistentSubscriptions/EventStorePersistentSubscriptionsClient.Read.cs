@@ -224,21 +224,20 @@ namespace EventStore.Client {
 						_channel.Writer.TryComplete();
 					} catch (Exception ex) {
 #if NET48
-					switch (ex) {
-						// The gRPC client for .NET 48 uses WinHttpHandler under the hood for sending HTTP requests.
-						// In certain scenarios, this can lead to exceptions of type WinHttpException being thrown.
-						// One such scenario is when the server abruptly closes the connection, which results in a WinHttpException with the error code 12030.
-						// Additionally, there are cases where the server response does not include the 'grpc-status' header.
-						// The absence of this header leads to an RpcException with the status code 'Cancelled' and the message "No grpc-status found on response".
-						// The switch statement below handles these specific exceptions and translates them into the appropriate
-						// PersistentSubscriptionDroppedByServerException exception. The downside of this approach is that it does not return the stream name
-						// and group name.
-						case RpcException { StatusCode: StatusCode.Unavailable } rex1 when rex1.Status.Detail.Contains("WinHttpException: Error 12030"):
-						case RpcException { StatusCode: StatusCode.Cancelled } rex2
-					        when rex2.Status.Detail.Contains("No grpc-status found on response"):
-							ex = new PersistentSubscriptionDroppedByServerException("", "", ex);
-							break;
-					}
+						switch (ex) {
+							// The gRPC client for .NET 48 uses WinHttpHandler under the hood for sending HTTP requests.
+							// In certain scenarios, this can lead to exceptions of type WinHttpException being thrown.
+							// One such scenario is when the server abruptly closes the connection, which results in a WinHttpException with the error code 12030.
+							// Additionally, there are cases where the server response does not include the 'grpc-status' header.
+							// The absence of this header leads to an RpcException with the status code 'Cancelled' and the message "No grpc-status found on response".
+							// The switch statement below handles these specific exceptions and translates them into the appropriate
+							// PersistentSubscriptionDroppedByServerException exception.
+							case RpcException { StatusCode: StatusCode.Unavailable } rex1 when rex1.Status.Detail.Contains("WinHttpException: Error 12030"):
+							case RpcException { StatusCode: StatusCode.Cancelled } rex2
+						        when rex2.Status.Detail.Contains("No grpc-status found on response"):
+								ex = new PersistentSubscriptionDroppedByServerException(StreamName, GroupName, ex);
+								break;
+						}
 #endif
 						if (ex is PersistentSubscriptionNotFoundException) {
 							await _channel.Writer.WriteAsync(PersistentSubscriptionMessage.NotFound.Instance,

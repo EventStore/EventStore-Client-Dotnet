@@ -13,10 +13,8 @@ public class deleting_existing_with_subscriber_obsolete
 		Assert.Equal(SubscriptionDroppedReason.ServerError, reason);
 		var ex = Assert.IsType<PersistentSubscriptionDroppedByServerException>(exception);
 
-#if NET
 		Assert.Equal(SystemStreams.AllStream, ex.StreamName);
 		Assert.Equal("groupname123", ex.GroupName);
-#endif
 	}
 
 	[Fact(Skip = "Isn't this how it should work?")]

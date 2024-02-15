@@ -15,10 +15,8 @@ public class update_existing_with_subscribers_obsolete
 		Assert.Equal(SubscriptionDroppedReason.ServerError, reason);
 		var ex = Assert.IsType<PersistentSubscriptionDroppedByServerException>(exception);
 
-#if NET
 		Assert.Equal(SystemStreams.AllStream, ex.StreamName);
 		Assert.Equal(Group, ex.GroupName);
-#endif
 	}
 
 	public class Fixture : EventStoreClientFixture {

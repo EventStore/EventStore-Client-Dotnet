@@ -12,10 +12,8 @@ public class connect_to_existing_with_start_from_set_to_invalid_middle_position
 		var ex = await Assert.ThrowsAsync<PersistentSubscriptionDroppedByServerException>(async () =>
 			await _fixture.Enumerator!.MoveNextAsync());
 
-#if NET
 		Assert.Equal(SystemStreams.AllStream, ex.StreamName);
 		Assert.Equal(Group, ex.GroupName);
-#endif
 	}
 
 	public class Fixture : EventStoreClientFixture {
