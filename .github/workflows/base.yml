@@ -45,7 +45,7 @@ jobs:
         env:
           ES_DOCKER_TAG: ${{ inputs.docker-tag }}
         run: |
-          ./gencert.sh
+          sudo ./gencert.sh
           dotnet test --configuration ${{ matrix.configuration }} --blame \
             --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
             --framework ${{ matrix.framework }} \

@@ -16,31 +16,39 @@ namespace EventStore.Client {
 				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 			}
 
-			return TChannel.ForAddress(address, new GrpcChannelOptions {
+			return TChannel.ForAddress(
+				address,
+				new GrpcChannelOptions {
 #if NET
-				HttpClient = new HttpClient(CreateHandler(), true) {
-					Timeout = System.Threading.Timeout.InfiniteTimeSpan,
-					DefaultRequestVersion = new Version(2, 0)
-				},
+					HttpClient = new HttpClient(CreateHandler(), true) {
+						Timeout               = System.Threading.Timeout.InfiniteTimeSpan,
+						DefaultRequestVersion = new Version(2, 0)
+					},
 #else
 				HttpHandler = CreateHandler(),
 #endif
-				LoggerFactory         = settings.LoggerFactory,
-				Credentials           = settings.ChannelCredentials,
-				DisposeHttpClient     = true,
-				MaxReceiveMessageSize = MaxReceiveMessageLength
-			});
-			
+					LoggerFactory         = settings.LoggerFactory,
+					Credentials           = settings.ChannelCredentials,
+					DisposeHttpClient     = true,
+					MaxReceiveMessageSize = MaxReceiveMessageLength
+				}
+			);
+
 			HttpMessageHandler CreateHandler() {
 				if (settings.CreateHttpMessageHandler != null) {
 					return settings.CreateHttpMessageHandler.Invoke();
 				}
+
+				var configureClientCert = settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false };
 #if NET
 				var handler = new SocketsHttpHandler {
 					KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
 					KeepAlivePingTimeout           = settings.ConnectivitySettings.KeepAliveTimeout,
 					EnableMultipleHttp2Connections = true,
 				};
+
+				if (configureClientCert)
+					handler.SslOptions.ClientCertificates = [settings.ConnectivitySettings.TlsCaFile!];
 
 				if (!settings.ConnectivitySettings.TlsVerifyCert) {
 					handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
@@ -52,6 +60,9 @@ namespace EventStore.Client {
 					TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
 					EnableMultipleHttp2Connections = true
 				};
+
+				if (configureClientCert)
+					handler.ClientCertificates.Add(settings.ConnectivitySettings.TlsCaFile!);
 
 				if (!settings.ConnectivitySettings.TlsVerifyCert) {
 					handler.ServerCertificateValidationCallback = delegate { return true; };

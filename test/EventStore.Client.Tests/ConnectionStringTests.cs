@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http;
 using AutoFixture;
+using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 
 namespace EventStore.Client.Tests;
 
@@ -16,6 +18,8 @@ public class ConnectionStringTests {
 				}.Uri
 			)
 		);
+
+		fixture.Register<X509Certificate2>(() => null!);
 
 		return Enumerable.Range(0, 3).SelectMany(GetTestCases);
 
@@ -143,6 +147,21 @@ public class ConnectionStringTests {
 	}
 
 #endif
+
+	public static IEnumerable<object?[]> InvalidClientCertificates() {
+		yield return new object?[] { Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "path", "not", "found") };
+		yield return new object?[] { Assembly.GetExecutingAssembly().Location };
+	}
+
+	[Theory]
+	[MemberData(nameof(InvalidClientCertificates))]
+	public void connection_string_with_invalid_client_certificate_should_throw(string clientCertificatePath) {
+		Assert.Throws<InvalidClientCertificateException >(
+			() => EventStoreClientSettings.Create(
+				$"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&tlsCAFile={clientCertificatePath}"
+			)
+		);
+	}
 
 	[Fact]
 	public void infinite_grpc_timeouts() {
