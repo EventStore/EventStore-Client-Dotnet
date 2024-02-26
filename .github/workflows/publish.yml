@@ -46,7 +46,7 @@ jobs:
         framework: [ net8.0 ]
     services:
       esdb:
-        image: docker.eventstore.com/eventstore-staging-ce/eventstoredb-oss:lts
+        image: docker.eventstore.com/eventstore-staging-ee/eventstoredb-commercial:lts
         credentials:
           username: ${{ secrets.CLOUDSMITH_CICD_USER }}
           password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}

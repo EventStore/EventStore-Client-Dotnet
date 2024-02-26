@@ -22,7 +22,7 @@ public static class GlobalEnvironment {
 			configuration.EnsureValue("ES_USE_CLUSTER", "false");
 			configuration.EnsureValue("ES_USE_EXTERNAL_SERVER", "false");
 
-			configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.eventstore.com/eventstore-staging-ce/eventstoredb-oss");
+			configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.eventstore.com/eventstore-staging-ee/eventstoredb-commercial");
 			configuration.EnsureValue("ES_DOCKER_TAG", "ci");
 			configuration.EnsureValue("ES_DOCKER_IMAGE", $"{configuration["ES_DOCKER_REGISTRY"]}:{configuration["ES_DOCKER_TAG"]}");
 
