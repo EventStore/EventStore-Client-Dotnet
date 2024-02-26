@@ -6,27 +6,26 @@ namespace EventStore.Client {
 	/// A class used to describe how to connect to an instance of EventStoreDB.
 	/// </summary>
 	public class EventStoreClientConnectivitySettings {
-		private const int DefaultPort = 2113;
-		private bool _insecure;
-		private Uri? _address;
-		
+		private const int  DefaultPort = 2113;
+		private       bool _insecure;
+		private       Uri? _address;
+
 		/// <summary>
 		/// The <see cref="Uri"/> of the EventStoreDB. Use this when connecting to a single node.
 		/// </summary>
-		public Uri Address {
-			get { return _address != null && IsSingleNode ? _address : DefaultAddress; }
-			set { _address = value; }
+		public Uri? Address {
+			get => IsSingleNode ? _address : null;
+			set => _address = value;
 		}
 
-		private Uri DefaultAddress {
-			get {
-				return new UriBuilder {
-						Scheme = _insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps,
-						Port = DefaultPort
-					}.Uri;
-			}
-		}
-		
+		internal Uri ResolvedAddressOrDefault => Address ?? DefaultAddress;
+
+		private Uri DefaultAddress =>
+			new UriBuilder {
+				Scheme = _insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps,
+				Port   = DefaultPort
+			}.Uri;
+
 		/// <summary>
 		/// The maximum number of times to attempt <see cref="EndPoint"/> discovery.
 		/// </summary>
@@ -38,8 +37,8 @@ namespace EventStore.Client {
 		public EndPoint[] GossipSeeds =>
 			((object?)DnsGossipSeeds ?? IpGossipSeeds) switch {
 				DnsEndPoint[] dns => Array.ConvertAll<DnsEndPoint, EndPoint>(dns, x => x),
-				IPEndPoint[] ip => Array.ConvertAll<IPEndPoint, EndPoint>(ip, x => x),
-				_ => Array.Empty<EndPoint>()
+				IPEndPoint[] ip   => Array.ConvertAll<IPEndPoint, EndPoint>(ip, x => x),
+				_                 => Array.Empty<EndPoint>()
 			};
 
 		/// <summary>
@@ -87,37 +86,31 @@ namespace EventStore.Client {
 		/// True if pointing to a single EventStoreDB node.
 		/// </summary>
 		public bool IsSingleNode => GossipSeeds.Length == 0;
-		
+
 		/// <summary>
 		/// True if communicating over an insecure channel; otherwise false.
 		/// </summary>
 		public bool Insecure {
-			get {
-				return IsSingleNode
-					? string.Equals(Address.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
-					: _insecure;
-			}
-			set {
-				_insecure = value;
-			}
+			get => IsSingleNode ? string.Equals(Address?.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) : _insecure;
+			set => _insecure = value;
 		}
 
 		/// <summary>
-		/// True if certificates will be validated; otherwise false. 
+		/// True if certificates will be validated; otherwise false.
 		/// </summary>
 		public bool TlsVerifyCert { get; set; } = true;
-		
+
 		/// <summary>
 		/// The default <see cref="EventStoreClientConnectivitySettings"/>.
 		/// </summary>
 		public static EventStoreClientConnectivitySettings Default => new EventStoreClientConnectivitySettings {
 			MaxDiscoverAttempts = 10,
-			GossipTimeout = TimeSpan.FromSeconds(5),
-			DiscoveryInterval = TimeSpan.FromMilliseconds(100),
-			NodePreference = NodePreference.Leader,
-			KeepAliveInterval = TimeSpan.FromSeconds(10),
-			KeepAliveTimeout =  TimeSpan.FromSeconds(10),
-			TlsVerifyCert = true,
+			GossipTimeout       = TimeSpan.FromSeconds(5),
+			DiscoveryInterval   = TimeSpan.FromMilliseconds(100),
+			NodePreference      = NodePreference.Leader,
+			KeepAliveInterval   = TimeSpan.FromSeconds(10),
+			KeepAliveTimeout    = TimeSpan.FromSeconds(10),
+			TlsVerifyCert       = true,
 		};
 	}
 }

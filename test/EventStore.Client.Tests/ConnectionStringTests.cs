@@ -27,8 +27,8 @@ public class ConnectionStringTests {
 			};
 
 			settings.ConnectivitySettings.Address =
-				new UriBuilder(EventStoreClientConnectivitySettings.Default.Address) {
-					Scheme = settings.ConnectivitySettings.Address.Scheme
+				new UriBuilder(EventStoreClientConnectivitySettings.Default.ResolvedAddressOrDefault) {
+					Scheme = settings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme
 				}.Uri;
 
 			yield return new object?[] {
@@ -48,8 +48,8 @@ public class ConnectionStringTests {
 			};
 
 			ipGossipSettings.ConnectivitySettings.Address =
-				new UriBuilder(EventStoreClientConnectivitySettings.Default.Address) {
-					Scheme = ipGossipSettings.ConnectivitySettings.Address.Scheme
+				new UriBuilder(EventStoreClientConnectivitySettings.Default.ResolvedAddressOrDefault) {
+					Scheme = ipGossipSettings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme
 				}.Uri;
 
 			ipGossipSettings.ConnectivitySettings.DnsGossipSeeds = null;
@@ -73,7 +73,7 @@ public class ConnectionStringTests {
 			singleNodeSettings.ConnectivitySettings.DnsGossipSeeds = null;
 			singleNodeSettings.ConnectivitySettings.IpGossipSeeds  = null;
 			singleNodeSettings.ConnectivitySettings.Address = new UriBuilder(fixture.Create<Uri>()) {
-				Scheme = singleNodeSettings.ConnectivitySettings.Address.Scheme
+				Scheme = singleNodeSettings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme
 			}.Uri;
 
 			yield return new object?[] {
@@ -115,7 +115,7 @@ public class ConnectionStringTests {
 		var       result           = EventStoreClientSettings.Create(connectionString);
 		using var handler          = result.CreateHttpMessageHandler?.Invoke();
 #if NET
-		var       socketsHandler   = Assert.IsType<SocketsHttpHandler>(handler);
+		var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
 		if (!tlsVerifyCert) {
 			Assert.NotNull(socketsHandler.SslOptions.RemoteCertificateValidationCallback);
 			Assert.True(
@@ -241,8 +241,8 @@ public class ConnectionStringTests {
 
 		Assert.Null(settings.ConnectionName);
 		Assert.Equal(
-			EventStoreClientConnectivitySettings.Default.Address.Scheme,
-			settings.ConnectivitySettings.Address.Scheme
+			EventStoreClientConnectivitySettings.Default.ResolvedAddressOrDefault.Scheme,
+			settings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme
 		);
 
 		Assert.Equal(
@@ -301,7 +301,7 @@ public class ConnectionStringTests {
 		var result         = EventStoreClientSettings.Create(connectionString);
 		var expectedScheme = expectedUseTls ? "https" : "http";
 		Assert.NotEqual(expectedUseTls, result.ConnectivitySettings.Insecure);
-		Assert.Equal(expectedScheme, result.ConnectivitySettings.Address.Scheme);
+		Assert.Equal(expectedScheme, result.ConnectivitySettings.ResolvedAddressOrDefault.Scheme);
 	}
 
 	[Theory]
@@ -334,7 +334,20 @@ public class ConnectionStringTests {
 
 		var expectedScheme = expectedUseTls ? "https" : "http";
 		Assert.Equal(expectedUseTls, !settings.Insecure);
-		Assert.Equal(expectedScheme, result.ConnectivitySettings.Address.Scheme);
+		Assert.Equal(expectedScheme, result.ConnectivitySettings.ResolvedAddressOrDefault.Scheme);
+	}
+
+	[Theory]
+	[InlineData("esdb://localhost:1234", "localhost", 1234)]
+	[InlineData("esdb://localhost:1234,localhost:4567", null, null)]
+	[InlineData("esdb+discover://localhost:1234", null, null)]
+	[InlineData("esdb+discover://localhost:1234,localhost:4567", null, null)]
+	public void connection_string_with_custom_ports(string connectionString, string? expectedHost, int? expectedPort) {
+		var result               = EventStoreClientSettings.Create(connectionString);
+		var connectivitySettings = result.ConnectivitySettings;
+
+		Assert.Equal(expectedHost, connectivitySettings.Address?.Host);
+		Assert.Equal(expectedPort, connectivitySettings.Address?.Port);
 	}
 
 	static string GetConnectionString(
@@ -350,7 +363,7 @@ public class ConnectionStringTests {
 
 	static string GetAuthority(EventStoreClientSettings settings) =>
 		settings.ConnectivitySettings.IsSingleNode
-			? $"{settings.ConnectivitySettings.Address.Host}:{settings.ConnectivitySettings.Address.Port}"
+			? $"{settings.ConnectivitySettings.ResolvedAddressOrDefault.Host}:{settings.ConnectivitySettings.ResolvedAddressOrDefault.Port}"
 			: string.Join(
 				",",
 				settings.ConnectivitySettings.GossipSeeds.Select(x => $"{x.GetHost()}:{x.GetPort()}")
@@ -447,7 +460,7 @@ public class ConnectionStringTests {
 			if (x.GetType() != y.GetType())
 				return false;
 
-			return (!x.IsSingleNode || x.Address.Equals(y.Address)) &&
+			return (!x.IsSingleNode || x.ResolvedAddressOrDefault.Equals(y.Address)) &&
 			       x.MaxDiscoverAttempts == y.MaxDiscoverAttempts &&
 			       x.GossipSeeds.SequenceEqual(y.GossipSeeds) &&
 			       x.GossipTimeout.Equals(y.GossipTimeout) &&
@@ -461,7 +474,7 @@ public class ConnectionStringTests {
 		public int GetHashCode(EventStoreClientConnectivitySettings obj) =>
 			obj.GossipSeeds.Aggregate(
 				HashCode.Hash
-					.Combine(obj.Address.GetHashCode())
+					.Combine(obj.ResolvedAddressOrDefault.GetHashCode())
 					.Combine(obj.MaxDiscoverAttempts)
 					.Combine(obj.GossipTimeout)
 					.Combine(obj.DiscoveryInterval)
