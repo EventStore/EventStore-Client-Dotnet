@@ -7,7 +7,7 @@ networks:
 services:
   
   eventstore:
-    image: docker.eventstore.com/eventstore-ce/eventstoredb-ce:${ES_DOCKER_TAG}
+    image: docker.eventstore.com/eventstore-staging-ce/eventstoredb-oss:${ES_DOCKER_TAG}
     container_name: eventstore
     environment:
       - EVENTSTORE_MEM_DB=true

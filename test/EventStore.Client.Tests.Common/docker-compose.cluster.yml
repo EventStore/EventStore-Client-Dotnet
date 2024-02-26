@@ -40,7 +40,7 @@ services:
       - cert-gen
         
   esdb-node1:
-    image: docker.eventstore.com/eventstore-ce/eventstoredb-ce:${ES_DOCKER_TAG}
+    image: docker.eventstore.com/eventstore-staging-ce/eventstoredb-oss:${ES_DOCKER_TAG}
     container_name: esdb-node1
     env_file:
       - shared.env
@@ -69,7 +69,7 @@ services:
       - cert-gen
 
   esdb-node2:
-    image: docker.eventstore.com/eventstore-ce/eventstoredb-ce:${ES_DOCKER_TAG}
+    image: docker.eventstore.com/eventstore-staging-ce/eventstoredb-oss:${ES_DOCKER_TAG}
     container_name: esdb-node2
     env_file:
       - shared.env
@@ -98,7 +98,7 @@ services:
       - cert-gen
 
   esdb-node3:
-    image: docker.eventstore.com/eventstore-ce/eventstoredb-ce:${ES_DOCKER_TAG}
+    image: docker.eventstore.com/eventstore-staging-ce/eventstoredb-oss:${ES_DOCKER_TAG}
     container_name: esdb-node3
     env_file:
       - shared.env
@@ -127,7 +127,7 @@ services:
       - cert-gen
 
   esdb-node4:
-    image: docker.eventstore.com/eventstore-ce/eventstoredb-ce:${ES_DOCKER_TAG}
+    image: docker.eventstore.com/eventstore-staging-ce/eventstoredb-oss:${ES_DOCKER_TAG}
     container_name: esdb-node4
     env_file:
       - shared.env

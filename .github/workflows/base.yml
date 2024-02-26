@@ -36,7 +36,7 @@ jobs:
       - name: Pull EventStore Image
         shell: bash
         run: |
-          docker pull docker.eventstore.com/eventstore-ce/eventstoredb-ce:${{ inputs.docker-tag }}
+          docker pull docker.eventstore.com/eventstore-staging-ce/eventstoredb-oss:${{ inputs.docker-tag }}
       - name: Install dotnet SDKs
         uses: actions/setup-dotnet@v3
         with:
