@@ -13,7 +13,7 @@ namespace EventStore.Client {
 		private readonly string _addressScheme;
 
 		internal HttpFallback (EventStoreClientSettings settings) {
-			_addressScheme = settings.ConnectivitySettings.Address.Scheme;
+			_addressScheme = settings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme;
             _defaultCredentials = settings.DefaultCredentials;
 			
 			var handler = new HttpClientHandler();

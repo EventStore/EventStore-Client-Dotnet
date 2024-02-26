@@ -110,12 +110,20 @@ public class EventStoreTestServer : IEventStoreTestServer {
 			.Start();
 
 		using var log = eventstore.Logs(true, cts.Token);
-		foreach (var line in log.ReadToEnd())
+		foreach (var line in log.ReadToEnd()) {
 			if (line.StartsWith(versionPrefix) &&
-			    Version.TryParse(line[(versionPrefix.Length + 1)..].Split(' ')[0], out var version))
+			    Version.TryParse(new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()), out var version)) {
 				return version;
+			}
+		}
 
 		throw new InvalidOperationException("Could not determine server version.");
+
+		IEnumerable<char> ReadVersion(string s) {
+			foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) {
+				yield return c;
+			}
+		}
 	}
 
 	void VerifyCertificatesExist() {
