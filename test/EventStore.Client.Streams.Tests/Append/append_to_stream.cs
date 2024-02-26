@@ -1,3 +1,4 @@
+using System.Text;
 using Grpc.Core;
 
 namespace EventStore.Client.Streams.Tests.Append;
@@ -438,36 +439,39 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		ex.StatusCode.ShouldBe(StatusCode.DeadlineExceeded);
 	}
-	
+
 	[Fact]
 	public async Task when_events_enumerator_throws_the_write_does_not_succeed() {
 		var streamName = Fixture.GetStreamName();
 
 		await Fixture.Streams
-			.AppendToStreamAsync(streamName, StreamRevision.None, GetEvents())
+			.AppendToStreamAsync(
+				streamName,
+				StreamRevision.None,
+				GetEvents(),
+				userCredentials: new UserCredentials(TestCredentials.Root.Username!, TestCredentials.Root.Password!)
+			)
 			.ShouldThrowAsync<EnumerationFailedException>();
 
-		var result = Fixture.Streams.ReadStreamAsync(Direction.Forwards, streamName, StreamPosition.Start);
-
-		var state = await result.ReadState;
+		var state = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, streamName, StreamPosition.Start)
+			.ReadState;
 
 		state.ShouldBe(ReadState.StreamNotFound);
-		
+
 		return;
 
 		IEnumerable<EventData> GetEvents() {
-			var i = 0;
-			foreach (var evt in Fixture.CreateTestEvents(5)) {
-				if (i++ % 3 == 0)
+			for (var i = 0; i < 5; i++) {
+				if (i % 3 == 0)
 					throw new EnumerationFailedException();
 
-				yield return evt;
+				yield return Fixture.CreateTestEvents(1).First();
 			}
 		}
 	}
 
 	class EnumerationFailedException : Exception { }
-	
+
 	public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
 		yield return new object?[] { StreamState.Any };
 		yield return new object?[] { ulong.MaxValue - 1UL };
