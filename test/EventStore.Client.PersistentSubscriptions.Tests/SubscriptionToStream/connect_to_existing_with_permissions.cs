@@ -2,36 +2,24 @@ namespace EventStore.Client.PersistentSubscriptions.Tests.SubscriptionToStream;
 
 public class connect_to_existing_with_permissions
 	: IClassFixture<connect_to_existing_with_permissions.Fixture> {
-	const string Stream = nameof(connect_to_existing_with_permissions);
+	private const string Stream = nameof(connect_to_existing_with_permissions);
 
-	readonly Fixture _fixture;
+	private readonly Fixture _fixture;
 
 	public connect_to_existing_with_permissions(Fixture fixture) => _fixture = fixture;
 
 	[Fact]
 	public async Task the_subscription_succeeds() {
-		var dropped = new TaskCompletionSource<(SubscriptionDroppedReason, Exception?)>();
-		using var subscription = await _fixture.Client.SubscribeToStreamAsync(
-			Stream,
-			"agroupname17",
-			delegate { return Task.CompletedTask; },
-			(s, reason, ex) => dropped.TrySetResult((reason, ex)),
-			TestCredentials.Root
-		).WithTimeout();
+		await using var subscription =
+			_fixture.Client.SubscribeToStream(Stream, "agroupname17", userCredentials: TestCredentials.Root);
 
-		Assert.NotNull(subscription);
-
-		await Assert.ThrowsAsync<TimeoutException>(() => dropped.Task.WithTimeout());
+		Assert.True(await subscription.Messages
+			.FirstAsync().AsTask().WithTimeout() is PersistentSubscriptionMessage.SubscriptionConfirmation);
 	}
 
 	public class Fixture : EventStoreClientFixture {
 		protected override Task Given() =>
-			Client.CreateToStreamAsync(
-				Stream,
-				"agroupname17",
-				new(),
-				userCredentials: TestCredentials.Root
-			);
+			Client.CreateToStreamAsync(Stream, "agroupname17", new(), userCredentials: TestCredentials.Root);
 
 		protected override Task When() => Task.CompletedTask;
 	}

@@ -42,6 +42,38 @@ namespace EventStore.Client {
 		public record LastAllStreamPosition(Position Position) : StreamMessage;
 
 		/// <summary>
+		/// A <see cref="EventStore.Client.StreamMessage"/> indicating that the subscription is ready to send additional messages.
+		/// </summary>
+		/// <param name="SubscriptionId">The unique identifier of the subscription.</param>
+		public record SubscriptionConfirmation(string SubscriptionId) : StreamMessage;
+
+		/// <summary>
+		/// A <see cref="EventStore.Client.StreamMessage"/> indicating that a checkpoint has been reached.
+		/// </summary>
+		/// <param name="Position">The <see cref="Position" />.</param>
+		public record AllStreamCheckpointReached(Position Position) : StreamMessage;
+		
+		/// <summary>
+		/// A <see cref="EventStore.Client.StreamMessage"/> indicating that a checkpoint has been reached.
+		/// </summary>
+		/// <param name="StreamPosition">The <see cref="StreamPosition" />.</param>
+		public record StreamCheckpointReached(StreamPosition StreamPosition) : StreamMessage;
+
+		/// <summary>
+		/// A <see cref="EventStore.Client.StreamMessage"/> indicating that the subscription is live.
+		/// </summary>
+		public record CaughtUp : StreamMessage {
+			internal static readonly CaughtUp Instance = new();
+		}
+
+		/// <summary>
+		/// A <see cref="EventStore.Client.StreamMessage"/> indicating that the subscription has switched to catch up mode.
+		/// </summary>
+		public record FellBehind : StreamMessage {
+			internal static readonly FellBehind Instance = new();
+		}
+
+		/// <summary>
 		/// A <see cref="EventStore.Client.StreamMessage"/> that could not be identified, usually indicating a lower client compatibility level than the server supports.
 		/// </summary>
 		public record Unknown : StreamMessage {

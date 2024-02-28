@@ -15,6 +15,7 @@ public class overriden_system_stream_security(ITestOutputHelper output, override
 		await Fixture.WriteMeta(stream, TestCredentials.TestUser1);
 
 		await Fixture.SubscribeToStream(stream, TestCredentials.TestUser1);
+		await Fixture.SubscribeToStreamObsolete(stream, TestCredentials.TestUser1);
 
 		await Fixture.DeleteStream(stream, TestCredentials.TestUser1);
 	}
@@ -35,6 +36,7 @@ public class overriden_system_stream_security(ITestOutputHelper output, override
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.WriteMeta(stream, TestCredentials.TestUser2));
 
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStream(stream, TestCredentials.TestUser2));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStreamObsolete(stream, TestCredentials.TestUser2));
 
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.DeleteStream(stream, TestCredentials.TestUser2));
 	}
@@ -52,6 +54,7 @@ public class overriden_system_stream_security(ITestOutputHelper output, override
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.WriteMeta(stream));
 
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStream(stream));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStreamObsolete(stream));
 
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.DeleteStream(stream));
 	}
@@ -69,6 +72,7 @@ public class overriden_system_stream_security(ITestOutputHelper output, override
 		await Fixture.WriteMeta(stream, TestCredentials.TestAdmin);
 
 		await Fixture.SubscribeToStream(stream, TestCredentials.TestAdmin);
+		await Fixture.SubscribeToStreamObsolete(stream, TestCredentials.TestAdmin);
 
 		await Fixture.DeleteStream(stream, TestCredentials.TestAdmin);
 	}

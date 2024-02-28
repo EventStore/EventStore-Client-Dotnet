@@ -135,7 +135,8 @@ namespace EventStore.Client {
 						}
 
 						try {
-							await foreach (var message in ReadAllAsync(_channel.Reader).ConfigureAwait(false)) {
+							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)
+								               .ConfigureAwait(false)) {
 								if (message is StreamMessage.LastAllStreamPosition(var position)) {
 									LastPosition = position;
 								}
@@ -155,11 +156,7 @@ namespace EventStore.Client {
 				var callOptions = EventStoreCallOptions.CreateStreaming(settings, deadline, userCredentials,
 					cancellationToken);
 
-				_channel = Channel.CreateBounded<StreamMessage>(new BoundedChannelOptions(1) {
-					SingleReader = true,
-					SingleWriter = true,
-					AllowSynchronousContinuations = true
-				});
+				_channel = Channel.CreateBounded<StreamMessage>(ReadBoundedChannelOptions);
 
 				_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 				var linkedCancellationToken = _cts.Token;
@@ -199,7 +196,7 @@ namespace EventStore.Client {
 				CancellationToken cancellationToken = default) {
 
 				try {
-					await foreach (var message in ReadAllAsync(_channel.Reader, cancellationToken).ConfigureAwait(false)) {
+					await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
 						if (message is not StreamMessage.Event e) {
 							continue;
 						}
@@ -298,7 +295,7 @@ namespace EventStore.Client {
 						}
 
 						try {
-							await foreach (var message in ReadAllAsync(_channel.Reader).ConfigureAwait(false)) {
+							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
 								switch (message) {
 									case StreamMessage.FirstStreamPosition(var streamPosition):
 										FirstStreamPosition = streamPosition;
@@ -330,11 +327,7 @@ namespace EventStore.Client {
 				var callOptions = EventStoreCallOptions.CreateStreaming(settings, deadline, userCredentials,
 					cancellationToken);
 
-				_channel = Channel.CreateBounded<StreamMessage>(new BoundedChannelOptions(1) {
-					SingleReader = true,
-					SingleWriter = true,
-					AllowSynchronousContinuations = true
-				});
+				_channel = Channel.CreateBounded<StreamMessage>(ReadBoundedChannelOptions);
 
 				StreamName = request.Options.Stream.StreamIdentifier!;
 
@@ -396,7 +389,7 @@ namespace EventStore.Client {
 				CancellationToken cancellationToken = default) {
 
 				try {
-					await foreach (var message in ReadAllAsync(_channel.Reader, cancellationToken).ConfigureAwait(false)) {
+					await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
 						if (message is StreamMessage.NotFound) {
 							throw new StreamNotFoundException(StreamName);
 						}
@@ -412,55 +405,7 @@ namespace EventStore.Client {
 				}
 			}
 		}
-
-		private async IAsyncEnumerable<(SubscriptionConfirmation, Position?, ResolvedEvent)> ReadInternal(
-			ReadReq request,
-			UserCredentials? userCredentials,
-			[EnumeratorCancellation] CancellationToken cancellationToken) {
-			if (request.Options.CountOptionCase == ReadReq.Types.Options.CountOptionOneofCase.Count &&
-			    request.Options.Count <= 0) {
-				throw new ArgumentOutOfRangeException("count");
-			}
-
-			if (request.Options.Filter == null) {
-				request.Options.NoFilter = new Empty();
-			}
-
-			request.Options.UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()};
-
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-
-			using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-			using var call = new Streams.Streams.StreamsClient(
-				channelInfo.CallInvoker).Read(request,
-				EventStoreCallOptions.CreateStreaming(Settings, userCredentials: userCredentials,
-					cancellationToken: cts.Token));
-
-			await foreach (var e in call.ResponseStream
-				.ReadAllAsync(cts.Token)
-				.Select(ConvertToItem)
-				.WithCancellation(cts.Token)
-				.ConfigureAwait(false)) {
-				if (e.HasValue) {
-					yield return e.Value;
-				}
-			}
-		}
-
-		private static (SubscriptionConfirmation, Position?, ResolvedEvent)? ConvertToItem(ReadResp response) =>
-			response.ContentCase switch {
-				Confirmation => (
-					new SubscriptionConfirmation(response.Confirmation.SubscriptionId), null, default),
-				Event => (SubscriptionConfirmation.None,
-					null,
-					ConvertToResolvedEvent(response.Event)),
-				Checkpoint => (SubscriptionConfirmation.None,
-					new Position(response.Checkpoint.CommitPosition, response.Checkpoint.PreparePosition),
-					default),
-				_ => null
-			};
-
+		
 		private static ResolvedEvent ConvertToResolvedEvent(ReadResp.Types.ReadEvent readEvent) =>
 			new ResolvedEvent(
 				ConvertToEventRecord(readEvent.Event)!,

@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
@@ -11,13 +6,14 @@ namespace EventStore.Client {
 	/// <summary>
 	/// Represents a persistent subscription connection.
 	/// </summary>
+	[Obsolete]
 	public class PersistentSubscription : IDisposable {
+		private readonly EventStorePersistentSubscriptionsClient.PersistentSubscriptionResult _persistentSubscriptionResult;
+		private readonly IAsyncEnumerator<PersistentSubscriptionMessage> _enumerator;
 		private readonly Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> _eventAppeared;
-		private readonly Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>      _subscriptionDropped;
-		private readonly IDisposable                                                                _disposable;
-		private readonly CancellationToken                                                          _cancellationToken;
-		private readonly AsyncDuplexStreamingCall<ReadReq, ReadResp>                                _call;
-		private readonly ILogger                                                                    _log;
+		private readonly Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> _subscriptionDropped;
+		private readonly ILogger _log;
+		private readonly CancellationTokenSource _cts;
 
 		private int _subscriptionDroppedInvoked;
 
@@ -27,47 +23,43 @@ namespace EventStore.Client {
 		public string SubscriptionId { get; }
 
 		internal static async Task<PersistentSubscription> Confirm(
-			ChannelBase channel, CallInvoker callInvoker, EventStoreClientSettings settings, 
-			UserCredentials? userCredentials, ReadReq.Types.Options options, ILogger log,
+			EventStorePersistentSubscriptionsClient.PersistentSubscriptionResult persistentSubscriptionResult,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped,
-			CancellationToken cancellationToken = default) {
+			ILogger log, UserCredentials? userCredentials, CancellationToken cancellationToken = default) {
+			var enumerator = persistentSubscriptionResult
+				.Messages
+				.GetAsyncEnumerator(cancellationToken);
 
-			var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+			var result = await enumerator.MoveNextAsync(cancellationToken).ConfigureAwait(false);
 
-			var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
-				.Read(EventStoreCallOptions.CreateStreaming(settings, userCredentials: userCredentials,
-					cancellationToken: cts.Token));
-
-			await call.RequestStream.WriteAsync(new ReadReq {
-				Options = options
-			}).ConfigureAwait(false);
-
-			if (await call.ResponseStream.MoveNext(cancellationToken).ConfigureAwait(false) &&
-			    call.ResponseStream.Current.ContentCase == ReadResp.ContentOneofCase.SubscriptionConfirmation)
-				return new PersistentSubscription(call, log, eventAppeared, subscriptionDropped, cts.Token, cts);
-
-			call.Dispose();
-			cts.Dispose();
-			throw new InvalidOperationException("Subscription could not be confirmed.");
+			return (result, enumerator.Current) switch {
+				(true, PersistentSubscriptionMessage.SubscriptionConfirmation (var subscriptionId)) =>
+					new PersistentSubscription(persistentSubscriptionResult, enumerator, subscriptionId, eventAppeared,
+						subscriptionDropped, log, cancellationToken),
+				(true, PersistentSubscriptionMessage.NotFound) =>
+					throw new PersistentSubscriptionNotFoundException(persistentSubscriptionResult.StreamName,
+						persistentSubscriptionResult.GroupName),
+				_ => throw new InvalidOperationException("Subscription could not be confirmed.")
+			};
 		}
 
 		// PersistentSubscription takes responsibility for disposing the call and the disposable
 		private PersistentSubscription(
-			AsyncDuplexStreamingCall<ReadReq, ReadResp> call,
-			ILogger log,
+			EventStorePersistentSubscriptionsClient.PersistentSubscriptionResult persistentSubscriptionResult,
+			IAsyncEnumerator<PersistentSubscriptionMessage> enumerator, string subscriptionId,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped,
-			CancellationToken cancellationToken,
-			IDisposable disposable) {
-			_call                = call;
-			_eventAppeared       = eventAppeared;
+			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped, ILogger log,
+			CancellationToken cancellationToken) {
+			_persistentSubscriptionResult = persistentSubscriptionResult;
+			_enumerator = enumerator;
+			SubscriptionId = subscriptionId;
+			_eventAppeared = eventAppeared;
 			_subscriptionDropped = subscriptionDropped;
-			_cancellationToken   = cancellationToken;
-			_disposable          = disposable;
-			_log                 = log;
-			SubscriptionId       = call.ResponseStream.Current.SubscriptionConfirmation.SubscriptionId;
-			Task.Run(Subscribe);
+			_log = log;
+			_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+			Task.Run(Subscribe, _cts.Token);
 		}
 
 		/// <summary>
@@ -75,13 +67,7 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
 		/// <param name="eventIds">The <see cref="Uuid"/> of the <see cref="ResolvedEvent" />s to acknowledge. There should not be more than 2000 to ack at a time.</param>
-		public Task Ack(params Uuid[] eventIds) {
-			if (eventIds.Length > 2000) {
-				throw new ArgumentException();
-			}
-
-			return AckInternal(eventIds);
-		}
+		public Task Ack(params Uuid[] eventIds) => AckInternal(eventIds);
 
 		/// <summary>
 		/// Acknowledge that a message has completed processing (this will tell the server it has been processed).
@@ -114,13 +100,7 @@ namespace EventStore.Client {
 		/// <param name="reason">A reason given.</param>
 		/// <param name="eventIds">The <see cref="Uuid"/> of the <see cref="ResolvedEvent" />s to nak. There should not be more than 2000 to nak at a time.</param>
 		/// <exception cref="ArgumentException">The number of eventIds exceeded the limit of 2000.</exception>
-		public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Uuid[] eventIds) {
-			if (eventIds.Length > 2000) {
-				throw new ArgumentException();
-			}
-
-			return NackInternal(eventIds, action, reason);
-		}
+		public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Uuid[] eventIds) => NackInternal(eventIds, action, reason);
 
 		/// <summary>
 		/// Acknowledge that a message has failed processing (this will tell the server it has not been processed).
@@ -130,7 +110,7 @@ namespace EventStore.Client {
 		/// <param name="resolvedEvents">The <see cref="ResolvedEvent" />s to nak. There should not be more than 2000 to nak at a time.</param>
 		/// <exception cref="ArgumentException">The number of resolvedEvents exceeded the limit of 2000.</exception>
 		public Task Nack(PersistentSubscriptionNakEventAction action, string reason,
-		                 params ResolvedEvent[] resolvedEvents) =>
+			params ResolvedEvent[] resolvedEvents) =>
 			Nack(action, reason,
 				Array.ConvertAll(resolvedEvents, resolvedEvent => resolvedEvent.OriginalEvent.EventId));
 
@@ -141,12 +121,21 @@ namespace EventStore.Client {
 			_log.LogDebug("Persistent Subscription {subscriptionId} confirmed.", SubscriptionId);
 
 			try {
-				await foreach (var response in _call.ResponseStream.ReadAllAsync(_cancellationToken).ConfigureAwait(false)) {
-					if (response.ContentCase != ReadResp.ContentOneofCase.Event) {
+				while (await _enumerator.MoveNextAsync(_cts.Token).ConfigureAwait(false)) {
+					if (_enumerator.Current is not PersistentSubscriptionMessage.Event(var resolvedEvent, var retryCount)) {
 						continue;
 					}
 
-					var resolvedEvent = ConvertToResolvedEvent(response);
+					if (_enumerator.Current is PersistentSubscriptionMessage.NotFound) {
+						if (_subscriptionDroppedInvoked != 0) {
+							return;
+						}
+						SubscriptionDropped(SubscriptionDroppedReason.ServerError,
+							new PersistentSubscriptionNotFoundException(
+								_persistentSubscriptionResult.StreamName, _persistentSubscriptionResult.GroupName));
+						return;
+					}
+					
 					_log.LogTrace(
 						"Persistent Subscription {subscriptionId} received event {streamName}@{streamRevision} {position}",
 						SubscriptionId, resolvedEvent.OriginalEvent.EventStreamId,
@@ -156,13 +145,8 @@ namespace EventStore.Client {
 						await _eventAppeared(
 							this,
 							resolvedEvent,
-							response.Event.CountCase switch {
-								ReadResp.Types.ReadEvent.CountOneofCase.RetryCount => response.Event
-									.RetryCount,
-								_ => default
-							},
-							_cancellationToken).ConfigureAwait(false);
-
+							retryCount,
+							_cts.Token).ConfigureAwait(false);
 					} catch (Exception ex) when (ex is ObjectDisposedException or OperationCanceledException) {
 						if (_subscriptionDroppedInvoked != 0) {
 							return;
@@ -186,23 +170,6 @@ namespace EventStore.Client {
 				}
 			} catch (Exception ex) {
 				if (_subscriptionDroppedInvoked == 0) {
-#if NET48
-					switch (ex) {
-						// The gRPC client for .NET 48 uses WinHttpHandler under the hood for sending HTTP requests.
-						// In certain scenarios, this can lead to exceptions of type WinHttpException being thrown.
-						// One such scenario is when the server abruptly closes the connection, which results in a WinHttpException with the error code 12030.
-						// Additionally, there are cases where the server response does not include the 'grpc-status' header.
-						// The absence of this header leads to an RpcException with the status code 'Cancelled' and the message "No grpc-status found on response".
-						// The switch statement below handles these specific exceptions and translates them into the appropriate
-						// PersistentSubscriptionDroppedByServerException exception. The downside of this approach is that it does not return the stream name
-						// and group name.
-						case RpcException { StatusCode: StatusCode.Unavailable } rex1 when rex1.Status.Detail.Contains("WinHttpException: Error 12030"):
-						case RpcException { StatusCode: StatusCode.Cancelled } rex2
-					        when rex2.Status.Detail.Contains("No grpc-status found on response"):
-							ex = new PersistentSubscriptionDroppedByServerException("", "", ex);
-							break;
-					}
-#endif
 					_log.LogError(ex,
 						"Persistent Subscription {subscriptionId} was dropped because an error occurred on the server.",
 						SubscriptionId);
@@ -216,26 +183,6 @@ namespace EventStore.Client {
 					SubscriptionDropped(SubscriptionDroppedReason.ServerError);
 				}
 			}
-
-			ResolvedEvent ConvertToResolvedEvent(ReadResp response) => new(
-				ConvertToEventRecord(response.Event.Event)!,
-				ConvertToEventRecord(response.Event.Link),
-				response.Event.PositionCase switch {
-					ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => response.Event.CommitPosition,
-					_                                                         => null
-				});
-
-			EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>
-				e == null
-					? null
-					: new EventRecord(
-						e.StreamIdentifier!,
-						Uuid.FromDto(e.Id),
-						new StreamPosition(e.StreamRevision),
-						new Position(e.CommitPosition, e.PreparePosition),
-						e.Metadata,
-						e.Data.ToByteArray(),
-						e.CustomMetadata.ToByteArray());
 		}
 
 		private void SubscriptionDropped(SubscriptionDroppedReason reason, Exception? ex = null) {
@@ -246,35 +193,14 @@ namespace EventStore.Client {
 			try {
 				_subscriptionDropped.Invoke(this, reason, ex);
 			} finally {
-				_call.Dispose();
-				_disposable.Dispose();
+				_persistentSubscriptionResult.Dispose();
+				_cts.Dispose();
 			}
 		}
 
-		private Task AckInternal(params Uuid[] ids) =>
-			_call.RequestStream.WriteAsync(new ReadReq {
-				Ack = new ReadReq.Types.Ack {
-					Ids = {
-						Array.ConvertAll(ids, id => id.ToDto())
-					}
-				}
-			});
+		private Task AckInternal(params Uuid[] ids) => _persistentSubscriptionResult.Ack(ids);
 
 		private Task NackInternal(Uuid[] ids, PersistentSubscriptionNakEventAction action, string reason) =>
-			_call!.RequestStream.WriteAsync(new ReadReq {
-				Nack = new ReadReq.Types.Nack {
-					Ids = {
-						Array.ConvertAll(ids, id => id.ToDto())
-					},
-					Action = action switch {
-						PersistentSubscriptionNakEventAction.Park  => ReadReq.Types.Nack.Types.Action.Park,
-						PersistentSubscriptionNakEventAction.Retry => ReadReq.Types.Nack.Types.Action.Retry,
-						PersistentSubscriptionNakEventAction.Skip  => ReadReq.Types.Nack.Types.Action.Skip,
-						PersistentSubscriptionNakEventAction.Stop  => ReadReq.Types.Nack.Types.Action.Stop,
-						_                                          => ReadReq.Types.Nack.Types.Action.Unknown
-					},
-					Reason = reason
-				}
-			});
+			_persistentSubscriptionResult.Nack(action, reason, ids);
 	}
 }

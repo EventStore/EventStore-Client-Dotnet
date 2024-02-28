@@ -21,7 +21,7 @@ public class all_stream_with_no_acl_security(ITestOutputHelper output, all_strea
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadAllForward());
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadAllBackward());
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadMeta(SecurityFixture.AllStream));
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToAll());
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToAllObsolete());
 	}
 
 	[Fact]
@@ -29,7 +29,7 @@ public class all_stream_with_no_acl_security(ITestOutputHelper output, all_strea
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadAllForward(TestCredentials.TestUser1));
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadAllBackward(TestCredentials.TestUser1));
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadMeta(SecurityFixture.AllStream, TestCredentials.TestUser1));
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToAll(TestCredentials.TestUser1));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToAllObsolete(TestCredentials.TestUser1));
 	}
 
 	[Fact]
@@ -37,7 +37,7 @@ public class all_stream_with_no_acl_security(ITestOutputHelper output, all_strea
 		await Fixture.ReadAllForward(TestCredentials.TestAdmin);
 		await Fixture.ReadAllBackward(TestCredentials.TestAdmin);
 		await Fixture.ReadMeta(SecurityFixture.AllStream, TestCredentials.TestAdmin);
-		await Fixture.SubscribeToAll(TestCredentials.TestAdmin);
+		await Fixture.SubscribeToAllObsolete(TestCredentials.TestAdmin);
 	}
 
 	[Fact]

@@ -1,7 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace EventStore.Client {
 	/// <summary>
 	/// A class representing the options to use when filtering read operations.
@@ -21,7 +17,8 @@ namespace EventStore.Client {
 		/// A Task invoked and await when a checkpoint is reached.
 		/// Set the checkpointInterval to define how often this method is called.
 		/// </summary>
-		public Func<StreamSubscription, Position, CancellationToken, Task> CheckpointReached { get; }
+		[Obsolete]
+		public Func<StreamSubscription, Position, CancellationToken, Task> CheckpointReached { get; } = null!;
 
 		/// <summary>
 		///
@@ -33,8 +30,20 @@ namespace EventStore.Client {
 		/// Set the checkpointInterval to define how often this method is called.
 		/// </param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public SubscriptionFilterOptions(IEventFilter filter, uint checkpointInterval = 1,
-			Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached = null) {
+		[Obsolete]
+		public SubscriptionFilterOptions(IEventFilter filter, uint checkpointInterval,
+			Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached) 
+			: this(filter, checkpointInterval) {
+			CheckpointReached = checkpointReached ?? ((_, __, ct) => Task.CompletedTask);
+		}
+		
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="filter">The <see cref="IEventFilter"/> to apply.</param>
+		/// <param name="checkpointInterval">Sets how often the checkpointReached callback is called.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public SubscriptionFilterOptions(IEventFilter filter, uint checkpointInterval = 1) {
 			if (checkpointInterval == 0) {
 				throw new ArgumentOutOfRangeException(nameof(checkpointInterval),
 					checkpointInterval, $"{nameof(checkpointInterval)} must be greater than 0.");
@@ -42,7 +51,6 @@ namespace EventStore.Client {
 
 			Filter = filter;
 			CheckpointInterval = checkpointInterval;
-			CheckpointReached = checkpointReached ?? ((_, __, ct) => Task.CompletedTask);
 		}
 	}
 }

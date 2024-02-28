@@ -1,7 +1,7 @@
 namespace EventStore.Client.PersistentSubscriptions.Tests.SubscriptionToAll;
 
 public class happy_case_filtered_with_start_from_set : IClassFixture<happy_case_filtered_with_start_from_set.Fixture> {
-	readonly Fixture _fixture;
+	private readonly Fixture _fixture;
 
 	public happy_case_filtered_with_start_from_set(Fixture fixture) => _fixture = fixture;
 
@@ -14,70 +14,47 @@ public class happy_case_filtered_with_start_from_set : IClassFixture<happy_case_
 		var (getFilter, prepareEvent) = Filters.GetFilter(filterName);
 		var filter = getFilter(streamPrefix);
 
-		var appeared        = new TaskCompletionSource<bool>();
-		var appearedEvents  = new List<EventRecord>();
-		var events          = _fixture.CreateTestEvents(20).Select(e => prepareEvent(streamPrefix, e)).ToArray();
-		var eventsToSkip    = events.Take(10).ToArray();
+		var events = _fixture.CreateTestEvents(20).Select(e => prepareEvent(streamPrefix, e)).ToArray();
+		var eventsToSkip = events.Take(10).ToArray();
 		var eventsToCapture = events.Skip(10).ToArray();
 
 		IWriteResult? eventToCaptureResult = null;
 
-		foreach (var e in eventsToSkip)
-			await _fixture.StreamsClient.AppendToStreamAsync(
-				$"{streamPrefix}_{Guid.NewGuid():n}",
-				StreamState.NoStream,
-				new[] { e }
-			);
+		foreach (var e in eventsToSkip) {
+			await _fixture.StreamsClient.AppendToStreamAsync($"{streamPrefix}_{Guid.NewGuid():n}", StreamState.NoStream,
+				new[] { e });
+		}
 
 		foreach (var e in eventsToCapture) {
-			var result = await _fixture.StreamsClient.AppendToStreamAsync(
-				$"{streamPrefix}_{Guid.NewGuid():n}",
-				StreamState.NoStream,
-				new[] { e }
-			);
+			var result = await _fixture.StreamsClient.AppendToStreamAsync($"{streamPrefix}_{Guid.NewGuid():n}",
+				StreamState.NoStream, new[] { e });
 
 			eventToCaptureResult ??= result;
 		}
 
-		await _fixture.Client.CreateToAllAsync(
-			filterName,
-			filter,
-			new(startFrom: eventToCaptureResult!.LogPosition),
-			userCredentials: TestCredentials.Root
-		);
+		await _fixture.Client.CreateToAllAsync(filterName, filter, new(startFrom: eventToCaptureResult!.LogPosition),
+			userCredentials: TestCredentials.Root);
 
-		using var subscription = await _fixture.Client.SubscribeToAllAsync(
-				filterName,
-				async (s, e, r, ct) => {
-					appearedEvents.Add(e.Event);
-					if (appearedEvents.Count >= eventsToCapture.Length)
-						appeared.TrySetResult(true);
+		await using var subscription =
+			_fixture.Client.SubscribeToAll(filterName, userCredentials: TestCredentials.Root);
 
-					await s.Ack(e);
-				},
-				userCredentials: TestCredentials.Root
-			)
+		var appearedEvents = await subscription.Messages.OfType<PersistentSubscriptionMessage.Event>()
+			.Take(10)
+			.Select(e => e.ResolvedEvent.Event)
+			.ToArrayAsync()
+			.AsTask()
 			.WithTimeout();
-
-		await Task.WhenAll(appeared.Task).WithTimeout();
 
 		Assert.Equal(eventsToCapture.Select(x => x.EventId), appearedEvents.Select(x => x.EventId));
 	}
 
 	public class Fixture : EventStoreClientFixture {
 		protected override async Task Given() {
-			await StreamsClient.AppendToStreamAsync(
-				Guid.NewGuid().ToString(),
-				StreamState.NoStream,
-				CreateTestEvents(256)
-			);
+			await StreamsClient.AppendToStreamAsync(Guid.NewGuid().ToString(), StreamState.NoStream,
+				CreateTestEvents(256));
 
-			await StreamsClient.SetStreamMetadataAsync(
-				SystemStreams.AllStream,
-				StreamState.Any,
-				new(acl: new(SystemRoles.All)),
-				userCredentials: TestCredentials.Root
-			);
+			await StreamsClient.SetStreamMetadataAsync(SystemStreams.AllStream, StreamState.Any,
+				new(acl: new(SystemRoles.All)), userCredentials: TestCredentials.Root);
 		}
 
 		protected override Task When() => Task.CompletedTask;

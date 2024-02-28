@@ -14,6 +14,7 @@ public class overriden_system_stream_security_for_all(ITestOutputHelper output, 
 		await Fixture.WriteMeta(stream, TestCredentials.TestUser1);
 
 		await Fixture.SubscribeToStream(stream, TestCredentials.TestUser1);
+		await Fixture.SubscribeToStreamObsolete(stream, TestCredentials.TestUser1);
 
 		await Fixture.DeleteStream(stream, TestCredentials.TestUser1);
 	}
@@ -30,6 +31,7 @@ public class overriden_system_stream_security_for_all(ITestOutputHelper output, 
 		await Fixture.WriteMeta(stream);
 
 		await Fixture.SubscribeToStream(stream);
+		await Fixture.SubscribeToStreamObsolete(stream);
 
 		await Fixture.DeleteStream(stream);
 	}
@@ -47,6 +49,7 @@ public class overriden_system_stream_security_for_all(ITestOutputHelper output, 
 		await Fixture.WriteMeta(stream, TestCredentials.TestAdmin);
 
 		await Fixture.SubscribeToStream(stream, TestCredentials.TestAdmin);
+		await Fixture.SubscribeToStreamObsolete(stream, TestCredentials.TestAdmin);
 
 		await Fixture.DeleteStream(stream, TestCredentials.TestAdmin);
 	}
