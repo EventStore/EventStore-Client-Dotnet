@@ -9,6 +9,8 @@ using Type = System.Type;
 
 namespace EventStore.Client {
 	public partial class EventStoreProjectionManagementClient {
+        static readonly JsonSerializerOptions DefaultJsonSerializerOptions = new JsonSerializerOptions();
+        
 		/// <summary>
 		/// Gets the result of a projection as an untyped document.
 		/// </summary>
@@ -24,10 +26,14 @@ namespace EventStore.Client {
 			var value = await GetResultInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 
+#if NET
 			await using var stream = new MemoryStream();
+#else
+			using var stream = new MemoryStream();
+#endif
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
-			serializer.Write(writer, value, new JsonSerializerOptions());
+			serializer.Write(writer, value, DefaultJsonSerializerOptions);
 			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 			stream.Position = 0;
 
@@ -51,10 +57,14 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken = default) {
 			var value = await GetResultInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
+#if NET
 			await using var stream = new MemoryStream();
+#else
+			using var stream = new MemoryStream();
+#endif
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
-			serializer.Write(writer, value, new JsonSerializerOptions());
+			serializer.Write(writer, value, DefaultJsonSerializerOptions);
 			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 			stream.Position = 0;
 
@@ -91,10 +101,14 @@ namespace EventStore.Client {
 			var value = await GetStateInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 
+#if NET
 			await using var stream = new MemoryStream();
+#else
+			using var stream = new MemoryStream();
+#endif
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
-			serializer.Write(writer, value, new JsonSerializerOptions());
+			serializer.Write(writer, value, DefaultJsonSerializerOptions);
 			stream.Position = 0;
 			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 
@@ -118,10 +132,14 @@ namespace EventStore.Client {
 			var value = await GetStateInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 
+#if NET
 			await using var stream = new MemoryStream();
+#else
+			using var stream = new MemoryStream();
+#endif
 			await using var writer = new Utf8JsonWriter(stream);
 			var serializer = new ValueSerializer();
-			serializer.Write(writer, value, new JsonSerializerOptions());
+			serializer.Write(writer, value, DefaultJsonSerializerOptions);
 			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 			stream.Position = 0;
 
@@ -173,9 +191,9 @@ namespace EventStore.Client {
 						break;
 					case Value.KindOneofCase.StructValue:
 						writer.WriteStartObject();
-						foreach (var (name, item) in value.StructValue.Fields) {
-							writer.WritePropertyName(name);
-							Write(writer, item, options);
+						foreach (var map in value.StructValue.Fields) {
+							writer.WritePropertyName(map.Key);
+							Write(writer, map.Value, options);
 						}
 
 						writer.WriteEndObject();

@@ -1,6 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<Description>The GRPC client API for Event Store Persistent Subscriptions. Get the open source or commercial versions of Event Store server from https://eventstore.com/</Description>
-	</PropertyGroup>
+    <PropertyGroup>
+        <Description>The GRPC client API for Event Store Persistent Subscriptions. Get the open source or commercial versions of Event Store server from https://eventstore.com/</Description>
+    </PropertyGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="EventStore.Client.PersistentSubscriptions.Tests"/>
+    </ItemGroup>
 </Project>

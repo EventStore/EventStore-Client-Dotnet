@@ -1,23 +1,14 @@
-using System.Threading.Tasks;
-using Xunit;
+namespace EventStore.Client.Tests;
 
-namespace EventStore.Client {
-	public class getting_current_user : IClassFixture<getting_current_user.Fixture> {
-		private readonly Fixture _fixture;
+public class getting_current_user : IClassFixture<EventStoreFixture> {
+	public getting_current_user(ITestOutputHelper output, EventStoreFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-		public getting_current_user(Fixture fixture) {
-			_fixture = fixture;
-		}
+	EventStoreFixture Fixture { get; }
 
-		[Fact]
-		public async Task returns_the_current_user() {
-			var user = await _fixture.Client.GetCurrentUserAsync(TestCredentials.Root);
-			Assert.Equal(TestCredentials.Root.Username, user.LoginName);
-		}
-
-		public class Fixture : EventStoreClientFixture {
-			protected override Task Given() => Task.CompletedTask;
-			protected override Task When() => Task.CompletedTask;
-		}
+	[Fact]
+	public async Task returns_the_current_user() {
+		var user = await Fixture.Users.GetCurrentUserAsync(TestCredentials.Root);
+		user.LoginName.ShouldBe(TestCredentials.Root.Username);
 	}
 }

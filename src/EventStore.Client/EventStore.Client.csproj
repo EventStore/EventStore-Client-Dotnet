@@ -1,24 +1,33 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<PackageId>EventStore.Client</PackageId>
-		<Description>The base GRPC client library for Event Store. Get the open source or commercial versions of Event Store server from https://eventstore.com/</Description>
-		<PackageId>EventStore.Client.Grpc</PackageId>
-	</PropertyGroup>
-	<ItemGroup>
-		<PackageReference Include="Google.Protobuf" Version="3.21.9" />
-		<PackageReference Include="Grpc.Net.Client" Version="$(GrpcPackageVersion)" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-		<PackageReference Include="System.Linq.Async" Version="6.0.1" />
-	</ItemGroup>
-	<ItemGroup>
-		<Protobuf Include="..\EventStore.Client.Common\protos\shared.proto;..\EventStore.Client.Common\protos\status.proto;..\EventStore.Client.Common\protos\code.proto;" GrpcServices="Client" ProtoRoot="..\EventStore.Client.Common\protos" />
-		<Protobuf Include="..\EventStore.Client.Common\protos\gossip.proto" ProtoRoot="..\EventStore.Client.Common\protos" />
-		<Protobuf Include="..\EventStore.Client.Common\protos\serverfeatures.proto" ProtoRoot="..\EventStore.Client.Common\protos" />
-	</ItemGroup>
-	<ItemGroup>
-		<Compile Remove="..\EventStore.Client.Common\TypedExceptionInterceptor.cs" />
-		<Compile Remove="..\EventStore.Client.Common\EventStoreClientSettingsExtensions.cs" />
-	</ItemGroup>
+    <PropertyGroup>
+        <PackageId>EventStore.Client</PackageId>
+        <Description>The base GRPC client library for Event Store. Get the open source or commercial versions of Event Store server from https://eventstore.com/</Description>
+        <PackageId>EventStore.Client.Grpc</PackageId>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" Version="3.25.1"/>
+        <PackageReference Include="Grpc.Net.Client" Version="$(GrpcPackageVersion)"/>
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+        <PackageReference Include="System.Linq.Async" Version="6.0.1"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Protobuf Include="..\EventStore.Client.Common\protos\shared.proto;..\EventStore.Client.Common\protos\status.proto;..\EventStore.Client.Common\protos\code.proto;" GrpcServices="Client" ProtoRoot="..\EventStore.Client.Common\protos"/>
+        <Protobuf Include="..\EventStore.Client.Common\protos\gossip.proto" ProtoRoot="..\EventStore.Client.Common\protos"/>
+        <Protobuf Include="..\EventStore.Client.Common\protos\serverfeatures.proto" ProtoRoot="..\EventStore.Client.Common\protos"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Remove="..\EventStore.Client.Common\TypedExceptionInterceptor.cs"/>
+        <Compile Remove="..\EventStore.Client.Common\EventStoreClientSettingsExtensions.cs"/>
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+        <Reference Include="System.Net.Http"/>
+        <Reference Include="System.Web"/>
+        <PackageReference Include="System.Text.Json" Version="7.0.3"/>
+        <PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0"/>
+    </ItemGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="EventStore.Client.Tests"/>
+    </ItemGroup>
 </Project>

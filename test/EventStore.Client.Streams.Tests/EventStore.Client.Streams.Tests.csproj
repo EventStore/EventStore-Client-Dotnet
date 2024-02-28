@@ -1,7 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-	<ItemGroup>
-		<ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
-		<ProjectReference Include="..\..\src\EventStore.Client.UserManagement\EventStore.Client.UserManagement.csproj" />
-	</ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\EventStore.Client.Tests.Common\EventStore.Client.Tests.Common.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <None Remove="EventStore.Client.Streams.Tests.csproj.DotSettings"/>
+    </ItemGroup>
 </Project>

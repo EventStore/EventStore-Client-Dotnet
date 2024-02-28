@@ -1,4 +1,6 @@
 using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace EventStore.Client {
 	/// <summary>
@@ -66,18 +68,28 @@ namespace EventStore.Client {
 
 			Span<byte> data = stackalloc byte[16];
 
-			if (!value.TryWriteBytes(data)) {
+			if (!TryWriteGuidBytes(value, data)) {
 				throw new InvalidOperationException();
 			}
 
-			data.Slice(0, 8).Reverse();
-			data.Slice(0, 2).Reverse();
+			data[..8].Reverse();
+			data[..2].Reverse();
 			data.Slice(2, 2).Reverse();
 			data.Slice(4, 4).Reverse();
-			data.Slice(8).Reverse();
+			data[8..].Reverse();
 
-			_msb = BitConverter.ToInt64(data);
-			_lsb = BitConverter.ToInt64(data.Slice(8));
+			_msb = BitConverterToInt64(data);
+			_lsb = BitConverterToInt64(data[8..]);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private static long BitConverterToInt64(ReadOnlySpan<byte> value)
+		{
+#if NET
+			return BitConverter.ToInt64(value);
+#else
+			return Unsafe.ReadUnaligned<long>(ref MemoryMarshal.GetReference(value));
+#endif
 		}
 
 		private Uuid(string value) : this(value == null
@@ -98,7 +110,7 @@ namespace EventStore.Client {
 			new UUID {
 				Structured = new UUID.Types.Structured {
 					LeastSignificantBits = _lsb,
-					MostSignificantBits = _msb
+					MostSignificantBits  = _msb
 				}
 			};
 
@@ -148,18 +160,44 @@ namespace EventStore.Client {
 			}
 
 			Span<byte> data = stackalloc byte[16];
-			if (!BitConverter.TryWriteBytes(data, _msb) ||
-			    !BitConverter.TryWriteBytes(data.Slice(8), _lsb)) {
+			if (!TryWriteBytes(data, _msb) ||
+			    !TryWriteBytes(data[8..], _lsb)) {
 				throw new InvalidOperationException();
 			}
 
-			data.Slice(0, 8).Reverse();
-			data.Slice(0, 4).Reverse();
+			data[..8].Reverse();
+			data[..4].Reverse();
 			data.Slice(4, 2).Reverse();
 			data.Slice(6, 2).Reverse();
-			data.Slice(8).Reverse();
+			data[8..].Reverse();
 
+#if NET
 			return new Guid(data);
+#else
+			return new Guid(data.ToArray());
+#endif
+		}
+		private static bool TryWriteBytes(Span<byte> destination, long value)
+		{
+			if (destination.Length < sizeof(long))
+				return false;
+
+			Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(destination), value);
+			return true;
+		}
+
+		private bool TryWriteGuidBytes(Guid value, Span<byte> destination)
+		{
+#if NET
+			return value.TryWriteBytes(destination);
+#else
+			if (destination.Length < 16)
+				return false;
+
+			var bytes = value.ToByteArray();
+			bytes.CopyTo(destination);
+			return true;
+#endif
 		}
 	}
 }

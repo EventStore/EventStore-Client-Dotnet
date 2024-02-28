@@ -13,11 +13,11 @@ namespace EventStore.Client {
 	/// </summary>
 	public class PersistentSubscription : IDisposable {
 		private readonly Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> _eventAppeared;
-		private readonly Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> _subscriptionDropped;
-		private readonly IDisposable _disposable;
-		private readonly CancellationToken _cancellationToken;
-		private readonly AsyncDuplexStreamingCall<ReadReq, ReadResp> _call;
-		private readonly ILogger _log;
+		private readonly Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>      _subscriptionDropped;
+		private readonly IDisposable                                                                _disposable;
+		private readonly CancellationToken                                                          _cancellationToken;
+		private readonly AsyncDuplexStreamingCall<ReadReq, ReadResp>                                _call;
+		private readonly ILogger                                                                    _log;
 
 		private int _subscriptionDroppedInvoked;
 
@@ -60,13 +60,13 @@ namespace EventStore.Client {
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped,
 			CancellationToken cancellationToken,
 			IDisposable disposable) {
-			_call = call;
-			_eventAppeared = eventAppeared;
+			_call                = call;
+			_eventAppeared       = eventAppeared;
 			_subscriptionDropped = subscriptionDropped;
-			_cancellationToken = cancellationToken;
-			_disposable = disposable;
-			_log = log;
-			SubscriptionId = call.ResponseStream.Current.SubscriptionConfirmation.SubscriptionId;
+			_cancellationToken   = cancellationToken;
+			_disposable          = disposable;
+			_log                 = log;
+			SubscriptionId       = call.ResponseStream.Current.SubscriptionConfirmation.SubscriptionId;
 			Task.Run(Subscribe);
 		}
 
@@ -130,7 +130,7 @@ namespace EventStore.Client {
 		/// <param name="resolvedEvents">The <see cref="ResolvedEvent" />s to nak. There should not be more than 2000 to nak at a time.</param>
 		/// <exception cref="ArgumentException">The number of resolvedEvents exceeded the limit of 2000.</exception>
 		public Task Nack(PersistentSubscriptionNakEventAction action, string reason,
-			params ResolvedEvent[] resolvedEvents) =>
+		                 params ResolvedEvent[] resolvedEvents) =>
 			Nack(action, reason,
 				Array.ConvertAll(resolvedEvents, resolvedEvent => resolvedEvent.OriginalEvent.EventId));
 
@@ -141,8 +141,7 @@ namespace EventStore.Client {
 			_log.LogDebug("Persistent Subscription {subscriptionId} confirmed.", SubscriptionId);
 
 			try {
-				await foreach (var response in
-				               _call.ResponseStream.ReadAllAsync(_cancellationToken).ConfigureAwait(false)) {
+				await foreach (var response in _call.ResponseStream.ReadAllAsync(_cancellationToken).ConfigureAwait(false)) {
 					if (response.ContentCase != ReadResp.ContentOneofCase.Event) {
 						continue;
 					}
@@ -187,6 +186,23 @@ namespace EventStore.Client {
 				}
 			} catch (Exception ex) {
 				if (_subscriptionDroppedInvoked == 0) {
+#if NET48
+					switch (ex) {
+						// The gRPC client for .NET 48 uses WinHttpHandler under the hood for sending HTTP requests.
+						// In certain scenarios, this can lead to exceptions of type WinHttpException being thrown.
+						// One such scenario is when the server abruptly closes the connection, which results in a WinHttpException with the error code 12030.
+						// Additionally, there are cases where the server response does not include the 'grpc-status' header.
+						// The absence of this header leads to an RpcException with the status code 'Cancelled' and the message "No grpc-status found on response".
+						// The switch statement below handles these specific exceptions and translates them into the appropriate
+						// PersistentSubscriptionDroppedByServerException exception. The downside of this approach is that it does not return the stream name
+						// and group name.
+						case RpcException { StatusCode: StatusCode.Unavailable } rex1 when rex1.Status.Detail.Contains("WinHttpException: Error 12030"):
+						case RpcException { StatusCode: StatusCode.Cancelled } rex2
+					        when rex2.Status.Detail.Contains("No grpc-status found on response"):
+							ex = new PersistentSubscriptionDroppedByServerException("", "", ex);
+							break;
+					}
+#endif
 					_log.LogError(ex,
 						"Persistent Subscription {subscriptionId} was dropped because an error occurred on the server.",
 						SubscriptionId);
@@ -206,7 +222,7 @@ namespace EventStore.Client {
 				ConvertToEventRecord(response.Event.Link),
 				response.Event.PositionCase switch {
 					ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => response.Event.CommitPosition,
-					_ => null
+					_                                                         => null
 				});
 
 			EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>
@@ -251,11 +267,11 @@ namespace EventStore.Client {
 						Array.ConvertAll(ids, id => id.ToDto())
 					},
 					Action = action switch {
-						PersistentSubscriptionNakEventAction.Park => ReadReq.Types.Nack.Types.Action.Park,
+						PersistentSubscriptionNakEventAction.Park  => ReadReq.Types.Nack.Types.Action.Park,
 						PersistentSubscriptionNakEventAction.Retry => ReadReq.Types.Nack.Types.Action.Retry,
-						PersistentSubscriptionNakEventAction.Skip => ReadReq.Types.Nack.Types.Action.Skip,
-						PersistentSubscriptionNakEventAction.Stop => ReadReq.Types.Nack.Types.Action.Stop,
-						_ => ReadReq.Types.Nack.Types.Action.Unknown
+						PersistentSubscriptionNakEventAction.Skip  => ReadReq.Types.Nack.Types.Action.Skip,
+						PersistentSubscriptionNakEventAction.Stop  => ReadReq.Types.Nack.Types.Action.Stop,
+						_                                          => ReadReq.Types.Nack.Types.Action.Unknown
 					},
 					Reason = reason
 				}

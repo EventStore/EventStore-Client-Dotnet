@@ -14,7 +14,7 @@ namespace EventStore.Client {
 		private readonly string _addressScheme;
 
 		internal HttpFallback (EventStoreClientSettings settings) {
-			_addressScheme = settings.ConnectivitySettings.Address.Scheme;
+			_addressScheme = settings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme;
             _defaultCredentials = settings.DefaultCredentials;
 			
 			var handler = new HttpClientHandler();
@@ -45,7 +45,11 @@ namespace EventStore.Client {
 			
 			var httpResult = await HttpSendAsync(request, onNotFound, deadline, cancellationToken).ConfigureAwait(false);
 			
+#if NET
 			var json = await httpResult.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+#else
+			var json = await httpResult.Content.ReadAsStringAsync().ConfigureAwait(false);
+#endif
 
 			var result = JsonSerializer.Deserialize<T>(json, _jsonSettings);
 			if (result == null) {

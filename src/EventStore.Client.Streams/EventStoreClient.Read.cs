@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Channels;
-using System.Threading.Tasks;
 using EventStore.Client.Streams;
 using Grpc.Core;
 using static EventStore.Client.Streams.ReadResp;
@@ -42,22 +37,75 @@ namespace EventStore.Client {
 				Options = new() {
 					ReadDirection = direction switch {
 						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
-						Direction.Forwards => ReadReq.Types.Options.Types.ReadDirection.Forwards,
-						_ => throw InvalidOption(direction)
+						Direction.Forwards  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
+						_                   => throw InvalidOption(direction)
 					},
 					ResolveLinks = resolveLinkTos,
 					All = new() {
 						Position = new() {
-							CommitPosition = position.CommitPosition,
+							CommitPosition  = position.CommitPosition,
 							PreparePosition = position.PreparePosition
 						}
 					},
-					Count = (ulong)maxCount,
-					UuidOption = new() {Structured = new()},
-					NoFilter = new(),
+					Count         = (ulong)maxCount,
+					UuidOption    = new() {Structured = new()},
+					NoFilter      = new(),
 					ControlOption = new() {Compatibility = 1}
 				}
 			}, Settings, deadline, userCredentials, cancellationToken);
+		}
+		
+		/// <summary>
+		/// Asynchronously reads all events with filtering.
+		/// </summary>
+		/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
+		/// <param name="position">The <see cref="Position"/> to start reading from.</param>
+		/// <param name="eventFilter">The <see cref="IEventFilter"/> to apply.</param>
+		/// <param name="maxCount">The maximum count to read.</param>
+		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public ReadAllStreamResult ReadAllAsync(
+			Direction direction,
+			Position position,
+			IEventFilter eventFilter,
+			long maxCount = long.MaxValue,
+			bool resolveLinkTos = false,
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default
+			) {
+			if (maxCount <= 0) {
+				throw new ArgumentOutOfRangeException(nameof(maxCount));
+			}
+
+			var readReq = new ReadReq {
+				Options = new() {
+					ReadDirection = direction switch {
+						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
+						Direction.Forwards  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
+						_                   => throw InvalidOption(direction)
+					},
+					ResolveLinks = resolveLinkTos,
+					All = new() {
+						Position = new() {
+							CommitPosition  = position.CommitPosition,
+							PreparePosition = position.PreparePosition
+						}
+					},
+					Count         = (ulong)maxCount,
+					UuidOption    = new() { Structured    = new() },
+					ControlOption = new() { Compatibility = 1 },
+					Filter        = GetFilterOptions(eventFilter)
+				}
+			};
+
+			return new ReadAllStreamResult(async _ => {
+				var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+				return channelInfo.CallInvoker;
+			}, readReq, Settings, deadline, userCredentials, cancellationToken);
 		}
 
 		/// <summary>
@@ -87,7 +135,7 @@ namespace EventStore.Client {
 						}
 
 						try {
-							await foreach (var message in _channel.Reader.ReadAllAsync().ConfigureAwait(false)) {
+							await foreach (var message in ReadAllAsync(_channel.Reader).ConfigureAwait(false)) {
 								if (message is StreamMessage.LastAllStreamPosition(var position)) {
 									LastPosition = position;
 								}
@@ -151,7 +199,7 @@ namespace EventStore.Client {
 				CancellationToken cancellationToken = default) {
 
 				try {
-					await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
+					await foreach (var message in ReadAllAsync(_channel.Reader, cancellationToken).ConfigureAwait(false)) {
 						if (message is not StreamMessage.Event e) {
 							continue;
 						}
@@ -250,7 +298,7 @@ namespace EventStore.Client {
 						}
 
 						try {
-							await foreach (var message in _channel.Reader.ReadAllAsync().ConfigureAwait(false)) {
+							await foreach (var message in ReadAllAsync(_channel.Reader).ConfigureAwait(false)) {
 								switch (message) {
 									case StreamMessage.FirstStreamPosition(var streamPosition):
 										FirstStreamPosition = streamPosition;
@@ -348,7 +396,7 @@ namespace EventStore.Client {
 				CancellationToken cancellationToken = default) {
 
 				try {
-					await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
+					await foreach (var message in ReadAllAsync(_channel.Reader, cancellationToken).ConfigureAwait(false)) {
 						if (message is StreamMessage.NotFound) {
 							throw new StreamNotFoundException(StreamName);
 						}

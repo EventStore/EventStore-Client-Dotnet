@@ -1,6 +1,5 @@
 // ReSharper disable CheckNamespace
 
-using System;
 using System.Net.Http;
 using EventStore.Client;
 using Grpc.Core.Interceptors;
