@@ -1,7 +1,6 @@
 namespace EventStore.Client.Streams.Tests;
 
 [Trait("Category", "Security")]
-[Obsolete]
 public class subscribe_to_stream_security(ITestOutputHelper output, SecurityFixture fixture)
 	: EventStoreTests<SecurityFixture>(output, fixture) {
 	[Fact]

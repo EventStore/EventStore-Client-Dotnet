@@ -15,7 +15,6 @@ public class system_stream_security(ITestOutputHelper output, SecurityFixture fi
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.WriteMeta("$system-no-acl", TestCredentials.TestUser1));
 
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStream("$system-no-acl", TestCredentials.TestUser1));
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStreamObsolete("$system-no-acl", TestCredentials.TestUser1));
 	}
 
 	[Fact]
@@ -30,7 +29,6 @@ public class system_stream_security(ITestOutputHelper output, SecurityFixture fi
 		await Fixture.WriteMeta("$system-no-acl", TestCredentials.TestAdmin);
 
 		await Fixture.SubscribeToStream("$system-no-acl", TestCredentials.TestAdmin);
-		await Fixture.SubscribeToStreamObsolete("$system-no-acl", TestCredentials.TestAdmin);
 	}
 
 	[Fact]
@@ -45,7 +43,6 @@ public class system_stream_security(ITestOutputHelper output, SecurityFixture fi
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.WriteMeta(SecurityFixture.SystemAclStream, TestCredentials.TestUser2, TestCredentials.TestUser1.Username));
 
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStream(SecurityFixture.SystemAclStream, TestCredentials.TestUser2));
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStreamObsolete(SecurityFixture.SystemAclStream, TestCredentials.TestUser2));
 	}
 
 	[Fact]
@@ -59,7 +56,6 @@ public class system_stream_security(ITestOutputHelper output, SecurityFixture fi
 		await Fixture.WriteMeta(SecurityFixture.SystemAclStream, TestCredentials.TestUser1, TestCredentials.TestUser1.Username);
 
 		await Fixture.SubscribeToStream(SecurityFixture.SystemAclStream, TestCredentials.TestUser1);
-		await Fixture.SubscribeToStreamObsolete(SecurityFixture.SystemAclStream, TestCredentials.TestUser1);
 	}
 
 	[Fact]
@@ -73,7 +69,6 @@ public class system_stream_security(ITestOutputHelper output, SecurityFixture fi
 		await Fixture.WriteMeta(SecurityFixture.SystemAclStream, TestCredentials.TestAdmin, TestCredentials.TestUser1.Username);
 
 		await Fixture.SubscribeToStream(SecurityFixture.SystemAclStream, TestCredentials.TestAdmin);
-		await Fixture.SubscribeToStreamObsolete(SecurityFixture.SystemAclStream, TestCredentials.TestAdmin);
 	}
 
 	[Fact]
@@ -94,7 +89,6 @@ public class system_stream_security(ITestOutputHelper output, SecurityFixture fi
 		);
 
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStream(SecurityFixture.SystemAdminStream, TestCredentials.TestUser1));
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStreamObsolete(SecurityFixture.SystemAdminStream, TestCredentials.TestUser1));
 	}
 
 	[Fact]
@@ -108,7 +102,6 @@ public class system_stream_security(ITestOutputHelper output, SecurityFixture fi
 		await Fixture.WriteMeta(SecurityFixture.SystemAdminStream, TestCredentials.TestAdmin, SystemRoles.Admins);
 
 		await Fixture.SubscribeToStream(SecurityFixture.SystemAdminStream, TestCredentials.TestAdmin);
-		await Fixture.SubscribeToStreamObsolete(SecurityFixture.SystemAdminStream, TestCredentials.TestAdmin);
 	}
 
 	[AnonymousAccess.Fact]
@@ -122,7 +115,6 @@ public class system_stream_security(ITestOutputHelper output, SecurityFixture fi
 		await Fixture.WriteMeta(SecurityFixture.SystemAllStream, role: SystemRoles.All);
 
 		await Fixture.SubscribeToStream(SecurityFixture.SystemAllStream);
-		await Fixture.SubscribeToStreamObsolete(SecurityFixture.SystemAllStream);
 	}
 
 	[Fact]
@@ -136,7 +128,6 @@ public class system_stream_security(ITestOutputHelper output, SecurityFixture fi
 		await Fixture.WriteMeta(SecurityFixture.SystemAllStream, TestCredentials.TestUser1, SystemRoles.All);
 
 		await Fixture.SubscribeToStream(SecurityFixture.SystemAllStream, TestCredentials.TestUser1);
-		await Fixture.SubscribeToStreamObsolete(SecurityFixture.SystemAllStream, TestCredentials.TestUser1);
 	}
 
 	[Fact]
@@ -150,6 +141,5 @@ public class system_stream_security(ITestOutputHelper output, SecurityFixture fi
 		await Fixture.WriteMeta(SecurityFixture.SystemAllStream, TestCredentials.TestAdmin, SystemRoles.All);
 
 		await Fixture.SubscribeToStream(SecurityFixture.SystemAllStream, TestCredentials.TestAdmin);
-		await Fixture.SubscribeToStreamObsolete(SecurityFixture.SystemAllStream, TestCredentials.TestAdmin);
 	}
 }

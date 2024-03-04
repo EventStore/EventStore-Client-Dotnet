@@ -8,9 +8,6 @@
 		/// </summary>
 		public string StreamName { get; }
 
-		/// <inheritdoc />
-		public long NextExpectedVersion { get; }
-
 		/// <summary>
 		/// The version the stream is at.
 		/// </summary>
@@ -34,7 +31,7 @@
 		/// <param name="nextExpectedStreamRevision"></param>
 		public WrongExpectedVersionResult(string streamName, StreamRevision nextExpectedStreamRevision) {
 			StreamName = streamName;
-			ActualVersion = NextExpectedVersion = nextExpectedStreamRevision.ToInt64();
+			ActualVersion = nextExpectedStreamRevision.ToInt64();
 			ActualStreamRevision = NextExpectedStreamRevision = nextExpectedStreamRevision;
 			LogPosition = default;
 		}
@@ -50,7 +47,6 @@
 			StreamName = streamName;
 			ActualVersion = actualStreamRevision.ToInt64();
 			ActualStreamRevision = actualStreamRevision;
-			NextExpectedVersion = nextExpectedStreamRevision.ToInt64();
 			NextExpectedStreamRevision = nextExpectedStreamRevision;
 			LogPosition = default;
 		}
