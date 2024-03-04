@@ -16,7 +16,7 @@ namespace EventStore.Client {
 		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		[Obsolete("SubscribeToAllAsync is no longer supported. Use SubscribeToAll instead.", true)]
+		[Obsolete("SubscribeToAllAsync is no longer supported. Use SubscribeToAll instead.", false)]
 		public Task<StreamSubscription> SubscribeToAllAsync(
 			FromAll start,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
@@ -68,7 +68,7 @@ namespace EventStore.Client {
 		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		[Obsolete("SubscribeToStreamAsync is no longer supported. Use SubscribeToStream instead.", true)]
+		[Obsolete("SubscribeToStreamAsync is no longer supported. Use SubscribeToStream instead.", false)]
 		public Task<StreamSubscription> SubscribeToStreamAsync(string streamName,
 		                                                       FromStream start,
 		                                                       Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
