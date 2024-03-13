@@ -29,7 +29,7 @@ namespace EventStore.Client {
 				throw new ArgumentOutOfRangeException(nameof(startFromChunk));
 			}
 
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			using var call = new Operations.Operations.OperationsClient(
 				channelInfo.CallInvoker).StartScavengeAsync(
 				new StartScavengeReq {
@@ -62,7 +62,7 @@ namespace EventStore.Client {
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			var result = await new Operations.Operations.OperationsClient(
 				channelInfo.CallInvoker).StopScavengeAsync(new StopScavengeReq {
 				Options = new StopScavengeReq.Types.Options {

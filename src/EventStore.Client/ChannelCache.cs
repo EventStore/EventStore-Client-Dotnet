@@ -1,5 +1,4 @@
-﻿using System.Net;
-using TChannel = Grpc.Net.Client.GrpcChannel;
+﻿using TChannel = Grpc.Net.Client.GrpcChannel;
 
 namespace EventStore.Client {
 	// Maintains Channels keyed by DnsEndPoint so the channels can be reused.
@@ -10,33 +9,35 @@ namespace EventStore.Client {
 
 		private readonly EventStoreClientSettings _settings;
 		private readonly Random _random;
-		private readonly Dictionary<DnsEndPoint, TChannel> _channels;
+		private readonly Dictionary<ChannelIdentifier, TChannel> _channels;
 		private readonly object _lock = new();
 		private bool _disposed;
 
 		public ChannelCache(EventStoreClientSettings settings) {
 			_settings = settings;
 			_random = new Random(0);
-			_channels = new Dictionary<DnsEndPoint, TChannel>(
+			_channels = new Dictionary<ChannelIdentifier, TChannel>(
 				DnsEndPointEqualityComparer.Instance);
 		}
 
-		public TChannel GetChannelInfo(DnsEndPoint endPoint) {
+		public TChannel GetChannelInfo(ChannelIdentifier channelIdentifier) {
 			lock (_lock) {
 				ThrowIfDisposed();
 
-				if (!_channels.TryGetValue(endPoint, out var channel)) {
+				if (!_channels.TryGetValue(channelIdentifier, out var channel)) {
 					channel = ChannelFactory.CreateChannel(
-						settings: _settings, 
-						endPoint: endPoint);
-					_channels[endPoint] = channel;
+						settings: _settings,
+						channelIdentifier
+					);
+
+					_channels[channelIdentifier] = channel;
 				}
 
 				return channel;
 			}
 		}
 
-		public KeyValuePair<DnsEndPoint, TChannel>[] GetRandomOrderSnapshot() {
+	 	public KeyValuePair<ChannelIdentifier, TChannel>[] GetRandomOrderSnapshot() {
 			lock (_lock) {
 				ThrowIfDisposed();
 
@@ -47,7 +48,7 @@ namespace EventStore.Client {
 		}
 
 		// Update the cache to contain channels for exactly these endpoints
-		public void UpdateCache(IEnumerable<DnsEndPoint> endPoints) {
+		public void UpdateCache(IEnumerable<ChannelIdentifier> endPoints) {
 			lock (_lock) {
 				ThrowIfDisposed();
 
@@ -61,7 +62,6 @@ namespace EventStore.Client {
 				foreach (var endPoint in endPointsToDiscard) {
 					if (!_channels.TryGetValue(endPoint, out var channel))
 						continue;
-
 					_channels.Remove(endPoint);
 					channelsToDispose.Add(channel);
 				}
@@ -114,14 +114,15 @@ namespace EventStore.Client {
 		}
 
 		private static async Task DisposeChannelsAsync(IEnumerable<TChannel> channels) {
-			foreach (var channel in channels)
+			foreach (var channel in channels) {
 				await channel.DisposeAsync().ConfigureAwait(false);
+			}
 		}
 
-		private class DnsEndPointEqualityComparer : IEqualityComparer<DnsEndPoint> {
+		private class DnsEndPointEqualityComparer : IEqualityComparer<ChannelIdentifier> {
 			public static readonly DnsEndPointEqualityComparer Instance = new();
 
-			public bool Equals(DnsEndPoint? x, DnsEndPoint? y) {
+			public bool Equals(ChannelIdentifier? x, ChannelIdentifier? y) {
 				if (ReferenceEquals(x, y))
 					return true;
 				if (x is null)
@@ -131,14 +132,12 @@ namespace EventStore.Client {
 				if (x.GetType() != y.GetType())
 					return false;
 				return
-					string.Equals(x.Host, y.Host, StringComparison.OrdinalIgnoreCase) &&
-					x.Port == y.Port;
+					x.GetHashCode() == y.GetHashCode();
 			}
 
-			public int GetHashCode(DnsEndPoint obj) {
+			public int GetHashCode(ChannelIdentifier obj) {
 				unchecked {
-					return (StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Host) * 397) ^
-						   obj.Port;
+					return (obj.DnsEndpoint.GetHashCode() * 397) ^ (obj.UserCredentials?.GetHashCode() ?? 0);
 				}
 			}
 		}

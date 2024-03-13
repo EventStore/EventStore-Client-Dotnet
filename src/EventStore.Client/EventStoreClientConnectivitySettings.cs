@@ -102,9 +102,15 @@ namespace EventStore.Client {
 		public bool TlsVerifyCert { get; set; } = true;
 
 		/// <summary>
+		/// Path to a certificate file for secure connection. Not required for enabling secure connection. Useful for self-signed certificate
+		/// that are not installed on the system trust store.
+		/// </summary>
+		public X509Certificate2? TlsCaFile { get; set; }
+
+		/// <summary>
 		/// Client certificate used for user authentication.
 		/// </summary>
-		public X509Certificate2? ClientCertificate { get; set; } = null;
+		public X509Certificate2? ClientCertificate { get; set; }
 
 		/// <summary>
 		/// The default <see cref="EventStoreClientConnectivitySettings"/>.

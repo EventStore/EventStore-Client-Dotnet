@@ -1,12 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Net.Security;
-using System.Security.Authentication;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using Timeout_ = System.Threading.Timeout;
 
 namespace EventStore.Client {
@@ -59,6 +52,7 @@ namespace EventStore.Client {
 					{ NodePreference, typeof(string) },
 					{ Tls, typeof(bool) },
 					{ TlsVerifyCert, typeof(bool) },
+					{ TlsCaFile, typeof(string) },
 					{ DefaultDeadline, typeof(int) },
 					{ ThrowOnAppendFailure, typeof(bool) },
 					{ KeepAliveInterval, typeof(int) },
@@ -213,57 +207,35 @@ namespace EventStore.Client {
 					settings.ConnectivitySettings.TlsVerifyCert = (bool)tlsVerifyCert;
 				}
 
+				if (typedOptions.TryGetValue(TlsCaFile, out var tlsCaFile)) {
+					var tlsCaFilePath = Path.GetFullPath((string)tlsCaFile);
+					if (!string.IsNullOrEmpty(tlsCaFilePath) && !File.Exists(tlsCaFilePath)) {
+						throw new InvalidClientCertificateException($"Failed to load certificate. File was not found.");
+					}
+
+					try {
+						settings.ConnectivitySettings.TlsCaFile = CertificateUtils.LoadCertificate(tlsCaFilePath);
+					} catch (CryptographicException) {
+						throw new InvalidClientCertificateException("Failed to load certificate. Invalid file format.");
+					}
+				}
+
 				var certPathSet = typedOptions.TryGetValue(CertPath, out var certPath);
 				var certKeyPathSet = typedOptions.TryGetValue(CertKeyPath, out var certKeyPath);
 
 				if (certPathSet ^ certKeyPathSet)
 					throw new InvalidSettingException($"Invalid certificate settings. {nameof(CertPath)} and {nameof(CertKeyPath)} must both be set");
 
-				if (certPathSet && certKeyPathSet) {
-					try {
-						settings.ConnectivitySettings.ClientCertificate  =
-							CertificateUtils.LoadFromFile((string)certPath!, (string)certKeyPath!);
-					} catch (Exception ex) {
-						throw new InvalidSettingException($"Invalid certificate settings. {ex.Message}");
-					}
-				}
+				if (!certPathSet || !certKeyPathSet) return settings;
 
-				settings.CreateHttpMessageHandler = CreateDefaultHandler;
+				try {
+					settings.ConnectivitySettings.ClientCertificate =
+						CertificateUtils.LoadFromFile((string)certPath!, (string)certKeyPath!);
+				} catch (Exception ex) {
+					throw new InvalidSettingException($"Invalid certificate settings. {ex.Message}");
+				}
 
 				return settings;
-
-				HttpMessageHandler CreateDefaultHandler() {
-					var configureClientCert = settings.ConnectivitySettings is { ClientCertificate: not null, Insecure: false };
-#if NET
-					var handler = new SocketsHttpHandler {
-						KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
-						KeepAlivePingTimeout           = settings.ConnectivitySettings.KeepAliveTimeout,
-						EnableMultipleHttp2Connections = true,
-					};
-
-					if (configureClientCert)
-						handler.SslOptions.ClientCertificates = [settings.ConnectivitySettings.ClientCertificate!];
-
-					if (!settings.ConnectivitySettings.TlsVerifyCert) {
-						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
-					}
-#else
-					var handler = new WinHttpHandler {
-						TcpKeepAliveEnabled = true,
-						TcpKeepAliveTime = settings.ConnectivitySettings.KeepAliveTimeout,
-						TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
-						EnableMultipleHttp2Connections = true
-					};
-
-					if (configureClientCert)
-						handler.ClientCertificates.Add(settings.ConnectivitySettings.ClientCertificate!);
-
-					if (!settings.ConnectivitySettings.TlsVerifyCert) {
-						handler.ServerCertificateValidationCallback = delegate { return true; };
-					}
-#endif
-					return handler;
-				}
 			}
 
 			private static string ParseScheme(string s) =>

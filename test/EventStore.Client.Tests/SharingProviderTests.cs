@@ -263,4 +263,44 @@ public class SharingProviderTests {
 		await constructionCompleted.WaitAsync();
 		Assert.Equal(0, await sut.CurrentAsync);
 	}
+
+	[Fact]
+	public async Task CanGetOrCreateAsyncWithSameAndDifferentInputs() {
+		var count           = 0;
+		var expensiveCalled = 0;
+		using var sut = new SharingProvider<int, int>(
+			async (x, _) => ExpensiveCall(x),
+			TimeSpan.FromSeconds(0),
+			0
+		);
+
+		// Get the object with input 0
+		var result1 = await sut.GetAsync(0);
+		Assert.Equal(0, result1);
+
+		// Get the object with input 0 again (returns the same object)
+		var result2 = await sut.GetAsync(0);
+		Assert.Equal(0, result2);
+
+		// Get the object with input 1 (creates a new object)
+		var result3 = await sut.GetAsync(1);
+		Assert.Equal(2, result3);
+
+		// Get the object with input 1 again (returns the same object)
+		var result4 = await sut.GetAsync(1);
+		Assert.Equal(2, result4);
+
+		// Get the object with input 2 (creates a new object)
+		var result5 = await sut.GetAsync(2);
+		Assert.Equal(4, result5);
+
+		// Expensive should be called 3 times
+		Assert.Equal(3, expensiveCalled);
+		return;
+
+		int ExpensiveCall(int x) {
+			expensiveCalled++;
+			return x + count++;
+		}
+	}
 }

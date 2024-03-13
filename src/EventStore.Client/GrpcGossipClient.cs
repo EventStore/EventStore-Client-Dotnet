@@ -16,15 +16,22 @@ namespace EventStore.Client {
 			var client = new Gossip.Gossip.GossipClient(channel);
 			using var call = client.ReadAsync(
 				new Empty(),
-				EventStoreCallOptions.CreateNonStreaming(_settings, ct));
+				EventStoreCallOptions.CreateNonStreaming(_settings, ct)
+			);
+
 			var result = await call.ResponseAsync.ConfigureAwait(false);
 
-			return new(result.Members.Select(x =>
-				new ClusterMessages.MemberInfo(
-					Uuid.FromDto(x.InstanceId),
-					(ClusterMessages.VNodeState)x.State,
-					x.IsAlive,
-					new DnsEndPoint(x.HttpEndPoint.Address, (int)x.HttpEndPoint.Port))).ToArray());
+			return new(
+				result.Members.Select(
+					x =>
+						new ClusterMessages.MemberInfo(
+							Uuid.FromDto(x.InstanceId),
+							(ClusterMessages.VNodeState)x.State,
+							x.IsAlive,
+							new DnsEndPoint(x.HttpEndPoint.Address, (int)x.HttpEndPoint.Port)
+						)
+				).ToArray()
+			);
 		}
 	}
 }

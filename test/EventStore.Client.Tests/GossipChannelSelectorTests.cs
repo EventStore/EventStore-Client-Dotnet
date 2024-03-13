@@ -46,10 +46,10 @@ public class GossipChannelSelectorTests {
 			)
 		);
 
-		var channel = await sut.SelectChannelAsync(default);
+		var channel = await sut.SelectChannelAsync(null, default);
 		Assert.Equal($"{firstSelection.Host}:{firstSelection.Port}", channel.Target);
 
-		channel = sut.SelectChannel(secondSelection);
+		channel = sut.SelectChannel(new ChannelIdentifier(secondSelection));
 		Assert.Equal($"{secondSelection.Host}:{secondSelection.Port}", channel.Target);
 	}
 
@@ -69,7 +69,7 @@ public class GossipChannelSelectorTests {
 
 		var sut = new GossipChannelSelector(settings, channelCache, new BadGossipClient());
 
-		var ex = await Assert.ThrowsAsync<DiscoveryException>(async () => await sut.SelectChannelAsync(default));
+		var ex = await Assert.ThrowsAsync<DiscoveryException>(async () => await sut.SelectChannelAsync(null, default));
 
 		Assert.Equal(3, ex.MaxDiscoverAttempts);
 	}

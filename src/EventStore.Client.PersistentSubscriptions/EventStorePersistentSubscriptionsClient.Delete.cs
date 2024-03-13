@@ -18,7 +18,7 @@ namespace EventStore.Client {
 		/// </summary>
 		public async Task DeleteToStreamAsync(string streamName, string groupName, TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 
 			if (streamName == SystemStreams.AllStream &&
 			    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {

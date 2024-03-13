@@ -9,7 +9,7 @@ namespace EventStore.Client {
 	internal class SingleNodeChannelSelector : IChannelSelector {
 		private readonly ILogger _log;
 		private readonly ChannelCache _channelCache;
-		private readonly DnsEndPoint _endPoint;
+		private readonly ChannelIdentifier _channelIdentifier;
 
 		public SingleNodeChannelSelector(
 			EventStoreClientSettings settings,
@@ -19,18 +19,21 @@ namespace EventStore.Client {
 				new NullLogger<SingleNodeChannelSelector>();
 
 			_channelCache = channelCache;
-			
-			var uri = settings.ConnectivitySettings.ResolvedAddressOrDefault;
-			_endPoint = new DnsEndPoint(host: uri.Host, port: uri.Port);
+
+			var uri             = settings.ConnectivitySettings.ResolvedAddressOrDefault;
+
+			_channelIdentifier = new ChannelIdentifier(new DnsEndPoint(uri.Host, uri.Port));
 		}
 
-		public Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken) =>
-			Task.FromResult(SelectChannel(_endPoint));
+		public Task<ChannelBase> SelectChannelAsync(
+			UserCredentials? userCredentials, CancellationToken cancellationToken
+		) =>
+			Task.FromResult(SelectChannel(_channelIdentifier));
 
-		public ChannelBase SelectChannel(DnsEndPoint endPoint) {
-			_log.LogInformation("Selected {endPoint}.", endPoint);
+		public ChannelBase SelectChannel(ChannelIdentifier channelIdentifier) {
+			_log.LogInformation("Selected {endPoint}.", channelIdentifier);
 
-			return _channelCache.GetChannelInfo(endPoint);
+			return _channelCache.GetChannelInfo(channelIdentifier);
 		}
 	}
 }

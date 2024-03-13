@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
@@ -8,12 +5,12 @@ namespace EventStore.Client.Interceptors {
 	// this has become more general than just detecting leader changes.
 	// triggers the action on any rpc exception with StatusCode.Unavailable
 	internal class ReportLeaderInterceptor : Interceptor {
-		private readonly Action<ReconnectionRequired> _onReconnectionRequired;
+		private readonly Action<GrpcChannelInput> _onReconnectionRequired;
 
 		private const TaskContinuationOptions ContinuationOptions =
 			TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted;
 
-		internal ReportLeaderInterceptor(Action<ReconnectionRequired> onReconnectionRequired) {
+		internal ReportLeaderInterceptor(Action<GrpcChannelInput> onReconnectionRequired) {
 			_onReconnectionRequired = onReconnectionRequired;
 		}
 
@@ -69,13 +66,15 @@ namespace EventStore.Client.Interceptors {
 				NotLeaderException ex => new ReconnectionRequired.NewLeader(ex.LeaderEndpoint),
 				RpcException {
 					StatusCode: StatusCode.Unavailable
-					// or StatusCode.Unknown or TODO: use RPC exceptions on server 
+					// or StatusCode.Unknown or TODO: use RPC exceptions on server
 				} => ReconnectionRequired.Rediscover.Instance,
 				_ => ReconnectionRequired.None.Instance
 			};
 
-			if (reconnectionRequired is not ReconnectionRequired.None)
-				_onReconnectionRequired(reconnectionRequired);
+			if (reconnectionRequired is not ReconnectionRequired.None) {
+				// fallback
+				_onReconnectionRequired(new GrpcChannelInput(reconnectionRequired));
+			}
 		}
 
 		private class StreamWriter<T> : IClientStreamWriter<T> {

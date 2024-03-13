@@ -31,30 +31,34 @@ namespace EventStore.Client {
 	//
 	// This class is thread safe.
 
+
 	internal class SharingProvider<TInput, TOutput> : SharingProvider, IDisposable {
-		private readonly Func<TInput, Action<TInput>, Task<TOutput>> _factory;
-		private readonly TimeSpan _factoryRetryDelay;
-		private readonly TInput _initialInput;
-		private TaskCompletionSource<TOutput> _currentBox;
-		private bool _disposed;
+		private readonly Func<TInput, Action<TInput>, Task<TOutput>>
+			_factory;
+
+		private readonly TimeSpan                      _factoryRetryDelay;
+		private          TInput  _previousInput;
+		private          TaskCompletionSource<TOutput> _currentBox;
+		private          bool                          _disposed;
+		private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
 
 		public SharingProvider(
 			Func<TInput, Action<TInput>, Task<TOutput>> factory,
 			TimeSpan factoryRetryDelay,
-			TInput initialInput,
+			TInput previousInput,
 			ILoggerFactory? loggerFactory = null) : base(loggerFactory) {
 
 			_factory = factory;
 			_factoryRetryDelay = factoryRetryDelay;
-			_initialInput = initialInput;
+			_previousInput = previousInput;
 			_currentBox = new(TaskCreationOptions.RunContinuationsAsynchronously);
-			_ = FillBoxAsync(_currentBox, input: initialInput);
+			_ = FillBoxAsync(_currentBox, input: previousInput);
 		}
 
 		public Task<TOutput> CurrentAsync => _currentBox.Task;
 
 		public void Reset() {
-			OnBroken(_currentBox, _initialInput);
+			OnBroken(_currentBox, _previousInput);
 		}
 
 		// Call this to return a box containing a defective item, or indeed no item at all.
@@ -89,7 +93,7 @@ namespace EventStore.Client {
 				box.TrySetException(new ObjectDisposedException(GetType().ToString()));
 				return;
 			}
-			
+
 			try {
 				Log.LogDebug("{type} being produced...", typeof(TOutput).Name);
 				var item = await _factory(input, x => OnBroken(box, x)).ConfigureAwait(false);
@@ -100,7 +104,30 @@ namespace EventStore.Client {
 				Log.LogDebug(ex, "{type} production failed. Retrying in {delay}", typeof(TOutput).Name, _factoryRetryDelay);
 				await Task.Delay(_factoryRetryDelay).ConfigureAwait(false);
 				box.TrySetException(ex);
-				OnBroken(box, _initialInput);
+				OnBroken(box, _previousInput);
+			}
+		}
+
+		public async Task<TOutput> GetAsync(TInput input) {
+			await _syncLock.WaitAsync().ConfigureAwait(false);
+			try {
+				if (Equals(input, _previousInput)) {
+					return await CurrentAsync.ConfigureAwait(false);
+				}
+
+				if (_currentBox.Task.IsCompleted && Equals(input, _previousInput))
+					return await CurrentAsync.ConfigureAwait(false);
+
+				_previousInput = input;
+				var newBox      = new TaskCompletionSource<TOutput>(TaskCreationOptions.RunContinuationsAsynchronously);
+				var originalBox = Interlocked.Exchange(ref _currentBox, newBox);
+				if (originalBox != newBox) {
+					_ = FillBoxAsync(newBox, input);
+				}
+
+				return await CurrentAsync.ConfigureAwait(false);
+			} finally {
+				_syncLock.Release();
 			}
 		}
 

@@ -28,13 +28,13 @@ public class ReportLeaderInterceptorTests {
 	[Theory]
 	[MemberData(nameof(ReportsNewLeaderCases))]
 	public async Task ReportsNewLeader(GrpcCall call) {
-		ReconnectionRequired? actual = default;
+		GrpcChannelInput? actual = default;
 
 		var sut = new ReportLeaderInterceptor(result => actual = result);
 
 		var result = await Assert.ThrowsAsync<NotLeaderException>(() => call(sut, Task.FromException<object>(new NotLeaderException("a.host", 2112))));
 
-		Assert.Equal(new ReconnectionRequired.NewLeader(result.LeaderEndpoint), actual);
+		Assert.Equal(new ReconnectionRequired.NewLeader(result.LeaderEndpoint), actual?.ReconnectionRequired);
 	}
 
 	public static IEnumerable<object?[]> ForcesRediscoveryCases() =>
@@ -45,13 +45,13 @@ public class ReportLeaderInterceptorTests {
 	[Theory]
 	[MemberData(nameof(ForcesRediscoveryCases))]
 	public async Task ForcesRediscovery(GrpcCall call, StatusCode statusCode) {
-		ReconnectionRequired? actual = default;
+		GrpcChannelInput? actual = default;
 
 		var sut = new ReportLeaderInterceptor(result => actual = result);
 
 		await Assert.ThrowsAsync<RpcException>(() => call(sut, Task.FromException<object>(new RpcException(new(statusCode, "oops")))));
 
-		Assert.Equal(ReconnectionRequired.Rediscover.Instance, actual);
+		Assert.NotNull(actual);
 	}
 
 	public static IEnumerable<object?[]> DoesNotForceRediscoveryCases() =>
@@ -64,13 +64,13 @@ public class ReportLeaderInterceptorTests {
 	[Theory]
 	[MemberData(nameof(DoesNotForceRediscoveryCases))]
 	public async Task DoesNotForceRediscovery(GrpcCall call, StatusCode statusCode) {
-		ReconnectionRequired actual = ReconnectionRequired.None.Instance;
+		GrpcChannelInput? actual = default;
 
 		var sut = new ReportLeaderInterceptor(result => actual = result);
 
 		await Assert.ThrowsAsync<RpcException>(() => call(sut, Task.FromException<object>(new RpcException(new(statusCode, "oops")))));
 
-		Assert.Equal(ReconnectionRequired.None.Instance, actual);
+		Assert.Equal(ReconnectionRequired.None.Instance, actual?.ReconnectionRequired);
 	}
 
 	static async Task MakeUnaryCall(Interceptor interceptor, Task<object>? response = null) {

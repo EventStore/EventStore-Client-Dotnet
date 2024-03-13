@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using static System.Convert;
 
@@ -10,6 +11,13 @@ namespace EventStore.Client {
 	public class UserCredentials {
 		// ReSharper disable once InconsistentNaming
 		static readonly UTF8Encoding UTF8NoBom = new UTF8Encoding(false);
+
+		/// <summary>
+		/// Constructs a new <see cref="UserCredentials"/>.
+		/// </summary>
+		public UserCredentials(X509Certificate2 clientCertificate) {
+			ClientCertificate = clientCertificate;
+		}
 
 		/// <summary>
 		/// Constructs a new <see cref="UserCredentials"/>.
@@ -31,7 +39,12 @@ namespace EventStore.Client {
 			Authorization = new(Constants.Headers.BearerScheme, bearerToken);
 		}
 
-		AuthenticationHeaderValue Authorization { get; }
+		AuthenticationHeaderValue? Authorization { get; }
+
+		/// <summary>
+		/// The client certificate
+		/// </summary>
+		public X509Certificate2? ClientCertificate { get; }
 
 		/// <summary>
 		/// The username
@@ -44,7 +57,8 @@ namespace EventStore.Client {
 		public string? Password { get; }
 
 		/// <inheritdoc />
-		public override string ToString() => Authorization.ToString();
+		public override string ToString() =>
+			ClientCertificate != null ? string.Empty : Authorization?.ToString() ?? string.Empty;
 
 		/// <summary>
 		/// Implicitly convert a <see cref="UserCredentials"/> to a <see cref="string"/>.

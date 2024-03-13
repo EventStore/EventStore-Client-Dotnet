@@ -10,8 +10,7 @@ namespace EventStore.Client {
 		/// </summary>
 		public async Task RestartSubsystemAsync(TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsRestartSubsystem) {
 				await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(channelInfo.CallInvoker)
 					.RestartSubsystemAsync(new Empty(), EventStoreCallOptions

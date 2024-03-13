@@ -13,19 +13,28 @@ namespace EventStore.Client {
 		private readonly UserCredentials? _defaultCredentials;
 		private readonly string _addressScheme;
 
-		internal HttpFallback (EventStoreClientSettings settings) {
+		internal HttpFallback (EventStoreClientSettings settings, UserCredentials? userCredentials = null) {
 			_addressScheme = settings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme;
             _defaultCredentials = settings.DefaultCredentials;
-			
-			var handler = new HttpClientHandler();
-			if (!settings.ConnectivitySettings.Insecure) {
-				handler.ClientCertificateOptions = ClientCertificateOption.Manual;
 
-				if (settings.ConnectivitySettings.ClientCertificate != null)
-					handler.ClientCertificates.Add(settings.ConnectivitySettings.ClientCertificate);
+            var handler = new HttpClientHandler();
+            if (!settings.ConnectivitySettings.Insecure) {
+	            handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+
+	            bool configureClientCert = settings.ConnectivitySettings.ClientCertificate != null
+	                                    || settings.ConnectivitySettings.TlsCaFile != null
+	                                    || userCredentials?.ClientCertificate != null;
+
+	            var certificate = userCredentials?.ClientCertificate
+	                           ?? settings.ConnectivitySettings.ClientCertificate
+	                           ?? settings.ConnectivitySettings.TlsCaFile;
+
+	            if (configureClientCert) {
+		            handler.ClientCertificates.Add(certificate!);
+	            }
 
 				if (!settings.ConnectivitySettings.TlsVerifyCert)
-					handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
+					handler.ServerCertificateCustomValidationCallback = delegate { return true; };
 			}
 
 			_httpClient = new HttpClient(handler);

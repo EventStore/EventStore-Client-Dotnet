@@ -31,15 +31,15 @@ static class EventStoreCallOptions {
 		Create(
 			settings,
 			deadline ?? settings.DefaultDeadline,
-			userCredentials,
+			userCredentials?.ClientCertificate != null ? null : userCredentials,
 			cancellationToken
 		);
 
 	static CallOptions Create(
 		EventStoreClientSettings settings, TimeSpan? deadline,
 		UserCredentials? userCredentials, CancellationToken cancellationToken
-	) =>
-		new(
+	) {
+		return new(
 			cancellationToken: cancellationToken,
 			deadline: DeadlineAfter(deadline),
 			headers: new() {
@@ -64,6 +64,7 @@ static class EventStoreCallOptions {
 					}
 				)
 		);
+	}
 
 	static DateTime? DeadlineAfter(TimeSpan? timeoutAfter) =>
 		!timeoutAfter.HasValue

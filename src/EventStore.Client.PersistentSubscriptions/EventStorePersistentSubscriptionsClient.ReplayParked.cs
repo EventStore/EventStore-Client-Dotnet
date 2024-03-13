@@ -14,7 +14,7 @@ namespace EventStore.Client {
 		public async Task ReplayParkedMessagesToAllAsync(string groupName, long? stopAt = null, TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsReplayParked) {
 				var req = new ReplayParkedReq() {
 					Options = new ReplayParkedReq.Types.Options{
@@ -46,7 +46,7 @@ namespace EventStore.Client {
 		public async Task ReplayParkedMessagesToStreamAsync(string streamName, string groupName, long? stopAt=null,
 			TimeSpan? deadline=null, UserCredentials? userCredentials=null, CancellationToken cancellationToken=default) {
 
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsReplayParked) {
 				var req = new ReplayParkedReq() {
 					Options = new ReplayParkedReq.Types.Options {

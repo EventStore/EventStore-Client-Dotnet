@@ -1,15 +1,13 @@
 using System.Net.Http;
 using Grpc.Net.Client;
-using System.Net.Security;
-using EndPoint = System.Net.EndPoint;
 using TChannel = Grpc.Net.Client.GrpcChannel;
 
 namespace EventStore.Client {
 	internal static class ChannelFactory {
 		private const int MaxReceiveMessageLength = 17 * 1024 * 1024;
 
-		public static TChannel CreateChannel(EventStoreClientSettings settings, EndPoint endPoint) {
-			var address = endPoint.ToUri(!settings.ConnectivitySettings.Insecure);
+		public static TChannel CreateChannel(EventStoreClientSettings settings, ChannelIdentifier channelIdentifier) {
+			var address = channelIdentifier.DnsEndpoint.ToUri(!settings.ConnectivitySettings.Insecure);
 
 			if (settings.ConnectivitySettings.Insecure) {
 				//this must be switched on before creation of the HttpMessageHandler
@@ -25,7 +23,7 @@ namespace EventStore.Client {
 						DefaultRequestVersion = new Version(2, 0)
 					},
 #else
-				HttpHandler = CreateHandler(),
+					HttpHandler = CreateHandler(),
 #endif
 					LoggerFactory         = settings.LoggerFactory,
 					Credentials           = settings.ChannelCredentials,
@@ -39,20 +37,20 @@ namespace EventStore.Client {
 					return settings.CreateHttpMessageHandler.Invoke();
 				}
 
-				var configureClientCert = settings.ConnectivitySettings is { ClientCertificate: not null, Insecure: false };
+				bool configureClientCert = settings.ConnectivitySettings.ClientCertificate != null
+				                        || settings.ConnectivitySettings.TlsCaFile != null
+				                        || channelIdentifier.UserCredentials?.ClientCertificate != null;
+
+				var certificate = channelIdentifier.UserCredentials?.ClientCertificate
+				               ?? settings.ConnectivitySettings.ClientCertificate
+				               ?? settings.ConnectivitySettings.TlsCaFile;
+
 #if NET
 				var handler = new SocketsHttpHandler {
 					KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
 					KeepAlivePingTimeout           = settings.ConnectivitySettings.KeepAliveTimeout,
 					EnableMultipleHttp2Connections = true,
 				};
-
-				if (configureClientCert)
-					handler.SslOptions.ClientCertificates = [settings.ConnectivitySettings.ClientCertificate!];
-
-				if (!settings.ConnectivitySettings.TlsVerifyCert) {
-					handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
-				}
 #else
 				var handler = new WinHttpHandler {
 					TcpKeepAliveEnabled = true,
@@ -60,14 +58,28 @@ namespace EventStore.Client {
 					TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
 					EnableMultipleHttp2Connections = true
 				};
+#endif
 
-				if (configureClientCert)
-					handler.ClientCertificates.Add(settings.ConnectivitySettings.ClientCertificate!);
+				if (settings.ConnectivitySettings.Insecure) return handler;
+
+#if NET
+				if (configureClientCert) {
+					handler.SslOptions.ClientCertificates = [certificate!];
+				}
+
+				if (!settings.ConnectivitySettings.TlsVerifyCert) {
+					handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+				}
+#else
+				if (configureClientCert) {
+					handler.ClientCertificates.Add(certificate!);
+				}
 
 				if (!settings.ConnectivitySettings.TlsVerifyCert) {
 					handler.ServerCertificateValidationCallback = delegate { return true; };
 				}
 #endif
+
 				return handler;
 			}
 		}

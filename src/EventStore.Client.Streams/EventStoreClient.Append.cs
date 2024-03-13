@@ -1,14 +1,9 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Threading.Channels;
 using Google.Protobuf;
 using EventStore.Client.Streams;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using System.Runtime.CompilerServices;
 
 namespace EventStore.Client {
 	public partial class EventStoreClient {
@@ -41,13 +36,19 @@ namespace EventStore.Client {
 				userCredentials == null && await batchAppender.IsUsable().ConfigureAwait(false)
 					? batchAppender.Append(streamName, expectedRevision, eventData, deadline, cancellationToken)
 					: AppendToStreamInternal(
-						(await GetChannelInfo(cancellationToken).ConfigureAwait(false)).CallInvoker,
+						(await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false)).CallInvoker,
 						new AppendReq {
 							Options = new AppendReq.Types.Options {
 								StreamIdentifier = streamName,
 								Revision         = expectedRevision
 							}
-						}, eventData, options, deadline, userCredentials, cancellationToken);
+						},
+						eventData,
+						options,
+						deadline,
+						userCredentials,
+						cancellationToken
+					);
 
 			return (await task.ConfigureAwait(false)).OptionallyThrowWrongExpectedVersionException(options);
 		}
@@ -81,13 +82,19 @@ namespace EventStore.Client {
 				userCredentials == null && await batchAppender.IsUsable().ConfigureAwait(false)
 					? batchAppender.Append(streamName, expectedState, eventData, deadline, cancellationToken)
 					: AppendToStreamInternal(
-						(await GetChannelInfo(cancellationToken).ConfigureAwait(false)).CallInvoker,
+						(await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false)).CallInvoker,
 						new AppendReq {
 							Options = new AppendReq.Types.Options {
 								StreamIdentifier = streamName
 							}
-						}.WithAnyStreamRevision(expectedState), eventData, operationOptions, deadline, userCredentials,
-						cancellationToken);
+						}.WithAnyStreamRevision(expectedState),
+						eventData,
+						operationOptions,
+						deadline,
+						userCredentials,
+						cancellationToken
+					);
+
 			return (await task.ConfigureAwait(false)).OptionallyThrowWrongExpectedVersionException(operationOptions);
 		}
 

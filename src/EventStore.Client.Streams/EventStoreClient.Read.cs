@@ -31,7 +31,7 @@ namespace EventStore.Client {
 			}
 
 			return new ReadAllStreamResult(async _ => {
-				var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+				var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 				return channelInfo.CallInvoker;
 			}, new ReadReq {
 				Options = new() {
@@ -103,7 +103,7 @@ namespace EventStore.Client {
 			};
 
 			return new ReadAllStreamResult(async _ => {
-				var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+				var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 				return channelInfo.CallInvoker;
 			}, readReq, Settings, deadline, userCredentials, cancellationToken);
 		}
@@ -238,7 +238,7 @@ namespace EventStore.Client {
 			}
 
 			return new ReadStreamResult(async _ => {
-				var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+				var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 				return channelInfo.CallInvoker;
 			}, new ReadReq {
 				Options = new() {

@@ -82,7 +82,7 @@ public class GrpcServerCapabilitiesClientTests {
 						new() {
 							CreateHttpMessageHandler = kestrel.CreateHandler
 						},
-						new DnsEndPoint("localhost", 80)
+						new ChannelIdentifier(new DnsEndPoint("localhost", 80))
 					)
 					.CreateCallInvoker(),
 				default

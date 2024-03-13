@@ -198,7 +198,7 @@ namespace EventStore.Client {
 					"The specified consumer strategy is not supported, specify one of the SystemConsumerStrategies");
 			}
 
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 
 			if (streamName == SystemStreams.AllStream &&
 			    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {

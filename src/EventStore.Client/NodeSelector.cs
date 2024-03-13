@@ -36,7 +36,9 @@ namespace EventStore.Client {
 			};
 		}
 
-		public DnsEndPoint SelectNode(ClusterMessages.ClusterInfo clusterInfo) {
+		public ChannelIdentifier SelectNode(
+			ClusterMessages.ClusterInfo clusterInfo, UserCredentials? userCredentials = null
+		) {
 			if (clusterInfo.Members.Length == 0) {
 				throw new Exception("No nodes in cluster info.");
 			}
@@ -52,7 +54,7 @@ namespace EventStore.Client {
 					throw new Exception("No nodes are in a connectable state.");
 				}
 
-				return node.EndPoint;
+				return new ChannelIdentifier(node.EndPoint, userCredentials);
 			}
 		}
 

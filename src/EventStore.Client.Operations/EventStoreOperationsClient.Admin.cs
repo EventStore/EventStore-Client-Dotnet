@@ -18,7 +18,7 @@ namespace EventStore.Client {
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			using var call = new Operations.Operations.OperationsClient(
 				channelInfo.CallInvoker).ShutdownAsync(EmptyResult,
 				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
@@ -36,7 +36,7 @@ namespace EventStore.Client {
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			using var call = new Operations.Operations.OperationsClient(
 				channelInfo.CallInvoker).MergeIndexesAsync(EmptyResult,
 				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
@@ -54,7 +54,7 @@ namespace EventStore.Client {
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			using var call = new Operations.Operations.OperationsClient(
 				channelInfo.CallInvoker).ResignNodeAsync(EmptyResult,
 				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
@@ -73,7 +73,7 @@ namespace EventStore.Client {
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			using var call = new Operations.Operations.OperationsClient(
 				channelInfo.CallInvoker).SetNodePriorityAsync(
 				new SetNodePriorityReq {Priority = nodePriority},
@@ -92,7 +92,7 @@ namespace EventStore.Client {
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			using var call = new Operations.Operations.OperationsClient(
 				channelInfo.CallInvoker).RestartPersistentSubscriptionsAsync(
 				EmptyResult,

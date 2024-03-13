@@ -15,7 +15,7 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task CreateOneTimeAsync(string query, TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
@@ -39,7 +39,7 @@ namespace EventStore.Client {
 		public async Task CreateContinuousAsync(string name, string query, bool trackEmittedStreams = false,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
@@ -64,7 +64,7 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task CreateTransientAsync(string name, string query, TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {

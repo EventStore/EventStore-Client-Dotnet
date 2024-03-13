@@ -12,8 +12,7 @@ namespace EventStore.Client {
 		/// </summary>
 		public async Task<PersistentSubscriptionInfo> GetInfoToAllAsync(string groupName, TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsGetInfo) {
 				var req = new GetInfoReq() {
 					Options = new GetInfoReq.Types.Options{
@@ -34,8 +33,7 @@ namespace EventStore.Client {
 		/// </summary>
 		public async Task<PersistentSubscriptionInfo> GetInfoToStreamAsync(string streamName, string groupName,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-
-			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
 			if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsGetInfo) {
 				var req = new GetInfoReq() {
 					Options = new GetInfoReq.Types.Options {
