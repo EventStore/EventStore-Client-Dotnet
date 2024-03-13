@@ -1,62 +1,46 @@
 namespace EventStore.Client.PersistentSubscriptions.Tests.SubscriptionToAll;
 
-public class connect_to_existing_with_start_from_set_to_end_position : IClassFixture<connect_to_existing_with_start_from_set_to_end_position.Fixture> {
-	const string Group = "startfromend1";
+public class connect_to_existing_with_start_from_set_to_end_position
+	: IClassFixture<connect_to_existing_with_start_from_set_to_end_position.Fixture> {
+	private const string Group = "startfromend1";
 
-	readonly Fixture _fixture;
+	private readonly Fixture _fixture;
 
 	public connect_to_existing_with_start_from_set_to_end_position(Fixture fixture) => _fixture = fixture;
 
 	[SupportsPSToAll.Fact]
-	public async Task the_subscription_gets_no_non_system_events() =>
-		await Assert.ThrowsAsync<TimeoutException>(() => _fixture.FirstNonSystemEvent.WithTimeout());
+	public async Task the_subscription_gets_no_non_system_events() {
+		await Assert.ThrowsAsync<TimeoutException>(() => _fixture.Subscription!.Messages
+			.OfType<PersistentSubscriptionMessage.Event>()
+			.Where(e => !SystemStreams.IsSystemStream(e.ResolvedEvent.OriginalStreamId))
+			.AnyAsync()
+			.AsTask()
+			.WithTimeout(TimeSpan.FromMilliseconds(250)));
+	}
 
 	public class Fixture : EventStoreClientFixture {
-		readonly TaskCompletionSource<ResolvedEvent> _firstNonSystemEventSource;
-
-		PersistentSubscription? _subscription;
-
-		public Fixture() => _firstNonSystemEventSource = new();
-
-		public Task<ResolvedEvent> FirstNonSystemEvent => _firstNonSystemEventSource.Task;
+		public EventStorePersistentSubscriptionsClient.PersistentSubscriptionResult? Subscription { get; private set; }
 
 		protected override async Task Given() {
-			foreach (var @event in CreateTestEvents(10))
-				await StreamsClient.AppendToStreamAsync(
-					"non-system-stream-" + Guid.NewGuid(),
-					StreamState.Any,
-					new[] { @event }
-				);
+			foreach (var @event in CreateTestEvents(10)) {
+				await StreamsClient.AppendToStreamAsync("non-system-stream-" + Guid.NewGuid(), StreamState.Any,
+					new[] { @event });
+			}
 
-			await Client.CreateToAllAsync(
-				Group,
-				new(startFrom: Position.End),
-				userCredentials: TestCredentials.Root
-			);
+			await Client.CreateToAllAsync(Group, new(startFrom: Position.End), userCredentials: TestCredentials.Root);
 		}
 
-		protected override async Task When() =>
-			_subscription = await Client.SubscribeToAllAsync(
-				Group,
-				async (subscription, e, r, ct) => {
-					if (SystemStreams.IsSystemStream(e.OriginalStreamId)) {
-						await subscription.Ack(e);
-						return;
-					}
+		protected override Task When() {
+			Subscription = Client.SubscribeToAll(Group, userCredentials: TestCredentials.Root);
+			return Task.CompletedTask;
+		}
 
-					_firstNonSystemEventSource.TrySetResult(e);
-					await subscription.Ack(e);
-				},
-				(subscription, reason, ex) => {
-					if (reason != SubscriptionDroppedReason.Disposed)
-						_firstNonSystemEventSource.TrySetException(ex!);
-				},
-				TestCredentials.Root
-			);
+		public override async Task DisposeAsync() {
+			if (Subscription is not null) {
+				await Subscription.DisposeAsync();
+			}
 
-		public override Task DisposeAsync() {
-			_subscription?.Dispose();
-			return base.DisposeAsync();
+			await base.DisposeAsync();
 		}
 	}
 }

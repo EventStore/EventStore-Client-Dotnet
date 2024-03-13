@@ -242,7 +242,8 @@ public class SecurityFixture : EventStoreFixture {
 			)
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public async Task SubscribeToStream(string streamId, UserCredentials? userCredentials = default) {
+	[Obsolete]
+	public async Task SubscribeToStreamObsolete(string streamId, UserCredentials? userCredentials = default) {
 		var source = new TaskCompletionSource<bool>();
 		using (await Streams.SubscribeToStreamAsync(
 			       streamId,
@@ -263,7 +264,16 @@ public class SecurityFixture : EventStoreFixture {
 		}
 	}
 
-	public async Task SubscribeToAll(UserCredentials? userCredentials = default) {
+	public async Task SubscribeToStream(string streamId, UserCredentials? userCredentials = default) {
+		await using var subscription =
+			Streams.SubscribeToStream(streamId, FromStream.Start, userCredentials: userCredentials);
+		await subscription
+			.Messages.OfType<StreamMessage.SubscriptionConfirmation>().AnyAsync().AsTask()
+			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
+	}
+
+	[Obsolete]
+	public async Task SubscribeToAllObsolete(UserCredentials? userCredentials = default) {
 		var source = new TaskCompletionSource<bool>();
 		using (await Streams.SubscribeToAllAsync(
 			       FromAll.Start,

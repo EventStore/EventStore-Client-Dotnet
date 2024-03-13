@@ -1,7 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Encodings.Web;
+using System.Threading.Channels;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -11,6 +9,12 @@ namespace EventStore.Client {
 	/// The client used to manage persistent subscriptions in the EventStoreDB.
 	/// </summary>
 	public sealed partial class EventStorePersistentSubscriptionsClient : EventStoreClientBase {
+		private static BoundedChannelOptions ReadBoundedChannelOptions = new (1) {
+			SingleReader = true,
+			SingleWriter = true,
+			AllowSynchronousContinuations = true
+		};
+
 		private readonly ILogger _log;
 
 		/// <summary>

@@ -1,6 +1,7 @@
 namespace EventStore.Client.Streams.Tests.Bugs;
 
 [Trait("Category", "Bug")]
+[Obsolete]
 public class Issue_104(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) { 
 	[Fact]
 	public async Task subscription_does_not_send_checkpoint_reached_after_disposal() {

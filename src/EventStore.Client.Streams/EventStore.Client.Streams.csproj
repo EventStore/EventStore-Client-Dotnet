@@ -3,9 +3,6 @@
     <PropertyGroup>
         <Description>The GRPC client API for Event Store Streams. Get the open source or commercial versions of Event Store server from https://eventstore.com/</Description>
     </PropertyGroup>
-    <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-        <PackageReference Include="System.Threading.Channels" Version="7.0.0"/>
-    </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="EventStore.Client.Streams.Tests"/>
     </ItemGroup>

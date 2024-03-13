@@ -13,8 +13,8 @@
         <DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
 
         <UseLinkBase>true</UseLinkBase>
-        <GrpcPackageVersion>2.59.0</GrpcPackageVersion>
-        <GrpcToolsPackageVersion>2.59.0</GrpcToolsPackageVersion>
+        <GrpcPackageVersion>2.60.0</GrpcPackageVersion>
+        <GrpcToolsPackageVersion>2.60.0</GrpcToolsPackageVersion>
     </PropertyGroup>
 
 		<ItemGroup Condition="'$(TargetFramework)' == 'net48'">

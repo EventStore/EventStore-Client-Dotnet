@@ -1,10 +1,14 @@
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests;
 
 [Trait("Category", "Security")]
-public class subscribe_to_stream_security(ITestOutputHelper output, SecurityFixture fixture) : EventStoreTests<SecurityFixture>(output, fixture) { 
+[Obsolete]
+public class subscribe_to_stream_security(ITestOutputHelper output, SecurityFixture fixture)
+	: EventStoreTests<SecurityFixture>(output, fixture) {
 	[Fact]
 	public async Task subscribing_to_stream_with_not_existing_credentials_is_not_authenticated() =>
-		await Assert.ThrowsAsync<NotAuthenticatedException>(() => Fixture.SubscribeToStream(SecurityFixture.ReadStream, TestCredentials.TestBadUser));
+		await Assert.ThrowsAsync<NotAuthenticatedException>(
+			() => Fixture.SubscribeToStream(SecurityFixture.ReadStream, TestCredentials.TestBadUser)
+		);
 
 	[Fact]
 	public async Task subscribing_to_stream_with_no_credentials_is_denied() =>
@@ -12,7 +16,9 @@ public class subscribe_to_stream_security(ITestOutputHelper output, SecurityFixt
 
 	[Fact]
 	public async Task subscribing_to_stream_with_not_authorized_user_credentials_is_denied() =>
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStream(SecurityFixture.ReadStream, TestCredentials.TestUser2));
+		await Assert.ThrowsAsync<AccessDeniedException>(
+			() => Fixture.SubscribeToStream(SecurityFixture.ReadStream, TestCredentials.TestUser2)
+		);
 
 	[Fact]
 	public async Task reading_stream_with_authorized_user_credentials_succeeds() {
@@ -34,7 +40,9 @@ public class subscribe_to_stream_security(ITestOutputHelper output, SecurityFixt
 
 	[Fact]
 	public async Task subscribing_to_no_acl_stream_is_not_authenticated_when_not_existing_credentials_are_passed() =>
-		await Assert.ThrowsAsync<NotAuthenticatedException>(() => Fixture.SubscribeToStream(SecurityFixture.NoAclStream, TestCredentials.TestBadUser));
+		await Assert.ThrowsAsync<NotAuthenticatedException>(
+			() => Fixture.SubscribeToStream(SecurityFixture.NoAclStream, TestCredentials.TestBadUser)
+		);
 
 	[Fact]
 	public async Task subscribing_to_no_acl_stream_succeeds_when_any_existing_user_credentials_are_passed() {
@@ -56,8 +64,11 @@ public class subscribe_to_stream_security(ITestOutputHelper output, SecurityFixt
 	}
 
 	[Fact]
-	public async Task subscribing_to_all_access_normal_stream_is_not_authenticated_when_not_existing_credentials_are_passed() =>
-		await Assert.ThrowsAsync<NotAuthenticatedException>(() => Fixture.SubscribeToStream(SecurityFixture.NormalAllStream, TestCredentials.TestBadUser));
+	public async Task
+		subscribing_to_all_access_normal_stream_is_not_authenticated_when_not_existing_credentials_are_passed() =>
+		await Assert.ThrowsAsync<NotAuthenticatedException>(
+			() => Fixture.SubscribeToStream(SecurityFixture.NormalAllStream, TestCredentials.TestBadUser)
+		);
 
 	[Fact]
 	public async Task subscribing_to_all_access_normal_stream_succeeds_when_any_existing_user_credentials_are_passed() {

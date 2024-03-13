@@ -9,7 +9,7 @@ namespace EventStore.Client.Streams {
 					StreamRevision expectedStreamRevision, TimeSpan? timeoutAfter) => new() {
 					StreamIdentifier = streamIdentifier,
 					StreamPosition = expectedStreamRevision.ToUInt64(),
-					Deadline = Timestamp.FromDateTime(timeoutAfter.HasValue
+					Deadline21100 = Timestamp.FromDateTime(timeoutAfter.HasValue
 						? DateTime.UtcNow + timeoutAfter.Value
 						: DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc))
 				};
@@ -24,7 +24,7 @@ namespace EventStore.Client.Streams {
 						_ => ExpectedStreamPositionOneofCase.None
 					},
 					expectedStreamPosition_ = new Google.Protobuf.WellKnownTypes.Empty(),
-					Deadline = Timestamp.FromDateTime(timeoutAfter.HasValue
+					Deadline21100 = Timestamp.FromDateTime(timeoutAfter.HasValue
 						? DateTime.UtcNow + timeoutAfter.Value
 						: DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc))
 				};

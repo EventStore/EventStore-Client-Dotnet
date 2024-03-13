@@ -27,7 +27,7 @@ namespace EventStore.Client {
 				if (!settings.ConnectivitySettings.TlsVerifyCert)
 					handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
 			}
-			
+
 			_httpClient = new HttpClient(handler);
 			if (settings.DefaultDeadline.HasValue) {
 				_httpClient.Timeout = settings.DefaultDeadline.Value;
