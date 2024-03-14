@@ -70,7 +70,7 @@ public class ReportLeaderInterceptorTests {
 
 		await Assert.ThrowsAsync<RpcException>(() => call(sut, Task.FromException<object>(new RpcException(new(statusCode, "oops")))));
 
-		Assert.Equal(ReconnectionRequired.None.Instance, actual?.ReconnectionRequired);
+		Assert.Null(actual);
 	}
 
 	static async Task MakeUnaryCall(Interceptor interceptor, Task<object>? response = null) {
