@@ -229,7 +229,7 @@ namespace EventStore.Client {
 				if (!certPathSet || !certKeyPathSet) return settings;
 
 				try {
-					settings.ConnectivitySettings.ClientCertificate =
+					settings.ConnectivitySettings.UserCertificate =
 						CertificateUtils.LoadFromFile((string)certPath!, (string)certKeyPath!);
 				} catch (Exception ex) {
 					throw new InvalidSettingException($"Invalid certificate settings. {ex.Message}");

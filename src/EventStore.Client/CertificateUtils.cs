@@ -16,7 +16,7 @@ namespace EventStore.Client;
 /// <summary>
 /// Utility class for loading certificates and private keys from files.
 /// </summary>
-public static class CertificateUtils {
+static class CertificateUtils {
 	private static RSA LoadKey(string privateKeyPath) {
 		string[] allLines        = File.ReadAllLines(privateKeyPath);
 		var      header          = allLines[0].Replace("-", "");

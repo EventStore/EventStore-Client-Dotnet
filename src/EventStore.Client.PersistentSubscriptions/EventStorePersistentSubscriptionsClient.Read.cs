@@ -88,7 +88,7 @@ namespace EventStore.Client {
 			}
 
 			return new PersistentSubscriptionResult(streamName, groupName, async ct => {
-				var channelInfo = await GetChannelInfo(userCredentials, ct).ConfigureAwait(false);
+				var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, ct).ConfigureAwait(false);
 
 				if (streamName == SystemStreams.AllStream &&
 				    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {

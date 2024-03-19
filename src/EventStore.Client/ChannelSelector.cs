@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using Grpc.Core;
 
 namespace EventStore.Client {
@@ -10,8 +11,8 @@ namespace EventStore.Client {
 			? new SingleNodeChannelSelector(settings, channelCache)
 			: new GossipChannelSelector(settings, channelCache, new GrpcGossipClient(settings));
 
-		public Task<ChannelBase> SelectChannelAsync(UserCredentials? userCredentials, CancellationToken cancellationToken) {
-			return _inner.SelectChannelAsync(userCredentials, cancellationToken);
+		public Task<ChannelBase> SelectChannelAsync(X509Certificate2? userCertificate, CancellationToken cancellationToken) {
+			return _inner.SelectChannelAsync(userCertificate, cancellationToken);
 		}
 
 		public ChannelBase SelectChannel(ChannelIdentifier channelIdentifier) =>

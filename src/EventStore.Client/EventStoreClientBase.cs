@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Interceptors;
@@ -44,7 +45,12 @@ namespace EventStore.Client {
 				factory: (endPoint, onBroken) =>
 					GetChannelInfoExpensive(endPoint, onBroken, channelSelector, _cts.Token),
 				factoryRetryDelay: Settings.ConnectivitySettings.DiscoveryInterval,
-				previousInput: new GrpcChannelInput(ReconnectionRequired.Rediscover.Instance),
+				previousInput: settings?.ConnectivitySettings.UserCertificate != null
+					? new GrpcChannelInput(
+						ReconnectionRequired.Rediscover.Instance,
+						settings.ConnectivitySettings.UserCertificate
+					)
+					: new GrpcChannelInput(ReconnectionRequired.Rediscover.Instance),
 				loggerFactory: Settings.LoggerFactory
 			);
 		}
@@ -58,12 +64,12 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken) {
 			var channel = grpcChannelInput.ReconnectionRequired switch {
 				ReconnectionRequired.Rediscover => await channelSelector.SelectChannelAsync(
-						grpcChannelInput.UserCredentials,
+						grpcChannelInput.UserCertificate,
 						cancellationToken
 					)
 					.ConfigureAwait(false),
 				ReconnectionRequired.NewLeader (var endPoint) => channelSelector.SelectChannel(
-					new ChannelIdentifier(endPoint, grpcChannelInput.UserCredentials)
+					new ChannelIdentifier(endPoint, grpcChannelInput.UserCertificate)
 				),
 				_ => throw new ArgumentException(null, nameof(grpcChannelInput.ReconnectionRequired))
 			};
@@ -88,22 +94,22 @@ namespace EventStore.Client {
 
 		/// Gets the current channel info.
 		protected async ValueTask<ChannelInfo> GetChannelInfo(CancellationToken cancellationToken) {
-			return await _channelInfoProvider
-				.GetAsync(new GrpcChannelInput(ReconnectionRequired.Rediscover.Instance))
-				.WithCancellation(cancellationToken).ConfigureAwait(false);
+			return await _channelInfoProvider.CurrentAsync.WithCancellation(cancellationToken).ConfigureAwait(false);
 		}
 
 
 		/// Gets the current channel info.
-		protected async ValueTask<ChannelInfo> GetChannelInfo(UserCredentials? userCredentials, CancellationToken cancellationToken) {
-			var input = userCredentials is null
-				? new GrpcChannelInput(ReconnectionRequired.Rediscover.Instance)
-				: new GrpcChannelInput(ReconnectionRequired.Rediscover.Instance, userCredentials);
+		protected async ValueTask<ChannelInfo> GetChannelInfo(X509Certificate2? userCertificate, CancellationToken cancellationToken) {
+			_httpFallback = new Lazy<HttpFallback>(() => new HttpFallback(Settings, userCertificate));
 
-			_httpFallback = new Lazy<HttpFallback>(() => new HttpFallback(Settings, userCredentials));
+			if (userCertificate == null) {
+				return await _channelInfoProvider.CurrentAsync.WithCancellation(cancellationToken)
+					.ConfigureAwait(false);
+			}
 
 			return await _channelInfoProvider
-				.GetAsync(input).WithCancellation(cancellationToken).ConfigureAwait(false);
+				.GetAsync(new GrpcChannelInput(ReconnectionRequired.Rediscover.Instance, userCertificate))
+				.WithCancellation(cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <summary>

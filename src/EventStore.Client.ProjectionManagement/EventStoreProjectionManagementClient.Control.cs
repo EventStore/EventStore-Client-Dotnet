@@ -15,7 +15,7 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task EnableAsync(string name, TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).EnableAsync(new EnableReq {
 				Options = new EnableReq.Types.Options {
@@ -35,7 +35,7 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task ResetAsync(string name, TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).ResetAsync(new ResetReq {
 				Options = new ResetReq.Types.Options {
@@ -79,7 +79,7 @@ namespace EventStore.Client {
 		/// <returns></returns>
 		public async Task RestartSubsystemAsync(TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).RestartSubsystemAsync(new Empty(),
 				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
@@ -88,7 +88,7 @@ namespace EventStore.Client {
 		
 		private async Task DisableInternalAsync(string name, bool writeCheckpoint, TimeSpan? deadline,
 			UserCredentials? userCredentials, CancellationToken cancellationToken) {
-			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).DisableAsync(new DisableReq {
 				Options = new DisableReq.Types.Options {

@@ -36,7 +36,7 @@ namespace EventStore.Client {
 				userCredentials == null && await batchAppender.IsUsable().ConfigureAwait(false)
 					? batchAppender.Append(streamName, expectedRevision, eventData, deadline, cancellationToken)
 					: AppendToStreamInternal(
-						(await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false)).CallInvoker,
+						(await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false)).CallInvoker,
 						new AppendReq {
 							Options = new AppendReq.Types.Options {
 								StreamIdentifier = streamName,
@@ -82,7 +82,7 @@ namespace EventStore.Client {
 				userCredentials == null && await batchAppender.IsUsable().ConfigureAwait(false)
 					? batchAppender.Append(streamName, expectedState, eventData, deadline, cancellationToken)
 					: AppendToStreamInternal(
-						(await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false)).CallInvoker,
+						(await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false)).CallInvoker,
 						new AppendReq {
 							Options = new AppendReq.Types.Options {
 								StreamIdentifier = streamName

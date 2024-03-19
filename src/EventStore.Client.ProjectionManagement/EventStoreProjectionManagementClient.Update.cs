@@ -28,7 +28,7 @@ namespace EventStore.Client {
 				options.NoEmitOptions = new Empty();
 			}
 
-			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).UpdateAsync(new UpdateReq {
 				Options = options

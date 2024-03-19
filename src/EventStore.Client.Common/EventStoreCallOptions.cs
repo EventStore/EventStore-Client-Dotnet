@@ -31,7 +31,7 @@ static class EventStoreCallOptions {
 		Create(
 			settings,
 			deadline ?? settings.DefaultDeadline,
-			userCredentials?.ClientCertificate != null ? null : userCredentials,
+			userCredentials,
 			cancellationToken
 		);
 

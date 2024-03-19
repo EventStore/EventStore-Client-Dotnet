@@ -6,6 +6,18 @@ on:
       docker-tag:
         required: true
         type: string
+      docker-registry:
+        required: false
+        type: string
+        default: docker.eventstore.com/eventstore-ce/eventstoredb-ce
+      build-matrix:
+        required: false
+        type: string
+        default: '["Streams", "PersistentSubscriptions", "Operations", "UserManagement", "ProjectionManagement"]'
+      test-matrix:
+        required: false
+        type: string
+        default: '["Streams", "PersistentSubscriptions", "Operations", "UserManagement", "ProjectionManagement"]'
 
 jobs:
   test:
@@ -15,7 +27,8 @@ jobs:
       matrix:
         framework: [ net6.0, net7.0, net8.0 ]
         os: [ ubuntu-latest ]
-        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement ]
+        build: ${{fromJson(inputs.build-matrix)}}
+        test: ${{fromJson(inputs.test-matrix)}}
         configuration: [ release ]
     runs-on: ${{ matrix.os }}
     name: EventStore.Client.${{ matrix.test }}/${{ matrix.os }}/${{ matrix.framework }}/${{ inputs.docker-tag }}
@@ -36,7 +49,7 @@ jobs:
       - name: Pull EventStore Image
         shell: bash
         run: |
-          docker pull docker.eventstore.com/eventstore-ce/eventstoredb-ce:${{ inputs.docker-tag }}
+          docker pull ${{ inputs.docker-registry }}:${{ inputs.docker-tag }}
       - name: Install dotnet SDKs
         uses: actions/setup-dotnet@v3
         with:
@@ -47,11 +60,12 @@ jobs:
       - name: Compile
         shell: bash
         run: |
-          dotnet build --configuration ${{ matrix.configuration }} --framework ${{ matrix.framework }} src/EventStore.Client.${{ matrix.test }}
+          dotnet build --configuration ${{ matrix.configuration }} --framework ${{ matrix.framework }} src/EventStore.Client.${{ matrix.build }}
       - name: Run Tests
         shell: bash
         env:
           ES_DOCKER_TAG: ${{ inputs.docker-tag }}
+          ES_DOCKER_REGISTRY: ${{ inputs.docker-registry }}
         run: |
           sudo ./gencert.sh
           dotnet test --configuration ${{ matrix.configuration }} --blame \

@@ -22,7 +22,7 @@ public static class GlobalEnvironment {
 			configuration.EnsureValue("ES_USE_CLUSTER", "false");
 			configuration.EnsureValue("ES_USE_EXTERNAL_SERVER", "false");
 
-			configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.eventstore.com/eventstore-ce/eventstoredb-ce");
+			configuration.EnsureValue("ES_DOCKER_REGISTRY", "ghcr.io/eventstore/eventstore");
 			configuration.EnsureValue("ES_DOCKER_TAG", "ci");
 			configuration.EnsureValue("ES_DOCKER_IMAGE", $"{configuration["ES_DOCKER_REGISTRY"]}:{configuration["ES_DOCKER_TAG"]}");
 

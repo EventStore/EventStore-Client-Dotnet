@@ -137,7 +137,7 @@ namespace EventStore.Client {
 
 			public int GetHashCode(ChannelIdentifier obj) {
 				unchecked {
-					return (obj.DnsEndpoint.GetHashCode() * 397) ^ (obj.UserCredentials?.GetHashCode() ?? 0);
+					return (obj.DnsEndpoint.GetHashCode() * 397) ^ (obj.UserCertificate?.GetHashCode() ?? 0);
 				}
 			}
 		}

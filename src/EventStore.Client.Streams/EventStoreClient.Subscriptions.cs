@@ -44,7 +44,7 @@ namespace EventStore.Client {
 			SubscriptionFilterOptions? filterOptions = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) => new(async _ => {
-			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
 			return channelInfo.CallInvoker;
 		}, new ReadReq {
 			Options = new ReadReq.Types.Options {
@@ -94,7 +94,7 @@ namespace EventStore.Client {
 			bool resolveLinkTos = false,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) => new(async _ => {
-			var channelInfo = await GetChannelInfo(userCredentials, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
 			return channelInfo.CallInvoker;
 		}, new ReadReq {
 			Options = new ReadReq.Types.Options {

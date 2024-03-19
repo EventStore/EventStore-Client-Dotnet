@@ -13,7 +13,7 @@ namespace EventStore.Client {
 		private readonly UserCredentials? _defaultCredentials;
 		private readonly string _addressScheme;
 
-		internal HttpFallback (EventStoreClientSettings settings, UserCredentials? userCredentials = null) {
+		internal HttpFallback (EventStoreClientSettings settings, X509Certificate2? userCertificate = null) {
 			_addressScheme = settings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme;
             _defaultCredentials = settings.DefaultCredentials;
 
@@ -21,12 +21,12 @@ namespace EventStore.Client {
             if (!settings.ConnectivitySettings.Insecure) {
 	            handler.ClientCertificateOptions = ClientCertificateOption.Manual;
 
-	            bool configureClientCert = settings.ConnectivitySettings.ClientCertificate != null
+	            bool configureClientCert = settings.ConnectivitySettings.UserCertificate != null
 	                                    || settings.ConnectivitySettings.TlsCaFile != null
-	                                    || userCredentials?.ClientCertificate != null;
+	                                    || userCertificate != null;
 
-	            var certificate = userCredentials?.ClientCertificate
-	                           ?? settings.ConnectivitySettings.ClientCertificate
+	            var certificate = userCertificate
+	                           ?? settings.ConnectivitySettings.UserCertificate
 	                           ?? settings.ConnectivitySettings.TlsCaFile;
 
 	            if (configureClientCert) {

@@ -37,12 +37,12 @@ namespace EventStore.Client {
 					return settings.CreateHttpMessageHandler.Invoke();
 				}
 
-				bool configureClientCert = settings.ConnectivitySettings.ClientCertificate != null
+				bool configureClientCert = settings.ConnectivitySettings.UserCertificate != null
 				                        || settings.ConnectivitySettings.TlsCaFile != null
-				                        || channelIdentifier.UserCredentials?.ClientCertificate != null;
+				                        || channelIdentifier.UserCertificate != null;
 
-				var certificate = channelIdentifier.UserCredentials?.ClientCertificate
-				               ?? settings.ConnectivitySettings.ClientCertificate
+				var certificate = channelIdentifier?.UserCertificate
+				               ?? settings.ConnectivitySettings.UserCertificate
 				               ?? settings.ConnectivitySettings.TlsCaFile;
 
 #if NET

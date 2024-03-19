@@ -1,0 +1,19 @@
+name: Test CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+    tags:
+      - v*
+
+jobs:
+  test:
+    uses: ./.github/workflows/base.yml
+    with:
+      docker-tag: 24.2.0-jammy
+      docker-registry: docker.eventstore.com/eventstore-ee/eventstoredb-commercial
+      build-matrix: '["Streams", "PersistentSubscriptions", "Operations", "UserManagement", "ProjectionManagement"]'
+      test-matrix: '["Plugins"]'
+    secrets: inherit

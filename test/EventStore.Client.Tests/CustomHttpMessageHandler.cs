@@ -5,10 +5,10 @@ using System.Net.Http;
 internal static class CustomHttpMessageHandler {
 	internal static Func<HttpMessageHandler>? CreateDefaultHandler(EventStoreClientSettings settings) {
 		return () => {
-			bool configureClientCert = settings.ConnectivitySettings.ClientCertificate != null
+			bool configureClientCert = settings.ConnectivitySettings.UserCertificate != null
 			                        || settings.ConnectivitySettings.TlsCaFile != null;
 
-			var certificate = settings.ConnectivitySettings.ClientCertificate
+			var certificate = settings.ConnectivitySettings.UserCertificate
 			               ?? settings.ConnectivitySettings.TlsCaFile;
 
 #if NET

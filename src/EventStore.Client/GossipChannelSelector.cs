@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -28,15 +29,15 @@ namespace EventStore.Client {
 		public ChannelBase SelectChannel(ChannelIdentifier channelIdentifier) =>
 			_channels.GetChannelInfo(channelIdentifier);
 
-		public async Task<ChannelBase> SelectChannelAsync(UserCredentials? userCredentials, CancellationToken cancellationToken) {
-			var endPoint = await DiscoverAsync(userCredentials, cancellationToken).ConfigureAwait(false);
+		public async Task<ChannelBase> SelectChannelAsync(X509Certificate2? userCertificate, CancellationToken cancellationToken) {
+			var endPoint = await DiscoverAsync(userCertificate, cancellationToken).ConfigureAwait(false);
 
 			_log.LogInformation("Successfully discovered candidate at {endPoint}.", endPoint);
 
 			return _channels.GetChannelInfo(endPoint);
 		}
 
-		private async Task<ChannelIdentifier> DiscoverAsync(UserCredentials? userCredentials, CancellationToken cancellationToken) {
+		private async Task<ChannelIdentifier> DiscoverAsync(X509Certificate2? userCertificate, CancellationToken cancellationToken) {
 			for (var attempt = 1; attempt <= _settings.ConnectivitySettings.MaxDiscoverAttempts; attempt++) {
 				foreach (var kvp in _channels.GetRandomOrderSnapshot()) {
 					var endPointToGetGossip = kvp.Key;
@@ -47,7 +48,7 @@ namespace EventStore.Client {
 							.GetAsync(channelToGetGossip, cancellationToken)
 							.ConfigureAwait(false);
 
-						var selectedEndpoint = _nodeSelector.SelectNode(clusterInfo, userCredentials);
+						var selectedEndpoint = _nodeSelector.SelectNode(clusterInfo, userCertificate);
 
 						// Successfully selected an endpoint using this gossip!
 						// We want _channels to contain exactly the nodes in ClusterInfo.
@@ -57,7 +58,7 @@ namespace EventStore.Client {
 							clusterInfo.Members.Select(
 								x => new ChannelIdentifier(
 									x.EndPoint,
-									userCredentials
+									userCertificate
 								)
 							)
 						);
@@ -78,7 +79,7 @@ namespace EventStore.Client {
 					_settings.ConnectivitySettings.GossipSeeds.Select(
 						endPoint => new ChannelIdentifier(
 							new DnsEndPoint(endPoint.GetHost(), endPoint.GetPort()),
-							userCredentials
+							userCertificate
 						)
 					)
 				);

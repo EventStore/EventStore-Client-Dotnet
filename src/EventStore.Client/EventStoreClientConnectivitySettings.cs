@@ -110,7 +110,7 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Client certificate used for user authentication.
 		/// </summary>
-		public X509Certificate2? ClientCertificate { get; set; }
+		public X509Certificate2? UserCertificate { get; set; }
 
 		/// <summary>
 		/// The default <see cref="EventStoreClientConnectivitySettings"/>.

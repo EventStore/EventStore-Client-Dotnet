@@ -15,8 +15,8 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Constructs a new <see cref="UserCredentials"/>.
 		/// </summary>
-		public UserCredentials(X509Certificate2 clientCertificate) {
-			ClientCertificate = clientCertificate;
+		public UserCredentials(UserCertificate userCertificate) {
+			UserCertificate = userCertificate.Certificate;
 		}
 
 		/// <summary>
@@ -44,7 +44,7 @@ namespace EventStore.Client {
 		/// <summary>
 		/// The client certificate
 		/// </summary>
-		public X509Certificate2? ClientCertificate { get; }
+		public X509Certificate2? UserCertificate { get; }
 
 		/// <summary>
 		/// The username
@@ -58,7 +58,7 @@ namespace EventStore.Client {
 
 		/// <inheritdoc />
 		public override string ToString() =>
-			ClientCertificate != null ? string.Empty : Authorization?.ToString() ?? string.Empty;
+			UserCertificate != null ? string.Empty : Authorization?.ToString() ?? string.Empty;
 
 		/// <summary>
 		/// Implicitly convert a <see cref="UserCredentials"/> to a <see cref="string"/>.
