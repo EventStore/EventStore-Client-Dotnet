@@ -11,11 +11,16 @@ namespace EventStore.Client {
 		/// <param name="name"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task EnableAsync(string name, TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+		public async Task EnableAsync(
+			string name, TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).EnableAsync(new EnableReq {
 				Options = new EnableReq.Types.Options {
@@ -31,11 +36,16 @@ namespace EventStore.Client {
 		/// <param name="name"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task ResetAsync(string name, TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+		public async Task ResetAsync(
+			string name, TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).ResetAsync(new ResetReq {
 				Options = new ResetReq.Types.Options {
@@ -52,11 +62,12 @@ namespace EventStore.Client {
 		/// <param name="name"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public Task AbortAsync(string name, TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+		public Task AbortAsync(string name, TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
 			CancellationToken cancellationToken = default) =>
-			DisableInternalAsync(name, false, deadline, userCredentials, cancellationToken);
+			DisableInternalAsync(name, false, deadline, userCredentials, userCertificate, cancellationToken);
 
 		/// <summary>
 		/// Disables a projection. Saves the projection's checkpoint.
@@ -64,22 +75,37 @@ namespace EventStore.Client {
 		/// <param name="name"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public Task DisableAsync(string name, TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) =>
-			DisableInternalAsync(name, true, deadline, userCredentials, cancellationToken);
+		public Task DisableAsync(
+			string name, TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) =>
+			DisableInternalAsync(
+				name,
+				true,
+				deadline,
+				userCredentials,
+				userCertificate,
+				cancellationToken
+			);
 
 		/// <summary>
 		/// Restarts the projection subsystem.
 		/// </summary>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task RestartSubsystemAsync(TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+		public async Task RestartSubsystemAsync(
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).RestartSubsystemAsync(new Empty(),
 				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
@@ -87,8 +113,8 @@ namespace EventStore.Client {
 		}
 		
 		private async Task DisableInternalAsync(string name, bool writeCheckpoint, TimeSpan? deadline,
-			UserCredentials? userCredentials, CancellationToken cancellationToken) {
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+			UserCredentials? userCredentials, UserCertificate? userCertificate, CancellationToken cancellationToken) {
+			var channelInfo = await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).DisableAsync(new DisableReq {
 				Options = new DisableReq.Types.Options {

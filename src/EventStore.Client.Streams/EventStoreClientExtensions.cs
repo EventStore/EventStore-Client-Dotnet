@@ -47,6 +47,7 @@ namespace EventStore.Client {
 		/// <param name="eventData"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
@@ -57,13 +58,22 @@ namespace EventStore.Client {
 			IEnumerable<EventData> eventData,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
 			CancellationToken cancellationToken = default) {
 			if (client == null) {
 				throw new ArgumentNullException(nameof(client));
 			}
 			try {
-				var result = await client.AppendToStreamAsync(streamName, expectedRevision, eventData,
-						options => options.ThrowOnAppendFailure = false, deadline, userCredentials, cancellationToken)
+				var result = await client.AppendToStreamAsync(
+						streamName,
+						expectedRevision,
+						eventData,
+						options => options.ThrowOnAppendFailure = false,
+						deadline,
+						userCredentials,
+						userCertificate,
+						cancellationToken
+					)
 					.ConfigureAwait(false);
 				return ConditionalWriteResult.FromWriteResult(result);
 			} catch (StreamDeletedException) {
@@ -80,6 +90,7 @@ namespace EventStore.Client {
 		/// <param name="eventData"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
@@ -90,13 +101,22 @@ namespace EventStore.Client {
 			IEnumerable<EventData> eventData,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
 			CancellationToken cancellationToken = default) {
 			if (client == null) {
 				throw new ArgumentNullException(nameof(client));
 			}
 			try {
-				var result = await client.AppendToStreamAsync(streamName, expectedState, eventData,
-						options => options.ThrowOnAppendFailure = false, deadline, userCredentials, cancellationToken)
+				var result = await client.AppendToStreamAsync(
+						streamName,
+						expectedState,
+						eventData,
+						options => options.ThrowOnAppendFailure = false,
+						deadline,
+						userCredentials,
+						userCertificate,
+						cancellationToken
+					)
 					.ConfigureAwait(false);
 				return ConditionalWriteResult.FromWriteResult(result);
 			} catch (StreamDeletedException) {

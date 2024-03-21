@@ -99,18 +99,12 @@ namespace EventStore.Client {
 
 
 		/// Gets the current channel info.
-		protected async ValueTask<ChannelInfo> GetChannelInfo(X509Certificate2? userCertificate, CancellationToken cancellationToken) {
-			_httpFallback = new Lazy<HttpFallback>(() => new HttpFallback(Settings, userCertificate));
-
-			if (userCertificate == null) {
-				return await _channelInfoProvider.CurrentAsync.WithCancellation(cancellationToken)
-					.ConfigureAwait(false);
-			}
-
-			return await _channelInfoProvider
+		protected async ValueTask<ChannelInfo> GetChannelInfo(
+			X509Certificate2? userCertificate, CancellationToken cancellationToken
+		) =>
+			await _channelInfoProvider
 				.GetAsync(new GrpcChannelInput(ReconnectionRequired.Rediscover.Instance, userCertificate))
 				.WithCancellation(cancellationToken).ConfigureAwait(false);
-		}
 
 		/// <summary>
 		/// Only exists so that we can manually trigger rediscovery in the tests

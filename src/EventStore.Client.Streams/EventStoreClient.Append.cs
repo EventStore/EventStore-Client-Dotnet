@@ -1,4 +1,8 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Threading.Channels;
 using Google.Protobuf;
 using EventStore.Client.Streams;
@@ -16,6 +20,7 @@ namespace EventStore.Client {
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
+		/// <param name="userCertificate">The <see cref="UserCertificate"/> for the operation.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public async Task<IWriteResult> AppendToStreamAsync(
@@ -25,6 +30,7 @@ namespace EventStore.Client {
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
 			CancellationToken cancellationToken = default) {
 			var options = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(options);
@@ -33,10 +39,10 @@ namespace EventStore.Client {
 
 			var batchAppender = _streamAppender;
 			var task =
-				userCredentials == null && await batchAppender.IsUsable().ConfigureAwait(false)
+				userCredentials == null && userCertificate == null && await batchAppender.IsUsable().ConfigureAwait(false)
 					? batchAppender.Append(streamName, expectedRevision, eventData, deadline, cancellationToken)
 					: AppendToStreamInternal(
-						(await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false)).CallInvoker,
+						(await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false)).CallInvoker,
 						new AppendReq {
 							Options = new AppendReq.Types.Options {
 								StreamIdentifier = streamName,
@@ -62,6 +68,7 @@ namespace EventStore.Client {
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
+		/// <param name="userCertificate">The <see cref="UserCertificate"/> for the operation.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public async Task<IWriteResult> AppendToStreamAsync(
@@ -71,6 +78,7 @@ namespace EventStore.Client {
 			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
 			CancellationToken cancellationToken = default) {
 			var operationOptions = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(operationOptions);
@@ -79,10 +87,10 @@ namespace EventStore.Client {
 
 			var batchAppender = _streamAppender;
 			var task =
-				userCredentials == null && await batchAppender.IsUsable().ConfigureAwait(false)
+				userCredentials == null && userCertificate == null && await batchAppender.IsUsable().ConfigureAwait(false)
 					? batchAppender.Append(streamName, expectedState, eventData, deadline, cancellationToken)
 					: AppendToStreamInternal(
-						(await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false)).CallInvoker,
+						(await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false)).CallInvoker,
 						new AppendReq {
 							Options = new AppendReq.Types.Options {
 								StreamIdentifier = streamName
@@ -234,9 +242,12 @@ namespace EventStore.Client {
 
 			private readonly Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>?> _callTask;
 
-			public StreamAppender(EventStoreClientSettings settings,
-			                      Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>?> callTask, CancellationToken cancellationToken,
-			                      Action<Exception> onException) {
+			public StreamAppender(
+				EventStoreClientSettings settings,
+				Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>?> callTask,
+				CancellationToken cancellationToken,
+				Action<Exception> onException
+			) {
 				_settings          = settings;
 				_callTask          = callTask;
 				_cancellationToken = cancellationToken;

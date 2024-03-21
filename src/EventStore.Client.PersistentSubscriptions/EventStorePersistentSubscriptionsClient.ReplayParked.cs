@@ -11,10 +11,13 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Retry the parked messages of the persistent subscription
 		/// </summary>
-		public async Task ReplayParkedMessagesToAllAsync(string groupName, long? stopAt = null, TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+		public async Task ReplayParkedMessagesToAllAsync(
+			string groupName, long? stopAt = null, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsReplayParked) {
 				var req = new ReplayParkedReq() {
 					Options = new ReplayParkedReq.Types.Options{
@@ -43,10 +46,13 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Retry the parked messages of the persistent subscription
 		/// </summary>
-		public async Task ReplayParkedMessagesToStreamAsync(string streamName, string groupName, long? stopAt=null,
-			TimeSpan? deadline=null, UserCredentials? userCredentials=null, CancellationToken cancellationToken=default) {
-
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+		public async Task ReplayParkedMessagesToStreamAsync(
+			string streamName, string groupName, long? stopAt = null,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsReplayParked) {
 				var req = new ReplayParkedReq() {
 					Options = new ReplayParkedReq.Types.Options {

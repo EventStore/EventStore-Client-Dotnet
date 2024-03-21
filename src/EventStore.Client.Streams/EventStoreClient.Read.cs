@@ -16,6 +16,7 @@ namespace EventStore.Client {
 		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="userCertificate">The optional <see cref="UserCertificate"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public ReadAllStreamResult ReadAllAsync(
@@ -25,13 +26,14 @@ namespace EventStore.Client {
 			bool resolveLinkTos = false,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
 			CancellationToken cancellationToken = default) {
 			if (maxCount <= 0) {
 				throw new ArgumentOutOfRangeException(nameof(maxCount));
 			}
 
 			return new ReadAllStreamResult(async _ => {
-				var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+				var channelInfo = await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 				return channelInfo.CallInvoker;
 			}, new ReadReq {
 				Options = new() {
@@ -65,6 +67,7 @@ namespace EventStore.Client {
 		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="userCertificate">The optional <see cref="UserCertificate"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public ReadAllStreamResult ReadAllAsync(
@@ -75,6 +78,7 @@ namespace EventStore.Client {
 			bool resolveLinkTos = false,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
 			CancellationToken cancellationToken = default
 			) {
 			if (maxCount <= 0) {
@@ -103,7 +107,7 @@ namespace EventStore.Client {
 			};
 
 			return new ReadAllStreamResult(async _ => {
-				var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+				var channelInfo = await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 				return channelInfo.CallInvoker;
 			}, readReq, Settings, deadline, userCredentials, cancellationToken);
 		}
@@ -221,6 +225,7 @@ namespace EventStore.Client {
 		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="userCertificate">The optional <see cref="UserCertificate"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public ReadStreamResult ReadStreamAsync(
@@ -231,6 +236,7 @@ namespace EventStore.Client {
 			bool resolveLinkTos = false,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
 			CancellationToken cancellationToken = default) {
 
 			if (maxCount <= 0) {
@@ -238,7 +244,7 @@ namespace EventStore.Client {
 			}
 
 			return new ReadStreamResult(async _ => {
-				var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+				var channelInfo = await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 				return channelInfo.CallInvoker;
 			}, new ReadReq {
 				Options = new() {

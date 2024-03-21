@@ -118,11 +118,21 @@ namespace EventStore.Client {
 		/// Creates a persistent subscription.
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
-		public async Task CreateToStreamAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) =>
-			await CreateInternalAsync(streamName, groupName, null, settings, deadline, userCredentials,
-					cancellationToken)
+		public async Task CreateToStreamAsync(
+			string streamName, string groupName, PersistentSubscriptionSettings settings,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) =>
+			await CreateInternalAsync(
+					streamName,
+					groupName,
+					null,
+					settings,
+					deadline,
+					userCredentials,
+					userCertificate,
+					cancellationToken
+				)
 				.ConfigureAwait(false);
 		
 		/// <summary>
@@ -130,36 +140,70 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
 		[Obsolete("CreateAsync is no longer supported. Use CreateToStreamAsync instead.", false)]
-		public async Task CreateAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) =>
-			await CreateInternalAsync(streamName, groupName, null, settings, deadline, userCredentials,
-					cancellationToken)
+		public async Task CreateAsync(
+			string streamName, string groupName, PersistentSubscriptionSettings settings,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) =>
+			await CreateInternalAsync(
+					streamName,
+					groupName,
+					null,
+					settings,
+					deadline,
+					userCredentials,
+					userCertificate,
+					cancellationToken
+				)
 				.ConfigureAwait(false);
 		
 		/// <summary>
 		/// Creates a filtered persistent subscription to $all.
 		/// </summary>
-		public async Task CreateToAllAsync(string groupName, IEventFilter eventFilter,
+		public async Task CreateToAllAsync(
+			string groupName, IEventFilter eventFilter,
 			PersistentSubscriptionSettings settings, TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) =>
-			await CreateInternalAsync(SystemStreams.AllStream, groupName, eventFilter, settings, deadline,
-					userCredentials, cancellationToken)
+			UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) =>
+			await CreateInternalAsync(
+					SystemStreams.AllStream,
+					groupName,
+					eventFilter,
+					settings,
+					deadline,
+					userCredentials,
+					userCertificate,
+					cancellationToken
+				)
 				.ConfigureAwait(false);
 
 		/// <summary>
 		/// Creates a persistent subscription to $all.
 		/// </summary>
-		public async Task CreateToAllAsync(string groupName, PersistentSubscriptionSettings settings,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) =>
-			await CreateInternalAsync(SystemStreams.AllStream, groupName, null, settings, deadline, userCredentials,
-					cancellationToken)
+		public async Task CreateToAllAsync(
+			string groupName, PersistentSubscriptionSettings settings,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) =>
+			await CreateInternalAsync(
+					SystemStreams.AllStream,
+					groupName,
+					null,
+					settings,
+					deadline,
+					userCredentials,
+					userCertificate,
+					cancellationToken
+				)
 				.ConfigureAwait(false);
 
-		private async Task CreateInternalAsync(string streamName, string groupName, IEventFilter? eventFilter,
+		private async Task CreateInternalAsync(
+			string streamName, string groupName, IEventFilter? eventFilter,
 			PersistentSubscriptionSettings settings, TimeSpan? deadline, UserCredentials? userCredentials,
-			CancellationToken cancellationToken) {
+			UserCertificate? userCertificate,
+			CancellationToken cancellationToken
+		) {
 			if (streamName is null) {
 				throw new ArgumentNullException(nameof(streamName));
 			}
@@ -198,7 +242,7 @@ namespace EventStore.Client {
 					"The specified consumer strategy is not supported, specify one of the SystemConsumerStrategies");
 			}
 
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 
 			if (streamName == SystemStreams.AllStream &&
 			    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {

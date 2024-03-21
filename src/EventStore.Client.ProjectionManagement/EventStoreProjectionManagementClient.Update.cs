@@ -13,11 +13,14 @@ namespace EventStore.Client {
 		/// <param name="emitEnabled"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task UpdateAsync(string name, string query, bool? emitEnabled = null,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+		public async Task UpdateAsync(
+			string name, string query, bool? emitEnabled = null,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
 			var options = new UpdateReq.Types.Options {
 				Name = name,
 				Query = query
@@ -28,7 +31,8 @@ namespace EventStore.Client {
 				options.NoEmitOptions = new Empty();
 			}
 
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).UpdateAsync(new UpdateReq {
 				Options = options

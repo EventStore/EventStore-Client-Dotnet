@@ -3,7 +3,32 @@ namespace EventStore.Client.Plugins.Tests {
 	public class UserCertificateTests(ITestOutputHelper output, EventStoreFixture fixture)
 		: EventStoreTests<EventStoreFixture>(output, fixture) {
 		[Fact]
-		public async Task user_credentials_takes_precedence_over_user_certificates() {
+		public async Task user_credentials_takes_precedence_over_user_certificate_on_a_call() {
+			var certPath    = Path.Combine(Environment.CurrentDirectory, "certs", "user-admin", "user-admin.crt");
+			var certKeyPath = Path.Combine(Environment.CurrentDirectory, "certs", "user-admin", "user-admin.key");
+
+			var connectionString =
+				$"esdb://localhost:2113/?tls=true&tlsVerifyCert=true&certPath={certPath}&certKeyPath={certKeyPath}";
+
+			var stream = Fixture.GetStreamName();
+
+			var settings = EventStoreClientSettings.Create(connectionString);
+
+			var client = new EventStoreClient(settings);
+
+			var appendResult = await client.AppendToStreamAsync(
+				stream,
+				StreamState.Any,
+				Fixture.CreateTestEvents(5),
+				userCredentials: new UserCredentials("admin", "changeit"),
+				userCertificate: TestCertificate.UserAdminCertificate
+			);
+
+			Assert.NotNull(appendResult);
+		}
+
+		[Fact]
+		public async Task invalid_user_credentials_takes_precedence_over_admin_cert() {
 			var certPath    = Path.Combine(Environment.CurrentDirectory, "certs", "user-admin", "user-admin.crt");
 			var certKeyPath = Path.Combine(Environment.CurrentDirectory, "certs", "user-admin", "user-admin.key");
 
@@ -19,36 +44,19 @@ namespace EventStore.Client.Plugins.Tests {
 			await client.AppendToStreamAsync(
 				stream,
 				StreamState.Any,
-				Enumerable.Empty<EventData>(),
-				userCredentials: TestCredentials.TestBadUser
+				Fixture.CreateTestEvents(5),
+				userCredentials: TestCredentials.TestBadUser,
+				userCertificate: TestCertificate.UserAdminCertificate
 			).ShouldThrowAsync<NotAuthenticatedException>();
 		}
 
 		[Fact]
-		public Task does_not_accept_certificates_with_invalid_path() {
-			var certPath    = Path.Combine("invalid.crt");
-			var certKeyPath = Path.Combine("invalid.key");
-
-			var connectionString =
-				$"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&certPath={certPath}&certKeyPath={certKeyPath}";
-
-			Assert.Throws<InvalidSettingException>(() => EventStoreClientSettings.Create(connectionString));
-
-			return Task.CompletedTask;
-		}
-
-		[Fact]
-		public async Task append_should_be_successful_with_user_certificates() {
-			var certPath    = Path.Combine(Environment.CurrentDirectory, "certs", "user-admin", "user-admin.crt");
-			var certKeyPath = Path.Combine(Environment.CurrentDirectory, "certs", "user-admin", "user-admin.key");
-
-			Assert.True(File.Exists(certPath));
-			Assert.True(File.Exists(certKeyPath));
+		public async Task valid_user_credentials_takes_precedence_over_invalid_user_cert_with_invalid_client() {
+			var certPath    = Path.Combine(Environment.CurrentDirectory, "certs", "user-invalid", "user-invalid.crt");
+			var certKeyPath = Path.Combine(Environment.CurrentDirectory, "certs", "user-invalid", "user-invalid.key");
 
 			var connectionString =
 				$"esdb://localhost:2113/?tls=true&tlsVerifyCert=true&certPath={certPath}&certKeyPath={certKeyPath}";
-
-			Fixture.Log.Information("connectionString: {connectionString}", connectionString);
 
 			var stream = Fixture.GetStreamName();
 
@@ -56,75 +64,60 @@ namespace EventStore.Client.Plugins.Tests {
 
 			var client = new EventStoreClient(settings);
 
-			var result = await client.AppendToStreamAsync(
+			await client.AppendToStreamAsync(
 				stream,
 				StreamState.Any,
-				Enumerable.Empty<EventData>()
-			);
-
-			Assert.NotNull(result);
+				Fixture.CreateTestEvents(5),
+				userCredentials: new UserCredentials("admin", "changeit"),
+				userCertificate: TestCertificate.BadUserCertificate
+			).ShouldThrowAsync<NotAuthenticatedException>();
 		}
 
 		[Fact]
-        public async Task append_with_correct_user_certificate_but_read_with_bad_user_certificate()
-        {
-            var connectionString = "esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true";
+		public async Task overriding_invalid_client_with_valid_user_credentials_throws_unauthenticated() {
+			var certPath    = Path.Combine(Environment.CurrentDirectory, "certs", "user-invalid", "user-invalid.crt");
+			var certKeyPath = Path.Combine(Environment.CurrentDirectory, "certs", "user-invalid", "user-invalid.key");
 
-            var stream = Fixture.GetStreamName();
+			var connectionString =
+				$"esdb://localhost:2113/?tls=true&tlsVerifyCert=true&certPath={certPath}&certKeyPath={certKeyPath}";
 
-            var settings = EventStoreClientSettings.Create(connectionString);
+			var stream = Fixture.GetStreamName();
 
-            var client = new EventStoreClient(settings);
+			var settings = EventStoreClientSettings.Create(connectionString);
 
-            var appendResult = await client.AppendToStreamAsync(
-	            stream,
-	            StreamState.Any,
-	            Enumerable.Empty<EventData>(),
-	            userCredentials: TestCredentials.UserAdminCertificate
-            );
+			var client = new EventStoreClient(settings);
 
-            Assert.NotNull(appendResult);
-
-            await Fixture.Streams
-	            .ReadStreamAsync(
-		            Direction.Forwards,
-		            stream,
-		            StreamPosition.Start,
-		            userCredentials: TestCredentials.BadUserCertificate
-	            )
-	            .ShouldThrowAsync<NotAuthenticatedException>();
-        }
+			await client.AppendToStreamAsync(
+				stream,
+				StreamState.Any,
+				Fixture.CreateTestEvents(5),
+				userCredentials: new UserCredentials("admin", "changeit")
+			).ShouldThrowAsync<NotAuthenticatedException>();
+		}
 
 		[Fact]
-		public async Task overriding_user_certificate_with_basic_authentication_should_work() {
+		public async Task override_call_with_invalid_user_certificate_should_throw_unauthenticated() {
 			var certPath    = Path.Combine(Environment.CurrentDirectory, "certs", "user-admin", "user-admin.crt");
 			var certKeyPath = Path.Combine(Environment.CurrentDirectory, "certs", "user-admin", "user-admin.key");
 
 			var connectionString =
 				$"esdb://localhost:2113/?tls=true&tlsVerifyCert=true&certPath={certPath}&certKeyPath={certKeyPath}";
 
-            var stream = Fixture.GetStreamName();
+			var stream = Fixture.GetStreamName();
 
-            var settings = EventStoreClientSettings.Create(connectionString);
+			var settings = EventStoreClientSettings.Create(connectionString);
 
-            var client = new EventStoreClient(settings);
+			var client = new EventStoreClient(settings);
 
-            var appendResult = await client.AppendToStreamAsync(
-	            stream,
-	            StreamState.Any,
-	            Fixture.CreateTestEvents(5),
-	            userCredentials: new UserCredentials("admin", "changeit")
-            );
+			await client.AppendToStreamAsync(
+				stream,
+				StreamState.Any,
+				Fixture.CreateTestEvents(5),
+				userCertificate: TestCertificate.BadUserCertificate
+			).ShouldThrowAsync<NotAuthenticatedException>();
 
-            Assert.NotNull(appendResult);
-
-            var readResult = await Fixture.Streams
-	            .ReadStreamAsync(
-		            Direction.Forwards,
-		            stream,
-		            StreamPosition.Start
-	            ).CountAsync();
-            readResult.ShouldBe(5);
+			await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+				.ShouldThrowAsync<StreamNotFoundException>();
 		}
 	}
 }

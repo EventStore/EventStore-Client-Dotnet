@@ -18,12 +18,22 @@ namespace EventStore.Client {
 		/// <param name="partition"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task<JsonDocument> GetResultAsync(string name, string? partition = null,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
-			var value = await GetResultInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
+		public async Task<JsonDocument> GetResultAsync(
+			string name, string? partition = null,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var value = await GetResultInternalAsync(
+					name,
+					partition,
+					deadline,
+					userCredentials,
+					userCertificate,
+					cancellationToken
+				)
 				.ConfigureAwait(false);
 
 #if NET
@@ -48,14 +58,24 @@ namespace EventStore.Client {
 		/// <param name="serializerOptions"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public async Task<T> GetResultAsync<T>(string name, string? partition = null,
-			JsonSerializerOptions? serializerOptions = null, 
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
-			var value = await GetResultInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
+		public async Task<T> GetResultAsync<T>(
+			string name, string? partition = null,
+			JsonSerializerOptions? serializerOptions = null,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var value = await GetResultInternalAsync(
+					name,
+					partition,
+					deadline,
+					userCredentials,
+					userCertificate,
+					cancellationToken
+				)
 				.ConfigureAwait(false);
 #if NET
 			await using var stream = new MemoryStream();
@@ -71,9 +91,13 @@ namespace EventStore.Client {
 			return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
 		}
 
-		private async ValueTask<Value> GetResultInternalAsync(string name, string? partition,
-			TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+		private async ValueTask<Value> GetResultInternalAsync(
+			string name, string? partition,
+			TimeSpan? deadline, UserCredentials? userCredentials, UserCertificate? userCertificate,
+			CancellationToken cancellationToken
+		) {
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).ResultAsync(new ResultReq {
 				Options = new ResultReq.Types.Options {
@@ -93,12 +117,22 @@ namespace EventStore.Client {
 		/// <param name="partition"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task<JsonDocument> GetStateAsync(string name, string? partition = null,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
-			var value = await GetStateInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
+		public async Task<JsonDocument> GetStateAsync(
+			string name, string? partition = null,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var value = await GetStateInternalAsync(
+					name,
+					partition,
+					deadline,
+					userCredentials,
+					userCertificate,
+					cancellationToken
+				)
 				.ConfigureAwait(false);
 
 #if NET
@@ -123,13 +157,24 @@ namespace EventStore.Client {
 		/// <param name="serializerOptions"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public async Task<T> GetStateAsync<T>(string name, string? partition = null,
+		public async Task<T> GetStateAsync<T>(
+			string name, string? partition = null,
 			JsonSerializerOptions? serializerOptions = null, TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			var value = await GetStateInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
+			UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var value = await GetStateInternalAsync(
+					name,
+					partition,
+					deadline,
+					userCredentials,
+					userCertificate,
+					cancellationToken
+				)
 				.ConfigureAwait(false);
 
 #if NET
@@ -146,9 +191,12 @@ namespace EventStore.Client {
 			return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
 		}
 
-		private async ValueTask<Value> GetStateInternalAsync(string name, string? partition, TimeSpan? deadline,
-			UserCredentials? userCredentials, CancellationToken cancellationToken) {
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+		private async ValueTask<Value> GetStateInternalAsync(
+			string name, string? partition, TimeSpan? deadline,
+			UserCredentials? userCredentials, UserCertificate? userCertificate, CancellationToken cancellationToken
+		) {
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).StateAsync(new StateReq {
 				Options = new StateReq.Types.Options {

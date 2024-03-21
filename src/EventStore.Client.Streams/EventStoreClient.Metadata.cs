@@ -13,15 +13,28 @@ namespace EventStore.Client {
 		/// <param name="streamName">The name of the stream to read the metadata for.</param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="userCertificate">The optional <see cref="UserCertificate"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public async Task<StreamMetadataResult> GetStreamMetadataAsync(string streamName, TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+		public async Task<StreamMetadataResult> GetStreamMetadataAsync(
+			string streamName, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
 			_log.LogDebug("Read stream metadata for {streamName}.", streamName);
 
 			try {
-				var result = ReadStreamAsync(Direction.Backwards, SystemStreams.MetastreamOf(streamName),
-					StreamPosition.End, 1, false, deadline, userCredentials, cancellationToken);
+				var result = ReadStreamAsync(
+					Direction.Backwards,
+					SystemStreams.MetastreamOf(streamName),
+					StreamPosition.End,
+					1,
+					false,
+					deadline,
+					userCredentials,
+					userCertificate,
+					cancellationToken
+				);
 				await foreach (var message in result.Messages.ConfigureAwait(false)) {
 					if (message is not StreamMessage.Event(var resolvedEvent)) {
 						continue;
@@ -47,12 +60,15 @@ namespace EventStore.Client {
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="userCertificate">The optional <see cref="UserCertificate"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public Task<IWriteResult> SetStreamMetadataAsync(string streamName, StreamState expectedState,
+		public Task<IWriteResult> SetStreamMetadataAsync(
+			string streamName, StreamState expectedState,
 			StreamMetadata metadata, Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
 			var options = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(options);
 
@@ -60,7 +76,7 @@ namespace EventStore.Client {
 				Options = new AppendReq.Types.Options {
 					StreamIdentifier = SystemStreams.MetastreamOf(streamName)
 				}
-			}.WithAnyStreamRevision(expectedState), options, deadline, userCredentials, cancellationToken);
+			}.WithAnyStreamRevision(expectedState), options, deadline, userCredentials, userCertificate, cancellationToken);
 		}
 
 		/// <summary>
@@ -72,21 +88,32 @@ namespace EventStore.Client {
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="userCertificate">The optional <see cref="UserCertificate"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public Task<IWriteResult> SetStreamMetadataAsync(string streamName, StreamRevision expectedRevision,
+		public Task<IWriteResult> SetStreamMetadataAsync(
+			string streamName, StreamRevision expectedRevision,
 			StreamMetadata metadata, Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
 			var options = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(options);
 
-			return SetStreamMetadataInternal(metadata, new AppendReq {
-				Options = new AppendReq.Types.Options {
-					StreamIdentifier = SystemStreams.MetastreamOf(streamName),
-					Revision = expectedRevision
-				}
-			}, options, deadline, userCredentials, cancellationToken);
+			return SetStreamMetadataInternal(
+				metadata,
+				new AppendReq {
+					Options = new AppendReq.Types.Options {
+						StreamIdentifier = SystemStreams.MetastreamOf(streamName),
+						Revision         = expectedRevision
+					}
+				},
+				options,
+				deadline,
+				userCredentials,
+				userCertificate,
+				cancellationToken
+			);
 		}
 
 		private async Task<IWriteResult> SetStreamMetadataInternal(StreamMetadata metadata,
@@ -94,9 +121,10 @@ namespace EventStore.Client {
 			EventStoreClientOperationOptions operationOptions,
 			TimeSpan? deadline,
 			UserCredentials? userCredentials,
+			UserCertificate? userCertificate,
 			CancellationToken cancellationToken) {
-
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			return await AppendToStreamInternal(channelInfo.CallInvoker, appendReq, new[] {
 				new EventData(Uuid.NewUuid(), SystemEventTypes.StreamMetadata,
 					JsonSerializer.SerializeToUtf8Bytes(metadata, StreamMetadataJsonSerializerOptions)),

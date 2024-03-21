@@ -13,6 +13,7 @@ namespace EventStore.Client {
 		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream being deleted.</param>
 		/// <param name="deadline">The maximum time to wait before terminating the call.</param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="userCertificate">The optional <see cref="UserCertificate"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public Task<DeleteResult> DeleteAsync(
@@ -20,13 +21,19 @@ namespace EventStore.Client {
 			StreamRevision expectedRevision,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
 			CancellationToken cancellationToken = default) =>
 			DeleteInternal(new DeleteReq {
 				Options = new DeleteReq.Types.Options {
 					StreamIdentifier = streamName,
 					Revision = expectedRevision
 				}
-			}, deadline, userCredentials, cancellationToken);
+				},
+				deadline,
+				userCredentials,
+				userCertificate,
+				cancellationToken
+			);
 
 		/// <summary>
 		/// Deletes a stream asynchronously.
@@ -35,6 +42,7 @@ namespace EventStore.Client {
 		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream being deleted.</param>
 		/// <param name="deadline">The maximum time to wait before terminating the call.</param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="userCertificate">The optional <see cref="UserCertificate"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public Task<DeleteResult> DeleteAsync(
@@ -42,18 +50,25 @@ namespace EventStore.Client {
 			StreamState expectedState,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
 			CancellationToken cancellationToken = default) => DeleteInternal(new DeleteReq {
 				Options = new DeleteReq.Types.Options {
 					StreamIdentifier = streamName
 				}
-			}.WithAnyStreamRevision(expectedState), deadline, userCredentials, cancellationToken);
+			}.WithAnyStreamRevision(expectedState),
+			deadline,
+			userCredentials,
+			userCertificate,
+			cancellationToken
+		);
 
 		private async Task<DeleteResult> DeleteInternal(DeleteReq request,
 			TimeSpan? deadline,
 			UserCredentials? userCredentials,
+			UserCertificate? userCertificate,
 			CancellationToken cancellationToken) {
 			_log.LogDebug("Deleting stream {streamName}.", request.Options.StreamIdentifier);
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Streams.Streams.StreamsClient(
 				channelInfo.CallInvoker).DeleteAsync(request,
 				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));

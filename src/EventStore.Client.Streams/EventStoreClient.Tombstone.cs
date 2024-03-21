@@ -13,6 +13,7 @@ namespace EventStore.Client {
 		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream being deleted.</param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="userCertificate">The optional <see cref="UserCertificate"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public Task<DeleteResult> TombstoneAsync(
@@ -20,12 +21,13 @@ namespace EventStore.Client {
 			StreamRevision expectedRevision,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
 			CancellationToken cancellationToken = default) => TombstoneInternal(new TombstoneReq {
 			Options = new TombstoneReq.Types.Options {
 				StreamIdentifier = streamName,
 				Revision = expectedRevision
 			}
-		}, deadline, userCredentials, cancellationToken);
+		}, deadline, userCredentials, userCertificate, cancellationToken);
 
 		/// <summary>
 		/// Tombstones a stream asynchronously. Note: Tombstoned streams can never be recreated.
@@ -34,6 +36,7 @@ namespace EventStore.Client {
 		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream being deleted.</param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="userCertificate">The optional <see cref="UserCertificate"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public Task<DeleteResult> TombstoneAsync(
@@ -41,17 +44,25 @@ namespace EventStore.Client {
 			StreamState expectedState,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) => TombstoneInternal(new TombstoneReq {
-			Options = new TombstoneReq.Types.Options {
-				StreamIdentifier = streamName
-			}
-		}.WithAnyStreamRevision(expectedState), deadline, userCredentials, cancellationToken);
+			UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) => TombstoneInternal(
+			new TombstoneReq {
+				Options = new TombstoneReq.Types.Options {
+					StreamIdentifier = streamName
+				}
+			}.WithAnyStreamRevision(expectedState),
+			deadline,
+			userCredentials,
+			userCertificate,
+			cancellationToken
+		);
 
 		private async Task<DeleteResult> TombstoneInternal(TombstoneReq request, TimeSpan? deadline,
-			UserCredentials? userCredentials, CancellationToken cancellationToken) {
+			UserCredentials? userCredentials, UserCertificate? userCertificate, CancellationToken cancellationToken) {
 			_log.LogDebug("Tombstoning stream {streamName}.", request.Options.StreamIdentifier);
 
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Streams.Streams.StreamsClient(
 				channelInfo.CallInvoker).TombstoneAsync(request,
 				EventStoreCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));

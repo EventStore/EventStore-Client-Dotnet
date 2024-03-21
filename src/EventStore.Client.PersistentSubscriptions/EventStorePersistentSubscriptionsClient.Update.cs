@@ -62,18 +62,30 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
 		[Obsolete("UpdateAsync is no longer supported. Use UpdateToStreamAsync instead.", false)]
-		public Task UpdateAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) => 
-			UpdateToStreamAsync(streamName, groupName, settings, deadline, userCredentials, cancellationToken);
+		public Task UpdateAsync(
+			string streamName, string groupName, PersistentSubscriptionSettings settings,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) =>
+			UpdateToStreamAsync(
+				streamName,
+				groupName,
+				settings,
+				deadline,
+				userCredentials,
+				userCertificate,
+				cancellationToken
+			);
 
 		/// <summary>
 		/// Updates a persistent subscription.
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
-		public async Task UpdateToStreamAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+		public async Task UpdateToStreamAsync(
+			string streamName, string groupName, PersistentSubscriptionSettings settings,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
 			if (streamName is null) {
 				throw new ArgumentNullException(nameof(streamName));
 			}
@@ -102,7 +114,7 @@ namespace EventStore.Client {
 					$"{nameof(settings.StartFrom)} must be of type '{nameof(Position)}' when subscribing to {SystemStreams.AllStream}");
 			}
 
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 
 			if (streamName == SystemStreams.AllStream &&
 			    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
@@ -155,11 +167,21 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Updates a persistent subscription to $all.
 		/// </summary>
-		public async Task UpdateToAllAsync(string groupName, PersistentSubscriptionSettings settings,
+		public async Task UpdateToAllAsync(
+			string groupName, PersistentSubscriptionSettings settings,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) =>
-			await UpdateToStreamAsync(SystemStreams.AllStream, groupName, settings, deadline, userCredentials,
-					cancellationToken)
+			UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) =>
+			await UpdateToStreamAsync(
+					SystemStreams.AllStream,
+					groupName,
+					settings,
+					deadline,
+					userCredentials,
+					userCertificate,
+					cancellationToken
+				)
 				.ConfigureAwait(false);
 	}
 }

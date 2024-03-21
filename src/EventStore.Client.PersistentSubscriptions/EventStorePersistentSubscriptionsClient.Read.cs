@@ -12,18 +12,21 @@ namespace EventStore.Client {
 		/// <exception cref="ArgumentException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		[Obsolete("SubscribeAsync is no longer supported. Use SubscribeToStream with manual acks instead.", false)]
-		public async Task<PersistentSubscription> SubscribeAsync(string streamName, string groupName,
+		public async Task<PersistentSubscription> SubscribeAsync(
+			string streamName, string groupName,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-			UserCredentials? userCredentials = null, int bufferSize = 10, bool autoAck = true,
-			CancellationToken cancellationToken = default) {
+			UserCredentials? userCredentials = null, UserCertificate? userCertificate = null, int bufferSize = 10,
+			bool autoAck = true,
+			CancellationToken cancellationToken = default
+		) {
 			if (autoAck) {
 				throw new InvalidOperationException(
 					$"AutoAck is no longer supported. Please use {nameof(SubscribeToStreamAsync)} with manual acks instead.");
 			}
 
 			return await SubscribeToStreamAsync(streamName, groupName, eventAppeared, subscriptionDropped,
-				userCredentials, bufferSize, cancellationToken).ConfigureAwait(false);
+				userCredentials, userCertificate, bufferSize, cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -33,13 +36,15 @@ namespace EventStore.Client {
 		/// <exception cref="ArgumentException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		[Obsolete("SubscribeToStreamAsync is no longer supported. Use SubscribeToStream with manual acks instead.", false)]
-		public async Task<PersistentSubscription> SubscribeToStreamAsync(string streamName, string groupName,
-		                                                                 Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-		                                                                 Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-		                                                                 UserCredentials? userCredentials = null, int bufferSize = 10,
-		                                                                 CancellationToken cancellationToken = default) {
+		public async Task<PersistentSubscription> SubscribeToStreamAsync(
+			string streamName, string groupName,
+			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
+			UserCredentials? userCredentials = null, UserCertificate? userCertificate = null, int bufferSize = 10,
+			CancellationToken cancellationToken = default
+		) {
 			return await PersistentSubscription
-				.Confirm(SubscribeToStream(streamName, groupName, bufferSize, userCredentials, cancellationToken),
+				.Confirm(SubscribeToStream(streamName, groupName, bufferSize, userCredentials, userCertificate, cancellationToken),
 					eventAppeared, subscriptionDropped ?? delegate { }, _log, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 		}
@@ -51,10 +56,14 @@ namespace EventStore.Client {
 		/// <param name="groupName">The name of the persistent subscription group.</param>
 		/// <param name="bufferSize">The size of the buffer.</param>
 		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
+		/// <param name="userCertificate">The optional user certificate to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public PersistentSubscriptionResult SubscribeToStream(string streamName, string groupName, int bufferSize = 10,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+		public PersistentSubscriptionResult SubscribeToStream(
+			string streamName, string groupName, int bufferSize = 10,
+			UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
 			if (streamName == null) {
 				throw new ArgumentNullException(nameof(streamName));
 			}
@@ -88,7 +97,7 @@ namespace EventStore.Client {
 			}
 
 			return new PersistentSubscriptionResult(streamName, groupName, async ct => {
-				var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, ct).ConfigureAwait(false);
+				var channelInfo = await GetChannelInfo(userCertificate?.Certificate, ct).ConfigureAwait(false);
 
 				if (streamName == SystemStreams.AllStream &&
 				    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
@@ -103,13 +112,23 @@ namespace EventStore.Client {
 		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged
 		/// </summary>
 		[Obsolete("SubscribeToAllAsync is no longer supported. Use SubscribeToAll with manual acks instead.", false)]
-		public async Task<PersistentSubscription> SubscribeToAllAsync(string groupName,
-		                                                              Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-		                                                              Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-		                                                              UserCredentials? userCredentials = null, int bufferSize = 10,
-		                                                              CancellationToken cancellationToken = default) =>
-			await SubscribeToStreamAsync(SystemStreams.AllStream, groupName, eventAppeared, subscriptionDropped,
-					userCredentials, bufferSize, cancellationToken)
+		public async Task<PersistentSubscription> SubscribeToAllAsync(
+			string groupName,
+			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
+			UserCredentials? userCredentials = null, UserCertificate? userCertificate = null, int bufferSize = 10,
+			CancellationToken cancellationToken = default
+		) =>
+			await SubscribeToStreamAsync(
+					SystemStreams.AllStream,
+					groupName,
+					eventAppeared,
+					subscriptionDropped,
+					userCredentials,
+					userCertificate,
+					bufferSize,
+					cancellationToken
+				)
 				.ConfigureAwait(false);
 
 		/// <summary>
@@ -118,11 +137,22 @@ namespace EventStore.Client {
 		/// <param name="groupName">The name of the persistent subscription group.</param>
 		/// <param name="bufferSize">The size of the buffer.</param>
 		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
+		/// <param name="userCertificate">The optional user certificate to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public PersistentSubscriptionResult SubscribeToAll(string groupName, int bufferSize = 10,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) =>
-			SubscribeToStream(SystemStreams.AllStream, groupName, bufferSize, userCredentials, cancellationToken);
+		public PersistentSubscriptionResult SubscribeToAll(
+			string groupName, int bufferSize = 10,
+			UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) =>
+			SubscribeToStream(
+				SystemStreams.AllStream,
+				groupName,
+				bufferSize,
+				userCredentials,
+				userCertificate,
+				cancellationToken
+			);
 
 		/// <inheritdoc />
 		public class PersistentSubscriptionResult : IAsyncEnumerable<ResolvedEvent>, IAsyncDisposable, IDisposable {

@@ -14,6 +14,7 @@ namespace EventStore.Client {
 		/// <param name="subscriptionDropped">An action invoked if the subscription is dropped.</param>
 		/// <param name="filterOptions">The optional <see cref="SubscriptionFilterOptions"/> to apply.</param>
 		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
+		/// <param name="userCertificate">The optional user certificate to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		[Obsolete("SubscribeToAllAsync is no longer supported. Use SubscribeToAll instead.", false)]
@@ -24,8 +25,9 @@ namespace EventStore.Client {
 			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = default,
 			SubscriptionFilterOptions? filterOptions = null,
 			UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
 			CancellationToken cancellationToken = default) => StreamSubscription.Confirm(
-			SubscribeToAll(start, resolveLinkTos, filterOptions, userCredentials, cancellationToken),
+			SubscribeToAll(start, resolveLinkTos, filterOptions, userCredentials, userCertificate, cancellationToken),
 			eventAppeared, subscriptionDropped, _log, filterOptions?.CheckpointReached,
 			cancellationToken: cancellationToken);
 
@@ -36,6 +38,7 @@ namespace EventStore.Client {
 		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
 		/// <param name="filterOptions">The optional <see cref="SubscriptionFilterOptions"/> to apply.</param>
 		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
+		/// <param name="userCertificate">The optional user certificate to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public StreamSubscriptionResult SubscribeToAll(
@@ -43,8 +46,9 @@ namespace EventStore.Client {
 			bool resolveLinkTos = false,
 			SubscriptionFilterOptions? filterOptions = null,
 			UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
 			CancellationToken cancellationToken = default) => new(async _ => {
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			return channelInfo.CallInvoker;
 		}, new ReadReq {
 			Options = new ReadReq.Types.Options {
@@ -66,17 +70,21 @@ namespace EventStore.Client {
 		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
 		/// <param name="subscriptionDropped">An action invoked if the subscription is dropped.</param>
 		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
+		/// <param name="userCertificate">The optional user credentials to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		[Obsolete("SubscribeToStreamAsync is no longer supported. Use SubscribeToStream instead.", false)]
-		public Task<StreamSubscription> SubscribeToStreamAsync(string streamName,
-		                                                       FromStream start,
-		                                                       Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
-		                                                       bool resolveLinkTos = false,
-		                                                       Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = default,
-		                                                       UserCredentials? userCredentials = null,
-		                                                       CancellationToken cancellationToken = default) => StreamSubscription.Confirm(
-			SubscribeToStream(streamName, start, resolveLinkTos, userCredentials, cancellationToken),
+		public Task<StreamSubscription> SubscribeToStreamAsync(
+			string streamName,
+			FromStream start,
+			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
+			bool resolveLinkTos = false,
+			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = default,
+			UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) => StreamSubscription.Confirm(
+			SubscribeToStream(streamName, start, resolveLinkTos, userCredentials, userCertificate, cancellationToken),
 			eventAppeared, subscriptionDropped, _log, cancellationToken: cancellationToken);
 
 		/// <summary>
@@ -86,6 +94,7 @@ namespace EventStore.Client {
 		/// <param name="streamName">The name of the stream to read events from.</param>
 		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
 		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
+		/// <param name="userCertificate">The optional user certificate to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public StreamSubscriptionResult SubscribeToStream(
@@ -93,8 +102,9 @@ namespace EventStore.Client {
 			FromStream start,
 			bool resolveLinkTos = false,
 			UserCredentials? userCredentials = null,
+			UserCertificate? userCertificate = null,
 			CancellationToken cancellationToken = default) => new(async _ => {
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+			var channelInfo = await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			return channelInfo.CallInvoker;
 		}, new ReadReq {
 			Options = new ReadReq.Types.Options {

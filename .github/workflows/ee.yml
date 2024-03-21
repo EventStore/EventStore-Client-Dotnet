@@ -1,4 +1,4 @@
-name: Test CI
+name: Test EE
 
 on:
   pull_request:
@@ -14,6 +14,5 @@ jobs:
     with:
       docker-tag: 24.2.0-jammy
       docker-registry: docker.eventstore.com/eventstore-ee/eventstoredb-commercial
-      build-matrix: '["Streams", "PersistentSubscriptions", "Operations", "UserManagement", "ProjectionManagement"]'
       test-matrix: '["Plugins"]'
     secrets: inherit

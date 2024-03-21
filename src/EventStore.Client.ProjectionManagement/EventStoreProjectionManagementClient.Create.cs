@@ -11,11 +11,17 @@ namespace EventStore.Client {
 		/// <param name="query"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task CreateOneTimeAsync(string query, TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+		public async Task CreateOneTimeAsync(
+			string query, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
+
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
@@ -34,12 +40,16 @@ namespace EventStore.Client {
 		/// <param name="trackEmittedStreams"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task CreateContinuousAsync(string name, string query, bool trackEmittedStreams = false,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+		public async Task CreateContinuousAsync(
+			string name, string query, bool trackEmittedStreams = false,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
@@ -60,11 +70,16 @@ namespace EventStore.Client {
 		/// <param name="query"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
+		/// <param name="userCertificate"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public async Task CreateTransientAsync(string name, string query, TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+		public async Task CreateTransientAsync(
+			string name, string query, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.Projections.ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {

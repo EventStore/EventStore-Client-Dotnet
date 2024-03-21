@@ -37,10 +37,10 @@ namespace EventStore.Client {
 			_factory;
 
 		private readonly TimeSpan                      _factoryRetryDelay;
-		private          TInput  _previousInput;
+		private          TInput                        _previousInput;
 		private          TaskCompletionSource<TOutput> _currentBox;
 		private          bool                          _disposed;
-		private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
+		private readonly SemaphoreSlim                 _syncLock = new SemaphoreSlim(1, 1);
 
 		public SharingProvider(
 			Func<TInput, Action<TInput>, Task<TOutput>> factory,

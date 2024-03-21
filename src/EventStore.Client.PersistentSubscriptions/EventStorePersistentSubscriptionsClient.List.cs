@@ -12,10 +12,13 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Lists persistent subscriptions to $all.
 		/// </summary>
-		public async Task<IEnumerable<PersistentSubscriptionInfo>> ListToAllAsync(TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+		public async Task<IEnumerable<PersistentSubscriptionInfo>> ListToAllAsync(
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
 				var req = new ListReq() {
 					Options = new ListReq.Types.Options{
@@ -35,10 +38,13 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Lists persistent subscriptions to the specified stream.
 		/// </summary>
-		public async Task<IEnumerable<PersistentSubscriptionInfo>> ListToStreamAsync(string streamName, TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+		public async Task<IEnumerable<PersistentSubscriptionInfo>> ListToStreamAsync(
+			string streamName, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
 				var req = new ListReq() {
 					Options = new ListReq.Types.Options {
@@ -59,10 +65,13 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Lists all persistent subscriptions.
 		/// </summary>
-		public async Task<IEnumerable<PersistentSubscriptionInfo>> ListAllAsync(TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-
-			var channelInfo = await GetChannelInfo(userCredentials?.UserCertificate, cancellationToken).ConfigureAwait(false);
+		public async Task<IEnumerable<PersistentSubscriptionInfo>> ListAllAsync(
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, UserCertificate? userCertificate = null,
+			CancellationToken cancellationToken = default
+		) {
+			var channelInfo =
+				await GetChannelInfo(userCertificate?.Certificate, cancellationToken).ConfigureAwait(false);
 			if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
 				var req = new ListReq() {
 					Options = new ListReq.Types.Options {
