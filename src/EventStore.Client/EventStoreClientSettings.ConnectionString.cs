@@ -1,12 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Net.Security;
-using System.Security.Authentication;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using Timeout_ = System.Threading.Timeout;
 
 namespace EventStore.Client {
@@ -41,6 +34,8 @@ namespace EventStore.Client {
 			private const string ThrowOnAppendFailure = nameof(ThrowOnAppendFailure);
 			private const string KeepAliveInterval    = nameof(KeepAliveInterval);
 			private const string KeepAliveTimeout     = nameof(KeepAliveTimeout);
+			private const string CertPath             = nameof(CertPath);
+			private const string CertKeyPath          = nameof(CertKeyPath);
 
 			private const string UriSchemeDiscover = "esdb+discover";
 
@@ -62,6 +57,8 @@ namespace EventStore.Client {
 					{ ThrowOnAppendFailure, typeof(bool) },
 					{ KeepAliveInterval, typeof(int) },
 					{ KeepAliveTimeout, typeof(int) },
+					{ CertPath, typeof(string)},
+					{ CertKeyPath, typeof(string)},
 				};
 
 			public static EventStoreClientSettings Parse(string connectionString) {
@@ -81,12 +78,7 @@ namespace EventStore.Client {
 				}
 
 				var slashIndex = connectionString.IndexOf(Slash, currentIndex, StringComparison.Ordinal);
-				var questionMarkIndex = connectionString.IndexOf(
-					QuestionMark,
-					Math.Max(currentIndex, slashIndex),
-					StringComparison.Ordinal
-				);
-
+				var questionMarkIndex = connectionString.IndexOf(QuestionMark, currentIndex, StringComparison.Ordinal);
 				var endIndex = connectionString.Length;
 
 				//for simpler substring operations:
@@ -222,48 +214,28 @@ namespace EventStore.Client {
 					}
 
 					try {
-						settings.ConnectivitySettings.TlsCaFile = new X509Certificate2(tlsCaFilePath);
+						settings.ConnectivitySettings.TlsCaFile = CertificateUtils.LoadCertificate(tlsCaFilePath);
 					} catch (CryptographicException) {
 						throw new InvalidClientCertificateException("Failed to load certificate. Invalid file format.");
 					}
 				}
 
-				settings.CreateHttpMessageHandler = CreateDefaultHandler;
+				var certPathSet = typedOptions.TryGetValue(CertPath, out var certPath);
+				var certKeyPathSet = typedOptions.TryGetValue(CertKeyPath, out var certKeyPath);
+
+				if (certPathSet ^ certKeyPathSet)
+					throw new InvalidSettingException($"Invalid certificate settings. {nameof(CertPath)} and {nameof(CertKeyPath)} must both be set");
+
+				if (!certPathSet || !certKeyPathSet) return settings;
+
+				try {
+					settings.ConnectivitySettings.UserCertificate =
+						CertificateUtils.LoadFromFile((string)certPath!, (string)certKeyPath!);
+				} catch (Exception ex) {
+					throw new InvalidSettingException($"Invalid certificate settings. {ex.Message}");
+				}
 
 				return settings;
-
-				HttpMessageHandler CreateDefaultHandler() {
-					var configureClientCert = settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false };
-#if NET
-					var handler = new SocketsHttpHandler {
-						KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
-						KeepAlivePingTimeout           = settings.ConnectivitySettings.KeepAliveTimeout,
-						EnableMultipleHttp2Connections = true,
-					};
-
-					if (configureClientCert)
-						handler.SslOptions.ClientCertificates = [settings.ConnectivitySettings.TlsCaFile!];
-
-					if (!settings.ConnectivitySettings.TlsVerifyCert) {
-						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
-					}
-#else
-					var handler = new WinHttpHandler {
-						TcpKeepAliveEnabled = true,
-						TcpKeepAliveTime = settings.ConnectivitySettings.KeepAliveTimeout,
-						TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
-						EnableMultipleHttp2Connections = true
-					};
-
-					if (configureClientCert)
-						handler.ClientCertificates.Add(settings.ConnectivitySettings.TlsCaFile!);
-
-					if (!settings.ConnectivitySettings.TlsVerifyCert) {
-						handler.ServerCertificateValidationCallback = delegate { return true; };
-					}
-#endif
-					return handler;
-				}
 			}
 
 			private static string ParseScheme(string s) =>

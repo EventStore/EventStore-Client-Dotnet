@@ -115,9 +115,10 @@ public class ConnectionStringTests {
 	[InlineData(false)]
 	[InlineData(true)]
 	public void tls_verify_cert(bool tlsVerifyCert) {
-		var       connectionString = $"esdb://localhost:2113/?tlsVerifyCert={tlsVerifyCert}";
-		var       result           = EventStoreClientSettings.Create(connectionString);
-		using var handler          = result.CreateHttpMessageHandler?.Invoke();
+		var connectionString = $"esdb://localhost:2113/?tlsVerifyCert={tlsVerifyCert}";
+		var result           = EventStoreClientSettings.Create(connectionString);
+		result.CreateHttpMessageHandler = CustomHttpMessageHandler.CreateDefaultHandler(result);
+		using var handler = result.CreateHttpMessageHandler?.Invoke();
 #if NET
 		var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
 		if (!tlsVerifyCert) {
@@ -156,7 +157,7 @@ public class ConnectionStringTests {
 	[Theory]
 	[MemberData(nameof(InvalidClientCertificates))]
 	public void connection_string_with_invalid_client_certificate_should_throw(string clientCertificatePath) {
-		Assert.Throws<InvalidClientCertificateException >(
+		Assert.Throws<InvalidClientCertificateException>(
 			() => EventStoreClientSettings.Create(
 				$"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&tlsCAFile={clientCertificatePath}"
 			)
@@ -166,6 +167,7 @@ public class ConnectionStringTests {
 	[Fact]
 	public void infinite_grpc_timeouts() {
 		var result = EventStoreClientSettings.Create("esdb://localhost:2113?keepAliveInterval=-1&keepAliveTimeout=-1");
+		result.CreateHttpMessageHandler = CustomHttpMessageHandler.CreateDefaultHandler(result);
 
 		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveInterval);
 		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveTimeout);

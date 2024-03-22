@@ -54,10 +54,10 @@ public class NodeSelectorTests {
 		DnsEndPoint allowedNode
 	) {
 		var sut          = new NodeSelector(settings);
-		var selectedNode = sut.SelectNode(clusterInfo);
+		var selectedNode = sut.SelectNode(clusterInfo, null);
 
-		Assert.Equal(allowedNode.Host, selectedNode.Host);
-		Assert.Equal(allowedNode.Port, selectedNode.Port);
+		Assert.Equal(allowedNode.Host, selectedNode.DnsEndpoint.Host);
+		Assert.Equal(allowedNode.Port, selectedNode.DnsEndpoint.Port);
 	}
 
 	[Fact]
@@ -86,8 +86,8 @@ public class NodeSelectorTests {
 			)
 		);
 
-		Assert.Equal(allowedNode.Host, selectedNode.Host);
-		Assert.Equal(allowedNode.Port, selectedNode.Port);
+		Assert.Equal(allowedNode.Host, selectedNode.DnsEndpoint.Host);
+		Assert.Equal(allowedNode.Port, selectedNode.DnsEndpoint.Port);
 	}
 
 	[Theory]
@@ -117,6 +117,6 @@ public class NodeSelectorTests {
 		if (expectedHost == "any")
 			return;
 
-		Assert.Equal(expectedHost, selectedNode.Host);
+		Assert.Equal(expectedHost, selectedNode.DnsEndpoint.Host);
 	}
 }

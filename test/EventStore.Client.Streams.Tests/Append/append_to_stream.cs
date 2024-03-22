@@ -342,7 +342,6 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 	[Fact]
 	public async Task returns_failure_status_when_conditionally_appending_with_version_mismatch() {
 		var stream = Fixture.GetStreamName();
-
 		var result = await Fixture.Streams.ConditionalAppendToStreamAsync(
 			stream,
 			new StreamRevision(7),

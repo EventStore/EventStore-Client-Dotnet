@@ -1,8 +1,5 @@
-using System;
-using System.Linq;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Security.Cryptography.X509Certificates;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -29,19 +26,18 @@ namespace EventStore.Client {
 			_nodeSelector = new(_settings);
 		}
 
-		public ChannelBase SelectChannel(DnsEndPoint endPoint) {
-			return _channels.GetChannelInfo(endPoint);
-		}
+		public ChannelBase SelectChannel(ChannelIdentifier channelIdentifier) =>
+			_channels.GetChannelInfo(channelIdentifier);
 
-		public async Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken) {
-			var endPoint = await DiscoverAsync(cancellationToken).ConfigureAwait(false);
+		public async Task<ChannelBase> SelectChannelAsync(X509Certificate2? userCertificate, CancellationToken cancellationToken) {
+			var endPoint = await DiscoverAsync(userCertificate, cancellationToken).ConfigureAwait(false);
 
 			_log.LogInformation("Successfully discovered candidate at {endPoint}.", endPoint);
 
 			return _channels.GetChannelInfo(endPoint);
 		}
 
-		private async Task<DnsEndPoint> DiscoverAsync(CancellationToken cancellationToken) {
+		private async Task<ChannelIdentifier> DiscoverAsync(X509Certificate2? userCertificate, CancellationToken cancellationToken) {
 			for (var attempt = 1; attempt <= _settings.ConnectivitySettings.MaxDiscoverAttempts; attempt++) {
 				foreach (var kvp in _channels.GetRandomOrderSnapshot()) {
 					var endPointToGetGossip = kvp.Key;
@@ -52,16 +48,22 @@ namespace EventStore.Client {
 							.GetAsync(channelToGetGossip, cancellationToken)
 							.ConfigureAwait(false);
 
-						var selectedEndpoint = _nodeSelector.SelectNode(clusterInfo);
+						var selectedEndpoint = _nodeSelector.SelectNode(clusterInfo, userCertificate);
 
 						// Successfully selected an endpoint using this gossip!
 						// We want _channels to contain exactly the nodes in ClusterInfo.
 						// nodes no longer in the cluster can be forgotten.
 						// new nodes are added so we can use them to get gossip.
-						_channels.UpdateCache(clusterInfo.Members.Select(x => x.EndPoint));
+						_channels.UpdateCache(
+							clusterInfo.Members.Select(
+								x => new ChannelIdentifier(
+									x.EndPoint,
+									userCertificate
+								)
+							)
+						);
 
 						return selectedEndpoint;
-
 					} catch (Exception ex) {
 						_log.Log(
 							GetLogLevelForDiscoveryAttempt(attempt),
@@ -73,8 +75,14 @@ namespace EventStore.Client {
 				}
 
 				// couldn't select a node from any _channel. reseed the channels.
-				_channels.UpdateCache(_settings.ConnectivitySettings.GossipSeeds.Select(endPoint =>
-					endPoint as DnsEndPoint ?? new DnsEndPoint(endPoint.GetHost(), endPoint.GetPort())));
+				_channels.UpdateCache(
+					_settings.ConnectivitySettings.GossipSeeds.Select(
+						endPoint => new ChannelIdentifier(
+							new DnsEndPoint(endPoint.GetHost(), endPoint.GetPort()),
+							userCertificate
+						)
+					)
+				);
 
 				await Task
 					.Delay(_settings.ConnectivitySettings.DiscoveryInterval, cancellationToken)

@@ -24,7 +24,7 @@ namespace EventStore.Client {
 			SingleWriter = true,
 			AllowSynchronousContinuations = true
 		};
-		
+
 		private readonly ILogger<EventStoreClient> _log;
 		private Lazy<StreamAppender> _streamAppenderLazy;
 		private StreamAppender _streamAppender => _streamAppenderLazy.Value;

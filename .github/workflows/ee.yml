@@ -1,4 +1,4 @@
-name: Test LTS
+name: Test EE
 
 on:
   pull_request:
@@ -12,5 +12,7 @@ jobs:
   test:
     uses: ./.github/workflows/base.yml
     with:
-      docker-tag: lts
+      docker-tag: 24.2.0-jammy
+      docker-registry: docker.eventstore.com/eventstore-ee/eventstoredb-commercial
+      test-matrix: '["Plugins"]'
     secrets: inherit
