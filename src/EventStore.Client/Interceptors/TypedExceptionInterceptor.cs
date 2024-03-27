@@ -160,6 +160,11 @@ class ExceptionConverterStreamWriter<TRequest>(
 		set => writer.WriteOptions = value;
 	}
 
+#if NET
+	public Task WriteAsync(TRequest message, CancellationToken cancellationToken) =>
+		writer.WriteAsync(message, cancellationToken);
+#endif
+	
 	public Task WriteAsync(TRequest message) => writer.WriteAsync(message).Apply(convertException);
 	public Task CompleteAsync() => writer.CompleteAsync().Apply(convertException);
 }
