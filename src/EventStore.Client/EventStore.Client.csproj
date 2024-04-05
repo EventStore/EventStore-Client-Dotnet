@@ -25,6 +25,11 @@
         <Reference Include="System.Net.Http"/>
         <Reference Include="System.Web"/>
     </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="System.Net.Http"/>
+    </ItemGroup>
+
     <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
         <PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0"/>
         <PackageReference Include="System.Text.Json" Version="7.0.3"/>

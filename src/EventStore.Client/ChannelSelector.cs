@@ -1,24 +1,16 @@
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core;
 
-namespace EventStore.Client {
-	internal class ChannelSelector : IChannelSelector {
-		private readonly IChannelSelector _inner;
+namespace EventStore.Client;
 
-		public ChannelSelector(
-			EventStoreClientSettings settings,
-			ChannelCache channelCache) {
-			_inner = settings.ConnectivitySettings.IsSingleNode
-				? new SingleNodeChannelSelector(settings, channelCache)
-				: new GossipChannelSelector(settings, channelCache, new GrpcGossipClient(settings));
-		}
+class ChannelSelector(EventStoreClientSettings settings, ChannelCache channelCache) : IChannelSelector {
+	readonly IChannelSelector _inner = settings.ConnectivitySettings.IsSingleNode
+		? new SingleNodeChannelSelector(settings, channelCache)
+		: new GossipChannelSelector(settings, channelCache, new GrpcGossipClient(settings));
 
-		public Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken) =>
-			_inner.SelectChannelAsync(cancellationToken);
+	public Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken) =>
+		_inner.SelectChannelAsync(cancellationToken);
 
-		public ChannelBase SelectChannel(DnsEndPoint endPoint) =>
-			_inner.SelectChannel(endPoint);
-	}
+	public ChannelBase SelectChannel(DnsEndPoint endPoint) =>
+		_inner.SelectChannel(endPoint);
 }

@@ -40,7 +40,7 @@ public class changing_user_password : IClassFixture<EventStoreFixture> {
 	[Theory(Skip = "This can't be right")]
 	[ClassData(typeof(InvalidCredentialsTestCases))]
 	public async Task with_user_with_insufficient_credentials_throws(string loginName, UserCredentials userCredentials) {
-		await Fixture.Users.CreateUserAsync(loginName, "Full Name", Array.Empty<string>(), "password", userCredentials: TestCredentials.Root);
+		await Fixture.Users.CreateUserAsync(loginName, "Full Name", [], "password", userCredentials: TestCredentials.Root);
 		
 		await Fixture.Users
 			.ChangePasswordAsync(loginName, "password", "newPassword", userCredentials: userCredentials)

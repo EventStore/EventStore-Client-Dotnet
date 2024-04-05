@@ -7,33 +7,19 @@ static class EventStoreCallOptions {
 	// deadline falls back to infinity
 	public static CallOptions CreateStreaming(
 		EventStoreClientSettings settings,
-		TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+		TimeSpan? deadline = null, 
+		UserCredentials? userCredentials = null,
 		CancellationToken cancellationToken = default
-	) =>
-		Create(settings, deadline, userCredentials, cancellationToken);
+	) => Create(settings, deadline, userCredentials, cancellationToken);
 
 	// deadline falls back to connection DefaultDeadline
-	public static CallOptions CreateNonStreaming(
-		EventStoreClientSettings settings,
-		CancellationToken cancellationToken
-	) =>
-		Create(
-			settings,
-			settings.DefaultDeadline,
-			settings.DefaultCredentials,
-			cancellationToken
-		);
+	public static CallOptions CreateNonStreaming(EventStoreClientSettings settings, CancellationToken cancellationToken) =>
+		Create(settings, settings.DefaultDeadline, settings.DefaultCredentials, cancellationToken);
 
 	public static CallOptions CreateNonStreaming(
 		EventStoreClientSettings settings, TimeSpan? deadline,
 		UserCredentials? userCredentials, CancellationToken cancellationToken
-	) =>
-		Create(
-			settings,
-			deadline ?? settings.DefaultDeadline,
-			userCredentials,
-			cancellationToken
-		);
+	) => Create(settings, deadline ?? settings.DefaultDeadline, userCredentials, cancellationToken);
 
 	static CallOptions Create(
 		EventStoreClientSettings settings, TimeSpan? deadline,
@@ -42,7 +28,7 @@ static class EventStoreCallOptions {
 		new(
 			cancellationToken: cancellationToken,
 			deadline: DeadlineAfter(deadline),
-			headers: new() {
+			headers: new Metadata {
 				{
 					Constants.Headers.RequiresLeader,
 					settings.ConnectivitySettings.NodePreference == NodePreference.Leader

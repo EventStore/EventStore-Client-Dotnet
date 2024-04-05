@@ -34,7 +34,7 @@ public partial class EventStoreFixture {
 
 	public Task<TestUser[]> CreateTestUsers(int count = 3, bool withoutGroups = true, bool useUserCredentials = false) =>
 		Fakers.Users
-			.RuleFor(x => x.Groups, f => withoutGroups ? Array.Empty<string>() : f.Lorem.Words())
+			.RuleFor(x => x.Groups, f => withoutGroups ? [] : f.Lorem.Words())
 			.Generate(count)
 			.Select(
 				async user => {

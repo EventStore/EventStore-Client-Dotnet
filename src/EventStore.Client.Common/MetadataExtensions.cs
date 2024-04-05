@@ -19,7 +19,7 @@ static class MetadataExtensions {
 
 	public static StreamRevision GetStreamRevision(this Metadata metadata, string key) =>
 		metadata.TryGetValue(key, out var s) && ulong.TryParse(s, out var value)
-			? new(value)
+			? new StreamRevision(value)
 			: StreamRevision.None;
 
 	public static int GetIntValueOrDefault(this Metadata metadata, string key) =>

@@ -1,5 +1,5 @@
 <Project>
-    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"/>
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
     <PropertyGroup>
         <RootNamespace>EventStore.Client</RootNamespace>
     </PropertyGroup>
@@ -12,8 +12,8 @@
     </PropertyGroup>
 
     <ItemGroup Condition="$(MSBuildProjectName) != 'EventStore.Client'">
-        <ProjectReference Include="..\EventStore.Client\EventStore.Client.csproj"/>
-        <Protobuf Access="internal" Include="$(ESProtoPath)" GrpcServices="Client" Link="protos/$(ESProto)"/>
+        <ProjectReference Include="..\EventStore.Client\EventStore.Client.csproj" />
+        <Protobuf Access="internal" Include="$(ESProtoPath)" GrpcServices="Client" Link="protos/$(ESProto)" />
     </ItemGroup>
 
     <PropertyGroup>
@@ -30,8 +30,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\"/>
-        <None Include="..\..\ouro.png" Pack="true" PackagePath="\"/>
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
+        <None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
     </ItemGroup>
 
     <ItemGroup>
@@ -43,11 +43,11 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="MinVer" Version="3.0.0" PrivateAssets="All"/>
+        <PackageReference Include="MinVer" Version="3.0.0" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="../EventStore.Client.Common/**/*.cs" Link="Common\%(RecursiveDir)/%(FileName)%(Extension)"/>
+        <Compile Include="../EventStore.Client.Common/**/*.cs" Link="Common\%(RecursiveDir)/%(FileName)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>

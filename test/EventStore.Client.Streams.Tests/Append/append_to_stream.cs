@@ -470,7 +470,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 		}
 	}
 
-	class EnumerationFailedException : Exception { }
+	class EnumerationFailedException : Exception;
 
 	public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
 		yield return new object?[] { StreamState.Any };

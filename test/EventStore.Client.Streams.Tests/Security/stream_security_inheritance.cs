@@ -127,7 +127,7 @@ public class stream_security_inheritance(ITestOutputHelper output, stream_securi
 			await Streams.SetStreamMetadataAsync(
 				"user-w-restricted",
 				StreamState.NoStream,
-				new(acl: new(writeRoles: Array.Empty<string>())),
+				new(acl: new(writeRoles: [])),
 				userCredentials: TestCredentials.TestAdmin
 			);
 
@@ -169,7 +169,7 @@ public class stream_security_inheritance(ITestOutputHelper output, stream_securi
 			await Streams.SetStreamMetadataAsync(
 				"$sys-w-restricted",
 				StreamState.NoStream,
-				new(acl: new(writeRoles: Array.Empty<string>())),
+				new(acl: new(writeRoles: [])),
 				userCredentials: TestCredentials.TestAdmin
 			);
 

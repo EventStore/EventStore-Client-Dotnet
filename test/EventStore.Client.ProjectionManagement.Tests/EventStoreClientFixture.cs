@@ -28,7 +28,7 @@ public abstract class EventStoreClientFixture : EventStoreClientFixtureBase {
 		await UserManagementClient.CreateUserWithRetry(
 			TestCredentials.TestUser1.Username!,
 			TestCredentials.TestUser1.Username!,
-			Array.Empty<string>(),
+			[],
 			TestCredentials.TestUser1.Password!,
 			TestCredentials.Root
 		).WithTimeout();

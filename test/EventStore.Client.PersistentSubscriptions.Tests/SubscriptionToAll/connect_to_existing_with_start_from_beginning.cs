@@ -19,7 +19,7 @@ public class connect_to_existing_with_start_from_beginning
 	public class Fixture : EventStoreClientFixture {
 		public EventStorePersistentSubscriptionsClient.PersistentSubscriptionResult? Subscription { get; private set; }
 
-		public ResolvedEvent[] Events { get; private set; } = Array.Empty<ResolvedEvent>();
+		public ResolvedEvent[] Events { get; private set; } = [];
 
 		protected override async Task Given() {
 			//append 10 events to random streams to make sure we have at least 10 events in the transaction file

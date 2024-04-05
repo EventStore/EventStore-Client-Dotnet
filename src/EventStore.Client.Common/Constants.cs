@@ -42,7 +42,7 @@ static class Constants {
 		public const           string   Type             = "type";
 		public const           string   Created          = "created";
 		public const           string   ContentType      = "content-type";
-		public static readonly string[] RequiredMetadata = { Type, ContentType };
+		public static readonly string[] RequiredMetadata = [Type, ContentType];
 
 		public static class ContentTypes {
 			public const string ApplicationJson        = "application/json";

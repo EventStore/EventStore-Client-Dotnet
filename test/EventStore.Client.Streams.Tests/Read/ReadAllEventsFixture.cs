@@ -29,10 +29,10 @@ public class ReadAllEventsFixture : EventStoreFixture {
 
 	public string ExpectedStreamName { get; private set; } = null!;
 	
-	public EventData[] Events { get; private set; } = Array.Empty<EventData>();
+	public EventData[] Events { get; private set; } = [];
 	
-	public EventBinaryData[] ExpectedEvents         { get; private set; } = Array.Empty<EventBinaryData>();
-	public EventBinaryData[] ExpectedEventsReversed { get; private set; } = Array.Empty<EventBinaryData>();
+	public EventBinaryData[] ExpectedEvents         { get; private set; } = [];
+	public EventBinaryData[] ExpectedEventsReversed { get; private set; } = [];
 
 	public EventBinaryData ExpectedFirstEvent { get; private set; }
 	public EventBinaryData ExpectedLastEvent  { get; private set; }

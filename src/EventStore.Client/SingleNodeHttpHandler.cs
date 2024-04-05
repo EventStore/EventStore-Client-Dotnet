@@ -1,22 +1,13 @@
-using System;
 using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace EventStore.Client {
-	internal class SingleNodeHttpHandler : DelegatingHandler {
-		private readonly EventStoreClientSettings _settings;
+namespace EventStore.Client;
 
-		public SingleNodeHttpHandler(EventStoreClientSettings settings) {
-			_settings = settings;
-		}
+class SingleNodeHttpHandler(EventStoreClientSettings settings) : DelegatingHandler {
+	protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) {
+		request.RequestUri = new UriBuilder(request.RequestUri!) {
+			Scheme = settings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme
+		}.Uri;
 
-		protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
-			CancellationToken cancellationToken) {
-			request.RequestUri = new UriBuilder(request.RequestUri!) {
-				Scheme = _settings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme
-			}.Uri;
-			return base.SendAsync(request, cancellationToken);
-		}
+		return base.SendAsync(request, cancellationToken);
 	}
 }

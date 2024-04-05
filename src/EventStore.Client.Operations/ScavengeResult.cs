@@ -1,25 +1,26 @@
-namespace EventStore.Client {
+namespace EventStore.Client;
+
+/// <summary>
+/// An enumeration that represents the result of a scavenge operation.
+/// </summary>
+public enum ScavengeResult {
 	/// <summary>
-	/// An enumeration that represents the result of a scavenge operation.
+	/// The scavenge operation has started.
 	/// </summary>
-	public enum ScavengeResult {
-		/// <summary>
-		/// The scavenge operation has started.
-		/// </summary>
-		Started,
-		/// <summary>
-		/// The scavenge operation is in progress.
-		/// </summary>
-		InProgress,
+	Started,
 
-		/// <summary>
-		/// The scavenge operation has stopped.
-		/// </summary>
-		Stopped,
+	/// <summary>
+	/// The scavenge operation is in progress.
+	/// </summary>
+	InProgress,
 
-		/// <summary>
-		/// The status of the scavenge operation was unknown.
-		/// </summary>
-		Unknown
-	}
+	/// <summary>
+	/// The scavenge operation has stopped.
+	/// </summary>
+	Stopped,
+
+	/// <summary>
+	/// The status of the scavenge operation was unknown.
+	/// </summary>
+	Unknown
 }

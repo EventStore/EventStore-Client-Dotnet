@@ -11,9 +11,8 @@ namespace EventStore.Client;
 public sealed partial class EventStoreOperationsClient : EventStoreClientBase {
 	static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap =
 		new() {
-			[Constants.Exceptions.ScavengeNotFound] = ex => new ScavengeNotFoundException(
-				ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.ScavengeId)?.Value
-			)
+			[Constants.Exceptions.ScavengeNotFound] = 
+				ex => new ScavengeNotFoundException(ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.ScavengeId)?.Value)
 		};
 
 	readonly ILogger _log;

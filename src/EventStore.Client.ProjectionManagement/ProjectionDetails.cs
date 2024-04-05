@@ -1,164 +1,45 @@
-namespace EventStore.Client {
-	/// <summary>
-	/// Provides the details for a projection.
-	/// </summary>
-	public sealed class ProjectionDetails {
-		/// <summary>
-		/// The CoreProcessingTime
-		/// </summary>
-		public readonly long CoreProcessingTime;
+namespace EventStore.Client;
 
-		/// <summary>
-		/// The projection version
-		/// </summary>
-		public readonly long Version;
-
-		/// <summary>
-		/// The Epoch
-		/// </summary>
-		public readonly long Epoch;
-
-		/// <summary>
-		/// The projection EffectiveName
-		/// </summary>
-		public readonly string EffectiveName;
-
-		/// <summary>
-		/// The projection WritesInProgress
-		/// </summary>
-		public readonly int WritesInProgress;
-
-		/// <summary>
-		/// The projection ReadsInProgress
-		/// </summary>
-		public readonly int ReadsInProgress;
-
-		/// <summary>
-		/// The projection PartitionsCached
-		/// </summary>
-		public readonly int PartitionsCached;
-
-		/// <summary>
-		/// The projection Status
-		/// </summary>
-		public readonly string Status;
-
-		/// <summary>
-		/// The projection StateReason
-		/// </summary>
-		public readonly string StateReason;
-
-		/// <summary>
-		/// The projection Name
-		/// </summary>
-		public readonly string Name;
-
-		/// <summary>
-		/// The projection Mode
-		/// </summary>
-		public readonly string Mode;
-
-		/// <summary>
-		/// The projection Position
-		/// </summary>
-		public readonly string Position;
-
-		/// <summary>
-		/// The projection Progress
-		/// </summary>
-		public readonly float Progress;
-
-		/// <summary>
-		/// LastCheckpoint
-		/// </summary>
-		public readonly string LastCheckpoint;
-
-		/// <summary>
-		/// The projection EventsProcessedAfterRestart
-		/// </summary>
-		public readonly long EventsProcessedAfterRestart;
-
-		/// <summary>
-		/// The projection CheckpointStatus
-		/// </summary>
-		public readonly string CheckpointStatus;
-
-		/// <summary>
-		/// The projection BufferedEvents
-		/// </summary>
-		public readonly long BufferedEvents;
-
-		/// <summary>
-		/// The projection WritePendingEventsBeforeCheckpoint
-		/// </summary>
-		public readonly int WritePendingEventsBeforeCheckpoint;
-
-		/// <summary>
-		/// The projection WritePendingEventsAfterCheckpoint
-		/// </summary>
-		public readonly int WritePendingEventsAfterCheckpoint;
-
-		/// <summary>
-		/// create a new <see cref="ProjectionDetails"/> class.
-		/// </summary>
-		/// <param name="coreProcessingTime"></param>
-		/// <param name="version"></param>
-		/// <param name="epoch"></param>
-		/// <param name="effectiveName"></param>
-		/// <param name="writesInProgress"></param>
-		/// <param name="readsInProgress"></param>
-		/// <param name="partitionsCached"></param>
-		/// <param name="status"></param>
-		/// <param name="stateReason"></param>
-		/// <param name="name"></param>
-		/// <param name="mode"></param>
-		/// <param name="position"></param>
-		/// <param name="progress"></param>
-		/// <param name="lastCheckpoint"></param>
-		/// <param name="eventsProcessedAfterRestart"></param>
-		/// <param name="checkpointStatus"></param>
-		/// <param name="bufferedEvents"></param>
-		/// <param name="writePendingEventsBeforeCheckpoint"></param>
-		/// <param name="writePendingEventsAfterCheckpoint"></param>
-		public ProjectionDetails(
-			long coreProcessingTime,
-			long version,
-			long epoch,
-			string effectiveName,
-			int writesInProgress,
-			int readsInProgress,
-			int partitionsCached,
-			string status,
-			string stateReason,
-			string name,
-			string mode,
-			string position,
-			float progress,
-			string lastCheckpoint,
-			long eventsProcessedAfterRestart,
-			string checkpointStatus,
-			long bufferedEvents,
-			int writePendingEventsBeforeCheckpoint,
-			int writePendingEventsAfterCheckpoint) {
-			CoreProcessingTime = coreProcessingTime;
-			Version = version;
-			Epoch = epoch;
-			EffectiveName = effectiveName;
-			WritesInProgress = writesInProgress;
-			ReadsInProgress = readsInProgress;
-			PartitionsCached = partitionsCached;
-			Status = status;
-			StateReason = stateReason;
-			Name = name;
-			Mode = mode;
-			Position = position;
-			Progress = progress;
-			LastCheckpoint = lastCheckpoint;
-			EventsProcessedAfterRestart = eventsProcessedAfterRestart;
-			CheckpointStatus = checkpointStatus;
-			BufferedEvents = bufferedEvents;
-			WritePendingEventsBeforeCheckpoint = writePendingEventsBeforeCheckpoint;
-			WritePendingEventsAfterCheckpoint = writePendingEventsAfterCheckpoint;
-		}
-	}
-}
+/// <summary>
+/// Provides the details for a projection.
+/// </summary>
+/// <param name="CoreProcessingTime">The core processing time of the projection.</param>
+/// <param name="Version">The version of the projection.</param>
+/// <param name="Epoch">The epoch of the projection.</param>
+/// <param name="EffectiveName">The effective name of the projection.</param>
+/// <param name="WritesInProgress">The number of writes in progress in the projection.</param>
+/// <param name="ReadsInProgress">The number of reads in progress in the projection.</param>
+/// <param name="PartitionsCached">The number of partitions cached in the projection.</param>
+/// <param name="Status">The status of the projection.</param>
+/// <param name="StateReason">The reason for the state of the projection.</param>
+/// <param name="Name">The name of the projection.</param>
+/// <param name="Mode">The mode of the projection.</param>
+/// <param name="Position">The position of the projection.</param>
+/// <param name="Progress">The progress of the projection.</param>
+/// <param name="LastCheckpoint">The last checkpoint of the projection.</param>
+/// <param name="EventsProcessedAfterRestart">The number of events processed after restart in the projection.</param>
+/// <param name="CheckpointStatus">The checkpoint status of the projection.</param>
+/// <param name="BufferedEvents">The number of buffered events in the projection.</param>
+/// <param name="WritePendingEventsBeforeCheckpoint">The number of write pending events before checkpoint in the projection.</param>
+/// <param name="WritePendingEventsAfterCheckpoint">The number of write pending events after checkpoint in the projection.</param>
+public record ProjectionDetails(
+    long CoreProcessingTime,
+    long Version,
+    long Epoch,
+    string EffectiveName,
+    int WritesInProgress,
+    int ReadsInProgress,
+    int PartitionsCached,
+    string Status,
+    string StateReason,
+    string Name,
+    string Mode,
+    string Position,
+    float Progress,
+    string LastCheckpoint,
+    long EventsProcessedAfterRestart,
+    string CheckpointStatus,
+    long BufferedEvents,
+    int WritePendingEventsBeforeCheckpoint,
+    int WritePendingEventsAfterCheckpoint
+);

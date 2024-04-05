@@ -7,7 +7,7 @@ public abstract class read_stream_events_linked_to_deleted_stream(ReadEventsLink
 	ReadEventsLinkedToDeletedStreamFixture Fixture { get; } = fixture;
 
 	[Fact]
-	public void one_event_is_read() => Assert.Single(Fixture.Events ?? Array.Empty<ResolvedEvent>());
+	public void one_event_is_read() => Assert.Single(Fixture.Events ?? []);
 
 	[Fact]
 	public void the_linked_event_is_not_resolved() => Assert.Null(Fixture.Events![0].Event);

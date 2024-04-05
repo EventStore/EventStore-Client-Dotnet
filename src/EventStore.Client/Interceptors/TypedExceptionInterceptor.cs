@@ -8,7 +8,7 @@ namespace EventStore.Client.Interceptors;
 class TypedExceptionInterceptor : Interceptor {
 	static readonly Dictionary<string, Func<RpcException, Exception>> DefaultExceptionMap = new() {
 		[Exceptions.AccessDenied] = ex => ex.ToAccessDeniedException(),
-		[Exceptions.NotLeader]    = ex => ex.ToNotLeaderException(),
+		[Exceptions.NotLeader]    = ex => ex.ToNotLeaderException()
 	};
 
 	public TypedExceptionInterceptor(Dictionary<string, Func<RpcException, Exception>> customExceptionMap) {
@@ -97,10 +97,10 @@ class TypedExceptionInterceptor : Interceptor {
 }
 
 static class RpcExceptionConversionExtensions {
-	public static IAsyncStreamReader<TRequest> Apply<TRequest>(this IAsyncStreamReader<TRequest> reader, Func<RpcException, Exception> convertException) => 
+	public static IAsyncStreamReader<TRequest> Apply<TRequest>(this IAsyncStreamReader<TRequest> reader, Func<RpcException, Exception> convertException) =>
 		new ExceptionConverterStreamReader<TRequest>(reader, convertException);
 
-	public static Task<TResponse> Apply<TResponse>(this Task<TResponse> task, Func<RpcException, Exception> convertException) => 
+	public static Task<TResponse> Apply<TResponse>(this Task<TResponse> task, Func<RpcException, Exception> convertException) =>
 		task.ContinueWith(t => t.Exception?.InnerException is RpcException ex ? throw convertException(ex) : t.Result);
 
 	public static IClientStreamWriter<TRequest> Apply<TRequest>(
@@ -111,7 +111,7 @@ static class RpcExceptionConversionExtensions {
 	public static Task Apply(this Task task, Func<RpcException, Exception> convertException) =>
 		task.ContinueWith(t => t.Exception?.InnerException is RpcException ex ? throw convertException(ex) : t);
 
-	public static AccessDeniedException ToAccessDeniedException(this RpcException exception) => 
+	public static AccessDeniedException ToAccessDeniedException(this RpcException exception) =>
 		new(exception.Message, exception);
 
 	public static NotLeaderException ToNotLeaderException(this RpcException exception) {
@@ -119,8 +119,8 @@ static class RpcExceptionConversionExtensions {
 		var port = exception.Trailers.GetIntValueOrDefault(Exceptions.LeaderEndpointPort);
 		return new NotLeaderException(host, port, exception);
 	}
-	
-	public static NotAuthenticatedException ToNotAuthenticatedException(this RpcException exception) => 
+
+	public static NotAuthenticatedException ToNotAuthenticatedException(this RpcException exception) =>
 		new(exception.Message, exception);
 
 	public static RpcException ToDeadlineExceededRpcException(this RpcException exception) =>
@@ -137,7 +137,8 @@ static class RpcExceptionConversionExtensions {
 	}
 }
 
-class ExceptionConverterStreamReader<TResponse>(IAsyncStreamReader<TResponse> reader, Func<RpcException, Exception> convertException) : IAsyncStreamReader<TResponse> {
+class ExceptionConverterStreamReader<TResponse>(IAsyncStreamReader<TResponse> reader, Func<RpcException, Exception> convertException)
+	: IAsyncStreamReader<TResponse> {
 	public TResponse Current => reader.Current;
 
 	public async Task<bool> MoveNext(CancellationToken cancellationToken) {
@@ -161,5 +162,5 @@ class ExceptionConverterStreamWriter<TRequest>(
 	}
 
 	public Task WriteAsync(TRequest message) => writer.WriteAsync(message).Apply(convertException);
-	public Task CompleteAsync() => writer.CompleteAsync().Apply(convertException);
+	public Task CompleteAsync()              => writer.CompleteAsync().Apply(convertException);
 }

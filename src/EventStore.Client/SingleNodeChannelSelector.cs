@@ -1,36 +1,31 @@
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace EventStore.Client {
-	internal class SingleNodeChannelSelector : IChannelSelector {
-		private readonly ILogger _log;
-		private readonly ChannelCache _channelCache;
-		private readonly DnsEndPoint _endPoint;
+namespace EventStore.Client;
 
-		public SingleNodeChannelSelector(
-			EventStoreClientSettings settings,
-			ChannelCache channelCache) {
+class SingleNodeChannelSelector : IChannelSelector {
+	readonly ChannelCache _channelCache;
+	readonly DnsEndPoint  _endPoint;
+	readonly ILogger      _log;
 
-			_log = settings.LoggerFactory?.CreateLogger<SingleNodeChannelSelector>() ??
-				new NullLogger<SingleNodeChannelSelector>();
+	public SingleNodeChannelSelector(EventStoreClientSettings settings, ChannelCache channelCache) {
+		_log = settings.LoggerFactory?.CreateLogger<SingleNodeChannelSelector>() ??
+		       new NullLogger<SingleNodeChannelSelector>();
 
-			_channelCache = channelCache;
-			
-			var uri = settings.ConnectivitySettings.ResolvedAddressOrDefault;
-			_endPoint = new DnsEndPoint(host: uri.Host, port: uri.Port);
-		}
+		_channelCache = channelCache;
 
-		public Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken) =>
-			Task.FromResult(SelectChannel(_endPoint));
+		var uri = settings.ConnectivitySettings.ResolvedAddressOrDefault;
+		_endPoint = new DnsEndPoint(uri.Host, uri.Port);
+	}
 
-		public ChannelBase SelectChannel(DnsEndPoint endPoint) {
-			_log.LogInformation("Selected {endPoint}.", endPoint);
+	public Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken) =>
+		Task.FromResult(SelectChannel(_endPoint));
 
-			return _channelCache.GetChannelInfo(endPoint);
-		}
+	public ChannelBase SelectChannel(DnsEndPoint endPoint) {
+		_log.LogInformation("Selected {endPoint}.", endPoint);
+
+		return _channelCache.GetChannelInfo(endPoint);
 	}
 }

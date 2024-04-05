@@ -21,7 +21,7 @@ public class SecurityFixture : EventStoreFixture {
 			await Users.CreateUserWithRetry(
 				TestCredentials.TestUser1.Username!,
 				nameof(TestCredentials.TestUser1),
-				Array.Empty<string>(),
+				[],
 				TestCredentials.TestUser1.Password!,
 				TestCredentials.Root
 			).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
@@ -29,7 +29,7 @@ public class SecurityFixture : EventStoreFixture {
 			await Users.CreateUserWithRetry(
 				TestCredentials.TestUser2.Username!,
 				nameof(TestCredentials.TestUser2),
-				Array.Empty<string>(),
+				[],
 				TestCredentials.TestUser2.Password!,
 				TestCredentials.Root
 			).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));

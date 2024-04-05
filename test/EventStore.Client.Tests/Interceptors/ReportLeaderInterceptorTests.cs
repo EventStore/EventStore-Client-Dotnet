@@ -12,7 +12,7 @@ public class ReportLeaderInterceptorTests {
 		StatusCode.Unavailable
 	};
 
-	static readonly Marshaller<object> Marshaller = new(_ => Array.Empty<byte>(), _ => new());
+	static readonly Marshaller<object> Marshaller = new(_ => [], _ => new());
 
 	static IEnumerable<GrpcCall> GrpcCalls() {
 		yield return MakeUnaryCall;

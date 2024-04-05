@@ -1,111 +1,95 @@
-using System;
-using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace EventStore.Client {
-	internal class StreamAclJsonConverter : JsonConverter<StreamAcl> {
-		public static readonly StreamAclJsonConverter Instance = new StreamAclJsonConverter();
+namespace EventStore.Client;
 
-		public override StreamAcl Read(ref Utf8JsonReader reader, Type typeToConvert,
-			JsonSerializerOptions options) {
-			string[]? read = null,
-				write = default,
-				delete = default,
-				metaRead = default,
-				metaWrite = default;
-			if (reader.TokenType != JsonTokenType.StartObject) {
-				throw new InvalidOperationException();
-			}
+class StreamAclJsonConverter : JsonConverter<StreamAcl> {
+	public static readonly StreamAclJsonConverter Instance = new();
 
-			while (reader.Read()) {
-				if (reader.TokenType == JsonTokenType.EndObject) {
+	public override StreamAcl Read(
+		ref Utf8JsonReader reader, Type typeToConvert,
+		JsonSerializerOptions options
+	) {
+		string[]? read      = null,
+		          write     = default,
+		          delete    = default,
+		          metaRead  = default,
+		          metaWrite = default;
+
+		if (reader.TokenType != JsonTokenType.StartObject) throw new InvalidOperationException();
+
+		while (reader.Read()) {
+			if (reader.TokenType == JsonTokenType.EndObject) break;
+
+			if (reader.TokenType != JsonTokenType.PropertyName) throw new InvalidOperationException();
+
+			switch (reader.GetString()) {
+				case SystemMetadata.AclRead:
+					read = ReadRoles(ref reader);
 					break;
-				}
 
-				if (reader.TokenType != JsonTokenType.PropertyName) {
-					throw new InvalidOperationException();
-				}
+				case SystemMetadata.AclWrite:
+					write = ReadRoles(ref reader);
+					break;
 
-				switch (reader.GetString()) {
-					case SystemMetadata.AclRead:
-						read = ReadRoles(ref reader);
-						break;
-					case SystemMetadata.AclWrite:
-						write = ReadRoles(ref reader);
-						break;
-					case SystemMetadata.AclDelete:
-						delete = ReadRoles(ref reader);
-						break;
-					case SystemMetadata.AclMetaRead:
-						metaRead = ReadRoles(ref reader);
-						break;
-					case SystemMetadata.AclMetaWrite:
-						metaWrite = ReadRoles(ref reader);
-						break;
-				}
+				case SystemMetadata.AclDelete:
+					delete = ReadRoles(ref reader);
+					break;
+
+				case SystemMetadata.AclMetaRead:
+					metaRead = ReadRoles(ref reader);
+					break;
+
+				case SystemMetadata.AclMetaWrite:
+					metaWrite = ReadRoles(ref reader);
+					break;
 			}
-
-			return new StreamAcl(read, write, delete, metaRead, metaWrite);
 		}
 
-		private static string[]? ReadRoles(ref Utf8JsonReader reader) {
-			if (!reader.Read()) {
-				throw new InvalidOperationException();
-			}
+		return new StreamAcl(read, write, delete, metaRead, metaWrite);
+	}
 
-			if (reader.TokenType == JsonTokenType.Null) {
-				return null;
-			}
+	static string[]? ReadRoles(ref Utf8JsonReader reader) {
+		if (!reader.Read()) throw new InvalidOperationException();
 
-			if (reader.TokenType == JsonTokenType.String) {
-				return new[] {reader.GetString()!};
-			}
+		if (reader.TokenType == JsonTokenType.Null) return null;
 
-			if (reader.TokenType != JsonTokenType.StartArray) {
-				throw new InvalidOperationException();
-			}
+		if (reader.TokenType == JsonTokenType.String) return new[] { reader.GetString()! };
 
-			var roles = new List<string>();
+		if (reader.TokenType != JsonTokenType.StartArray) throw new InvalidOperationException();
 
-			while (reader.Read()) {
-				if (reader.TokenType == JsonTokenType.EndArray) {
-					return roles.Count == 0 ? Array.Empty<string>() : roles.ToArray();
-				}
+		var roles = new List<string>();
 
-				if (reader.TokenType != JsonTokenType.String) {
-					throw new InvalidOperationException();
-				}
+		while (reader.Read()) {
+			if (reader.TokenType == JsonTokenType.EndArray) return roles.Count == 0 ? [] : roles.ToArray();
 
-				roles.Add(reader.GetString()!);
-			}
+			if (reader.TokenType != JsonTokenType.String) throw new InvalidOperationException();
 
-			return roles.ToArray();
+			roles.Add(reader.GetString()!);
 		}
 
-		public override void Write(Utf8JsonWriter writer, StreamAcl value, JsonSerializerOptions options) {
-			writer.WriteStartObject();
+		return roles.ToArray();
+	}
 
-			WriteRoles(writer, SystemMetadata.AclRead, value.ReadRoles);
-			WriteRoles(writer, SystemMetadata.AclWrite, value.WriteRoles);
-			WriteRoles(writer, SystemMetadata.AclDelete, value.DeleteRoles);
-			WriteRoles(writer, SystemMetadata.AclMetaRead, value.MetaReadRoles);
-			WriteRoles(writer, SystemMetadata.AclMetaWrite, value.MetaWriteRoles);
+	public override void Write(Utf8JsonWriter writer, StreamAcl value, JsonSerializerOptions options) {
+		writer.WriteStartObject();
 
-			writer.WriteEndObject();
-		}
+		WriteRoles(writer, SystemMetadata.AclRead, value.ReadRoles);
+		WriteRoles(writer, SystemMetadata.AclWrite, value.WriteRoles);
+		WriteRoles(writer, SystemMetadata.AclDelete, value.DeleteRoles);
+		WriteRoles(writer, SystemMetadata.AclMetaRead, value.MetaReadRoles);
+		WriteRoles(writer, SystemMetadata.AclMetaWrite, value.MetaWriteRoles);
 
-		private static void WriteRoles(Utf8JsonWriter writer, string name, string[]? roles) {
-			if (roles == null) {
-				return;
-			}
-			writer.WritePropertyName(name);
-			writer.WriteStartArray();
-			foreach (var role in roles) {
-				writer.WriteStringValue(role);
-			}
+		writer.WriteEndObject();
+	}
 
-			writer.WriteEndArray();
-		}
+	static void WriteRoles(Utf8JsonWriter writer, string name, string[]? roles) {
+		if (roles == null) return;
+
+		writer.WritePropertyName(name);
+		writer.WriteStartArray();
+		foreach (var role in roles) writer.WriteStringValue(role);
+
+		writer.WriteEndArray();
 	}
 }

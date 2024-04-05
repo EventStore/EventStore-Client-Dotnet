@@ -4,6 +4,6 @@
         <Description>The GRPC client API for managing users in Event Store. Get the open source or commercial versions of Event Store server from https://eventstore.com/</Description>
     </PropertyGroup>
     <ItemGroup>
-        <None Remove="EventStore.Client.UserManagement.csproj.DotSettings"/>
+        <None Remove="EventStore.Client.UserManagement.csproj.DotSettings" />
     </ItemGroup>
 </Project>
