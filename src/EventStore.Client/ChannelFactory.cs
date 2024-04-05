@@ -5,6 +5,7 @@ using EndPoint = System.Net.EndPoint;
 using TChannel = Grpc.Net.Client.GrpcChannel;
 
 namespace EventStore.Client {
+	
 	internal static class ChannelFactory {
 		private const int MaxReceiveMessageLength = 17 * 1024 * 1024;
 
@@ -19,13 +20,13 @@ namespace EventStore.Client {
 			return TChannel.ForAddress(
 				address,
 				new GrpcChannelOptions {
-#if NET
+#if NET48
+					HttpHandler = CreateHandler(),
+#else
 					HttpClient = new HttpClient(CreateHandler(), true) {
 						Timeout               = System.Threading.Timeout.InfiniteTimeSpan,
 						DefaultRequestVersion = new Version(2, 0)
 					},
-#else
-					HttpHandler = CreateHandler(),
 #endif
 					LoggerFactory         = settings.LoggerFactory,
 					Credentials           = settings.ChannelCredentials,

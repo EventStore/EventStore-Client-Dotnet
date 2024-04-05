@@ -1,6 +1,5 @@
-using System;
-using System.IO;
-using System.Linq;
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
@@ -13,95 +12,90 @@ using Org.BouncyCastle.Security;
 
 namespace EventStore.Client;
 
-/// <summary>
-/// Utility class for loading certificates and private keys from files.
-/// </summary>
-static class CertificateUtils {
-	private static RSA LoadKey(string privateKeyPath) {
-		string[] allLines        = File.ReadAllLines(privateKeyPath);
-		var      header          = allLines[0].Replace("-", "");
-		var      privateKeyLines = allLines.Skip(1).Take(allLines.Length - 2);
-		var      privateKey      = Convert.FromBase64String(string.Join(string.Empty, privateKeyLines));
-
-		var rsa = RSA.Create();
-		switch (header) {
-			case "BEGIN PRIVATE KEY":
-#if NET
-				rsa.ImportPkcs8PrivateKey(new ReadOnlySpan<byte>(privateKey), out _);
-#else
-			{
-				var pemReader        = new PemReader(new StringReader(string.Join(Environment.NewLine, allLines)));
-				var keyPair          = (AsymmetricCipherKeyPair)pemReader.ReadObject();
-				var privateKeyParams = (RsaPrivateCrtKeyParameters)keyPair.Private;
-				rsa.ImportParameters(DotNetUtilities.ToRSAParameters(privateKeyParams));
-			}
-#endif
-				break;
-
-			case "BEGIN RSA PRIVATE KEY":
-#if NET
-				rsa.ImportRSAPrivateKey(new ReadOnlySpan<byte>(privateKey), out _);
-#else
-			{
-				var pemReader = new PemReader(new StringReader(string.Join(Environment.NewLine, allLines)));
-				object pemObject = pemReader.ReadObject();
-				RsaPrivateCrtKeyParameters privateKeyParams;
-				if (pemObject is RsaPrivateCrtKeyParameters) {
-					privateKeyParams = (RsaPrivateCrtKeyParameters)pemObject;
-				} else if (pemObject is AsymmetricCipherKeyPair keyPair) {
-					privateKeyParams = (RsaPrivateCrtKeyParameters)keyPair.Private;
-				} else {
-					throw new NotSupportedException($"Unsupported PEM object type: {pemObject.GetType()}");
-				}
-
-				rsa.ImportParameters(DotNetUtilities.ToRSAParameters(privateKeyParams));
-			}
-#endif
-				break;
-
-			default:
-				rsa.Dispose();
-				throw new NotSupportedException($"Unsupported private key file format: {header}");
+static class X509Certificates {
+#if NET48
+	public static X509Certificate2 CreateFromPemFile(string certPemFilePath, string keyPemFilePath) {
+		try {
+			using var publicCert  = new X509Certificate2(certPemFilePath);
+			using var privateKey  = RSA.Create().ImportPrivateKeyFromFile(keyPemFilePath);
+			using var certificate = publicCert.CopyWithPrivateKey(privateKey);
+		
+			return new(certificate.Export(X509ContentType.Pfx));
 		}
+		catch (Exception ex) {
+			throw new CryptographicException($"Failed to load private key: {ex.Message}");
+		}
+	}
+#else
+	public static X509Certificate2 CreateFromPemFile(string certPemFilePath, string keyPemFilePath) => 
+		X509Certificate2.CreateFromPemFile(certPemFilePath, keyPemFilePath);
+#endif
+}
+
+public static class RsaExtensions {
+#if NET48	
+	public static RSA ImportPrivateKeyFromFile(this RSA rsa, string privateKeyPath) {
+		var (content, label) = LoadPemKeyFile(privateKeyPath);
+
+		using var reader = new PemReader(new StringReader(string.Join(Environment.NewLine, content)));
+	
+		var keyParameters = reader.ReadObject() switch {
+			RsaPrivateCrtKeyParameters parameters => parameters,
+			AsymmetricCipherKeyPair keyPair       => keyPair.Private as RsaPrivateCrtKeyParameters,
+			_                                     => throw new NotSupportedException($"Invalid private key format: {label}")
+		};
+				
+		rsa.ImportParameters(DotNetUtilities.ToRSAParameters(keyParameters));
 
 		return rsa;
 	}
+#else	
+	public static RSA ImportPrivateKeyFromFile(this RSA rsa, string privateKeyPath) {
+		var (content, label) = LoadPemKeyFile(privateKeyPath);
 
-	internal static X509Certificate2 LoadCertificate(string certificatePath) {
-		return new X509Certificate2(certificatePath);
+		var privateKey      = string.Join(string.Empty, content[1..^1]);
+		var privateKeyBytes = Convert.FromBase64String(privateKey);
+		
+		if (label == RsaPemLabels.Pkcs8PrivateKey) 
+			rsa.ImportPkcs8PrivateKey(privateKeyBytes, out _);
+		else if (label == RsaPemLabels.RSAPrivateKey) 
+			rsa.ImportRSAPrivateKey(privateKeyBytes, out _);
+		
+		return rsa;
 	}
+#endif
 
-	/// <summary>
-	///
-	/// </summary>
-	/// <param name="certificatePath"></param>
-	/// <param name="privateKeyPath"></param>
-	/// <returns></returns>
-	/// <exception cref="Exception"></exception>
-	public static X509Certificate2 LoadFromFile(string certificatePath, string privateKeyPath) {
-		X509Certificate2? publicCertificate = null;
-		RSA?              rsa               = null;
+	static (string[] Content, string Label) LoadPemKeyFile(string privateKeyPath) {
+		var content = File.ReadAllLines(privateKeyPath);
+		var label   = RsaPemLabels.ParseKeyLabel(content[0]);
 
-		try {
-			try {
-				publicCertificate = LoadCertificate(certificatePath);
-			} catch (Exception ex) {
-				throw new Exception($"Failed to load certificate: {ex.Message}");
-			}
+		if (RsaPemLabels.IsEncryptedPrivateKey(label))
+			throw new NotSupportedException("Encrypted private keys are not supported");
 
-			try {
-				rsa = LoadKey(privateKeyPath);
-			} catch (Exception ex) {
-				throw new Exception($"Failed to load private key: {ex.Message}");
-			}
+		return (content, label);
+	}
+}
 
-			using var publicWithPrivate = publicCertificate.CopyWithPrivateKey(rsa);
-			var       certificate       = new X509Certificate2(publicWithPrivate.Export(X509ContentType.Pfx));
+static class RsaPemLabels {
+	public const string RSAPrivateKey            = "RSA PRIVATE KEY";
+	public const string Pkcs8PrivateKey          = "PRIVATE KEY";
+	public const string EncryptedPkcs8PrivateKey = "ENCRYPTED PRIVATE KEY";
 
-			return certificate;
-		} finally {
-			publicCertificate?.Dispose();
-			rsa?.Dispose();
-		}
+	public static readonly string[] PrivateKeyLabels = [RSAPrivateKey, Pkcs8PrivateKey, EncryptedPkcs8PrivateKey];
+
+	public static bool IsPrivateKey(string label) => Array.IndexOf(PrivateKeyLabels, label) != -1;
+
+	public static bool IsEncryptedPrivateKey(string label) => label == EncryptedPkcs8PrivateKey;
+
+	const string LabelPrefix = "-----BEGIN ";
+	const string LabelSuffix = "-----";
+	
+	public static string ParseKeyLabel(string pemFileHeader) {
+		var label = pemFileHeader.Replace(LabelPrefix, string.Empty).Replace(LabelSuffix, string.Empty);
+		
+		if (!IsPrivateKey(label))
+			throw new CryptographicException($"Unknown private key label: {label}");
+
+		return label;
 	}
 }

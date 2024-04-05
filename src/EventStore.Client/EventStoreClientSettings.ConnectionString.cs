@@ -227,23 +227,8 @@ namespace EventStore.Client {
 					}
 				}
 
-				var certPathSet    = typedOptions.TryGetValue(CertPath, out var certPath);
-				var certKeyPathSet = typedOptions.TryGetValue(CertKeyPath, out var certKeyPath);
-
-				if (certPathSet ^ certKeyPathSet)
-					throw new InvalidClientCertificateException(
-						$"Invalid certificate settings. {nameof(CertPath)} and {nameof(CertKeyPath)} must both be set"
-					);
-
-				if (certPathSet && certKeyPathSet) {
-					try {
-						settings.ConnectivitySettings.ClientCertificate =
-							CertificateUtils.LoadFromFile((string)certPath!, (string)certKeyPath!);
-					} catch (Exception ex) {
-						throw new InvalidClientCertificateException($"Invalid certificate settings. {ex.Message}");
-					}
-				}
-
+				ConfigureClientCertificate(settings, typedOptions);
+				
 				settings.CreateHttpMessageHandler = CreateDefaultHandler;
 
 				return settings;
@@ -288,6 +273,37 @@ namespace EventStore.Client {
 #endif
 					return handler;
 				}
+			}
+			
+			static void ConfigureClientCertificate(EventStoreClientSettings settings, IReadOnlyDictionary<string, object> options) {
+				var certPemFilePath = GetSetting<string>(options, CertPath) ?? "";
+				var keyPemFilePath  = GetSetting<string>(options, CertKeyPath) ?? "";
+				
+				var certificatePathIsSet = !string.IsNullOrEmpty(certPemFilePath);
+				var keyPathIsSet         = !string.IsNullOrEmpty(keyPemFilePath);
+
+				if (!certificatePathIsSet && !keyPathIsSet) return;
+
+				if (!certificatePathIsSet)
+					throw new InvalidClientCertificateException(
+						$"Invalid client certificate settings. {nameof(CertPath)} is invalid or not set"
+					);
+				
+				if (!keyPathIsSet)
+					throw new InvalidClientCertificateException(
+						$"Invalid client certificate settings. {nameof(CertKeyPath)} is invalid or not set"
+					);
+				
+				try {
+					settings.ConnectivitySettings.ClientCertificate = X509Certificates.CreateFromPemFile(certPemFilePath, keyPemFilePath);
+				} catch (Exception ex) {
+					throw new InvalidClientCertificateException("Failed to create client certificate.", ex);
+				}
+
+				return;
+
+				static T? GetSetting<T>(IReadOnlyDictionary<string, object> options, string key) => 
+					!options.TryGetValue(key, out var value) ? (T?)value : default;
 			}
 
 			private static string ParseScheme(string s) =>

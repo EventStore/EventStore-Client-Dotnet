@@ -7,7 +7,8 @@ namespace EventStore.Client {
 		/// Constructs a new <see cref="InvalidClientCertificateException"/>.
 		/// </summary>
 		/// <param name="message"></param>
-		public InvalidClientCertificateException(string message)
-			: base(message) { }
+		/// <param name="innerException"></param>
+		public InvalidClientCertificateException(string message, Exception? innerException = null)
+			: base(message, innerException) { }
 	}
 }

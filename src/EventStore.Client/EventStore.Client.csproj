@@ -29,10 +29,14 @@
         <PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0"/>
         <PackageReference Include="System.Text.Json" Version="7.0.3"/>
         <PackageReference Include="System.Threading.Channels" Version="7.0.0"/>
-				<PackageReference Include="BouncyCastle.Cryptography" Version="2.3.0" />
+        <PackageReference Include="BouncyCastle.Cryptography" Version="2.3.0" />
     </ItemGroup>
 
     <ItemGroup>
         <InternalsVisibleTo Include="EventStore.Client.Tests"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Certificates\" />
     </ItemGroup>
 </Project>
