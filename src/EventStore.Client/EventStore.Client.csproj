@@ -35,8 +35,4 @@
     <ItemGroup>
         <InternalsVisibleTo Include="EventStore.Client.Tests"/>
     </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Certificates\" />
-    </ItemGroup>
 </Project>

@@ -165,16 +165,15 @@ public class ConnectionStringTests {
 
 	public static IEnumerable<object?[]> InvalidClientCertificates() {
 		var invalidPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "path", "not", "found");
-		yield return [invalidPath, null];
-		yield return [null, invalidPath];
-		yield return [null, null];
+		var validPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "certs", "ca", "ca.crt");
 		yield return [invalidPath, invalidPath];
+		yield return [validPath, invalidPath];
 	}
 
 	[Theory]
 	[MemberData(nameof(InvalidClientCertificates))]
 	public void connection_string_with_invalid_client_certificate_should_throw(string certPath, string certKeyPath) {
-		Assert.Throws<InvalidClientCertificateException >(
+		Assert.Throws<InvalidClientCertificateException>(
 			() => EventStoreClientSettings.Create(
 				$"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&certPath={certPath}&certKeyPath={certKeyPath}"
 			)

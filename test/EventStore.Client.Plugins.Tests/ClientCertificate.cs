@@ -13,8 +13,8 @@ public class ClientCertificate(ITestOutputHelper output, EventStoreFixture fixtu
 	public static IEnumerable<object[]> AdminClientCertPaths =>
 		new List<object[]> {
 			new object[] {
-				Path.Combine(Environment.CurrentDirectory, "certs", "user-admin", "user-admin.crt"),
-				Path.Combine(Environment.CurrentDirectory, "certs", "user-admin", "user-admin.key")
+				Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "certs", "user-admin", "user-admin.crt"),
+				Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "certs", "user-admin", "user-admin.key")
 			},
 			new object[] {
 				Path.Combine("certs", "user-admin", "user-admin.crt"),
@@ -29,8 +29,8 @@ public class ClientCertificate(ITestOutputHelper output, EventStoreFixture fixtu
 				Path.Combine("certs", "user-invalid", "user-invalid.key")
 			},
 			new object[] {
-				Path.Combine(Environment.CurrentDirectory, "certs", "user-invalid", "user-invalid.crt"),
-				Path.Combine(Environment.CurrentDirectory, "certs", "user-invalid", "user-invalid.key")
+				Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "certs", "user-invalid", "user-invalid.crt"),
+				Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "certs", "user-invalid", "user-invalid.key")
 			}
 		};
 
@@ -43,6 +43,7 @@ public class ClientCertificate(ITestOutputHelper output, EventStoreFixture fixtu
 	[Theory]
 	[MemberData(nameof(AdminClientCertPaths))]
 	async Task append_with_admin_client_certificate(string certPath, string certKeyPath) {
+		Fixture.Log.Information("CertPath: {certPath}, CertKeyPath: {certKeyPath}", certPath, certKeyPath);
 		await AppendWithCertificate($"esdb://localhost:2113/?tls=true&tlsVerifyCert=true&certPath={certPath}&certKeyPath={certKeyPath}");
 	}
 

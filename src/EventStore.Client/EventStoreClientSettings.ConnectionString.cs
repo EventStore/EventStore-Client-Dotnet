@@ -228,41 +228,27 @@ namespace EventStore.Client {
 				}
 
 				ConfigureClientCertificate(settings, typedOptions);
-				
+
 				settings.CreateHttpMessageHandler = CreateDefaultHandler;
 
 				return settings;
 
+#if NET48
 				HttpMessageHandler CreateDefaultHandler() {
 					var certificate = settings.ConnectivitySettings.ClientCertificate ??
 					                  settings.ConnectivitySettings.TlsCaFile;
 
 					var configureClientCert = settings.ConnectivitySettings is { Insecure: false } && certificate != null;
 
-#if NET
-					var handler = new SocketsHttpHandler {
-						KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
-						KeepAlivePingTimeout           = settings.ConnectivitySettings.KeepAliveTimeout,
-						EnableMultipleHttp2Connections = true,
-					};
-#else
 					var handler = new WinHttpHandler {
-						TcpKeepAliveEnabled = true,
-						TcpKeepAliveTime = settings.ConnectivitySettings.KeepAliveTimeout,
-						TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
+						TcpKeepAliveEnabled            = true,
+						TcpKeepAliveTime               = settings.ConnectivitySettings.KeepAliveTimeout,
+						TcpKeepAliveInterval           = settings.ConnectivitySettings.KeepAliveInterval,
 						EnableMultipleHttp2Connections = true
 					};
-#endif
-					if (settings.ConnectivitySettings.Insecure) return handler;
-#if NET
-					if (configureClientCert) {
-						handler.SslOptions.ClientCertificates = [certificate!];
-					}
 
-					if (!settings.ConnectivitySettings.TlsVerifyCert) {
-						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
-					}
-#else
+					if (settings.ConnectivitySettings.Insecure) return handler;
+
 					if (configureClientCert) {
 						handler.ClientCertificates.Add(certificate!);
 					}
@@ -270,40 +256,67 @@ namespace EventStore.Client {
 					if (!settings.ConnectivitySettings.TlsVerifyCert) {
 						handler.ServerCertificateValidationCallback = delegate { return true; };
 					}
-#endif
+
 					return handler;
 				}
+#else
+				HttpMessageHandler CreateDefaultHandler() {
+					var certificate = settings.ConnectivitySettings.ClientCertificate ??
+					                  settings.ConnectivitySettings.TlsCaFile;
+
+					var configureClientCert = settings.ConnectivitySettings is { Insecure: false } && certificate != null;
+
+					var handler = new SocketsHttpHandler {
+						KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
+						KeepAlivePingTimeout           = settings.ConnectivitySettings.KeepAliveTimeout,
+						EnableMultipleHttp2Connections = true,
+					};
+
+					if (settings.ConnectivitySettings.Insecure) return handler;
+
+					if (configureClientCert) {
+						handler.SslOptions.ClientCertificates = [certificate!];
+					}
+
+					if (!settings.ConnectivitySettings.TlsVerifyCert) {
+						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+					}
+
+					return handler;
+				}
+#endif
 			}
-			
+
 			static void ConfigureClientCertificate(EventStoreClientSettings settings, IReadOnlyDictionary<string, object> options) {
-				var certPemFilePath = GetSetting<string>(options, CertPath) ?? "";
-				var keyPemFilePath  = GetSetting<string>(options, CertKeyPath) ?? "";
-				
-				var certificatePathIsSet = !string.IsNullOrEmpty(certPemFilePath);
-				var keyPathIsSet         = !string.IsNullOrEmpty(keyPemFilePath);
+				var certPemFilePath = GetOptionValueAsString(CertPath);
+				var keyPemFilePath  = GetOptionValueAsString(CertKeyPath);
 
-				if (!certificatePathIsSet && !keyPathIsSet) return;
+				if (string.IsNullOrEmpty(certPemFilePath) && string.IsNullOrEmpty(keyPemFilePath))
+					return;
 
-				if (!certificatePathIsSet)
+				if (string.IsNullOrEmpty(certPemFilePath) || string.IsNullOrEmpty(keyPemFilePath))
+					throw new InvalidClientCertificateException("Invalid client certificate settings. Both CertPath and CertKeyPath must be set.");
+
+				if (!File.Exists(certPemFilePath))
 					throw new InvalidClientCertificateException(
-						$"Invalid client certificate settings. {nameof(CertPath)} is invalid or not set"
+						$"Invalid client certificate settings. The specified CertPath does not exist: {certPemFilePath}"
 					);
-				
-				if (!keyPathIsSet)
+
+				if (!File.Exists(keyPemFilePath))
 					throw new InvalidClientCertificateException(
-						$"Invalid client certificate settings. {nameof(CertKeyPath)} is invalid or not set"
+						$"Invalid client certificate settings. The specified CertKeyPath does not exist: {keyPemFilePath}"
 					);
-				
+
 				try {
-					settings.ConnectivitySettings.ClientCertificate = X509Certificates.CreateFromPemFile(certPemFilePath, keyPemFilePath);
+					settings.ConnectivitySettings.ClientCertificate =
+						X509Certificates.CreateFromPemFile(certPemFilePath, keyPemFilePath);
 				} catch (Exception ex) {
 					throw new InvalidClientCertificateException("Failed to create client certificate.", ex);
 				}
 
 				return;
 
-				static T? GetSetting<T>(IReadOnlyDictionary<string, object> options, string key) => 
-					!options.TryGetValue(key, out var value) ? (T?)value : default;
+				string GetOptionValueAsString(string key) => options.TryGetValue(key, out var value) ? (string)value : "";
 			}
 
 			private static string ParseScheme(string s) =>
