@@ -13,38 +13,32 @@ using Org.BouncyCastle.Security;
 namespace EventStore.Client;
 
 static class X509Certificates {
-#if NET48
-	public static X509Certificate2 CreateFromPemFile(string certPemFilePath, string keyPemFilePath) {
-		try {
-			using var publicCert  = new X509Certificate2(certPemFilePath);
-			using var privateKey  = RSA.Create().ImportPrivateKeyFromFile(keyPemFilePath);
-			using var certificate = publicCert.CopyWithPrivateKey(privateKey);
-
-			return new(certificate.Export(X509ContentType.Pfx));
-		}
-		catch (Exception ex) {
-			throw new CryptographicException($"Failed to load private key: {ex.Message}");
-		}
-	}
-#else
-	public static X509Certificate2 CreateFromPemFile(string certPemFilePath, string keyPemFilePath) {
-		// TODO:
-		// using X509Certificate2.CreateFromPemFile(certPemFilePath, keyPemFilePath) would be the ideal choice here,
-		// but it's currently causing a Win32Exception specifically on Windows. Alternative implementation is used until the issue is resolved.
-		// Error: The SSL connection could not be established, see inner exception. AuthenticationException: Authentication failed because the platform
-		// does not support ephemeral keys. Win32Exception: No credentials are available in the security package
-		try {
-			using var publicCert  = new X509Certificate2(certPemFilePath);
-			using var privateKey  = RSA.Create().ImportPrivateKeyFromFile(keyPemFilePath);
-			using var certificate = publicCert.CopyWithPrivateKey(privateKey);
-
-			return new(certificate.Export(X509ContentType.Pfx));
-		}
-		catch (Exception ex) {
-			throw new CryptographicException($"Failed to load private key: {ex.Message}");
-		}
-	}
-#endif
+    
+    // TODO SS: Use .NET 8 X509Certificate2.CreateFromPemFile(certPemFilePath, keyPemFilePath) once the Windows32Exception issue is resolved
+    public static X509Certificate2 CreateFromPemFile(string certPemFilePath, string keyPemFilePath) {
+        try {
+            using var publicCert  = new X509Certificate2(certPemFilePath);
+            using var privateKey  = RSA.Create().ImportPrivateKeyFromFile(keyPemFilePath);
+            using var certificate = publicCert.CopyWithPrivateKey(privateKey);
+		
+            return new(certificate.Export(X509ContentType.Pfx));
+        }
+        catch (Exception ex) {
+            throw new CryptographicException($"Failed to load private key: {ex.Message}");
+        }
+        
+        // Notes:
+        // using X509Certificate2.CreateFromPemFile(certPemFilePath, keyPemFilePath) would be the ideal choice here,
+        // but it's currently causing a Win32Exception specifically on Windows. Alternative implementation is used until the issue is resolved.
+        //
+        // Error: The SSL connection could not be established, see inner exception. AuthenticationException: Authentication failed because the platform
+        // does not support ephemeral keys. Win32Exception: No credentials are available in the security package
+        //
+        // public static X509Certificate2 CreateFromPemFile(string certPemFilePath, string keyPemFilePath) =>
+        //  X509Certificate2.CreateFromPemFile(certPemFilePath, keyPemFilePath);
+    }
+    
+   
 }
 
 public static class RsaExtensions {
