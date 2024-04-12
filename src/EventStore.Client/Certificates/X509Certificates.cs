@@ -13,7 +13,6 @@ using Org.BouncyCastle.Security;
 namespace EventStore.Client;
 
 static class X509Certificates {
-    
     // TODO SS: Use .NET 8 X509Certificate2.CreateFromPemFile(certPemFilePath, keyPemFilePath) once the Windows32Exception issue is resolved
     public static X509Certificate2 CreateFromPemFile(string certPemFilePath, string keyPemFilePath) {
         try {
@@ -37,8 +36,6 @@ static class X509Certificates {
         // public static X509Certificate2 CreateFromPemFile(string certPemFilePath, string keyPemFilePath) =>
         //  X509Certificate2.CreateFromPemFile(certPemFilePath, keyPemFilePath);
     }
-    
-   
 }
 
 public static class RsaExtensions {
