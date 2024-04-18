@@ -172,10 +172,10 @@ public class ConnectionStringTests {
 
 	[Theory]
 	[MemberData(nameof(InvalidClientCertificates))]
-	public void connection_string_with_invalid_client_certificate_should_throw(string certPath, string certKeyPath) {
+	public void connection_string_with_invalid_client_certificate_should_throw(string userCertFile, string userKeyFile) {
 		Assert.Throws<InvalidClientCertificateException>(
 			() => EventStoreClientSettings.Create(
-				$"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&certPath={certPath}&certKeyPath={certKeyPath}"
+				$"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}"
 			)
 		);
 	}

@@ -41,8 +41,8 @@ namespace EventStore.Client {
 			private const string ThrowOnAppendFailure = nameof(ThrowOnAppendFailure);
 			private const string KeepAliveInterval    = nameof(KeepAliveInterval);
 			private const string KeepAliveTimeout     = nameof(KeepAliveTimeout);
-			private const string CertPath             = nameof(CertPath);
-			private const string CertKeyPath          = nameof(CertKeyPath);
+			private const string UserCertFile             = nameof(UserCertFile);
+			private const string UserKeyFile          = nameof(UserKeyFile);
 
 			private const string UriSchemeDiscover = "esdb+discover";
 
@@ -64,8 +64,8 @@ namespace EventStore.Client {
 					{ ThrowOnAppendFailure, typeof(bool) },
 					{ KeepAliveInterval, typeof(int) },
 					{ KeepAliveTimeout, typeof(int) },
-					{ CertPath, typeof(string)},
-					{ CertKeyPath, typeof(string)},
+					{ UserCertFile, typeof(string)},
+					{ UserKeyFile, typeof(string)},
 				};
 
 			public static EventStoreClientSettings Parse(string connectionString) {
@@ -288,23 +288,23 @@ namespace EventStore.Client {
 			}
 
 			static void ConfigureClientCertificate(EventStoreClientSettings settings, IReadOnlyDictionary<string, object> options) {
-				var certPemFilePath = GetOptionValueAsString(CertPath);
-				var keyPemFilePath  = GetOptionValueAsString(CertKeyPath);
+				var certPemFilePath = GetOptionValueAsString(UserCertFile);
+				var keyPemFilePath  = GetOptionValueAsString(UserKeyFile);
 
 				if (string.IsNullOrEmpty(certPemFilePath) && string.IsNullOrEmpty(keyPemFilePath))
 					return;
 
 				if (string.IsNullOrEmpty(certPemFilePath) || string.IsNullOrEmpty(keyPemFilePath))
-					throw new InvalidClientCertificateException("Invalid client certificate settings. Both CertPath and CertKeyPath must be set.");
+					throw new InvalidClientCertificateException("Invalid client certificate settings. Both UserCertFile and UserKeyFile must be set.");
 
 				if (!File.Exists(certPemFilePath))
 					throw new InvalidClientCertificateException(
-						$"Invalid client certificate settings. The specified CertPath does not exist: {certPemFilePath}"
+						$"Invalid client certificate settings. The specified UserCertFile does not exist: {certPemFilePath}"
 					);
 
 				if (!File.Exists(keyPemFilePath))
 					throw new InvalidClientCertificateException(
-						$"Invalid client certificate settings. The specified CertKeyPath does not exist: {keyPemFilePath}"
+						$"Invalid client certificate settings. The specified UserKeyFile does not exist: {keyPemFilePath}"
 					);
 
 				try {

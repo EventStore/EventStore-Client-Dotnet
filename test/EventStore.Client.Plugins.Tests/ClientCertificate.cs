@@ -42,24 +42,23 @@ public class ClientCertificate(ITestOutputHelper output, EventStoreFixture fixtu
 
 	[Theory]
 	[MemberData(nameof(AdminClientCertPaths))]
-	async Task append_with_admin_client_certificate(string certPath, string certKeyPath) {
-		Fixture.Log.Information("CertPath: {certPath}, CertKeyPath: {certKeyPath}", certPath, certKeyPath);
-		await AppendWithCertificate($"esdb://localhost:2113/?tls=true&tlsVerifyCert=true&certPath={certPath}&certKeyPath={certKeyPath}");
+	async Task append_with_admin_client_certificate(string userCertFile, string userKeyFile) {
+		await AppendWithCertificate($"esdb://localhost:2113/?tls=true&tlsVerifyCert=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}");
 	}
 
 	[Theory]
 	[MemberData(nameof(BadClientCertPaths))]
-	async Task append_with_bad_client_certificate(string certPath, string certKeyPath) {
+	async Task append_with_bad_client_certificate(string userCertFile, string userKeyFile) {
 		await AssertAppendFailsWithCertificate(
-			$"esdb://localhost:2113/?tls=true&tlsVerifyCert=true&certPath={certPath}&certKeyPath={certKeyPath}",
+			$"esdb://localhost:2113/?tls=true&tlsVerifyCert=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}",
 			typeof(NotAuthenticatedException)
 		);
 	}
 
 	[Theory]
 	[MemberData(nameof(BadClientCertPaths))]
-	async Task user_credentials_takes_precedence_over_client_certificates(string certPath, string certKeyPath) {
-		await AppendWithCertificate($"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&certPath={certPath}&certKeyPath={certKeyPath}");
+	async Task user_credentials_takes_precedence_over_client_certificates(string userCertFile, string userKeyFile) {
+		await AppendWithCertificate($"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}");
 	}
 
 	async Task AppendWithCertificate(string connectionString) {
