@@ -33,7 +33,7 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
 			["EVENTSTORE_MEM_DB"]                           = "true",
-			["EVENTSTORE_CHUNK_SIZE"]                       = (1024 * 1024).ToString(),
+			["EVENTSTORE_CHUNK_SIZE"]                       = (1024 * 1024 * 1024).ToString(),
 			["EVENTSTORE_CERTIFICATE_FILE"]                 = "/etc/eventstore/certs/node/node.crt",
 			["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"]     = "/etc/eventstore/certs/node/node.key",
 			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"]     = "10000",
@@ -42,7 +42,12 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			["EVENTSTORE_DISABLE_LOG_FILE"]                 = "true",
 			["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}"
 		};
-		
+
+		if (GlobalEnvironment.DockerImage.Contains("commercial")) {
+			defaultEnvironment["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/eventstore/certs/ca";
+			defaultEnvironment["EventStore__Plugins__UserCertificates__Enabled"] = "true";
+		}
+
 		// TODO SS: must find a way to enable parallel tests on CI. It works locally.
 		if (port != NetworkPortProvider.DefaultEsdbPort) {
 			if (GlobalEnvironment.Variables.TryGetValue("ES_DOCKER_TAG", out var tag) && tag == "ci")

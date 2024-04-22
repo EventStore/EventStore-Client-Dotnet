@@ -108,6 +108,11 @@ namespace EventStore.Client {
 		public X509Certificate2? TlsCaFile { get; set; }
 
 		/// <summary>
+		/// Client certificate used for user authentication.
+		/// </summary>
+		public X509Certificate2? ClientCertificate { get; set; }
+
+		/// <summary>
 		/// The default <see cref="EventStoreClientConnectivitySettings"/>.
 		/// </summary>
 		public static EventStoreClientConnectivitySettings Default => new EventStoreClientConnectivitySettings {

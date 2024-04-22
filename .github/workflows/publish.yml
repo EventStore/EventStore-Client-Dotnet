@@ -72,7 +72,30 @@ jobs:
         run: |
           find samples/ -type f -iname "*.csproj" -print0 | xargs -0L1 dotnet run --framework ${{ matrix.framework }} --project
 
+  generate-certificates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Generate certificates
+        run: |
+          mkdir -p certs
+          docker run --rm --user root --volume "$PWD/certs:/tmp" ghcr.io/eventstore/es-gencert-cli:1.3 create-ca -out /tmp/ca
+          docker run --rm --user root --volume "$PWD/certs:/tmp" ghcr.io/eventstore/es-gencert-cli:1.3 create-node -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/node -ip-addresses 127.0.0.1 -dns-names localhost
+          docker run --rm --user root --volume "$PWD/certs:/tmp" ghcr.io/eventstore/es-gencert-cli:1.3 create-user -username admin -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/user-admin
+          docker run --rm --user root --volume "$PWD/certs:/tmp" ghcr.io/eventstore/es-gencert-cli:1.3 create-user -username invalid -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/user-invalid
+      - name: Set permissions on certificates
+        run: |
+          sudo chown -R $USER:$USER certs
+          sudo chmod -R 755 certs
+      - name: Upload certificates
+        uses: actions/upload-artifact@v2
+        with:
+          name: certs
+          path: certs
+
   test:
+    needs: generate-certificates
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -99,12 +122,37 @@ jobs:
         shell: bash
         run: |
           dotnet build --configuration ${{ matrix.configuration }} --framework ${{ matrix.framework }} src/EventStore.Client
-      - name: Run Tests
+      - name: Download certificates
+        uses: actions/download-artifact@v2
+        with:
+          name: certs
+          path: certs
+      - name: Import certificates (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo cp certs/ca/ca.crt /usr/local/share/ca-certificates/eventstore_ca.crt
+          sudo update-ca-certificates
+      - name: Import certificates (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Import-Certificate -FilePath "certs\ca\ca.crt" -CertStoreLocation "Cert:\LocalMachine\Root"
+      - name: Run Tests (Linux)
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           dotnet test --configuration ${{ matrix.configuration }} --blame \
             --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
             --framework ${{ matrix.framework }} \
+            test/EventStore.Client.Tests
+      - name: Run Tests (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          dotnet test --configuration ${{ matrix.configuration }} --blame `
+            --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" `
+            --framework ${{ matrix.framework }} `
             test/EventStore.Client.Tests
 
   publish:

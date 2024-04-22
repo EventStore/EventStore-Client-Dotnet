@@ -41,6 +41,8 @@ namespace EventStore.Client {
 			private const string ThrowOnAppendFailure = nameof(ThrowOnAppendFailure);
 			private const string KeepAliveInterval    = nameof(KeepAliveInterval);
 			private const string KeepAliveTimeout     = nameof(KeepAliveTimeout);
+			private const string UserCertFile             = nameof(UserCertFile);
+			private const string UserKeyFile          = nameof(UserKeyFile);
 
 			private const string UriSchemeDiscover = "esdb+discover";
 
@@ -62,6 +64,8 @@ namespace EventStore.Client {
 					{ ThrowOnAppendFailure, typeof(bool) },
 					{ KeepAliveInterval, typeof(int) },
 					{ KeepAliveTimeout, typeof(int) },
+					{ UserCertFile, typeof(string)},
+					{ UserKeyFile, typeof(string)},
 				};
 
 			public static EventStoreClientSettings Parse(string connectionString) {
@@ -80,14 +84,9 @@ namespace EventStore.Client {
 					currentIndex = userInfoIndex + UserInfoSeparator.Length;
 				}
 
-				var slashIndex = connectionString.IndexOf(Slash, currentIndex, StringComparison.Ordinal);
-				var questionMarkIndex = connectionString.IndexOf(
-					QuestionMark,
-					Math.Max(currentIndex, slashIndex),
-					StringComparison.Ordinal
-				);
-
-				var endIndex = connectionString.Length;
+				var slashIndex        = connectionString.IndexOf(Slash, currentIndex, StringComparison.Ordinal);
+				var questionMarkIndex = connectionString.IndexOf(QuestionMark, currentIndex, StringComparison.Ordinal);
+				var endIndex          = connectionString.Length;
 
 				//for simpler substring operations:
 				if (slashIndex == -1) slashIndex               = int.MaxValue;
@@ -228,42 +227,96 @@ namespace EventStore.Client {
 					}
 				}
 
+				ConfigureClientCertificate(settings, typedOptions);
+
 				settings.CreateHttpMessageHandler = CreateDefaultHandler;
 
 				return settings;
 
+#if NET48
 				HttpMessageHandler CreateDefaultHandler() {
-					var configureClientCert = settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false };
-#if NET
+					var certificate = settings.ConnectivitySettings.ClientCertificate ??
+					                  settings.ConnectivitySettings.TlsCaFile;
+
+					var configureClientCert = settings.ConnectivitySettings is { Insecure: false } && certificate != null;
+
+					var handler = new WinHttpHandler {
+						TcpKeepAliveEnabled            = true,
+						TcpKeepAliveTime               = settings.ConnectivitySettings.KeepAliveTimeout,
+						TcpKeepAliveInterval           = settings.ConnectivitySettings.KeepAliveInterval,
+						EnableMultipleHttp2Connections = true
+					};
+
+					if (settings.ConnectivitySettings.Insecure) return handler;
+
+					if (configureClientCert) {
+						handler.ClientCertificates.Add(certificate!);
+					}
+
+					if (!settings.ConnectivitySettings.TlsVerifyCert) {
+						handler.ServerCertificateValidationCallback = delegate { return true; };
+					}
+
+					return handler;
+				}
+#else
+				HttpMessageHandler CreateDefaultHandler() {
+					var certificate = settings.ConnectivitySettings.ClientCertificate ??
+					                  settings.ConnectivitySettings.TlsCaFile;
+
+					var configureClientCert = settings.ConnectivitySettings is { Insecure: false } && certificate != null;
+
 					var handler = new SocketsHttpHandler {
 						KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
 						KeepAlivePingTimeout           = settings.ConnectivitySettings.KeepAliveTimeout,
 						EnableMultipleHttp2Connections = true,
 					};
 
-					if (configureClientCert)
-						handler.SslOptions.ClientCertificates = [settings.ConnectivitySettings.TlsCaFile!];
+					if (settings.ConnectivitySettings.Insecure) return handler;
+
+					if (configureClientCert) {
+						handler.SslOptions.ClientCertificates = [certificate!];
+					}
 
 					if (!settings.ConnectivitySettings.TlsVerifyCert) {
 						handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
 					}
-#else
-					var handler = new WinHttpHandler {
-						TcpKeepAliveEnabled = true,
-						TcpKeepAliveTime = settings.ConnectivitySettings.KeepAliveTimeout,
-						TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
-						EnableMultipleHttp2Connections = true
-					};
 
-					if (configureClientCert)
-						handler.ClientCertificates.Add(settings.ConnectivitySettings.TlsCaFile!);
-
-					if (!settings.ConnectivitySettings.TlsVerifyCert) {
-						handler.ServerCertificateValidationCallback = delegate { return true; };
-					}
-#endif
 					return handler;
 				}
+#endif
+			}
+
+			static void ConfigureClientCertificate(EventStoreClientSettings settings, IReadOnlyDictionary<string, object> options) {
+				var certPemFilePath = GetOptionValueAsString(UserCertFile);
+				var keyPemFilePath  = GetOptionValueAsString(UserKeyFile);
+
+				if (string.IsNullOrEmpty(certPemFilePath) && string.IsNullOrEmpty(keyPemFilePath))
+					return;
+
+				if (string.IsNullOrEmpty(certPemFilePath) || string.IsNullOrEmpty(keyPemFilePath))
+					throw new InvalidClientCertificateException("Invalid client certificate settings. Both UserCertFile and UserKeyFile must be set.");
+
+				if (!File.Exists(certPemFilePath))
+					throw new InvalidClientCertificateException(
+						$"Invalid client certificate settings. The specified UserCertFile does not exist: {certPemFilePath}"
+					);
+
+				if (!File.Exists(keyPemFilePath))
+					throw new InvalidClientCertificateException(
+						$"Invalid client certificate settings. The specified UserKeyFile does not exist: {keyPemFilePath}"
+					);
+
+				try {
+					settings.ConnectivitySettings.ClientCertificate =
+						X509Certificates.CreateFromPemFile(certPemFilePath, keyPemFilePath);
+				} catch (Exception ex) {
+					throw new InvalidClientCertificateException("Failed to create client certificate.", ex);
+				}
+
+				return;
+
+				string GetOptionValueAsString(string key) => options.TryGetValue(key, out var value) ? (string)value : "";
 			}
 
 			private static string ParseScheme(string s) =>

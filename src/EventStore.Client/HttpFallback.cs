@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,10 +13,10 @@ namespace EventStore.Client {
 		private readonly UserCredentials? _defaultCredentials;
 		private readonly string _addressScheme;
 
-		internal HttpFallback (EventStoreClientSettings settings) {
-			_addressScheme = settings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme;
-            _defaultCredentials = settings.DefaultCredentials;
-			
+		internal HttpFallback(EventStoreClientSettings settings) {
+			_addressScheme      = settings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme;
+			_defaultCredentials = settings.DefaultCredentials;
+
 			var handler = new HttpClientHandler();
 			if (!settings.ConnectivitySettings.Insecure) {
 				handler.ClientCertificateOptions = ClientCertificateOption.Manual;
@@ -23,17 +24,20 @@ namespace EventStore.Client {
 				if (settings.ConnectivitySettings.TlsCaFile != null)
 					handler.ClientCertificates.Add(settings.ConnectivitySettings.TlsCaFile);
 
+				if (settings.ConnectivitySettings.ClientCertificate != null)
+					handler.ClientCertificates.Add(settings.ConnectivitySettings.ClientCertificate);
+
 				if (!settings.ConnectivitySettings.TlsVerifyCert)
-					handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
+					handler.ServerCertificateCustomValidationCallback = delegate { return true; };
 			}
 
 			_httpClient = new HttpClient(handler);
 			if (settings.DefaultDeadline.HasValue) {
 				_httpClient.Timeout = settings.DefaultDeadline.Value;
 			}
-			
+
 			_jsonSettings = new JsonSerializerOptions {
-				PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+				PropertyNamingPolicy = JsonNamingPolicy.CamelCase
 			};
 		}
 

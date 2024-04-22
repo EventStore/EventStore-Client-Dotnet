@@ -1,10 +1,11 @@
 using System.Net.Http;
+using System.Security.Cryptography.X509Certificates;
 using Grpc.Net.Client;
-using System.Net.Security;
 using EndPoint = System.Net.EndPoint;
 using TChannel = Grpc.Net.Client.GrpcChannel;
 
 namespace EventStore.Client {
+	
 	internal static class ChannelFactory {
 		private const int MaxReceiveMessageLength = 17 * 1024 * 1024;
 
@@ -19,13 +20,13 @@ namespace EventStore.Client {
 			return TChannel.ForAddress(
 				address,
 				new GrpcChannelOptions {
-#if NET
-					HttpClient = new HttpClient(CreateHandler(), true) {
+#if NET48
+					HttpHandler = CreateHandler(settings),
+#else
+					HttpClient = new HttpClient(CreateHandler(settings), true) {
 						Timeout               = System.Threading.Timeout.InfiniteTimeSpan,
 						DefaultRequestVersion = new Version(2, 0)
 					},
-#else
-				HttpHandler = CreateHandler(),
 #endif
 					LoggerFactory         = settings.LoggerFactory,
 					Credentials           = settings.ChannelCredentials,
@@ -34,42 +35,67 @@ namespace EventStore.Client {
 				}
 			);
 
-			HttpMessageHandler CreateHandler() {
-				if (settings.CreateHttpMessageHandler != null) {
-					return settings.CreateHttpMessageHandler.Invoke();
-				}
 
-				var configureClientCert = settings.ConnectivitySettings is { TlsCaFile: not null, Insecure: false };
-#if NET
-				var handler = new SocketsHttpHandler {
-					KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
-					KeepAlivePingTimeout           = settings.ConnectivitySettings.KeepAliveTimeout,
-					EnableMultipleHttp2Connections = true,
-				};
-
-				if (configureClientCert)
-					handler.SslOptions.ClientCertificates = [settings.ConnectivitySettings.TlsCaFile!];
-
-				if (!settings.ConnectivitySettings.TlsVerifyCert) {
-					handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
-				}
-#else
-				var handler = new WinHttpHandler {
-					TcpKeepAliveEnabled = true,
-					TcpKeepAliveTime = settings.ConnectivitySettings.KeepAliveTimeout,
-					TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
-					EnableMultipleHttp2Connections = true
-				};
-
-				if (configureClientCert)
-					handler.ClientCertificates.Add(settings.ConnectivitySettings.TlsCaFile!);
-
-				if (!settings.ConnectivitySettings.TlsVerifyCert) {
-					handler.ServerCertificateValidationCallback = delegate { return true; };
-				}
-#endif
-				return handler;
+#if NET48
+		static HttpMessageHandler CreateHandler(EventStoreClientSettings settings) {
+			if (settings.CreateHttpMessageHandler != null) {
+				return settings.CreateHttpMessageHandler.Invoke();
 			}
+
+			var certificate = settings.ConnectivitySettings.ClientCertificate ??
+			                  settings.ConnectivitySettings.TlsCaFile;
+
+			var configureClientCert = settings.ConnectivitySettings is { Insecure: false } && certificate != null;
+
+			var handler = new WinHttpHandler {
+				TcpKeepAliveEnabled = true,
+				TcpKeepAliveTime = settings.ConnectivitySettings.KeepAliveTimeout,
+				TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
+				EnableMultipleHttp2Connections = true
+			};
+
+			if (settings.ConnectivitySettings.Insecure) return handler;
+
+			if (configureClientCert) {
+				handler.ClientCertificates.Add(certificate!);
+			}
+
+			if (!settings.ConnectivitySettings.TlsVerifyCert) {
+				handler.ServerCertificateValidationCallback = delegate { return true; };
+			}
+
+			return handler;
+		}
+#else
+		static HttpMessageHandler CreateHandler(EventStoreClientSettings settings) {
+			if (settings.CreateHttpMessageHandler != null) {
+				return settings.CreateHttpMessageHandler.Invoke();
+			}
+
+			var certificate = settings.ConnectivitySettings.ClientCertificate ??
+			                  settings.ConnectivitySettings.TlsCaFile;
+
+			var configureClientCert = settings.ConnectivitySettings is { Insecure: false } && certificate != null;
+
+			var handler = new SocketsHttpHandler {
+				KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
+				KeepAlivePingTimeout           = settings.ConnectivitySettings.KeepAliveTimeout,
+				EnableMultipleHttp2Connections = true,
+			};
+
+			if (settings.ConnectivitySettings.Insecure) return handler;
+
+			if (configureClientCert) {
+				handler.SslOptions.ClientCertificates = new X509CertificateCollection { certificate! };
+			}
+
+			if (!settings.ConnectivitySettings.TlsVerifyCert) {
+				handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
+			}
+
+			return handler;
+		}
+#endif
 		}
 	}
 }
