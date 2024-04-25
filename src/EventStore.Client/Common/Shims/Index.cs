@@ -11,9 +11,8 @@ namespace System;
 /// int lastElement = someArray[^1]; // lastElement = 5
 /// </code>
 /// </remarks>
-internal readonly struct Index : IEquatable<Index>
-{
-    private readonly int _value;
+readonly struct Index : IEquatable<Index> {
+    readonly int _value;
 
     /// <summary>Construct an Index using a value and indicating if the index is from the start or from the end.</summary>
     /// <param name="value">The index value. it has to be zero or positive number.</param>
@@ -22,12 +21,8 @@ internal readonly struct Index : IEquatable<Index>
     /// If the Index constructed from the end, index value 1 means pointing at the last element and index value 0 means pointing at beyond last element.
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Index(int value, bool fromEnd = false)
-    {
-        if (value < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(value), "value must be non-negative");
-        }
+    public Index(int value, bool fromEnd = false) {
+        if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "value must be non-negative");
 
         if (fromEnd)
             _value = ~value;
@@ -36,26 +31,19 @@ internal readonly struct Index : IEquatable<Index>
     }
 
     // The following private constructors mainly created for perf reason to avoid the checks
-    private Index(int value)
-    {
-        _value = value;
-    }
+    Index(int value) => _value = value;
 
     /// <summary>Create an Index pointing at first element.</summary>
-    public static Index Start => new Index(0);
+    public static Index Start => new(0);
 
     /// <summary>Create an Index pointing at beyond last element.</summary>
-    public static Index End => new Index(~0);
+    public static Index End => new(~0);
 
     /// <summary>Create an Index from the start at the position indicated by the value.</summary>
     /// <param name="value">The index value from the start.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Index FromStart(int value)
-    {
-        if (value < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(value), "value must be non-negative");
-        }
+    public static Index FromStart(int value) {
+        if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "value must be non-negative");
 
         return new Index(value);
     }
@@ -63,21 +51,15 @@ internal readonly struct Index : IEquatable<Index>
     /// <summary>Create an Index from the end at the position indicated by the value.</summary>
     /// <param name="value">The index value from the end.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Index FromEnd(int value)
-    {
-        if (value < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(value), "value must be non-negative");
-        }
+    public static Index FromEnd(int value) {
+        if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "value must be non-negative");
 
         return new Index(~value);
     }
 
     /// <summary>Returns the index value.</summary>
-    public int Value
-    {
-        get
-        {
+    public int Value {
+        get {
             if (_value < 0)
                 return ~_value;
             else
@@ -97,17 +79,14 @@ internal readonly struct Index : IEquatable<Index>
     /// then used to index a collection will get out of range exception which will be same affect as the validation.
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int GetOffset(int length)
-    {
-        int offset = _value;
+    public int GetOffset(int length) {
+        var offset = _value;
         if (IsFromEnd)
-        {
             // offset = length - (~value)
             // offset = length + (~(~value) + 1)
             // offset = length + value + 1
-
             offset += length + 1;
-        }
+
         return offset;
     }
 
@@ -126,6 +105,6 @@ internal readonly struct Index : IEquatable<Index>
     public static implicit operator Index(int value) => FromStart(value);
 
     /// <summary>Converts the value of the current Index object to its equivalent string representation.</summary>
-    public override string ToString() => IsFromEnd ? $"^{((uint)Value)}" : ((uint)Value).ToString();
+    public override string ToString() => IsFromEnd ? $"^{(uint)Value}" : ((uint)Value).ToString();
 }
 #endif

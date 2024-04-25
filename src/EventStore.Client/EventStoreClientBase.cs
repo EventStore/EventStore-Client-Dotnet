@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using EventStore.Client.Interceptors;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
+using Enum = System.Enum;
 
 namespace EventStore.Client {
 	/// <summary>
@@ -13,28 +10,29 @@ namespace EventStore.Client {
 	public abstract class EventStoreClientBase :
 		IDisposable, // for grpc.net we can dispose synchronously, but not for grpc.core
 		IAsyncDisposable {
-
-		private readonly Dictionary<string, Func<RpcException, Exception>> _exceptionMap;
-		private readonly CancellationTokenSource _cts;
-		private readonly ChannelCache _channelCache;
+		private readonly Dictionary<string, Func<RpcException, Exception>>  _exceptionMap;
+		private readonly CancellationTokenSource                            _cts;
+		private readonly ChannelCache                                       _channelCache;
 		private readonly SharingProvider<ReconnectionRequired, ChannelInfo> _channelInfoProvider;
-		private readonly Lazy<HttpFallback> _httpFallback;
-		
+		private readonly Lazy<HttpFallback>                                 _httpFallback;
+
 		/// The name of the connection.
 		public string ConnectionName { get; }
-		
+
 		/// The <see cref="EventStoreClientSettings"/>.
 		protected EventStoreClientSettings Settings { get; }
 
 		/// Constructs a new <see cref="EventStoreClientBase"/>.
-		protected EventStoreClientBase(EventStoreClientSettings? settings,
-			Dictionary<string, Func<RpcException, Exception>> exceptionMap) {
-			Settings = settings ?? new EventStoreClientSettings();
+		protected EventStoreClientBase(
+			EventStoreClientSettings? settings,
+			Dictionary<string, Func<RpcException, Exception>> exceptionMap
+		) {
+			Settings      = settings ?? new EventStoreClientSettings();
 			_exceptionMap = exceptionMap;
-			_cts = new CancellationTokenSource();
+			_cts          = new CancellationTokenSource();
 			_channelCache = new(Settings);
 			_httpFallback = new Lazy<HttpFallback>(() => new HttpFallback(Settings));
-			
+
 			ConnectionName = Settings.ConnectionName ?? $"ES-{Guid.NewGuid()}";
 
 			var channelSelector = new ChannelSelector(Settings, _channelCache);
@@ -43,17 +41,18 @@ namespace EventStore.Client {
 					GetChannelInfoExpensive(endPoint, onBroken, channelSelector, _cts.Token),
 				factoryRetryDelay: Settings.ConnectivitySettings.DiscoveryInterval,
 				initialInput: ReconnectionRequired.Rediscover.Instance,
-				loggerFactory: Settings.LoggerFactory);
+				loggerFactory: Settings.LoggerFactory
+			);
 		}
-		
+
 		// Select a channel and query its capabilities. This is an expensive call that
 		// we don't want to do often.
 		private async Task<ChannelInfo> GetChannelInfoExpensive(
 			ReconnectionRequired reconnectionRequired,
 			Action<ReconnectionRequired> onReconnectionRequired,
 			IChannelSelector channelSelector,
-			CancellationToken cancellationToken) {
-
+			CancellationToken cancellationToken
+		) {
 			var channel = reconnectionRequired switch {
 				ReconnectionRequired.Rediscover => await channelSelector.SelectChannelAsync(cancellationToken)
 					.ConfigureAwait(false),
@@ -78,11 +77,10 @@ namespace EventStore.Client {
 
 			return new(channel, caps, invoker);
 		}
-		
+
 		/// Gets the current channel info.
 		protected async ValueTask<ChannelInfo> GetChannelInfo(CancellationToken cancellationToken) =>
 			await _channelInfoProvider.CurrentAsync.WithCancellation(cancellationToken).ConfigureAwait(false);
-        
 
 		/// <summary>
 		/// Only exists so that we can manually trigger rediscovery in the tests
@@ -95,20 +93,30 @@ namespace EventStore.Client {
 		}
 
 		/// Returns the result of an HTTP Get request based on the client settings.
-		protected async Task<T> HttpGet<T>(string path, Action onNotFound, ChannelInfo channelInfo,
-			TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
-			
+		protected async Task<T> HttpGet<T>(
+			string path, Action onNotFound, ChannelInfo channelInfo,
+			TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken
+		) {
 			return await _httpFallback.Value
 				.HttpGetAsync<T>(path, channelInfo, deadline, userCredentials, onNotFound, cancellationToken)
 				.ConfigureAwait(false);
 		}
 
 		/// Executes an HTTP Post request based on the client settings.
-		protected async Task HttpPost(string path, string query, Action onNotFound, ChannelInfo channelInfo,
-			TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
-			
+		protected async Task HttpPost(
+			string path, string query, Action onNotFound, ChannelInfo channelInfo,
+			TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken
+		) {
 			await _httpFallback.Value
-				.HttpPostAsync(path, query, channelInfo, deadline, userCredentials, onNotFound, cancellationToken)
+				.HttpPostAsync(
+					path,
+					query,
+					channelInfo,
+					deadline,
+					userCredentials,
+					onNotFound,
+					cancellationToken
+				)
 				.ConfigureAwait(false);
 		}
 
@@ -118,7 +126,7 @@ namespace EventStore.Client {
 			_cts.Cancel();
 			_cts.Dispose();
 			_channelCache.Dispose();
-			
+
 			if (_httpFallback.IsValueCreated) {
 				_httpFallback.Value.Dispose();
 			}

@@ -7,7 +7,7 @@ New-Item -ItemType Directory -Path .\certs -Force
 icacls .\certs /grant:r "$($env:UserName):(OI)(CI)F"
 
 # Pull the Docker image
-docker pull ghcr.io/eventstore/es-gencert-cli:1.3
+docker pull ghcr.io/eventstore/es-gencert-cli:1.3.0
 
 docker run --rm --volume .\certs:/tmp ghcr.io/eventstore/es-gencert-cli create-ca -out /tmp/ca
 

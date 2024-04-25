@@ -17,8 +17,8 @@
         <GrpcToolsPackageVersion>2.60.0</GrpcToolsPackageVersion>
     </PropertyGroup>
 
-		<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-			<Reference Include="System.Net.Http"/>
-			<Reference Include="System.Web"/>
-		</ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+        <Reference Include="System.Net.Http" />
+        <Reference Include="System.Web" />
+    </ItemGroup>
 </Project>

@@ -35,6 +35,6 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-        <Compile Include="..\src\EventStore.Client.Common\Shims\*.cs" LinkBase="Shims"/>
+        <Compile Include="..\src\EventStore.Client\Common\Shims\*.cs" LinkBase="Shims"/>
     </ItemGroup>
 </Project>

@@ -97,7 +97,7 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken) {
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			return await AppendToStreamInternal(channelInfo.CallInvoker, appendReq, new[] {
+			return await AppendToStreamInternal(channelInfo, appendReq, new[] {
 				new EventData(Uuid.NewUuid(), SystemEventTypes.StreamMetadata,
 					JsonSerializer.SerializeToUtf8Bytes(metadata, StreamMetadataJsonSerializerOptions)),
 			}, operationOptions, deadline, userCredentials, cancellationToken).ConfigureAwait(false);

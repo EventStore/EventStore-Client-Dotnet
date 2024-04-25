@@ -1,19 +1,25 @@
 <Project>
-    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"/>
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+    
     <PropertyGroup>
         <RootNamespace>EventStore.Client</RootNamespace>
     </PropertyGroup>
 
-    <PropertyGroup Condition="$(MSBuildProjectName) != 'EventStore.Client'">
-        <ESPackageIdSuffix>$(MSBuildProjectName.Remove(0,18))</ESPackageIdSuffix>
-        <ESProto>$(ESPackageIdSuffix.ToLower()).proto</ESProto>
-        <ESProtoPath>../EventStore.Client.Common/protos/$(ESProto)</ESProtoPath>
-        <PackageId>EventStore.Client.Grpc.$(ESPackageIdSuffix)</PackageId>
-    </PropertyGroup>
-
+    <!-- Reference client base project -->
     <ItemGroup Condition="$(MSBuildProjectName) != 'EventStore.Client'">
-        <ProjectReference Include="..\EventStore.Client\EventStore.Client.csproj"/>
-        <Protobuf Access="internal" Include="$(ESProtoPath)" GrpcServices="Client" Link="protos/$(ESProto)"/>
+        <ProjectReference Include="..\EventStore.Client\EventStore.Client.csproj" />
+    </ItemGroup>
+
+    <!-- Set package id and generate proto file path-->
+    <PropertyGroup Condition="$(MSBuildProjectName) != 'EventStore.Client' And $(MSBuildProjectName) != 'EventStore.Client.Extensions.OpenTelemetry'">
+        <PackageIdSuffix>$(MSBuildProjectName.Remove(0,18))</PackageIdSuffix>
+        <PackageId>EventStore.Client.Grpc.$(PackageIdSuffix)</PackageId>
+        <ESProtoFilePath>../EventStore.Client/Common/protos/$(PackageIdSuffix.ToLower()).proto</ESProtoFilePath>
+    </PropertyGroup>
+    
+    <!-- Configure grpc services -->
+    <ItemGroup Condition="$(MSBuildProjectName) != 'EventStore.Client' And $(MSBuildProjectName) != 'EventStore.Client.Extensions.OpenTelemetry'">
+        <Protobuf Access="internal" Include="$(ESProtoFilePath)" GrpcServices="Client" Link="protos/%(FileName)%(Extension)" />
     </ItemGroup>
 
     <PropertyGroup>
@@ -26,14 +32,13 @@
         <Authors>Event Store Ltd</Authors>
         <Copyright>Copyright 2012-2020 Event Store Ltd</Copyright>
         <MinVerTagPrefix>v</MinVerTagPrefix>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\"/>
-        <None Include="..\..\ouro.png" Pack="true" PackagePath="\"/>
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
+        <None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
     </ItemGroup>
-
+    
     <ItemGroup>
         <PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="4.0.0">
             <PrivateAssets>all</PrivateAssets>
@@ -43,22 +48,24 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="MinVer" Version="3.0.0" PrivateAssets="All"/>
+        <PackageReference Include="MinVer" Version="3.0.0" PrivateAssets="All" />
     </ItemGroup>
-
+    
     <ItemGroup>
-        <Compile Include="../EventStore.Client.Common/**/*.cs" Link="Common\%(RecursiveDir)/%(FileName)%(Extension)"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-            <_Parameter1>$(ProjectName).Tests</_Parameter1>
-        </AssemblyAttribute>
-        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-            <_Parameter1>$(ProjectName).Tests.Common</_Parameter1>
-        </AssemblyAttribute>
-        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-            <_Parameter1>EventStore.Client</_Parameter1>
-        </AssemblyAttribute>
+        <InternalsVisibleTo Include="$(ProjectName)" />
+        <InternalsVisibleTo Include="$(ProjectName).Operations" />
+        <InternalsVisibleTo Include="$(ProjectName).Operations.Tests" />
+        <InternalsVisibleTo Include="$(ProjectName).PersistentSubscriptions" />
+        <InternalsVisibleTo Include="$(ProjectName).PersistentSubscriptions.Tests" />
+        <InternalsVisibleTo Include="$(ProjectName).ProjectionManagement" />
+        <InternalsVisibleTo Include="$(ProjectName).ProjectionManagement.Tests" />
+        <InternalsVisibleTo Include="$(ProjectName).Streams" />
+        <InternalsVisibleTo Include="$(ProjectName).Streams.Tests" />
+        <InternalsVisibleTo Include="$(ProjectName).UserManagement" />
+        <InternalsVisibleTo Include="$(ProjectName).UserManagement.Tests" />
+        <InternalsVisibleTo Include="$(ProjectName).Extensions.OpenTelemetry" />
+        <InternalsVisibleTo Include="$(ProjectName).Tests" />
+        <InternalsVisibleTo Include="$(ProjectName).Common.Tests" />
+        <InternalsVisibleTo Include="$(ProjectName).Tests.Common" />
     </ItemGroup>
 </Project>
