@@ -46,7 +46,7 @@ jobs:
         framework: [ net8.0 ]
     services:
       esdb:
-        image: ghcr.io/eventstore/eventstore:lts
+        image: docker.eventstore.com/eventstore-ce/eventstoredb-ce:lts
         env:
           EVENTSTORE_INSECURE: true
           EVENTSTORE_MEM_DB: false
