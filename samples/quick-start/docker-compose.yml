@@ -1,7 +1,7 @@
 version: '3.5'
 services:
   eventstore:
-    image: eventstore/eventstore:latest
+    image: docker.eventstore.com/eventstore-ce/eventstoredb-ce:latest
     environment:
       EVENTSTORE_INSECURE: true
       EVENTSTORE_MEM_DB: false

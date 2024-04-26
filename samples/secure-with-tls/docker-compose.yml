@@ -7,7 +7,7 @@ networks:
 services:
   
   eventstore:
-    image: eventstore/eventstore:latest
+    image: docker.eventstore.com/eventstore-ce/eventstoredb-ce:latest
     container_name: eventstore
     environment:
       - EVENTSTORE_MEM_DB=true
