@@ -47,9 +47,6 @@ jobs:
     services:
       esdb:
         image: docker.eventstore.com/eventstore-ce/eventstoredb-ce:lts
-        credentials:
-          username: ${{ secrets.CLOUDSMITH_CICD_USER }}
-          password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
         env:
           EVENTSTORE_INSECURE: true
           EVENTSTORE_MEM_DB: false

@@ -13,4 +13,3 @@ jobs:
     uses: ./.github/workflows/base.yml
     with:
       docker-tag: lts
-    secrets: inherit
