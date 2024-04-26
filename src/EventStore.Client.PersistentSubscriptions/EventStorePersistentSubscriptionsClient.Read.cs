@@ -1,6 +1,9 @@
 using System.Threading.Channels;
+using EventStore.Client.Diagnostics;
 using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
+
+using static EventStore.Client.PersistentSubscriptions.PersistentSubscriptions;
 using static EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase;
 
 namespace EventStore.Client {
@@ -12,18 +15,28 @@ namespace EventStore.Client {
 		/// <exception cref="ArgumentException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		[Obsolete("SubscribeAsync is no longer supported. Use SubscribeToStream with manual acks instead.", false)]
-		public async Task<PersistentSubscription> SubscribeAsync(string streamName, string groupName,
+		public async Task<PersistentSubscription> SubscribeAsync(
+			string streamName, string groupName,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
 			UserCredentials? userCredentials = null, int bufferSize = 10, bool autoAck = true,
-			CancellationToken cancellationToken = default) {
+			CancellationToken cancellationToken = default
+		) {
 			if (autoAck) {
 				throw new InvalidOperationException(
-					$"AutoAck is no longer supported. Please use {nameof(SubscribeToStreamAsync)} with manual acks instead.");
+					$"AutoAck is no longer supported. Please use {nameof(SubscribeToStreamAsync)} with manual acks instead."
+				);
 			}
 
-			return await SubscribeToStreamAsync(streamName, groupName, eventAppeared, subscriptionDropped,
-				userCredentials, bufferSize, cancellationToken).ConfigureAwait(false);
+			return await SubscribeToStreamAsync(
+				streamName,
+				groupName,
+				eventAppeared,
+				subscriptionDropped,
+				userCredentials,
+				bufferSize,
+				cancellationToken
+			).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -33,14 +46,22 @@ namespace EventStore.Client {
 		/// <exception cref="ArgumentException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		[Obsolete("SubscribeToStreamAsync is no longer supported. Use SubscribeToStream with manual acks instead.", false)]
-		public async Task<PersistentSubscription> SubscribeToStreamAsync(string streamName, string groupName,
-		                                                                 Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-		                                                                 Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-		                                                                 UserCredentials? userCredentials = null, int bufferSize = 10,
-		                                                                 CancellationToken cancellationToken = default) {
+		public async Task<PersistentSubscription> SubscribeToStreamAsync(
+			string streamName, string groupName,
+			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
+			UserCredentials? userCredentials = null, int bufferSize = 10,
+			CancellationToken cancellationToken = default
+		) {
 			return await PersistentSubscription
-				.Confirm(SubscribeToStream(streamName, groupName, bufferSize, userCredentials, cancellationToken),
-					eventAppeared, subscriptionDropped ?? delegate { }, _log, userCredentials, cancellationToken)
+				.Confirm(
+					SubscribeToStream(streamName, groupName, bufferSize, userCredentials, cancellationToken),
+					eventAppeared,
+					subscriptionDropped ?? delegate { },
+					_log,
+					userCredentials,
+					cancellationToken
+				)
 				.ConfigureAwait(false);
 		}
 
@@ -53,8 +74,10 @@ namespace EventStore.Client {
 		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public PersistentSubscriptionResult SubscribeToStream(string streamName, string groupName, int bufferSize = 10,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+		public PersistentSubscriptionResult SubscribeToStream(
+			string streamName, string groupName, int bufferSize = 10,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
+		) {
 			if (streamName == null) {
 				throw new ArgumentNullException(nameof(streamName));
 			}
@@ -77,7 +100,7 @@ namespace EventStore.Client {
 
 			var readOptions = new ReadReq.Types.Options {
 				BufferSize = bufferSize,
-				GroupName = groupName,
+				GroupName  = groupName,
 				UuidOption = new ReadReq.Types.Options.Types.UUIDOption { Structured = new Empty() }
 			};
 
@@ -87,29 +110,48 @@ namespace EventStore.Client {
 				readOptions.StreamIdentifier = streamName;
 			}
 
-			return new PersistentSubscriptionResult(streamName, groupName, async ct => {
-				var channelInfo = await GetChannelInfo(ct).ConfigureAwait(false);
+			return new PersistentSubscriptionResult(
+				streamName,
+				groupName,
+				async ct => {
+					var channelInfo = await GetChannelInfo(ct).ConfigureAwait(false);
 
-				if (streamName == SystemStreams.AllStream &&
-				    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
-					throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
-				}
+					if (streamName == SystemStreams.AllStream &&
+					    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
+						throw new NotSupportedException(
+							"The server does not support persistent subscriptions to $all."
+						);
+					}
 
-				return channelInfo.CallInvoker;
-			}, new() { Options = readOptions }, Settings, userCredentials, cancellationToken);
+					return channelInfo;
+				},
+				new() { Options = readOptions },
+				Settings,
+				userCredentials,
+				cancellationToken
+			);
 		}
 
 		/// <summary>
 		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged
 		/// </summary>
 		[Obsolete("SubscribeToAllAsync is no longer supported. Use SubscribeToAll with manual acks instead.", false)]
-		public async Task<PersistentSubscription> SubscribeToAllAsync(string groupName,
-		                                                              Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-		                                                              Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-		                                                              UserCredentials? userCredentials = null, int bufferSize = 10,
-		                                                              CancellationToken cancellationToken = default) =>
-			await SubscribeToStreamAsync(SystemStreams.AllStream, groupName, eventAppeared, subscriptionDropped,
-					userCredentials, bufferSize, cancellationToken)
+		public async Task<PersistentSubscription> SubscribeToAllAsync(
+			string groupName,
+			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
+			UserCredentials? userCredentials = null, int bufferSize = 10,
+			CancellationToken cancellationToken = default
+		) =>
+			await SubscribeToStreamAsync(
+					SystemStreams.AllStream,
+					groupName,
+					eventAppeared,
+					subscriptionDropped,
+					userCredentials,
+					bufferSize,
+					cancellationToken
+				)
 				.ConfigureAwait(false);
 
 		/// <summary>
@@ -120,31 +162,34 @@ namespace EventStore.Client {
 		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public PersistentSubscriptionResult SubscribeToAll(string groupName, int bufferSize = 10,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) =>
+		public PersistentSubscriptionResult SubscribeToAll(
+			string groupName, int bufferSize = 10,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
+		) =>
 			SubscribeToStream(SystemStreams.AllStream, groupName, bufferSize, userCredentials, cancellationToken);
 
 		/// <inheritdoc />
 		public class PersistentSubscriptionResult : IAsyncEnumerable<ResolvedEvent>, IAsyncDisposable, IDisposable {
-			private const int MaxEventIdLength = 2000;
-			private readonly ReadReq _request;
-			private readonly Channel<PersistentSubscriptionMessage> _channel;
-			private readonly CancellationTokenSource _cts;
-			private readonly CallOptions _callOptions;
+            const int MaxEventIdLength = 2000;
+            
+            readonly ReadReq                                _request;
+            readonly Channel<PersistentSubscriptionMessage> _channel;
+            readonly CancellationTokenSource                _cts;
+            readonly CallOptions                            _callOptions;
 
-			private AsyncDuplexStreamingCall<ReadReq, ReadResp>? _call;
-			private int _messagesEnumerated;
+            AsyncDuplexStreamingCall<ReadReq, ReadResp>? _call;
+            int                                          _messagesEnumerated;
 
 			/// <summary>
 			/// The server-generated unique identifier for the subscription.
 			/// </summary>
 			public string? SubscriptionId { get; private set; }
-			
+
 			/// <summary>
 			/// The name of the stream to read events from.
 			/// </summary>
 			public string StreamName { get; }
-			
+
 			/// <summary>
 			/// The name of the persistent subscription group.
 			/// </summary>
@@ -155,40 +200,43 @@ namespace EventStore.Client {
 			/// </summary>
 			public IAsyncEnumerable<PersistentSubscriptionMessage> Messages {
 				get {
-					if (Interlocked.Exchange(ref _messagesEnumerated, 1) == 1) {
-						throw new InvalidOperationException("Messages may only be enumerated once.");
-					}
+					if (Interlocked.Exchange(ref _messagesEnumerated, 1) == 1)
+                        throw new InvalidOperationException("Messages may only be enumerated once.");
 
 					return GetMessages();
 
 					async IAsyncEnumerable<PersistentSubscriptionMessage> GetMessages() {
-						try {
-							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)) {
-								if (message is PersistentSubscriptionMessage
-								    .SubscriptionConfirmation(var subscriptionId)) {
-									SubscriptionId = subscriptionId;
-								}
+                        try {
+                            await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)) {
+                                if (message is PersistentSubscriptionMessage.SubscriptionConfirmation(var subscriptionId)) 
+                                    SubscriptionId = subscriptionId;
 
-								yield return message;
-							}
-						} finally {
-							_cts.Cancel();
-						}
+                                yield return message;
+                            }
+                        }
+                        finally {
+                            _cts.Cancel();
+                        }
 					}
 				}
 			}
 
-			internal PersistentSubscriptionResult(string streamName, string groupName,
-				Func<CancellationToken, Task<CallInvoker>> selectCallInvoker,
+			internal PersistentSubscriptionResult(
+				string streamName, string groupName,
+				Func<CancellationToken, Task<ChannelInfo>> selectChannelInfo,
 				ReadReq request, EventStoreClientSettings settings, UserCredentials? userCredentials,
-				CancellationToken cancellationToken) {
+				CancellationToken cancellationToken
+			) {
 				StreamName = streamName;
-				GroupName = groupName;
-				
+				GroupName  = groupName;
+
 				_request = request;
-				
-				_callOptions = EventStoreCallOptions.CreateStreaming(settings, userCredentials: userCredentials,
-					cancellationToken: cancellationToken);
+
+				_callOptions = EventStoreCallOptions.CreateStreaming(
+					settings,
+					userCredentials: userCredentials,
+					cancellationToken: cancellationToken
+				);
 
 				_channel = Channel.CreateBounded<PersistentSubscriptionMessage>(ReadBoundedChannelOptions);
 
@@ -200,25 +248,38 @@ namespace EventStore.Client {
 
 				async Task PumpMessages() {
 					try {
-						var callInvoker = await selectCallInvoker(_cts.Token).ConfigureAwait(false);
-						var client = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
-							callInvoker);
+                        var channelInfo = await selectChannelInfo(_cts.Token).ConfigureAwait(false);
+                        var client      = new PersistentSubscriptionsClient(channelInfo.CallInvoker);
+
 						_call = client.Read(_callOptions);
 
 						await _call.RequestStream.WriteAsync(_request).ConfigureAwait(false);
 
-						await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token)
-							               .ConfigureAwait(false)) {
-							await _channel.Writer.WriteAsync(response.ContentCase switch {
+						await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
+							PersistentSubscriptionMessage subscriptionMessage = response.ContentCase switch {
 								SubscriptionConfirmation => new PersistentSubscriptionMessage.SubscriptionConfirmation(
-									response.SubscriptionConfirmation.SubscriptionId),
-								Event => new PersistentSubscriptionMessage.Event(ConvertToResolvedEvent(response),
+									response.SubscriptionConfirmation.SubscriptionId
+								),
+								Event => new PersistentSubscriptionMessage.Event(
+									ConvertToResolvedEvent(response),
 									response.Event.CountCase switch {
 										ReadResp.Types.ReadEvent.CountOneofCase.RetryCount => response.Event.RetryCount,
-										_ => null
-									}),
+										_                                                  => null
+									}
+								),
 								_ => PersistentSubscriptionMessage.Unknown.Instance
-							}, _cts.Token).ConfigureAwait(false);
+							};
+
+							if (subscriptionMessage is PersistentSubscriptionMessage.Event evnt)
+								EventStoreClientDiagnostics.ActivitySource.TraceSubscriptionEvent(
+									SubscriptionId,
+									evnt.ResolvedEvent,
+									channelInfo,
+									settings,
+									userCredentials
+								);
+
+							await _channel.Writer.WriteAsync(subscriptionMessage, _cts.Token).ConfigureAwait(false);
 						}
 
 						_channel.Writer.TryComplete();
@@ -240,11 +301,14 @@ namespace EventStore.Client {
 						}
 #endif
 						if (ex is PersistentSubscriptionNotFoundException) {
-							await _channel.Writer.WriteAsync(PersistentSubscriptionMessage.NotFound.Instance,
-								cancellationToken).ConfigureAwait(false);
+							await _channel.Writer
+                                .WriteAsync(PersistentSubscriptionMessage.NotFound.Instance, cancellationToken)
+                                .ConfigureAwait(false);
+
 							_channel.Writer.TryComplete();
 							return;
 						}
+
 						_channel.Writer.TryComplete(ex);
 					}
 				}
@@ -280,7 +344,6 @@ namespace EventStore.Client {
 			public Task Ack(IEnumerable<ResolvedEvent> resolvedEvents) =>
 				Ack(resolvedEvents.Select(resolvedEvent => resolvedEvent.OriginalEvent.EventId));
 
-
 			/// <summary>
 			/// Acknowledge that a message has failed processing (this will tell the server it has not been processed).
 			/// </summary>
@@ -298,61 +361,69 @@ namespace EventStore.Client {
 			/// <param name="reason">A reason given.</param>
 			/// <param name="resolvedEvents">The <see cref="ResolvedEvent" />s to nak. There should not be more than 2000 to nak at a time.</param>
 			/// <exception cref="ArgumentException">The number of resolvedEvents exceeded the limit of 2000.</exception>
-			public Task Nack(PersistentSubscriptionNakEventAction action, string reason,
-				params ResolvedEvent[] resolvedEvents) => Nack(action, reason,
-				Array.ConvertAll(resolvedEvents, resolvedEvent => resolvedEvent.OriginalEvent.EventId));
+			public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params ResolvedEvent[] resolvedEvents) => 
+                Nack(action, reason, Array.ConvertAll(resolvedEvents, re => re.OriginalEvent.EventId));
 
-			private static ResolvedEvent ConvertToResolvedEvent(ReadResp response) => new(
+            static ResolvedEvent ConvertToResolvedEvent(ReadResp response) => new(
 				ConvertToEventRecord(response.Event.Event)!,
 				ConvertToEventRecord(response.Event.Link),
 				response.Event.PositionCase switch {
 					ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => response.Event.CommitPosition,
-					_ => null
-				});
+					_                                                         => null
+				}
+			);
 
-			private Task AckInternal(params Uuid[] eventIds) {
+            Task AckInternal(params Uuid[] eventIds) {
 				if (eventIds.Length > MaxEventIdLength) {
 					throw new ArgumentException(
-						$"The number of eventIds exceeds the maximum length of {MaxEventIdLength}.", nameof(eventIds));
+						$"The number of eventIds exceeds the maximum length of {MaxEventIdLength}.",
+						nameof(eventIds)
+					);
 				}
 
 				return _call is null
 					? throw new InvalidOperationException()
-					: _call.RequestStream.WriteAsync(new ReadReq {
-						Ack = new ReadReq.Types.Ack {
-							Ids = {
-								Array.ConvertAll(eventIds, id => id.ToDto())
+					: _call.RequestStream.WriteAsync(
+						new ReadReq {
+							Ack = new ReadReq.Types.Ack {
+								Ids = {
+									Array.ConvertAll(eventIds, id => id.ToDto())
+								}
 							}
 						}
-					});
+					);
 			}
 
-			private Task NackInternal(Uuid[] eventIds, PersistentSubscriptionNakEventAction action, string reason) {
+            Task NackInternal(Uuid[] eventIds, PersistentSubscriptionNakEventAction action, string reason) {
 				if (eventIds.Length > MaxEventIdLength) {
 					throw new ArgumentException(
-						$"The number of eventIds exceeds the maximum length of {MaxEventIdLength}.", nameof(eventIds));
+						$"The number of eventIds exceeds the maximum length of {MaxEventIdLength}.",
+						nameof(eventIds)
+					);
 				}
 
 				return _call is null
 					? throw new InvalidOperationException()
-					: _call.RequestStream.WriteAsync(new ReadReq {
-						Nack = new ReadReq.Types.Nack {
-							Ids = {
-								Array.ConvertAll(eventIds, id => id.ToDto())
-							},
-							Action = action switch {
-								PersistentSubscriptionNakEventAction.Park => ReadReq.Types.Nack.Types.Action.Park,
-								PersistentSubscriptionNakEventAction.Retry => ReadReq.Types.Nack.Types.Action.Retry,
-								PersistentSubscriptionNakEventAction.Skip => ReadReq.Types.Nack.Types.Action.Skip,
-								PersistentSubscriptionNakEventAction.Stop => ReadReq.Types.Nack.Types.Action.Stop,
-								_ => ReadReq.Types.Nack.Types.Action.Unknown
-							},
-							Reason = reason
+					: _call.RequestStream.WriteAsync(
+						new ReadReq {
+							Nack = new ReadReq.Types.Nack {
+								Ids = {
+									Array.ConvertAll(eventIds, id => id.ToDto())
+								},
+								Action = action switch {
+									PersistentSubscriptionNakEventAction.Park => ReadReq.Types.Nack.Types.Action.Park,
+									PersistentSubscriptionNakEventAction.Retry => ReadReq.Types.Nack.Types.Action.Retry,
+									PersistentSubscriptionNakEventAction.Skip => ReadReq.Types.Nack.Types.Action.Skip,
+									PersistentSubscriptionNakEventAction.Stop => ReadReq.Types.Nack.Types.Action.Stop,
+									_ => ReadReq.Types.Nack.Types.Action.Unknown
+								},
+								Reason = reason
+							}
 						}
-					});
+					);
 			}
 
-			private static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>
+            static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>
 				e is null
 					? null
 					: new EventRecord(
@@ -362,7 +433,8 @@ namespace EventStore.Client {
 						new Position(e.CommitPosition, e.PreparePosition),
 						e.Metadata,
 						e.Data.ToByteArray(),
-						e.CustomMetadata.ToByteArray());
+						e.CustomMetadata.ToByteArray()
+					);
 
 			/// <inheritdoc />
 			public async ValueTask DisposeAsync() {
@@ -375,16 +447,17 @@ namespace EventStore.Client {
 					switch (resource) {
 						case null:
 							return;
+
 						case IAsyncDisposable resourceAsyncDisposable:
 							await resourceAsyncDisposable.DisposeAsync().ConfigureAwait(false);
 							break;
+
 						default:
 							resource.Dispose();
 							break;
 					}
 				}
 			}
-
 
 			/// <inheritdoc />
 			public void Dispose() {
@@ -393,12 +466,10 @@ namespace EventStore.Client {
 			}
 
 			/// <inheritdoc />
-			public async IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(
-				CancellationToken cancellationToken = default) {
+			public async IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(CancellationToken cancellationToken = default) {
 				await foreach (var message in Messages.WithCancellation(cancellationToken)) {
-					if (message is not PersistentSubscriptionMessage.Event(var resolvedEvent, _)) {
-						continue;
-					}
+					if (message is not PersistentSubscriptionMessage.Event(var resolvedEvent, _))
+                        continue;
 
 					yield return resolvedEvent;
 				}

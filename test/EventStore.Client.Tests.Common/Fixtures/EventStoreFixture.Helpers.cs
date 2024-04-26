@@ -4,27 +4,40 @@ using System.Text;
 namespace EventStore.Client.Tests;
 
 public partial class EventStoreFixture {
-	public const string TestEventType = "test-event-type";
+	public const string TestEventType              = "test-event-type";
 	public const string AnotherTestEventTypePrefix = "another";
-	public const string AnotherTestEventType = $"{AnotherTestEventTypePrefix}-test-event-type";
+	public const string AnotherTestEventType       = $"{AnotherTestEventTypePrefix}-test-event-type";
 
 	public T NewClient<T>(Action<EventStoreClientSettings> configure) where T : EventStoreClientBase, new() =>
-		(T)Activator.CreateInstance(typeof(T), new object?[] { ClientSettings.With(configure) })!;
-	
+		(T)Activator.CreateInstance(typeof(T), [ClientSettings.With(configure)])!;
+
 	public string GetStreamName([CallerMemberName] string? testMethod = null) =>
 		$"{testMethod}-{Guid.NewGuid():N}";
 
-	public IEnumerable<EventData> CreateTestEvents(int count = 1, string? type = null, int metadataSize = 1) =>
-		Enumerable.Range(0, count).Select(index => CreateTestEvent(index, type ?? TestEventType, metadataSize));
+	public ReadOnlyMemory<byte> CreateMetadataOfSize(int metadataSize) =>
+		Encoding.UTF8.GetBytes($"\"{new string('$', metadataSize)}\"");
 
-	protected static EventData CreateTestEvent(int index) => CreateTestEvent(index, TestEventType, 1);
+	public ReadOnlyMemory<byte> CreateTestJsonMetadata() => "{\"Foo\": \"Bar\"}"u8.ToArray();
 
-	protected static EventData CreateTestEvent(int index, string type, int metadataSize) =>
+	public IEnumerable<EventData> CreateTestEvents(int count = 1, string? type = null, ReadOnlyMemory<byte>? metadata = null) =>
+		Enumerable.Range(0, count).Select(index => CreateTestEvent(index, type ?? TestEventType, metadata));
+
+	public IEnumerable<EventData> CreateTestEventsThatThrowsException() {
+		// Ensure initial IEnumerator.Current does not throw
+		yield return CreateTestEvent(1);
+
+		// Throw after enumerator advances
+		throw new Exception();
+	}
+
+	protected static EventData CreateTestEvent(int index) => CreateTestEvent(index, TestEventType);
+
+	protected static EventData CreateTestEvent(int index, string type, ReadOnlyMemory<byte>? metadata = null) =>
 		new(
 			Uuid.NewUuid(),
 			type,
 			Encoding.UTF8.GetBytes($$"""{"x":{{index}}}"""),
-			Encoding.UTF8.GetBytes($"\"{new string('$', metadataSize)}\"")
+			metadata
 		);
 
 	public async Task<TestUser> CreateTestUser(bool withoutGroups = true, bool useUserCredentials = false) {
@@ -32,21 +45,26 @@ public partial class EventStoreFixture {
 		return result.First();
 	}
 
-	public Task<TestUser[]> CreateTestUsers(int count = 3, bool withoutGroups = true, bool useUserCredentials = false) =>
+	public Task<TestUser[]> CreateTestUsers(
+		int count = 3, bool withoutGroups = true, bool useUserCredentials = false
+	) =>
 		Fakers.Users
 			.RuleFor(x => x.Groups, f => withoutGroups ? Array.Empty<string>() : f.Lorem.Words())
 			.Generate(count)
 			.Select(
 				async user => {
 					await Users.CreateUserAsync(
-						user.LoginName, user.FullName, user.Groups, user.Password,
+						user.LoginName,
+						user.FullName,
+						user.Groups,
+						user.Password,
 						userCredentials: useUserCredentials ? user.Credentials : TestCredentials.Root
 					);
 
 					return user;
 				}
 			).WhenAll();
-	
+
 	public async Task RestartService(TimeSpan delay) {
 		await Service.Restart(delay);
 		await Streams.WarmUp();

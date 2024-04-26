@@ -5,7 +5,8 @@ namespace EventStore.Client.Streams.Tests.Append;
 
 [Trait("Category", "Target:Stream")]
 [Trait("Category", "Operation:Append")]
-public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixture) : EventStoreTests<EventStoreFixture>(output, fixture) {
+public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixture)
+	: EventStoreTests<EventStoreFixture>(output, fixture) {
 	public static IEnumerable<object?[]> ExpectedVersionCreateStreamTestCases() {
 		yield return new object?[] { StreamState.Any };
 		yield return new object?[] { StreamState.NoStream };
@@ -18,7 +19,12 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		const int iterations = 2;
 		for (var i = 0; i < iterations; i++) {
-			var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, expectedStreamState, Enumerable.Empty<EventData>());
+			var writeResult = await Fixture.Streams.AppendToStreamAsync(
+				stream,
+				expectedStreamState,
+				Enumerable.Empty<EventData>()
+			);
+
 			writeResult.NextExpectedStreamRevision.ShouldBe(StreamRevision.None);
 		}
 
@@ -34,7 +40,12 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		const int iterations = 2;
 		for (var i = 0; i < iterations; i++) {
-			var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, expectedStreamState, Enumerable.Empty<EventData>());
+			var writeResult = await Fixture.Streams.AppendToStreamAsync(
+				stream,
+				expectedStreamState,
+				Enumerable.Empty<EventData>()
+			);
+
 			Assert.Equal(StreamRevision.None, writeResult.NextExpectedStreamRevision);
 		}
 
@@ -87,7 +98,8 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 	}
 
 	[Fact]
-	public async Task in_case_where_multiple_writes_of_multiple_events_with_the_same_ids_using_expected_version_any_then_next_expected_version_is_unreliable() {
+	public async Task
+		in_case_where_multiple_writes_of_multiple_events_with_the_same_ids_using_expected_version_any_then_next_expected_version_is_unreliable() {
 		var stream = Fixture.GetStreamName();
 
 		var evnt   = Fixture.CreateTestEvents().First();
@@ -103,7 +115,8 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 	}
 
 	[Fact]
-	public async Task in_case_where_multiple_writes_of_multiple_events_with_the_same_ids_using_expected_version_nostream_then_next_expected_version_is_correct() {
+	public async Task
+		in_case_where_multiple_writes_of_multiple_events_with_the_same_ids_using_expected_version_nostream_then_next_expected_version_is_correct() {
 		var stream = Fixture.GetStreamName();
 
 		var evnt           = Fixture.CreateTestEvents().First();
@@ -280,18 +293,20 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 	}
 
 	[Fact]
-	public async Task appending_with_stream_exists_expected_version_and_stream_does_not_exist_throws_wrong_expected_version() {
+	public async Task
+		appending_with_stream_exists_expected_version_and_stream_does_not_exist_throws_wrong_expected_version() {
 		var stream = Fixture.GetStreamName();
 
 		var ex = await Fixture.Streams
 			.AppendToStreamAsync(stream, StreamState.StreamExists, Fixture.CreateTestEvents())
 			.ShouldThrowAsync<WrongExpectedVersionException>();
-		
+
 		ex.ActualStreamRevision.ShouldBe(StreamRevision.None);
 	}
 
 	[Fact]
-	public async Task appending_with_stream_exists_expected_version_and_stream_does_not_exist_returns_wrong_expected_version() {
+	public async Task
+		appending_with_stream_exists_expected_version_and_stream_does_not_exist_returns_wrong_expected_version() {
 		var stream = Fixture.GetStreamName();
 
 		var writeResult = await Fixture.Streams.AppendToStreamAsync(
@@ -334,7 +349,11 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 	public async Task can_append_multiple_events_at_once() {
 		var stream = Fixture.GetStreamName();
 
-		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents(100));
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			Fixture.CreateTestEvents(100)
+		);
 
 		Assert.Equal(new(99), writeResult.NextExpectedStreamRevision);
 	}
@@ -387,7 +406,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		Assert.Equal(ConditionalWriteResult.StreamDeleted, result);
 	}
-	
+
 	[Fact]
 	public async Task expected_version_no_stream() {
 		var result = await Fixture.Streams.AppendToStreamAsync(
@@ -409,7 +428,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		Assert.True(result.LogPosition > Position.Start);
 	}
-	
+
 	[Fact]
 	public async Task with_timeout_any_stream_revision_fails_when_operation_expired() {
 		var stream = Fixture.GetStreamName();
@@ -429,7 +448,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 		var stream = Fixture.GetStreamName();
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents());
-		
+
 		var ex = await Fixture.Streams.AppendToStreamAsync(
 			stream,
 			new StreamRevision(0),
@@ -448,32 +467,14 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 			.AppendToStreamAsync(
 				streamName,
 				StreamRevision.None,
-				GetEvents(),
+				Fixture.CreateTestEventsThatThrowsException(),
 				userCredentials: new UserCredentials(TestCredentials.Root.Username!, TestCredentials.Root.Password!)
 			)
-			.ShouldThrowAsync<EnumerationFailedException>();
+			.ShouldThrowAsync<Exception>();
 
 		var state = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, streamName, StreamPosition.Start)
 			.ReadState;
 
 		state.ShouldBe(ReadState.StreamNotFound);
-
-		return;
-
-		IEnumerable<EventData> GetEvents() {
-			for (var i = 0; i < 5; i++) {
-				if (i % 3 == 0)
-					throw new EnumerationFailedException();
-
-				yield return Fixture.CreateTestEvents(1).First();
-			}
-		}
-	}
-
-	class EnumerationFailedException : Exception { }
-
-	public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
-		yield return new object?[] { StreamState.Any };
-		yield return new object?[] { ulong.MaxValue - 1UL };
 	}
 }

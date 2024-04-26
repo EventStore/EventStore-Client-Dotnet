@@ -64,7 +64,7 @@ public class read_stream_backward(ITestOutputHelper output, EventStoreFixture fi
 	public async Task returns_events_in_reversed_order(string suffix, int count, int metadataSize) {
 		var stream = $"{Fixture.GetStreamName()}_{suffix}";
 
-		var expected = Fixture.CreateTestEvents(count, metadataSize: metadataSize).ToArray();
+		var expected = Fixture.CreateTestEvents(count, metadata: Fixture.CreateMetadataOfSize(metadataSize)).ToArray();
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 

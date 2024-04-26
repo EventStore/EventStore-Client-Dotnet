@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Threading.Channels;
-using EventStore.Client.Streams;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -12,32 +11,48 @@ namespace EventStore.Client {
 	/// The client used for operations on streams.
 	/// </summary>
 	public sealed partial class EventStoreClient : EventStoreClientBase {
-
 		private static readonly JsonSerializerOptions StreamMetadataJsonSerializerOptions = new() {
 			Converters = {
 				StreamMetadataJsonConverter.Instance
 			},
 		};
 
-		private static BoundedChannelOptions ReadBoundedChannelOptions = new (1) {
-			SingleReader = true,
-			SingleWriter = true,
+		private static BoundedChannelOptions ReadBoundedChannelOptions = new(1) {
+			SingleReader                  = true,
+			SingleWriter                  = true,
 			AllowSynchronousContinuations = true
 		};
-		
-		private readonly ILogger<EventStoreClient> _log;
-		private Lazy<StreamAppender> _streamAppenderLazy;
-		private StreamAppender _streamAppender => _streamAppenderLazy.Value;
-		private readonly CancellationTokenSource _disposedTokenSource;
 
+		private readonly ILogger<EventStoreClient> _log;
+		private          Lazy<StreamAppender>      _batchAppenderLazy;
+		private          StreamAppender            _batchAppender => _batchAppenderLazy.Value;
+		private readonly CancellationTokenSource   _disposedTokenSource;
 
 		private static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
 			[Constants.Exceptions.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),
-			[Constants.Exceptions.StreamDeleted] = ex => new StreamDeletedException(ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value ?? "<unknown>", ex),
-			[Constants.Exceptions.WrongExpectedVersion] = ex => new WrongExpectedVersionException(ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!, ex.Trailers.GetStreamRevision(Constants.Exceptions.ExpectedVersion), ex.Trailers.GetStreamRevision(Constants.Exceptions.ActualVersion), ex, ex.Message),
-			[Constants.Exceptions.MaximumAppendSizeExceeded] = ex => new MaximumAppendSizeExceededException(ex.Trailers.GetIntValueOrDefault(Constants.Exceptions.MaximumAppendSize), ex),
-			[Constants.Exceptions.StreamNotFound] = ex => new StreamNotFoundException(ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!, ex),
-			[Constants.Exceptions.MissingRequiredMetadataProperty] = ex => new RequiredMetadataPropertyMissingException(ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.MissingRequiredMetadataProperty)?.Value!, ex),
+			[Constants.Exceptions.StreamDeleted] = ex => new StreamDeletedException(
+				ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value ?? "<unknown>",
+				ex
+			),
+			[Constants.Exceptions.WrongExpectedVersion] = ex => new WrongExpectedVersionException(
+				ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!,
+				ex.Trailers.GetStreamRevision(Constants.Exceptions.ExpectedVersion),
+				ex.Trailers.GetStreamRevision(Constants.Exceptions.ActualVersion),
+				ex,
+				ex.Message
+			),
+			[Constants.Exceptions.MaximumAppendSizeExceeded] = ex => new MaximumAppendSizeExceededException(
+				ex.Trailers.GetIntValueOrDefault(Constants.Exceptions.MaximumAppendSize),
+				ex
+			),
+			[Constants.Exceptions.StreamNotFound] = ex => new StreamNotFoundException(
+				ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!,
+				ex
+			),
+			[Constants.Exceptions.MissingRequiredMetadataProperty] = ex => new RequiredMetadataPropertyMissingException(
+				ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.MissingRequiredMetadataProperty)?.Value!,
+				ex
+			),
 		};
 
 		/// <summary>
@@ -53,29 +68,24 @@ namespace EventStore.Client {
 		public EventStoreClient(EventStoreClientSettings? settings = null) : base(settings, ExceptionMap) {
 			_log = Settings.LoggerFactory?.CreateLogger<EventStoreClient>() ?? new NullLogger<EventStoreClient>();
 			_disposedTokenSource = new CancellationTokenSource();
-			_streamAppenderLazy = new Lazy<StreamAppender>(CreateStreamAppender);
+			_batchAppenderLazy = new Lazy<StreamAppender>(CreateStreamAppender);
 		}
 
 		private void SwapStreamAppender(Exception ex) =>
-			Interlocked.Exchange(ref _streamAppenderLazy, new Lazy<StreamAppender>(CreateStreamAppender)).Value.Dispose();
+			Interlocked.Exchange(ref _batchAppenderLazy, new Lazy<StreamAppender>(CreateStreamAppender)).Value
+				.Dispose();
 
 		// todo: might be nice to have two different kinds of appenders and we decide which to instantiate according to the server caps.
-		private StreamAppender CreateStreamAppender() {
-			return new StreamAppender(Settings, GetCall(), _disposedTokenSource.Token, SwapStreamAppender);
+		private StreamAppender CreateStreamAppender() => new StreamAppender(
+			Settings,
+			GetChannelInfo(_disposedTokenSource.Token),
+			_disposedTokenSource.Token,
+			SwapStreamAppender
+		);
 
-			async Task<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>?> GetCall() {
-				var channelInfo = await GetChannelInfo(_disposedTokenSource.Token).ConfigureAwait(false);
-				if (!channelInfo.ServerCapabilities.SupportsBatchAppend)
-					return null;
-
-				var client = new Streams.Streams.StreamsClient(channelInfo.CallInvoker);
-
-				return client.BatchAppend(EventStoreCallOptions.CreateStreaming(Settings,
-					userCredentials: Settings.DefaultCredentials, cancellationToken: _disposedTokenSource.Token));
-			}
-		}
-
-		private static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(IEventFilter? filter, uint checkpointInterval = 0) {
+		private static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(
+			IEventFilter? filter, uint checkpointInterval = 0
+		) {
 			if (filter == null) {
 				return null;
 			}
@@ -131,21 +141,25 @@ namespace EventStore.Client {
 			return options;
 		}
 
-		private static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(SubscriptionFilterOptions? filterOptions)
+		private static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(
+			SubscriptionFilterOptions? filterOptions
+		)
 			=> filterOptions == null ? null : GetFilterOptions(filterOptions.Filter, filterOptions.CheckpointInterval);
 
 		/// <inheritdoc />
 		public override void Dispose() {
-			if (_streamAppenderLazy.IsValueCreated)
-				_streamAppenderLazy.Value.Dispose();
+			if (_batchAppenderLazy.IsValueCreated)
+				_batchAppenderLazy.Value.Dispose();
+
 			_disposedTokenSource.Dispose();
 			base.Dispose();
 		}
 
 		/// <inheritdoc />
 		public override async ValueTask DisposeAsync() {
-			if (_streamAppenderLazy.IsValueCreated)
-				_streamAppenderLazy.Value.Dispose();
+			if (_batchAppenderLazy.IsValueCreated)
+				_batchAppenderLazy.Value.Dispose();
+
 			_disposedTokenSource.Dispose();
 			await base.DisposeAsync().ConfigureAwait(false);
 		}

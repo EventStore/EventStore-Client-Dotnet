@@ -9,14 +9,14 @@ public class ReadAllEventsFixture : EventStoreFixture {
 				new(acl: new(SystemRoles.All)),
 				userCredentials: TestCredentials.Root
 			);
-			
+
 			Events = CreateTestEvents(20)
-				.Concat(CreateTestEvents(2, metadataSize: 1_000_000))
+				.Concat(CreateTestEvents(2, metadata: CreateMetadataOfSize(1_000_000)))
 				.Concat(CreateTestEvents(2, AnotherTestEventType))
 				.ToArray();
 
 			ExpectedStreamName = GetStreamName();
-			
+
 			await Streams.AppendToStreamAsync(ExpectedStreamName, StreamState.NoStream, Events);
 
 			ExpectedEvents         = Events.ToBinaryData();
@@ -28,9 +28,9 @@ public class ReadAllEventsFixture : EventStoreFixture {
 	}
 
 	public string ExpectedStreamName { get; private set; } = null!;
-	
+
 	public EventData[] Events { get; private set; } = Array.Empty<EventData>();
-	
+
 	public EventBinaryData[] ExpectedEvents         { get; private set; } = Array.Empty<EventBinaryData>();
 	public EventBinaryData[] ExpectedEventsReversed { get; private set; } = Array.Empty<EventBinaryData>();
 

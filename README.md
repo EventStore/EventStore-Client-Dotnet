@@ -19,6 +19,24 @@ Reference the nuget package(s) for the API that you would like to call
 
 [User Management](https://www.nuget.org/packages/EventStore.Client.Grpc.UserManagement)
 
+## Open Telemetry
+
+Telemetry instrumentation can be enabled by installing the [Open Telemetry Extensions](https://www.nuget.org/packages/EventStore.Client.Extensions.OpenTelemetry) package.
+
+Once installed you can configure instrumentation using the `AddEventStoreClientInstrumentation` extension method on a `TracerProviderBuilder`.
+
+```csharp
+using var tracerProvider = Sdk.CreateTracerProviderBuilder()
+    ...
+    .AddEventStoreClientInstrumentation()
+    ...
+    .Build();
+```
+
+Tracing is the only telemetry currently exported, specifically for the `Append` and `Subscribe` (Catchup and Persistent) operations.
+
+For more information about Open Telemetry, refer to the [official documentation](https://opentelemetry.io/docs/what-is-opentelemetry/).
+
 ## Support
 
 Information on support and commercial tools such as LDAP authentication can be found here: [Event Store Support](https://eventstore.com/support/).

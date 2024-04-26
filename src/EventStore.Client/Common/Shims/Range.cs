@@ -1,4 +1,6 @@
 #if !NET
+// ReSharper disable CheckNamespace
+
 using System.Runtime.CompilerServices;
 
 namespace System;
@@ -12,8 +14,7 @@ namespace System;
 /// int[] subArray2 = someArray[1..^0]; // { 2, 3, 4, 5 }
 /// </code>
 /// </remarks>
-internal readonly struct Range : IEquatable<Range>
-{
+readonly struct Range : IEquatable<Range> {
     /// <summary>Represent the inclusive start index of the Range.</summary>
     public Index Start { get; }
 
@@ -23,8 +24,7 @@ internal readonly struct Range : IEquatable<Range>
     /// <summary>Construct a Range object using the start and end indexes.</summary>
     /// <param name="start">Represent the inclusive start index of the range.</param>
     /// <param name="end">Represent the exclusive end index of the range.</param>
-    public Range(Index start, Index end)
-    {
+    public Range(Index start, Index end) {
         Start = start;
         End = end;
     }
@@ -63,15 +63,11 @@ internal readonly struct Range : IEquatable<Range>
     /// We validate the range is inside the length scope though.
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public (int Offset, int Length) GetOffsetAndLength(int length)
-    {
-        int start = Start.GetOffset(length);
-        int end = End.GetOffset(length);
+    public (int Offset, int Length) GetOffsetAndLength(int length) {
+        var start = Start.GetOffset(length);
+        var end = End.GetOffset(length);
 
-        if ((uint)end > (uint)length || (uint)start > (uint)end)
-        {
-            throw new ArgumentOutOfRangeException(nameof(length));
-        }
+        if ((uint)end > (uint)length || (uint)start > (uint)end) throw new ArgumentOutOfRangeException(nameof(length));
 
         return (start, end - start);
     }

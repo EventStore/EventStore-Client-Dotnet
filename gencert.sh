@@ -13,7 +13,7 @@ mkdir -p certs
 
 chmod 0755 ./certs
 
-docker pull ghcr.io/eventstore/es-gencert-cli:1.3
+docker pull ghcr.io/eventstore/es-gencert-cli:1.3.0
 
 docker run --rm --volume $PWD/certs:/tmp --user $(id -u):$(id -g) ghcr.io/eventstore/es-gencert-cli create-ca -out /tmp/ca
 

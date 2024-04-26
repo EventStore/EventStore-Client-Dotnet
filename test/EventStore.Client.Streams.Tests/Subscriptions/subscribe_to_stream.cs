@@ -9,14 +9,14 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 		var streamName = Fixture.GetStreamName();
 
 		var seedEvents = Fixture.CreateTestEvents(10).ToArray();
-		var pageSize = seedEvents.Length / 2;
+		var pageSize   = seedEvents.Length / 2;
 
 		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents.Take(pageSize));
 
 		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
-		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
+		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator.MoveNextAsync());
 
@@ -48,25 +48,29 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 		var streamName = Fixture.GetStreamName();
 
 		var seedEvents = Fixture.CreateTestEvents(10).ToArray();
-		var pageSize = seedEvents.Length / 2;
+		var pageSize   = seedEvents.Length / 2;
 
 		// only the second half of the events will be received
 		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.EventId));
 
 		var writeResult =
 			await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents.Take(pageSize));
+
 		var streamPosition = StreamPosition.FromStreamRevision(writeResult.NextExpectedStreamRevision);
-		var checkpoint = FromStream.After(streamPosition);
+		var checkpoint     = FromStream.After(streamPosition);
 
 		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, checkpoint);
-		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
+		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator.MoveNextAsync());
 
 		Assert.IsType<StreamMessage.SubscriptionConfirmation>(enumerator.Current);
 
-		await Fixture.Streams.AppendToStreamAsync(streamName, writeResult.NextExpectedStreamRevision,
-			seedEvents.Skip(pageSize));
+		await Fixture.Streams.AppendToStreamAsync(
+			streamName,
+			writeResult.NextExpectedStreamRevision,
+			seedEvents.Skip(pageSize)
+		);
 
 		await Subscribe().WithTimeout();
 
@@ -96,7 +100,7 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
 
 		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
-		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
+		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator.MoveNextAsync());
 
@@ -132,14 +136,14 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
 
 		await using var subscription1 = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
-		await using var enumerator1 = subscription1.Messages.GetAsyncEnumerator();
+		await using var enumerator1   = subscription1.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator1.MoveNextAsync());
 
 		Assert.IsType<StreamMessage.SubscriptionConfirmation>(enumerator1.Current);
 
 		await using var subscription2 = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
-		await using var enumerator2 = subscription2.Messages.GetAsyncEnumerator();
+		await using var enumerator2   = subscription2.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator2.MoveNextAsync());
 
@@ -171,7 +175,7 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 		var streamName = Fixture.GetStreamName();
 
 		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
-		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
+		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator.MoveNextAsync());
 
@@ -180,9 +184,11 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 		// rest in peace
 		await Fixture.Streams.TombstoneAsync(streamName, StreamState.NoStream);
 
-		var ex = await Assert.ThrowsAsync<StreamDeletedException>(async () => {
-			while (await enumerator.MoveNextAsync()) { }
-		}).WithTimeout();
+		var ex = await Assert.ThrowsAsync<StreamDeletedException>(
+			async () => {
+				while (await enumerator.MoveNextAsync()) { }
+			}
+		).WithTimeout();
 
 		ex.ShouldBeOfType<StreamDeletedException>().Stream.ShouldBe(streamName);
 	}
@@ -191,13 +197,14 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 	public async Task receives_all_events_with_resolved_links() {
 		var streamName = Fixture.GetStreamName();
 
-		var seedEvents = Fixture.CreateTestEvents(3).ToArray();
+		var seedEvents      = Fixture.CreateTestEvents(3).ToArray();
 		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
 
 		await using var subscription =
 			Fixture.Streams.SubscribeToStream($"$et-{EventStoreFixture.TestEventType}", FromStream.Start, true);
+
 		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator.MoveNextAsync());

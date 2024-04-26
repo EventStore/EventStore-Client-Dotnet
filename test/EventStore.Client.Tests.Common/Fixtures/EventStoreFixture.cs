@@ -8,7 +8,10 @@ using static System.TimeSpan;
 
 namespace EventStore.Client.Tests;
 
-public record EventStoreFixtureOptions(EventStoreClientSettings ClientSettings, IDictionary<string, string?> Environment) {
+public record EventStoreFixtureOptions(
+	EventStoreClientSettings ClientSettings,
+	IDictionary<string, string?> Environment
+) {
 	public EventStoreFixtureOptions RunInMemory(bool runInMemory = true) =>
 		this with { Environment = Environment.With(x => x["EVENTSTORE_MEM_DB"] = runInMemory.ToString()) };
 
@@ -24,7 +27,7 @@ public record EventStoreFixtureOptions(EventStoreClientSettings ClientSettings, 
 
 	public EventStoreFixtureOptions WithoutDefaultCredentials() =>
 		this with { ClientSettings = ClientSettings.With(x => x.DefaultCredentials = null) };
-	
+
 	public EventStoreFixtureOptions WithMaxAppendSize(uint maxAppendSize) =>
 		this with { Environment = Environment.With(x => x["EVENTSTORE_MAX_APPEND_SIZE"] = $"{maxAppendSize}") };
 }
@@ -54,8 +57,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 		if (GlobalEnvironment.UseCluster) {
 			Options = configure(EventStoreTestCluster.DefaultOptions());
 			Service = new EventStoreTestCluster(Options);
-		}
-		else {
+		} else {
 			Options = configure(EventStoreTestNode.DefaultOptions());
 			Service = new EventStoreTestNode(Options);
 		}
@@ -64,7 +66,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	List<Guid> TestRuns { get; } = new();
 
 	public ILogger Log => Logger;
-	
+
 	public ITestService             Service { get; }
 	public EventStoreFixtureOptions Options { get; }
 	public Faker                    Faker   { get; } = new Faker();
@@ -80,7 +82,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 
 	public Func<Task> OnSetup    { get; init; } = () => Task.CompletedTask;
 	public Func<Task> OnTearDown { get; init; } = () => Task.CompletedTask;
-	
+
 	/// <summary>
 	/// must test this
 	/// </summary>
@@ -96,10 +98,9 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 			DefaultCredentials       = Options.ClientSettings.DefaultCredentials,
 			DefaultDeadline          = Options.ClientSettings.DefaultDeadline
 		};
-	
+
 	InterlockedBoolean WarmUpCompleted  { get; } = new InterlockedBoolean();
 	SemaphoreSlim      WarmUpGatekeeper { get; } = new(1, 1);
-
 
 	public void CaptureTestRun(ITestOutputHelper outputHelper) {
 		var testRunId = Logging.CaptureLogs(outputHelper);
@@ -107,51 +108,52 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 		Logger.Information(">>> Test Run {TestRunId} {Operation} <<<", testRunId, "starting");
 		Service.ReportStatus();
 	}
-	
+
 	public async Task InitializeAsync() {
 		await Service.Start();
 
 		EventStoreVersion               = GetEventStoreVersion();
 		EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
-		
+
 		await WarmUpGatekeeper.WaitAsync();
-		
+
 		try {
 			if (!WarmUpCompleted.CurrentValue) {
 				Logger.Warning("*** Warmup started ***");
 
 				await Task.WhenAll(
 					InitClient<EventStoreUserManagementClient>(async x => Users = await x.WarmUp()),
-					InitClient<EventStoreClient>(async x => Streams = await x.WarmUp()),
-					InitClient<EventStoreProjectionManagementClient>(async x => Projections = await x.WarmUp(), Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None"),
+					InitClient<EventStoreClient>(async x => Streams             = await x.WarmUp()),
+					InitClient<EventStoreProjectionManagementClient>(
+						async x => Projections = await x.WarmUp(),
+						Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None"
+					),
 					InitClient<EventStorePersistentSubscriptionsClient>(async x => Subscriptions = await x.WarmUp()),
-					InitClient<EventStoreOperationsClient>(async x => Operations = await x.WarmUp())
+					InitClient<EventStoreOperationsClient>(async x => Operations                 = await x.WarmUp())
 				);
-				
+
 				WarmUpCompleted.EnsureCalledOnce();
-				
+
 				Logger.Warning("*** Warmup completed ***");
-			}
-			else {
+			} else {
 				Logger.Information("*** Warmup skipped ***");
 			}
-		}
-		finally {
+		} finally {
 			WarmUpGatekeeper.Release();
 		}
-		
+
 		await OnSetup();
-		
+
 		return;
 
 		async Task<T> InitClient<T>(Func<T, Task> action, bool execute = true) where T : EventStoreClientBase {
 			if (!execute) return default(T)!;
+
 			var client = (Activator.CreateInstance(typeof(T), new object?[] { ClientSettings }) as T)!;
 			await action(client);
 			return client;
 		}
-		
-		
+
 		static Version GetEventStoreVersion() {
 			const string versionPrefix = "EventStoreDB version";
 
@@ -166,7 +168,10 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 			using var log = eventstore.Logs(true, cancellator.Token);
 			foreach (var line in log.ReadToEnd()) {
 				if (line.StartsWith(versionPrefix) &&
-				    Version.TryParse(new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()), out var version)) {
+				    Version.TryParse(
+					    new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()),
+					    out var version
+				    )) {
 					return version;
 				}
 			}
@@ -184,8 +189,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 	public async Task DisposeAsync() {
 		try {
 			await OnTearDown();
-		}
-		catch {
+		} catch {
 			// ignored
 		}
 
@@ -206,11 +210,13 @@ public class EventStoreSharedDatabaseFixture : ICollectionFixture<EventStoreFixt
 }
 
 public abstract class EventStoreTests<TFixture> : IClassFixture<TFixture> where TFixture : EventStoreFixture {
-	protected EventStoreTests(ITestOutputHelper output, TFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
-
+	protected EventStoreTests(ITestOutputHelper output, TFixture fixture) =>
+		Fixture = fixture.With(x => x.CaptureTestRun(output));
+	
 	protected TFixture Fixture { get; }
 }
 
 [Collection(nameof(EventStoreSharedDatabaseFixture))]
-public abstract class EventStoreSharedDatabaseTests<TFixture>(ITestOutputHelper output, TFixture fixture) : EventStoreTests<TFixture>(output, fixture)
+public abstract class EventStoreSharedDatabaseTests<TFixture>(ITestOutputHelper output, TFixture fixture)
+	: EventStoreTests<TFixture>(output, fixture)
 	where TFixture : EventStoreFixture;
