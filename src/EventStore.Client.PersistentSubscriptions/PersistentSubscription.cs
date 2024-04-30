@@ -6,7 +6,6 @@ namespace EventStore.Client {
 	/// <summary>
 	/// Represents a persistent subscription connection.
 	/// </summary>
-	[Obsolete]
 	public class PersistentSubscription : IDisposable {
 		private readonly EventStorePersistentSubscriptionsClient.PersistentSubscriptionResult _persistentSubscriptionResult;
 		private readonly IAsyncEnumerator<PersistentSubscriptionMessage> _enumerator;

@@ -17,7 +17,6 @@ namespace EventStore.Client {
 		/// A Task invoked and await when a checkpoint is reached.
 		/// Set the checkpointInterval to define how often this method is called.
 		/// </summary>
-		[Obsolete]
 		public Func<StreamSubscription, Position, CancellationToken, Task> CheckpointReached { get; } = null!;
 
 		/// <summary>
@@ -30,7 +29,6 @@ namespace EventStore.Client {
 		/// Set the checkpointInterval to define how often this method is called.
 		/// </param>
 		/// <exception cref="ArgumentNullException"></exception>
-		[Obsolete]
 		public SubscriptionFilterOptions(IEventFilter filter, uint checkpointInterval,
 			Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached) 
 			: this(filter, checkpointInterval) {
