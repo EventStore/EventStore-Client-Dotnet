@@ -13,7 +13,7 @@ mkdir -p certs
 
 chmod 0755 ./certs
 
-docker pull docker.eventstore.com/eventstore-utils/es-gencert-cli:1.3
+docker pull docker.eventstore.com/eventstore-utils/es-gencert-cli:latest
 
 docker run --rm --volume $PWD/certs:/tmp --user $(id -u):$(id -g) docker.eventstore.com/eventstore-utils/es-gencert-cli create-ca -out /tmp/ca
 
