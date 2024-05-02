@@ -21,10 +21,9 @@ jobs:
     name: EventStore.Client.${{ matrix.test }}/${{ matrix.os }}/${{ matrix.framework }}/${{ inputs.docker-tag }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
-    - shell: bash
-      run: |
-        git fetch --prune --unshallow
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - name: Pull EventStore Image
       shell: bash
       run: |
