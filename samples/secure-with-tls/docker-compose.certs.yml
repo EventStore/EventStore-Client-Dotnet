@@ -16,7 +16,7 @@ services:
     network_mode: none
   
   cert-gen:
-    image: eventstore/es-gencert-cli:latest.0
+    image: docker.eventstore.com/eventstore-utils/es-gencert-cli:latest
     container_name: cert-gen
     user: "1000:1000"
     entrypoint: [ "/bin/sh","-c" ]
