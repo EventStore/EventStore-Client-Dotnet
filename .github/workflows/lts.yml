@@ -10,6 +10,6 @@ on:
 
 jobs:
   test:
-    uses: ./.github/workflows/base.yml
+    uses: ./.github/workflows/ce.yml
     with:
       docker-tag: lts

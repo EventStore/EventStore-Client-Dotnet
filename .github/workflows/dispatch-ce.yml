@@ -1,0 +1,20 @@
+name: "Dispatch CE"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Docker tag version"
+        required: true
+        type: string
+      image:
+        description: "Docker image"
+        required: true
+        type: string
+
+jobs:
+  test:
+    uses: ./.github/workflows/ce.yml
+    with:
+      docker-tag: ${{ inputs.version }}
+      docker-image: ${{ inputs.image }}

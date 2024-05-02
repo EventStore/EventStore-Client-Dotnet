@@ -1,12 +1,6 @@
-name: Test EE
+name: Test CE
 
 on:
-  pull_request:
-  push:
-    branches:
-    - master
-    tags:
-    - v*
   workflow_call:
     inputs:
       docker-tag:
@@ -20,17 +14,16 @@ on:
 jobs:
   test:
     uses: ./.github/workflows/base.yml
-    if: ${{ github.repository_owner == 'EventStore' }}
-    strategy:
+    strategy:      
       fail-fast: false
       matrix:
         framework: [ net6.0, net7.0, net8.0 ]
         os: [ ubuntu-latest ]
-        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement, Plugins ]
+        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement ]
         configuration: [ release ]
     with:
-      docker-image: ${{ inputs.docker-image != null && inputs.docker-image || 'eventstore-ee/eventstoredb-commercial' }} 
-      docker-tag: ${{ inputs.docker-tag != null && inputs.docker-tag || '24.2.0-jammy' }}
+      docker-tag: ${{ inputs.docker-tag }}
+      docker-image: ${{ inputs.docker-image }}
       framework: ${{ matrix.framework }}
       os: ${{ matrix.os }}
       test: ${{ matrix.test }}
@@ -38,4 +31,3 @@ jobs:
     secrets: 
       CLOUDSMITH_CICD_USER: ${{ secrets.CLOUDSMITH_CICD_USER }}
       CLOUDSMITH_CICD_TOKEN: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
-    

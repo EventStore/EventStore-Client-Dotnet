@@ -1,4 +1,4 @@
-name: "Dispatch"
+name: "Dispatch EE"
 
 on:
   workflow_dispatch:
@@ -7,9 +7,14 @@ on:
         description: "Docker tag version"
         required: true
         type: string
+      image:
+        description: "Docker image"
+        required: true
+        type: string
 
 jobs:
   test:
-    uses: ./.github/workflows/base.yml
+    uses: ./.github/workflows/ee.yml
     with:
       docker-tag: ${{ inputs.version }}
+      docker-image: ${{ inputs.image }}
