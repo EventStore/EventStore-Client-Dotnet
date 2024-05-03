@@ -7,7 +7,6 @@ on:
       - "samples/**"
       - "**.md"
       - "gencert.sh"
-      - ".github/**"
       - ".gitignore"
       - ".gitattributes"
       - ".editorconfig"
@@ -20,4 +19,4 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Check pull requests
-        uses: EventStore/Automations/pr-check@master
+        uses: EventStore/Automations/pr-check@josephcummings/pr-check-repo-auth
