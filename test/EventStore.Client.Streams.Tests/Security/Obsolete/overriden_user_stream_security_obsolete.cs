@@ -1,7 +1,8 @@
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests.Obsolete; 
 
 [Trait("Category", "Security")]
-public class overriden_user_stream_security(ITestOutputHelper output, overriden_user_stream_security.CustomFixture fixture) : EventStoreTests<overriden_user_stream_security.CustomFixture>(output, fixture) {
+[Obsolete("Will be removed in future release when older subscriptions APIs are removed from the client")]
+public class overriden_user_stream_security_obsolete(ITestOutputHelper output, overriden_user_stream_security_obsolete.CustomFixture fixture) : EventStoreTests<overriden_user_stream_security_obsolete.CustomFixture>(output, fixture) {
 	[Fact]
 	public async Task operations_on_user_stream_succeeds_for_authorized_user() {
 		var stream = Fixture.GetStreamName();
@@ -14,7 +15,7 @@ public class overriden_user_stream_security(ITestOutputHelper output, overriden_
 		await Fixture.ReadMeta(stream, TestCredentials.TestUser1);
 		await Fixture.WriteMeta(stream, TestCredentials.TestUser1);
 
-		await Fixture.SubscribeToStream(stream, TestCredentials.TestUser1);
+		await Fixture.SubscribeToStreamObsolete(stream, TestCredentials.TestUser1);
 
 		await Fixture.DeleteStream(stream, TestCredentials.TestUser1);
 	}
@@ -30,7 +31,7 @@ public class overriden_user_stream_security(ITestOutputHelper output, overriden_
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadMeta(stream, TestCredentials.TestUser2));
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.WriteMeta(stream, TestCredentials.TestUser2));
 
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStream(stream, TestCredentials.TestUser2));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStreamObsolete(stream, TestCredentials.TestUser2));
 
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.DeleteStream(stream, TestCredentials.TestUser2));
 	}
@@ -46,7 +47,7 @@ public class overriden_user_stream_security(ITestOutputHelper output, overriden_
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadMeta(stream));
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.WriteMeta(stream));
 
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStream(stream));
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStreamObsolete(stream));
 
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.DeleteStream(stream));
 	}
@@ -63,12 +64,12 @@ public class overriden_user_stream_security(ITestOutputHelper output, overriden_
 		await Fixture.ReadMeta(stream, TestCredentials.TestAdmin);
 		await Fixture.WriteMeta(stream, TestCredentials.TestAdmin);
 
-		await Fixture.SubscribeToStream(stream, TestCredentials.TestAdmin);
+		await Fixture.SubscribeToStreamObsolete(stream, TestCredentials.TestAdmin);
 
 		await Fixture.DeleteStream(stream, TestCredentials.TestAdmin);
 	}
 
-	public class CustomFixture : SecurityFixture {
+	public class CustomFixture : SecurityFixture_obsolete {
 		protected override Task When() {
 			var settings = new SystemSettings(new("user1", "user1", "user1", "user1", "user1"));
 			return Streams.SetSystemSettingsAsync(settings, userCredentials: TestCredentials.TestAdmin);
