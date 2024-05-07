@@ -24,19 +24,20 @@ namespace EventStore.Client {
 		) {
 			if (autoAck) {
 				throw new InvalidOperationException(
-					$"AutoAck is no longer supported. Please use {nameof(SubscribeToStreamAsync)} with manual acks instead."
+					$"AutoAck is no longer supported. Please use {nameof(SubscribeToStream)} with manual acks instead."
 				);
 			}
 
-			return await SubscribeToStreamAsync(
-				streamName,
-				groupName,
-				eventAppeared,
-				subscriptionDropped,
-				userCredentials,
-				bufferSize,
-				cancellationToken
-			).ConfigureAwait(false);
+			return await PersistentSubscription
+				.Confirm(
+					SubscribeToStream(streamName, groupName, bufferSize, userCredentials, cancellationToken),
+					eventAppeared,
+					subscriptionDropped ?? delegate { },
+					_log,
+					userCredentials,
+					cancellationToken
+				)
+				.ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -45,7 +46,6 @@ namespace EventStore.Client {
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
-		[Obsolete("SubscribeToStreamAsync is no longer supported. Use SubscribeToStream with manual acks instead.", false)]
 		public async Task<PersistentSubscription> SubscribeToStreamAsync(
 			string streamName, string groupName,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
@@ -135,7 +135,6 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged
 		/// </summary>
-		[Obsolete("SubscribeToAllAsync is no longer supported. Use SubscribeToAll with manual acks instead.", false)]
 		public async Task<PersistentSubscription> SubscribeToAllAsync(
 			string groupName,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,

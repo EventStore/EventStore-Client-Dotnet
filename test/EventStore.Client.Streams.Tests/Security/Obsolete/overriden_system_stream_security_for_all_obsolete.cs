@@ -1,7 +1,8 @@
-namespace EventStore.Client.Streams.Tests; 
+namespace EventStore.Client.Streams.Tests.Obsolete; 
 
 [Trait("Category", "Security")]
-public class overriden_system_stream_security_for_all(ITestOutputHelper output, overriden_system_stream_security_for_all.CustomFixture fixture) : EventStoreTests<overriden_system_stream_security_for_all.CustomFixture>(output, fixture) {
+[Obsolete("Will be removed in future release when older subscriptions APIs are removed from the client")]
+public class overriden_system_stream_security_for_all_obsolete(ITestOutputHelper output, overriden_system_stream_security_for_all_obsolete.CustomFixture fixture) : EventStoreTests<overriden_system_stream_security_for_all_obsolete.CustomFixture>(output, fixture) {
 	[Fact]
 	public async Task operations_on_system_stream_succeeds_for_user() {
 		var stream = $"${Fixture.GetStreamName()}";
@@ -13,7 +14,7 @@ public class overriden_system_stream_security_for_all(ITestOutputHelper output, 
 		await Fixture.ReadMeta(stream, TestCredentials.TestUser1);
 		await Fixture.WriteMeta(stream, TestCredentials.TestUser1);
 
-		await Fixture.SubscribeToStream(stream, TestCredentials.TestUser1);
+		await Fixture.SubscribeToStreamObsolete(stream, TestCredentials.TestUser1);
 
 		await Fixture.DeleteStream(stream, TestCredentials.TestUser1);
 	}
@@ -29,7 +30,7 @@ public class overriden_system_stream_security_for_all(ITestOutputHelper output, 
 		await Fixture.ReadMeta(stream);
 		await Fixture.WriteMeta(stream);
 
-		await Fixture.SubscribeToStream(stream);
+		await Fixture.SubscribeToStreamObsolete(stream);
 
 		await Fixture.DeleteStream(stream);
 	}
@@ -46,12 +47,12 @@ public class overriden_system_stream_security_for_all(ITestOutputHelper output, 
 		await Fixture.ReadMeta(stream, TestCredentials.TestAdmin);
 		await Fixture.WriteMeta(stream, TestCredentials.TestAdmin);
 
-		await Fixture.SubscribeToStream(stream, TestCredentials.TestAdmin);
+		await Fixture.SubscribeToStreamObsolete(stream, TestCredentials.TestAdmin);
 
 		await Fixture.DeleteStream(stream, TestCredentials.TestAdmin);
 	}
 
-	public class CustomFixture : SecurityFixture {
+	public class CustomFixture : SecurityFixture_obsolete {
 		protected override Task When() {
 			var settings = new SystemSettings(
 				systemStreamAcl: new(

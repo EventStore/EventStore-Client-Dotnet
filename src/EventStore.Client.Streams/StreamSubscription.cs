@@ -5,7 +5,6 @@ namespace EventStore.Client {
 	/// <summary>
 	/// A class representing a <see cref="StreamSubscription"/>.
 	/// </summary>
-	[Obsolete]
 	public class StreamSubscription : IDisposable {
 		private readonly EventStoreClient.StreamSubscriptionResult                          _subscription;
 		private readonly IAsyncEnumerator<StreamMessage>                                    _messages;

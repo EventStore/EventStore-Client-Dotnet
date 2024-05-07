@@ -1,8 +1,9 @@
 using System.Runtime.CompilerServices;
 
-namespace EventStore.Client.Streams.Tests;
+namespace EventStore.Client.Streams.Tests.Obsolete;
 
-public class SecurityFixture : EventStoreFixture {
+[Obsolete("Will be removed in future release when older subscriptions APIs are removed from the client")]
+public class SecurityFixture_obsolete : EventStoreFixture {
 	public const string NoAclStream       = nameof(NoAclStream);
 	public const string ReadStream        = nameof(ReadStream);
 	public const string WriteStream       = nameof(WriteStream);
@@ -16,7 +17,7 @@ public class SecurityFixture : EventStoreFixture {
 
 	const int TimeoutMs = 1000;
 
-	public SecurityFixture() : base(x => x.WithoutDefaultCredentials()) {
+	public SecurityFixture_obsolete() : base(x => x.WithoutDefaultCredentials()) {
 		OnSetup = async () => {
 			await Users.CreateUserWithRetry(
 				TestCredentials.TestUser1.Username!,
@@ -242,12 +243,56 @@ public class SecurityFixture : EventStoreFixture {
 			)
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
+	[Obsolete("Will be removed in future release when older subscriptions APIs are removed from the client", false)]
+	public async Task SubscribeToStreamObsolete(string streamId, UserCredentials? userCredentials = default) {
+		var source = new TaskCompletionSource<bool>();
+		using (await Streams.SubscribeToStreamAsync(
+			       streamId,
+			       FromStream.Start,
+			       (_, _, _) => {
+				       source.TrySetResult(true);
+				       return Task.CompletedTask;
+			       },
+			       subscriptionDropped: (_, _, ex) => {
+				       if (ex == null)
+					       source.TrySetResult(true);
+				       else
+					       source.TrySetException(ex);
+			       },
+			       userCredentials: userCredentials
+		       ).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs))) {
+			await source.Task.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
+		}
+	}
+
 	public async Task SubscribeToStream(string streamId, UserCredentials? userCredentials = default) {
 		await using var subscription =
 			Streams.SubscribeToStream(streamId, FromStream.Start, userCredentials: userCredentials);
 		await subscription
 			.Messages.OfType<StreamMessage.SubscriptionConfirmation>().AnyAsync().AsTask()
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
+	}
+
+	[Obsolete("Will be removed in future release when older subscriptions APIs are removed from the client", false)]
+	public async Task SubscribeToAllObsolete(UserCredentials? userCredentials = default) {
+		var source = new TaskCompletionSource<bool>();
+		using (await Streams.SubscribeToAllAsync(
+			       FromAll.Start,
+			       (_, _, _) => {
+				       source.TrySetResult(true);
+				       return Task.CompletedTask;
+			       },
+			       false,
+			       (_, _, ex) => {
+				       if (ex == null)
+					       source.TrySetResult(true);
+				       else
+					       source.TrySetException(ex);
+			       },
+			       userCredentials: userCredentials
+		       ).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs))) {
+			await source.Task.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
+		}
 	}
 
 	public async Task SubscribeToAll(UserCredentials? userCredentials = default) {
