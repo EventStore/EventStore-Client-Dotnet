@@ -91,6 +91,6 @@ static async Task TraceAppendToStream(EventStoreClient client) {
 				}
 			);
 
-		#endregion
+		#endregion setup-exporter
 	}
 }
