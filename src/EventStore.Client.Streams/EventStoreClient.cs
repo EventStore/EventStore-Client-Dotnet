@@ -11,24 +11,24 @@ namespace EventStore.Client {
 	/// The client used for operations on streams.
 	/// </summary>
 	public sealed partial class EventStoreClient : EventStoreClientBase {
-		private static readonly JsonSerializerOptions StreamMetadataJsonSerializerOptions = new() {
+		static readonly JsonSerializerOptions StreamMetadataJsonSerializerOptions = new() {
 			Converters = {
 				StreamMetadataJsonConverter.Instance
 			},
 		};
 
-		private static BoundedChannelOptions ReadBoundedChannelOptions = new(1) {
+		static BoundedChannelOptions ReadBoundedChannelOptions = new(1) {
 			SingleReader                  = true,
 			SingleWriter                  = true,
 			AllowSynchronousContinuations = true
 		};
 
-		private readonly ILogger<EventStoreClient> _log;
-		private          Lazy<StreamAppender>      _batchAppenderLazy;
-		private          StreamAppender            _batchAppender => _batchAppenderLazy.Value;
-		private readonly CancellationTokenSource   _disposedTokenSource;
+		readonly ILogger<EventStoreClient> _log;
+		Lazy<StreamAppender>               _batchAppenderLazy;
+		StreamAppender                     BatchAppender => _batchAppenderLazy.Value;
+		readonly CancellationTokenSource   _disposedTokenSource;
 
-		private static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
+		static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
 			[Constants.Exceptions.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),
 			[Constants.Exceptions.StreamDeleted] = ex => new StreamDeletedException(
 				ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value ?? "<unknown>",
@@ -66,29 +66,30 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="settings"></param>
 		public EventStoreClient(EventStoreClientSettings? settings = null) : base(settings, ExceptionMap) {
-			_log = Settings.LoggerFactory?.CreateLogger<EventStoreClient>() ?? new NullLogger<EventStoreClient>();
+			_log                 = Settings.LoggerFactory?.CreateLogger<EventStoreClient>() ?? new NullLogger<EventStoreClient>();
 			_disposedTokenSource = new CancellationTokenSource();
-			_batchAppenderLazy = new Lazy<StreamAppender>(CreateStreamAppender);
+			_batchAppenderLazy   = new Lazy<StreamAppender>(CreateStreamAppender);
 		}
 
-		private void SwapStreamAppender(Exception ex) =>
+		void SwapStreamAppender(Exception ex) =>
 			Interlocked.Exchange(ref _batchAppenderLazy, new Lazy<StreamAppender>(CreateStreamAppender)).Value
 				.Dispose();
 
 		// todo: might be nice to have two different kinds of appenders and we decide which to instantiate according to the server caps.
-		private StreamAppender CreateStreamAppender() => new StreamAppender(
+		StreamAppender CreateStreamAppender() => new StreamAppender(
 			Settings,
 			GetChannelInfo(_disposedTokenSource.Token),
 			_disposedTokenSource.Token,
 			SwapStreamAppender
 		);
 
-		private static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(
+		static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(
 			IEventFilter? filter, uint checkpointInterval = 0
 		) {
-			if (filter == null) {
+			if (filter == null
+			 || filter.Equals(StreamFilter.None)
+			 || filter.Equals(EventTypeFilter.None))
 				return null;
-			}
 
 			var options = filter switch {
 				StreamFilter => new ReadReq.Types.Options.Types.FilterOptions {
@@ -126,22 +127,20 @@ namespace EventStore.Client {
 				_ => null
 			};
 
-			if (options == null) {
+			if (options == null)
 				return null;
-			}
 
-			if (filter.MaxSearchWindow.HasValue) {
+			if (filter.MaxSearchWindow.HasValue)
 				options.Max = filter.MaxSearchWindow.Value;
-			} else {
+			else
 				options.Count = new Empty();
-			}
 
 			options.CheckpointIntervalMultiplier = checkpointInterval;
 
 			return options;
 		}
 
-		private static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(
+		static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(
 			SubscriptionFilterOptions? filterOptions
 		)
 			=> filterOptions == null ? null : GetFilterOptions(filterOptions.Filter, filterOptions.CheckpointInterval);

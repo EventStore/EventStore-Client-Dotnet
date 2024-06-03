@@ -12,7 +12,7 @@ namespace EventStore.Client {
 		/// </summary>
 		public static readonly EventTypeFilter None = default;
 
-		private readonly PrefixFilterExpression[] _prefixes;
+		readonly PrefixFilterExpression[] _prefixes;
 
 
 		/// <inheritdoc />
@@ -76,7 +76,7 @@ namespace EventStore.Client {
 		public static IEventFilter RegularExpression(Regex regex, uint maxSearchWindow = 32)
 			=> new EventTypeFilter(maxSearchWindow, new RegularFilterExpression(regex));
 
-		private EventTypeFilter(uint maxSearchWindow, RegularFilterExpression regex) {
+		EventTypeFilter(uint maxSearchWindow, RegularFilterExpression regex) {
 			if (maxSearchWindow == 0) {
 				throw new ArgumentOutOfRangeException(nameof(maxSearchWindow),
 					maxSearchWindow, $"{nameof(maxSearchWindow)} must be greater than 0.");
@@ -87,9 +87,9 @@ namespace EventStore.Client {
 			MaxSearchWindow = maxSearchWindow;
 		}
 
-		private EventTypeFilter(params PrefixFilterExpression[] prefixes) : this(32, prefixes) { }
+		EventTypeFilter(params PrefixFilterExpression[] prefixes) : this(32, prefixes) { }
 
-		private EventTypeFilter(uint maxSearchWindow, params PrefixFilterExpression[] prefixes) {
+		EventTypeFilter(uint maxSearchWindow, params PrefixFilterExpression[] prefixes) {
 			if (prefixes.Length == 0) {
 				throw new ArgumentException();
 			}
