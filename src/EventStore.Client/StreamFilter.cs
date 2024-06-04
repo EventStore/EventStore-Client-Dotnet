@@ -12,7 +12,7 @@ namespace EventStore.Client {
 		/// </summary>
 		public static readonly StreamFilter None = default;
 
-		private readonly PrefixFilterExpression[] _prefixes;
+		readonly PrefixFilterExpression[] _prefixes;
 
 		/// <inheritdoc />
 		public PrefixFilterExpression[] Prefixes => _prefixes ?? Array.Empty<PrefixFilterExpression>();
@@ -67,9 +67,9 @@ namespace EventStore.Client {
 		public static IEventFilter RegularExpression(Regex regex, uint maxSearchWindow = 32)
 			=> new StreamFilter(maxSearchWindow, new RegularFilterExpression(regex));
 
-		private StreamFilter(RegularFilterExpression regex) : this(default, regex) { }
+		StreamFilter(RegularFilterExpression regex) : this(default, regex) { }
 
-		private StreamFilter(uint maxSearchWindow, RegularFilterExpression regex) {
+		StreamFilter(uint maxSearchWindow, RegularFilterExpression regex) {
 			if (maxSearchWindow == 0) {
 				throw new ArgumentOutOfRangeException(nameof(maxSearchWindow),
 					maxSearchWindow, $"{nameof(maxSearchWindow)} must be greater than 0.");
@@ -80,9 +80,9 @@ namespace EventStore.Client {
 			MaxSearchWindow = maxSearchWindow;
 		}
 
-		private StreamFilter(params PrefixFilterExpression[] prefixes) : this(32, prefixes) { }
+		StreamFilter(params PrefixFilterExpression[] prefixes) : this(32, prefixes) { }
 
-		private StreamFilter(uint maxSearchWindow, params PrefixFilterExpression[] prefixes) {
+		StreamFilter(uint maxSearchWindow, params PrefixFilterExpression[] prefixes) {
 			if (prefixes.Length == 0) {
 				throw new ArgumentException();
 			}
