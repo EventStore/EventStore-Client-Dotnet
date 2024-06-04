@@ -15,24 +15,21 @@ on:
         required: false
         type: string
         default: eventstore-ce/eventstoredb-ce
-      framework:
-        required: true
-        type: string
-      os:
-        required: true
-        type: string
       test:
-        required: true
-        type: string
-      configuration:
         required: true
         type: string
 
 jobs:
   test:
     timeout-minutes: 20
-    runs-on: ${{ inputs.os }}
-    name: EventStore.Client.${{ inputs.test }}/${{ inputs.os }}/${{ inputs.framework }}/${{ inputs.docker-tag }}
+    strategy:      
+      fail-fast: false
+      matrix:
+        framework: [ net6.0, net7.0, net8.0 ]
+        os: [ ubuntu-latest ]
+        configuration: [ release ]
+    runs-on: ${{ matrix.os }}
+    name: ${{ inputs.test }} (${{ matrix.os }}, ${{ matrix.framework }})
     env:
       CLOUDSMITH_CICD_USER: ${{ secrets.CLOUDSMITH_CICD_USER }}
     steps:
@@ -58,10 +55,6 @@ jobs:
           6.0.x
           7.0.x
           8.0.x
-    - name: Compile
-      shell: bash
-      run: |
-        dotnet build --configuration ${{ inputs.configuration }} --framework ${{ inputs.framework }} src/EventStore.Client.${{ inputs.test }}
     - name: Run Tests
       shell: bash
       env:
@@ -69,7 +62,7 @@ jobs:
         ES_DOCKER_REGISTRY: docker.eventstore.com/${{ inputs.docker-image }}
       run: |
         sudo ./gencert.sh
-        dotnet test --configuration ${{ inputs.configuration }} --blame \
+        dotnet test --configuration ${{ matrix.configuration }} --blame \
           --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
-          --framework ${{ inputs.framework }} \
+          --framework ${{ matrix.framework }} \
           test/EventStore.Client.${{ inputs.test }}.Tests
