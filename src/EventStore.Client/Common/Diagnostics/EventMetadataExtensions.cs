@@ -20,16 +20,17 @@ static class EventMetadataExtensions {
 		try {
 			using var doc = JsonDocument.Parse(eventMetadata);
 
-			return new TracingMetadata(
-				doc.RootElement.GetProperty(TracingConstants.Metadata.TraceId).GetString(),
-				doc.RootElement.GetProperty(TracingConstants.Metadata.SpanId).GetString()
-			);
+			if (!doc.RootElement.TryGetProperty(TracingConstants.Metadata.TraceId, out var traceId)
+			 || !doc.RootElement.TryGetProperty(TracingConstants.Metadata.SpanId, out var spanId))
+				return TracingMetadata.None;
+
+			return new TracingMetadata(traceId.GetString(), spanId.GetString());
 		}
-		catch (Exception) {
+		catch (JsonException) {
 			return TracingMetadata.None;
 		}
 	}
-	
+
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	static ReadOnlySpan<byte> InjectTracingMetadata(this ReadOnlyMemory<byte> eventMetadata, TracingMetadata tracingMetadata) {
 		if (tracingMetadata == TracingMetadata.None || !tracingMetadata.IsValid)
