@@ -23,7 +23,7 @@ static class EventMetadataExtensions {
 		var reader = new Utf8JsonReader(eventMetadata.Span);
 		if (!JsonDocument.TryParseValue(ref reader, out var doc))
 			return TracingMetadata.None;
-
+	
 		using (doc) {
 			if (!doc.RootElement.TryGetProperty(TracingConstants.Metadata.TraceId, out var traceId)
 			 || !doc.RootElement.TryGetProperty(TracingConstants.Metadata.SpanId, out var spanId))

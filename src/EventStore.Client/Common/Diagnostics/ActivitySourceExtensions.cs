@@ -32,6 +32,9 @@ static class ActivitySourceExtensions {
         EventStoreClientSettings settings,
         UserCredentials? userCredentials
     ) {
+	    if (source.HasNoActiveListeners())
+		    return;
+
         var parentContext = resolvedEvent.OriginalEvent.Metadata.ExtractPropagationContext();
 
         if (parentContext is null) return;
@@ -53,6 +56,9 @@ static class ActivitySourceExtensions {
         this ActivitySource source,
         string operationName, ActivityKind activityKind, ActivityTagsCollection? tags = null, ActivityContext? parentContext = null
     ) {
+	    if (source.HasNoActiveListeners())
+		    return null;
+	    
         (tags ??= new ActivityTagsCollection())
             .WithRequiredTag(TelemetryTags.Database.System, "eventstoredb")
             .WithRequiredTag(TelemetryTags.Database.Operation, operationName);
@@ -67,4 +73,6 @@ static class ActivitySourceExtensions {
             )
             ?.Start();
     }
+    
+    static bool HasNoActiveListeners(this ActivitySource source) => !source.HasListeners();
 }
