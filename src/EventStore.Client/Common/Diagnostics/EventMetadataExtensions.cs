@@ -17,18 +17,14 @@ static class EventMetadataExtensions {
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public static TracingMetadata ExtractTracingMetadata(this ReadOnlyMemory<byte> eventMetadata) {
-		try {
-			using var doc = JsonDocument.Parse(eventMetadata);
-
-			if (!doc.RootElement.TryGetProperty(TracingConstants.Metadata.TraceId, out var traceId)
-			 || !doc.RootElement.TryGetProperty(TracingConstants.Metadata.SpanId, out var spanId))
-				return TracingMetadata.None;
-
-			return new TracingMetadata(traceId.GetString(), spanId.GetString());
-		}
-		catch (JsonException) {
+		var reader = new Utf8JsonReader(eventMetadata.Span);
+		
+		if (!JsonDocument.TryParseValue(ref reader, out var doc)
+		 || !doc.RootElement.TryGetProperty(TracingConstants.Metadata.TraceId, out var traceId)
+		 || !doc.RootElement.TryGetProperty(TracingConstants.Metadata.SpanId, out var spanId))
 			return TracingMetadata.None;
-		}
+
+		return new TracingMetadata(traceId.GetString(), spanId.GetString());
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
