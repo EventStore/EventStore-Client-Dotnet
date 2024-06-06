@@ -1,0 +1,26 @@
+name: Dispatch CE
+
+on:
+  workflow_dispatch:
+    inputs:
+      docker-tag:
+        description: "Docker tag"
+        required: true
+        type: string
+      docker-image:
+        description: "Docker image"
+        required: true
+        type: string
+
+jobs:
+  test:
+    uses: ./.github/workflows/base.yml
+    strategy:      
+      fail-fast: false
+      matrix:
+        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement ]
+    name: Test CE (${{ inputs.docker-tag }})
+    with:
+      docker-tag: ${{ inputs.docker-tag }}
+      docker-image: ${{ inputs.docker-image }}
+      test: ${{ matrix.test }}

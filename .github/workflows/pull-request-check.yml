@@ -2,22 +2,22 @@ name: Pull Request check
 on:
   pull_request:
     paths-ignore:
-      - "test/**"
-      - "generators/**"
-      - "samples/**"
-      - "**.md"
-      - "gencert.sh"
-      - ".github/**"
-      - ".gitignore"
-      - ".gitattributes"
-      - ".editorconfig"
-    types: [opened, edited]
+    - "test/**"
+    - "generators/**"
+    - "samples/**"
+    - "**.md"
+    - "gencert.sh"
+    - ".github/**"
+    - ".gitignore"
+    - ".gitattributes"
+    - ".editorconfig"
+    types: [ opened, edited ]
 jobs:
   checkPullRequest:
     name: Pull Request check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Check pull requests
-        uses: EventStore/Automations/pr-check@master
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Check pull requests
+      uses: EventStore/Automations/pr-check@master

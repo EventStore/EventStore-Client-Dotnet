@@ -1,6 +1,3 @@
-# EditorConfig is awesome:
-http://EditorConfig.org
-
 # top-most EditorConfig file
 root = true
 
@@ -142,5 +139,5 @@ indent_size = 2
 [*.{cmd,ps1}]
 indent_size = 8
 
-[*.{yaml, yml}]
+[*.{yaml,yml}]
 indent_size = 2

@@ -2,51 +2,67 @@ name: Build
 
 on:
   workflow_call:
+    secrets:
+      CLOUDSMITH_CICD_USER:
+        required: false
+      CLOUDSMITH_CICD_TOKEN:
+        required: false
     inputs:
       docker-tag:
+        required: true
+        type: string
+      docker-image:
+        required: false
+        type: string
+        default: eventstore-ce/eventstoredb-ce
+      test:
         required: true
         type: string
 
 jobs:
   test:
     timeout-minutes: 20
-    strategy:
+    strategy:      
       fail-fast: false
       matrix:
         framework: [ net6.0, net7.0, net8.0 ]
         os: [ ubuntu-latest ]
-        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement ]
         configuration: [ release ]
     runs-on: ${{ matrix.os }}
-    name: EventStore.Client.${{ matrix.test }}/${{ matrix.os }}/${{ matrix.framework }}/${{ inputs.docker-tag }}
+    name: ${{ inputs.test }} (${{ matrix.os }}, ${{ matrix.framework }})
+    env:
+      CLOUDSMITH_CICD_USER: ${{ secrets.CLOUDSMITH_CICD_USER }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - shell: bash
-        run: |
-          git fetch --prune --unshallow
-      - name: Pull EventStore Image
-        shell: bash
-        run: |
-          docker pull docker.eventstore.com/eventstore-ce/eventstoredb-ce:${{ inputs.docker-tag }}
-      - name: Install dotnet SDKs
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: |
-            6.0.x
-            7.0.x
-            8.0.x
-      - name: Compile
-        shell: bash
-        run: |
-          dotnet build --configuration ${{ matrix.configuration }} --framework ${{ matrix.framework }} src/EventStore.Client.${{ matrix.test }}
-      - name: Run Tests
-        shell: bash
-        env:
-          ES_DOCKER_TAG: ${{ inputs.docker-tag }}
-        run: |
-          sudo ./gencert.sh
-          dotnet test --configuration ${{ matrix.configuration }} --blame \
-            --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
-            --framework ${{ matrix.framework }} \
-            test/EventStore.Client.${{ matrix.test }}.Tests
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Login to Cloudsmith
+      if: ${{ env.CLOUDSMITH_CICD_USER != '' }}
+      uses: docker/login-action@v3
+      with:
+        registry: docker.eventstore.com
+        username: ${{ secrets.CLOUDSMITH_CICD_USER }}
+        password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
+    - name: Pull EventStore Image
+      shell: bash
+      run: |
+        docker pull docker.eventstore.com/${{ inputs.docker-image }}:${{ inputs.docker-tag }}
+    - name: Install dotnet SDKs
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: |
+          6.0.x
+          7.0.x
+          8.0.x
+    - name: Run Tests
+      shell: bash
+      env:
+        ES_DOCKER_TAG: ${{ inputs.docker-tag }}
+        ES_DOCKER_REGISTRY: docker.eventstore.com/${{ inputs.docker-image }}
+      run: |
+        sudo ./gencert.sh
+        dotnet test --configuration ${{ matrix.configuration }} --blame \
+          --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
+          --framework ${{ matrix.framework }} \
+          test/EventStore.Client.${{ inputs.test }}.Tests
