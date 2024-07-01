@@ -3,7 +3,8 @@ namespace EventStore.Client.Streams.Tests.Subscriptions.Obsolete;
 [Trait("Category", "Subscriptions")]
 [Trait("Category", "Target:Stream")]
 [Obsolete("Will be removed in future release when older subscriptions APIs are removed from the client")]
-public class subscribe_to_stream_obsolete(ITestOutputHelper output, SubscriptionsFixture fixture) : EventStoreTests<SubscriptionsFixture>(output, fixture) {
+public class subscribe_to_stream_obsolete(ITestOutputHelper output, SubscriptionsFixture fixture)
+	: EventStoreTests<SubscriptionsFixture>(output, fixture) {
 	[Fact]
 	public async Task receives_all_events_from_start() {
 		var streamName = Fixture.GetStreamName();
@@ -65,7 +66,12 @@ public class subscribe_to_stream_obsolete(ITestOutputHelper output, Subscription
 		// only the second half of the events will be received
 		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.EventId));
 
-		var writeResult    = await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents.Take(pageSize));
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(
+			streamName,
+			StreamState.NoStream,
+			seedEvents.Take(pageSize)
+		);
+
 		var streamPosition = StreamPosition.FromStreamRevision(writeResult.NextExpectedStreamRevision);
 		var checkpoint     = FromStream.After(streamPosition);
 
@@ -73,7 +79,11 @@ public class subscribe_to_stream_obsolete(ITestOutputHelper output, Subscription
 			.SubscribeToStreamAsync(streamName, checkpoint, OnReceived, false, OnDropped)
 			.WithTimeout();
 
-		await Fixture.Streams.AppendToStreamAsync(streamName, writeResult.NextExpectedStreamRevision, seedEvents.Skip(pageSize));
+		await Fixture.Streams.AppendToStreamAsync(
+			streamName,
+			writeResult.NextExpectedStreamRevision,
+			seedEvents.Skip(pageSize)
+		);
 
 		await receivedAllEvents.Task.WithTimeout();
 
@@ -266,7 +276,13 @@ public class subscribe_to_stream_obsolete(ITestOutputHelper output, Subscription
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
 
 		using var subscription = await Fixture.Streams
-			.SubscribeToStreamAsync($"$et-{EventStoreFixture.TestEventType}", FromStream.Start, OnReceived, true, OnDropped)
+			.SubscribeToStreamAsync(
+				$"$et-{EventStoreFixture.TestEventType}",
+				FromStream.Start,
+				OnReceived,
+				true,
+				OnDropped
+			)
 			.WithTimeout();
 
 		await receivedAllEvents.Task.WithTimeout();
@@ -285,7 +301,12 @@ public class subscribe_to_stream_obsolete(ITestOutputHelper output, Subscription
 		Task OnReceived(StreamSubscription sub, ResolvedEvent re, CancellationToken ct) {
 			var hasResolvedLink = re.OriginalEvent.EventStreamId.StartsWith($"$et-{EventStoreFixture.TestEventType}");
 			if (availableEvents.RemoveWhere(x => x == re.Event.EventId && hasResolvedLink) == 0) {
-				Fixture.Log.Debug("Received unexpected event {EventId} from stream {StreamId}", re.Event.EventId, re.OriginalEvent.EventStreamId);
+				Fixture.Log.Debug(
+					"Received unexpected event {EventId} from stream {StreamId}",
+					re.Event.EventId,
+					re.OriginalEvent.EventStreamId
+				);
+
 				return Task.CompletedTask;
 			}
 
@@ -299,5 +320,31 @@ public class subscribe_to_stream_obsolete(ITestOutputHelper output, Subscription
 
 		void OnDropped(StreamSubscription sub, SubscriptionDroppedReason reason, Exception? ex) =>
 			subscriptionDropped.SetResult(new(reason, ex));
+	}
+
+	[Fact]
+	public async Task subscription_drops_due_to_cancellation_token() {
+		var subscriptionDropped = new TaskCompletionSource<SubscriptionDroppedResult>();
+
+		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+		var streamName = Fixture.GetStreamName();
+
+		using var subscription = await Fixture.Streams
+			.SubscribeToStreamAsync(
+				streamName,
+				FromStream.Start,
+				(sub, re, ct) => Task.CompletedTask,
+				false,
+				(sub, reason, ex) => subscriptionDropped.SetResult(new(reason, ex)),
+				cancellationToken: cts.Token
+			)
+			.WithTimeout();
+
+		// wait until the cancellation token canels
+		await Task.Delay(TimeSpan.FromSeconds(3));
+
+		var result = await subscriptionDropped.Task.WithTimeout();
+		result.Reason.ShouldBe(SubscriptionDroppedReason.Disposed);
 	}
 }
