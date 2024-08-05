@@ -1,3 +1,4 @@
+using System.Text.Json;
 using EventStore.Client.Diagnostics;
 using EventStore.Diagnostics.Tracing;
 
@@ -129,8 +130,8 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 
 	[Fact]
 	public async Task TracingContextIsNotInjectedWhenUserMetadataIsNotValidJsonObject() {
-		var stream   = Fixture.GetStreamName();
-		
+		var stream = Fixture.GetStreamName();
+
 		var inputMetadata = "clearlynotavalidjsonobject"u8.ToArray();
 		await Fixture.Streams.AppendToStreamAsync(
 			stream,
@@ -143,6 +144,29 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 			.ToListAsync();
 
 		var outputMetadata = readResult[0].OriginalEvent.Metadata.ToArray();
+		outputMetadata.ShouldBe(inputMetadata);
+	}
+
+	[Fact]
+	public async Task TracingContextIsNotInjectedWhenEventIsNotJsonButHasJsonMetadata() {
+		var stream = Fixture.GetStreamName();
+
+		var inputMetadata = Fixture.CreateTestJsonMetadata().ToArray();
+		await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			Fixture.CreateTestEvents(
+				metadata: inputMetadata,
+				contentType: Constants.Metadata.ContentTypes.ApplicationOctetStream
+			)
+		);
+
+		var readResult = await Fixture.Streams
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+			.ToListAsync();
+
+		var outputMetadata = readResult[0].OriginalEvent.Metadata.ToArray();
+		var test           = JsonSerializer.Deserialize<object>(outputMetadata);
 		outputMetadata.ShouldBe(inputMetadata);
 	}
 }

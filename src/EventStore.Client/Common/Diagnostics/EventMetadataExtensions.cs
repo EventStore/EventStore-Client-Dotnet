@@ -21,15 +21,20 @@ static class EventMetadataExtensions {
 			return TracingMetadata.None;
 
 		var reader = new Utf8JsonReader(eventMetadata.Span);
-		if (!JsonDocument.TryParseValue(ref reader, out var doc))
-			return TracingMetadata.None;
-	
-		using (doc) {
-			if (!doc.RootElement.TryGetProperty(TracingConstants.Metadata.TraceId, out var traceId)
-			 || !doc.RootElement.TryGetProperty(TracingConstants.Metadata.SpanId, out var spanId))
+		try {
+			if (!JsonDocument.TryParseValue(ref reader, out var doc))
 				return TracingMetadata.None;
 
-			return new TracingMetadata(traceId.GetString(), spanId.GetString());
+			using (doc) {
+				if (!doc.RootElement.TryGetProperty(TracingConstants.Metadata.TraceId, out var traceId)
+				 || !doc.RootElement.TryGetProperty(TracingConstants.Metadata.SpanId, out var spanId))
+					return TracingMetadata.None;
+
+				return new TracingMetadata(traceId.GetString(), spanId.GetString());
+			}
+		}
+		catch (Exception) {
+			return TracingMetadata.None;
 		}
 	}
 

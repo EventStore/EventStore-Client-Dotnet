@@ -71,4 +71,85 @@ public class PersistentSubscriptionsTracingInstrumentationTests(ITestOutputHelpe
 			}
 		}
 	}
+
+	[Fact]
+	public async Task PersistentSubscriptionDoesNotThrowWhenInstrumentedWithTracingAndReceivesNonJsonEvents() {
+		var stream = Fixture.GetStreamName();
+		var events = Fixture.CreateTestEvents(
+			2,
+			metadata: Fixture.CreateTestJsonMetadata(),
+			contentType: Constants.Metadata.ContentTypes.ApplicationOctetStream
+		).ToArray();
+
+		var groupName = $"{stream}-group";
+		await Fixture.Subscriptions.CreateToStreamAsync(
+			stream,
+			groupName,
+			new()
+		);
+
+		await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			events
+		);
+
+		await Subscribe().WithTimeout();
+
+		return;
+
+		async Task Subscribe() {
+			await using var subscription = Fixture.Subscriptions.SubscribeToStream(stream, groupName);
+			await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
+
+			var eventsAppeared = 0;
+			while (await enumerator.MoveNextAsync()) {
+				if (enumerator.Current is PersistentSubscriptionMessage.Event(_, _))
+					eventsAppeared++;
+
+				if (eventsAppeared >= events.Length)
+					return;
+			}
+		}
+	}
+
+	[Fact]
+	public async Task PersistentSubscriptionDoesNotThrowWhenInstrumentedWithTracingAndReceivesEventsWithInvalidJsonMetadata() {
+		var stream = Fixture.GetStreamName();
+		var events = Fixture.CreateTestEvents(
+			2,
+			metadata: "clearlynotavalidjsonobject"u8.ToArray()
+		).ToArray();
+
+		var groupName = $"{stream}-group";
+		await Fixture.Subscriptions.CreateToStreamAsync(
+			stream,
+			groupName,
+			new()
+		);
+
+		await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			events
+		);
+
+		await Subscribe().WithTimeout();
+
+		return;
+
+		async Task Subscribe() {
+			await using var subscription = Fixture.Subscriptions.SubscribeToStream(stream, groupName);
+			await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
+
+			var eventsAppeared = 0;
+			while (await enumerator.MoveNextAsync()) {
+				if (enumerator.Current is PersistentSubscriptionMessage.Event(_, _))
+					eventsAppeared++;
+
+				if (eventsAppeared >= events.Length)
+					return;
+			}
+		}
+	}
 }

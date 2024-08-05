@@ -19,8 +19,8 @@ public partial class EventStoreFixture {
 
 	public ReadOnlyMemory<byte> CreateTestJsonMetadata() => "{\"Foo\": \"Bar\"}"u8.ToArray();
 
-	public IEnumerable<EventData> CreateTestEvents(int count = 1, string? type = null, ReadOnlyMemory<byte>? metadata = null) =>
-		Enumerable.Range(0, count).Select(index => CreateTestEvent(index, type ?? TestEventType, metadata));
+	public IEnumerable<EventData> CreateTestEvents(int count = 1, string? type = null, ReadOnlyMemory<byte>? metadata = null, string? contentType = null) =>
+		Enumerable.Range(0, count).Select(index => CreateTestEvent(index, type ?? TestEventType, metadata, contentType));
 
 	public IEnumerable<EventData> CreateTestEventsThatThrowsException() {
 		// Ensure initial IEnumerator.Current does not throw
@@ -32,12 +32,13 @@ public partial class EventStoreFixture {
 
 	protected static EventData CreateTestEvent(int index) => CreateTestEvent(index, TestEventType);
 
-	protected static EventData CreateTestEvent(int index, string type, ReadOnlyMemory<byte>? metadata = null) =>
+	protected static EventData CreateTestEvent(int index, string type, ReadOnlyMemory<byte>? metadata = null, string? contentType = null) =>
 		new(
 			Uuid.NewUuid(),
 			type,
 			Encoding.UTF8.GetBytes($$"""{"x":{{index}}}"""),
-			metadata
+			metadata,
+			contentType ?? "application/json"
 		);
 
 	public async Task<TestUser> CreateTestUser(bool withoutGroups = true, bool useUserCredentials = false) {
