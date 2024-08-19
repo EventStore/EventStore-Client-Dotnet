@@ -30,7 +30,7 @@
         <PackageReleaseNotes>https://eventstore.com/blog/</PackageReleaseNotes>
         <PackageTags>eventstore client grpc</PackageTags>
         <Authors>Event Store Ltd</Authors>
-        <Copyright>Copyright 2012-2020 Event Store Ltd</Copyright>
+			  <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Event Store Ltd</Copyright>
         <MinVerTagPrefix>v</MinVerTagPrefix>
     </PropertyGroup>
 
