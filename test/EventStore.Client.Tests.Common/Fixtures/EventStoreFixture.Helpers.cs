@@ -19,8 +19,18 @@ public partial class EventStoreFixture {
 
 	public ReadOnlyMemory<byte> CreateTestJsonMetadata() => "{\"Foo\": \"Bar\"}"u8.ToArray();
 
-	public IEnumerable<EventData> CreateTestEvents(int count = 1, string? type = null, ReadOnlyMemory<byte>? metadata = null, string? contentType = null) =>
-		Enumerable.Range(0, count).Select(index => CreateTestEvent(index, type ?? TestEventType, metadata, contentType));
+	public ReadOnlyMemory<byte> CreateTestNonJsonMetadata() => "non-json-metadata"u8.ToArray();
+
+	public IEnumerable<EventData> CreateTestEvents(
+		int count = 1, string? type = null, ReadOnlyMemory<byte>? metadata = null, string? contentType = null
+	) =>
+		Enumerable.Range(0, count)
+			.Select(index => CreateTestEvent(index, type ?? TestEventType, metadata, contentType));
+
+	public EventData CreateTestEvent(
+		string? type = null, ReadOnlyMemory<byte>? metadata = null, string? contentType = null
+	) =>
+		CreateTestEvent(0, type ?? TestEventType, metadata, contentType);
 
 	public IEnumerable<EventData> CreateTestEventsThatThrowsException() {
 		// Ensure initial IEnumerator.Current does not throw
@@ -32,7 +42,9 @@ public partial class EventStoreFixture {
 
 	protected static EventData CreateTestEvent(int index) => CreateTestEvent(index, TestEventType);
 
-	protected static EventData CreateTestEvent(int index, string type, ReadOnlyMemory<byte>? metadata = null, string? contentType = null) =>
+	protected static EventData CreateTestEvent(
+		int index, string type, ReadOnlyMemory<byte>? metadata = null, string? contentType = null
+	) =>
 		new(
 			Uuid.NewUuid(),
 			type,

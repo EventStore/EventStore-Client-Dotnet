@@ -18,8 +18,7 @@ static class ActivitySourceExtensions {
 			var res = await tracedOperation().ConfigureAwait(false);
 			activity?.StatusOk();
 			return res;
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			activity?.StatusError(ex);
 			throw;
 		}
@@ -33,15 +32,12 @@ static class ActivitySourceExtensions {
 		EventStoreClientSettings settings,
 		UserCredentials? userCredentials
 	) {
-		if (resolvedEvent.OriginalEvent.ContentType != Constants.Metadata.ContentTypes.ApplicationJson)
-			return;
-
 		if (source.HasNoActiveListeners())
 			return;
 
 		var parentContext = resolvedEvent.OriginalEvent.Metadata.ExtractPropagationContext();
 
-		if (parentContext is null) return;
+		if (parentContext == default(ActivityContext)) return;
 
 		var tags = new ActivityTagsCollection()
 			.WithRequiredTag(TelemetryTags.EventStore.Stream, resolvedEvent.OriginalEvent.EventStreamId)
@@ -51,14 +47,19 @@ static class ActivitySourceExtensions {
 			// Ensure consistent server.address attribute when connecting to cluster via dns discovery
 			.WithGrpcChannelServerTags(channelInfo)
 			.WithClientSettingsServerTags(settings)
-			.WithOptionalTag(TelemetryTags.Database.User, userCredentials?.Username ?? settings.DefaultCredentials?.Username);
+			.WithOptionalTag(
+				TelemetryTags.Database.User,
+				userCredentials?.Username ?? settings.DefaultCredentials?.Username
+			);
 
-		StartActivity(source, TracingConstants.Operations.Subscribe, ActivityKind.Consumer, tags, parentContext)?.Dispose();
+		StartActivity(source, TracingConstants.Operations.Subscribe, ActivityKind.Consumer, tags, parentContext)
+			?.Dispose();
 	}
 
 	static Activity? StartActivity(
 		this ActivitySource source,
-		string operationName, ActivityKind activityKind, ActivityTagsCollection? tags = null, ActivityContext? parentContext = null
+		string operationName, ActivityKind activityKind, ActivityTagsCollection? tags = null,
+		ActivityContext? parentContext = null
 	) {
 		if (source.HasNoActiveListeners())
 			return null;

@@ -132,13 +132,9 @@ namespace EventStore.Client {
 				foreach (var e in eventData) {
 					var appendReq = new AppendReq {
 						ProposedMessage = new() {
-							Id   = e.EventId.ToDto(),
-							Data = ByteString.CopyFrom(e.Data.Span),
-							CustomMetadata = ByteString.CopyFrom(
-								e.ContentType == Constants.Metadata.ContentTypes.ApplicationJson
-									? e.Metadata.InjectTracingContext(Activity.Current)
-									: e.Metadata.Span
-							),
+							Id             = e.EventId.ToDto(),
+							Data           = ByteString.CopyFrom(e.Data.Span),
+							CustomMetadata = ByteString.CopyFrom(e.Metadata.InjectTracingContext(Activity.Current)),
 							Metadata = {
 								{ Constants.Metadata.Type, e.Type },
 								{ Constants.Metadata.ContentType, e.ContentType }
@@ -392,13 +388,9 @@ namespace EventStore.Client {
 
 				foreach (var eventData in events) {
 					var proposedMessage = new BatchAppendReq.Types.ProposedMessage {
-						Data = ByteString.CopyFrom(eventData.Data.Span),
-						CustomMetadata = ByteString.CopyFrom(
-							eventData.ContentType == Constants.Metadata.ContentTypes.ApplicationJson
-								? eventData.Metadata.InjectTracingContext(Activity.Current)
-								: eventData.Metadata.Span
-						),
-						Id = eventData.EventId.ToDto(),
+						Data           = ByteString.CopyFrom(eventData.Data.Span),
+						CustomMetadata = ByteString.CopyFrom(eventData.Metadata.InjectTracingContext(Activity.Current)),
+						Id             = eventData.EventId.ToDto(),
 						Metadata = {
 							{ Constants.Metadata.Type, eventData.Type },
 							{ Constants.Metadata.ContentType, eventData.ContentType }
