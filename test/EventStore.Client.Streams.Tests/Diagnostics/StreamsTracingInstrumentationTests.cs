@@ -1,4 +1,3 @@
-using System.Text.Json;
 using EventStore.Client.Diagnostics;
 using EventStore.Diagnostics.Tracing;
 
@@ -89,7 +88,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 	}
 
 	[Fact]
-	public async Task TracingContextIsNotInjectedWhenEventIsNotJsonButHasJsonMetadata() {
+	public async Task TracingContextIsInjectedWhenEventIsNotJsonButHasJsonMetadata() {
 		var stream = Fixture.GetStreamName();
 
 		var inputMetadata = Fixture.CreateTestJsonMetadata().ToArray();
@@ -107,8 +106,11 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 			.ToListAsync();
 
 		var outputMetadata = readResult[0].OriginalEvent.Metadata.ToArray();
-		var test           = JsonSerializer.Deserialize<object>(outputMetadata);
-		outputMetadata.ShouldBe(inputMetadata);
+		outputMetadata.ShouldNotBe(inputMetadata);
+
+		var appendActivities = Fixture.GetActivitiesForOperation(TracingConstants.Operations.Append, stream);
+
+		appendActivities.ShouldNotBeEmpty();
 	}
 
 	[Fact]
