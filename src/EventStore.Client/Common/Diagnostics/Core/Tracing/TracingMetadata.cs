@@ -25,8 +25,7 @@ readonly record struct TracingMetadata(
 					isRemote: isRemote
 				)
 				: default;
-		}
-		catch (Exception) {
+		} catch (Exception) {
 			return default;
 		}
 	}

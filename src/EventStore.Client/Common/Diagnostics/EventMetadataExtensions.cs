@@ -8,7 +8,9 @@ namespace EventStore.Client.Diagnostics;
 
 static class EventMetadataExtensions {
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public static ReadOnlySpan<byte> InjectTracingContext(this ReadOnlyMemory<byte> eventMetadata, Activity? activity) =>
+	public static ReadOnlySpan<byte> InjectTracingContext(
+		this ReadOnlyMemory<byte> eventMetadata, Activity? activity
+	) =>
 		eventMetadata.InjectTracingMetadata(activity?.GetTracingMetadata() ?? TracingMetadata.None);
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -32,14 +34,15 @@ static class EventMetadataExtensions {
 
 				return new TracingMetadata(traceId.GetString(), spanId.GetString());
 			}
-		}
-		catch (Exception) {
+		} catch (Exception) {
 			return TracingMetadata.None;
 		}
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	static ReadOnlySpan<byte> InjectTracingMetadata(this ReadOnlyMemory<byte> eventMetadata, TracingMetadata tracingMetadata) {
+	static ReadOnlySpan<byte> InjectTracingMetadata(
+		this ReadOnlyMemory<byte> eventMetadata, TracingMetadata tracingMetadata
+	) {
 		if (tracingMetadata == TracingMetadata.None || !tracingMetadata.IsValid)
 			return eventMetadata.Span;
 
@@ -49,7 +52,9 @@ static class EventMetadataExtensions {
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	static ReadOnlyMemory<byte> TryInjectTracingMetadata(this ReadOnlyMemory<byte> utf8Json, TracingMetadata tracingMetadata) {
+	static ReadOnlyMemory<byte> TryInjectTracingMetadata(
+		this ReadOnlyMemory<byte> utf8Json, TracingMetadata tracingMetadata
+	) {
 		try {
 			using var doc    = JsonDocument.Parse(utf8Json);
 			using var stream = new MemoryStream();
@@ -72,8 +77,7 @@ static class EventMetadataExtensions {
 			writer.Flush();
 
 			return stream.ToArray();
-		}
-		catch (Exception) {
+		} catch (Exception) {
 			return utf8Json;
 		}
 	}
