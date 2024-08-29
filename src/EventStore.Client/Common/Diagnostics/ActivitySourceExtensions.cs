@@ -35,7 +35,7 @@ static class ActivitySourceExtensions {
 		if (source.HasNoActiveListeners())
 			return;
 
-		var parentContext = resolvedEvent.OriginalEvent.Metadata.ExtractPropagationContext();
+		var parentContext = resolvedEvent.Event.Metadata.ExtractPropagationContext();
 
 		if (parentContext == default(ActivityContext)) return;
 
