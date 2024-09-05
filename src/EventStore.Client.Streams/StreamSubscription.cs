@@ -135,13 +135,22 @@ namespace EventStore.Client {
 				SubscriptionDropped(SubscriptionDroppedReason.Disposed, ex);
 			} catch (Exception ex) {
 				if (_subscriptionDroppedInvoked == 0) {
-					_log.LogError(
-						ex,
-						"Subscription {subscriptionId} was dropped because an error occurred on the server.",
-						SubscriptionId
-					);
+					if (_cts.IsCancellationRequested) {
+						_log.LogInformation(
+							"Subscription {subscriptionId} was dropped because cancellation was requested by the client.",
+							SubscriptionId
+						);
 
-					SubscriptionDropped(SubscriptionDroppedReason.ServerError, ex);
+						SubscriptionDropped(SubscriptionDroppedReason.Disposed, ex);
+					} else {
+						_log.LogError(
+							ex,
+							"Subscription {subscriptionId} was dropped because an error occurred on the server.",
+							SubscriptionId
+						);
+
+						SubscriptionDropped(SubscriptionDroppedReason.ServerError, ex);
+					}
 				}
 			}
 		}
