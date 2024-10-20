@@ -2,9 +2,7 @@ using AutoFixture;
 
 namespace EventStore.Client.Tests;
 
-public class UuidTests : ValueObjectTests<Uuid> {
-	public UuidTests() : base(new ScenarioFixture()) { }
-
+public class UuidTests() : ValueObjectTests<Uuid>(new ScenarioFixture()) {
 	[Fact]
 	public void ToGuidReturnsExpectedResult() {
 		var guid = Guid.NewGuid();

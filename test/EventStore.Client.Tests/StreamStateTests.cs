@@ -3,13 +3,11 @@ using AutoFixture;
 
 namespace EventStore.Client.Tests;
 
-public class StreamStateTests : ValueObjectTests<StreamState> {
-	public StreamStateTests() : base(new ScenarioFixture()) { }
-
+public class StreamStateTests() : ValueObjectTests<StreamState>(new ScenarioFixture()) {
 	public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
-		yield return new object?[] { 0 };
-		yield return new object?[] { int.MaxValue };
-		yield return new object?[] { -3 };
+		yield return [0];
+		yield return [int.MaxValue];
+		yield return [-3];
 	}
 
 	[Theory]
@@ -33,9 +31,9 @@ public class StreamStateTests : ValueObjectTests<StreamState> {
 	}
 
 	public static IEnumerable<object?[]> ToStringTestCases() {
-		yield return new object?[] { StreamState.Any, nameof(StreamState.Any) };
-		yield return new object?[] { StreamState.NoStream, nameof(StreamState.NoStream) };
-		yield return new object?[] { StreamState.StreamExists, nameof(StreamState.StreamExists) };
+		yield return [StreamState.Any, nameof(StreamState.Any)];
+		yield return [StreamState.NoStream, nameof(StreamState.NoStream)];
+		yield return [StreamState.StreamExists, nameof(StreamState.StreamExists)];
 	}
 
 	[Theory]

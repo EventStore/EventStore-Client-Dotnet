@@ -188,7 +188,7 @@ public class SharingProviderTests {
 		// return the box
 		onBroken?.Invoke(true);
 
-		// the factory method isn't called any more
+		// the factory method isn't called anymore
 		await Assert.ThrowsAsync<ObjectDisposedException>(async () => await sut.CurrentAsync);
 		Assert.Equal(1, count);
 	}
@@ -197,7 +197,7 @@ public class SharingProviderTests {
 	public async Task ExampleUsage() {
 		// factory waits to be signalled by completeConstruction being released
 		// sometimes the factory succeeds, sometimes it throws.
-		// failure of the produced item is trigged by 
+		// failure of the produced item is trigger by 
 		var completeConstruction  = new SemaphoreSlim(0);
 		var constructionCompleted = new SemaphoreSlim(0);
 

@@ -18,12 +18,12 @@ static class TypeExtensions {
 	public static int InvokeGenericCompareTo(this Type type, object? left, object? right) =>
 		(int)typeof(IComparable<>).MakeGenericType(type)
 			.GetMethod("CompareTo", BindingFlags.Public | BindingFlags.Instance)!
-			.Invoke(left, new[] { right })!;
+			.Invoke(left, [right])!;
 
 	public static int InvokeCompareTo(this Type type, object? left, object? right) =>
 		(int)typeof(IComparable)
 			.GetMethod("CompareTo", BindingFlags.Public | BindingFlags.Instance)!
-			.Invoke(left, new[] { right })!;
+			.Invoke(left, [right])!;
 
 	public static bool ImplementsGenericIComparable(this Type type) => type.GetInterfaces().Any(t => t == typeof(IComparable<>).MakeGenericType(type));
 
@@ -34,6 +34,6 @@ static class TypeExtensions {
 		if (op == null)
 			throw new($"The type {type} did not implement op_{name}.");
 
-		return (bool)op.Invoke(null, new[] { left, right })!;
+		return (bool)op.Invoke(null, [left, right])!;
 	}
 }

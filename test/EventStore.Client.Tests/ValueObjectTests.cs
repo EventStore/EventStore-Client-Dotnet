@@ -2,10 +2,8 @@ using AutoFixture;
 
 namespace EventStore.Client.Tests;
 
-public abstract class ValueObjectTests<T> {
-	protected readonly Fixture _fixture;
-
-	protected ValueObjectTests(Fixture fixture) => _fixture = fixture;
+public abstract class ValueObjectTests<T>(Fixture fixture) {
+	protected readonly Fixture _fixture = fixture;
 
 	[Fact]
 	public void ValueObjectIsWellBehaved() => _fixture.Create<ValueObjectAssertion>().Verify(typeof(T));

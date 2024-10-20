@@ -11,8 +11,8 @@ namespace EventStore.Client.Tests;
 
 public class GrpcServerCapabilitiesClientTests {
 	public static IEnumerable<object?[]> ExpectedResultsCases() {
-		yield return new object?[] { new SupportedMethods(), new ServerCapabilities() };
-		yield return new object?[] {
+		yield return [new SupportedMethods(), new ServerCapabilities()];
+		yield return [
 			new SupportedMethods {
 				Methods = {
 					new SupportedMethod {
@@ -22,9 +22,9 @@ public class GrpcServerCapabilitiesClientTests {
 				}
 			},
 			new ServerCapabilities(true)
-		};
+		];
 
-		yield return new object?[] {
+		yield return [
 			new SupportedMethods {
 				Methods = {
 					new SupportedMethod {
@@ -37,9 +37,9 @@ public class GrpcServerCapabilitiesClientTests {
 				}
 			},
 			new ServerCapabilities(SupportsPersistentSubscriptionsToAll: true)
-		};
+		];
 
-		yield return new object?[] {
+		yield return [
 			new SupportedMethods {
 				Methods = {
 					new SupportedMethod {
@@ -49,7 +49,7 @@ public class GrpcServerCapabilitiesClientTests {
 				}
 			},
 			new ServerCapabilities()
-		};
+		];
 	}
 
 	[Theory]
@@ -91,12 +91,8 @@ public class GrpcServerCapabilitiesClientTests {
 		Assert.Equal(expected, actual);
 	}
 
-	class FakeServerFeatures : ServerFeatures.ServerFeatures.ServerFeaturesBase {
-		readonly SupportedMethods _supportedMethods;
-
-		public FakeServerFeatures(SupportedMethods supportedMethods) => _supportedMethods = supportedMethods;
-
-		public override Task<SupportedMethods> GetSupportedMethods(Empty request, ServerCallContext context) => Task.FromResult(_supportedMethods);
+	class FakeServerFeatures(SupportedMethods supportedMethods) : ServerFeatures.ServerFeatures.ServerFeaturesBase {
+		public override Task<SupportedMethods> GetSupportedMethods(Empty request, ServerCallContext context) => Task.FromResult(supportedMethods);
 	}
 }
 #endif

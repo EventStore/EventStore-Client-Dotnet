@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
@@ -78,49 +75,33 @@ namespace EventStore.Client.Interceptors {
 				_onReconnectionRequired(reconnectionRequired);
 		}
 
-		private class StreamWriter<T> : IClientStreamWriter<T> {
-			private readonly IClientStreamWriter<T> _inner;
-			private readonly Action<Task> _reportNewLeader;
-
-			public StreamWriter(IClientStreamWriter<T> inner, Action<Task> reportNewLeader) {
-				_inner = inner;
-				_reportNewLeader = reportNewLeader;
-			}
-
+		private class StreamWriter<T>(IClientStreamWriter<T> inner, Action<Task> reportNewLeader) : IClientStreamWriter<T> {
 			public WriteOptions? WriteOptions {
-				get => _inner.WriteOptions;
-				set => _inner.WriteOptions = value;
+				get => inner.WriteOptions;
+				set => inner.WriteOptions = value;
 			}
 
 			public Task CompleteAsync() {
-				var task = _inner.CompleteAsync();
-				task.ContinueWith(_reportNewLeader, ContinuationOptions);
+				var task = inner.CompleteAsync();
+				task.ContinueWith(reportNewLeader, ContinuationOptions);
 				return task;
 			}
 
 			public Task WriteAsync(T message) {
-				var task = _inner.WriteAsync(message);
-				task.ContinueWith(_reportNewLeader, ContinuationOptions);
+				var task = inner.WriteAsync(message);
+				task.ContinueWith(reportNewLeader, ContinuationOptions);
 				return task;
 			}
 		}
 
-		private class StreamReader<T> : IAsyncStreamReader<T> {
-			private readonly IAsyncStreamReader<T> _inner;
-			private readonly Action<Task> _reportNewLeader;
-
-			public StreamReader(IAsyncStreamReader<T> inner, Action<Task> reportNewLeader) {
-				_inner = inner;
-				_reportNewLeader = reportNewLeader;
-			}
-
+		private class StreamReader<T>(IAsyncStreamReader<T> inner, Action<Task> reportNewLeader) : IAsyncStreamReader<T> {
 			public Task<bool> MoveNext(CancellationToken cancellationToken) {
-				var task = _inner.MoveNext(cancellationToken);
-				task.ContinueWith(_reportNewLeader, ContinuationOptions);
+				var task = inner.MoveNext(cancellationToken);
+				task.ContinueWith(reportNewLeader, ContinuationOptions);
 				return task;
 			}
 
-			public T Current => _inner.Current;
+			public T Current => inner.Current;
 		}
 	}
 }

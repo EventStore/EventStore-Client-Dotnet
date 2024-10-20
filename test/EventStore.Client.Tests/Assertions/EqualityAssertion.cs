@@ -4,9 +4,7 @@ using AutoFixture.Kernel;
 // ReSharper disable once CheckNamespace
 namespace EventStore.Client;
 
-class EqualityAssertion : CompositeIdiomaticAssertion {
-	public EqualityAssertion(ISpecimenBuilder builder) : base(CreateChildrenAssertions(builder)) { }
-
+class EqualityAssertion(ISpecimenBuilder builder) : CompositeIdiomaticAssertion(CreateChildrenAssertions(builder)) {
 	static IEnumerable<IIdiomaticAssertion> CreateChildrenAssertions(ISpecimenBuilder builder) {
 		yield return new EqualsNewObjectAssertion(builder);
 		yield return new EqualsSelfAssertion(builder);
@@ -16,10 +14,8 @@ class EqualityAssertion : CompositeIdiomaticAssertion {
 		yield return new DifferentValuesEqualityOperatorsAssertion(builder);
 	}
 
-	class SameValueEqualityOperatorsAssertion : IdiomaticAssertion {
-		readonly ISpecimenBuilder _builder;
-
-		public SameValueEqualityOperatorsAssertion(ISpecimenBuilder builder) => _builder = builder ?? throw new ArgumentNullException(nameof(builder));
+	class SameValueEqualityOperatorsAssertion(ISpecimenBuilder builder) : IdiomaticAssertion {
+		readonly ISpecimenBuilder _builder = builder ?? throw new ArgumentNullException(nameof(builder));
 
 		public override void Verify(Type type) {
 			if (type == null)
@@ -41,10 +37,8 @@ class EqualityAssertion : CompositeIdiomaticAssertion {
 		}
 	}
 
-	class DifferentValuesEqualityOperatorsAssertion : IdiomaticAssertion {
-		readonly ISpecimenBuilder _builder;
-
-		public DifferentValuesEqualityOperatorsAssertion(ISpecimenBuilder builder) => _builder = builder ?? throw new ArgumentNullException(nameof(builder));
+	class DifferentValuesEqualityOperatorsAssertion(ISpecimenBuilder builder) : IdiomaticAssertion {
+		readonly ISpecimenBuilder _builder = builder ?? throw new ArgumentNullException(nameof(builder));
 
 		public override void Verify(Type type) {
 			if (type == null)

@@ -228,7 +228,7 @@ namespace EventStore.Client {
                                     _          => StreamMessage.Unknown.Instance
                                 };
 
-                            if (subscriptionMessage is StreamMessage.Event evt)
+                            if (subscriptionMessage is StreamMessage.Event { ResolvedEvent.Event: not null } evt)
                                 EventStoreClientDiagnostics.ActivitySource.TraceSubscriptionEvent(
                                     SubscriptionId,
                                     evt.ResolvedEvent,

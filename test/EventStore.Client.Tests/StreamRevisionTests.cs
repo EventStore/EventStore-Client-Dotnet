@@ -2,9 +2,7 @@ using AutoFixture;
 
 namespace EventStore.Client.Tests;
 
-public class StreamRevisionTests : ValueObjectTests<StreamRevision> {
-	public StreamRevisionTests() : base(new ScenarioFixture()) { }
-
+public class StreamRevisionTests() : ValueObjectTests<StreamRevision>(new ScenarioFixture()) {
 	[Fact]
 	public void IsComparable() => Assert.IsAssignableFrom<IComparable<StreamRevision>>(_fixture.Create<StreamRevision>());
 
@@ -22,7 +20,7 @@ public class StreamRevisionTests : ValueObjectTests<StreamRevision> {
 	}
 
 	public static IEnumerable<object?[]> AdditionOutOfBoundsCases() {
-		yield return new object?[] { new StreamRevision(long.MaxValue), long.MaxValue + 2UL };
+		yield return [new StreamRevision(long.MaxValue), long.MaxValue + 2UL];
 	}
 
 	[Theory]
@@ -40,8 +38,8 @@ public class StreamRevisionTests : ValueObjectTests<StreamRevision> {
 	}
 
 	public static IEnumerable<object?[]> SubtractionOutOfBoundsCases() {
-		yield return new object?[] { new StreamRevision(1), 2 };
-		yield return new object?[] { new StreamRevision(0), 1 };
+		yield return [new StreamRevision(1), 2];
+		yield return [new StreamRevision(0), 1];
 	}
 
 	[Theory]
@@ -52,8 +50,8 @@ public class StreamRevisionTests : ValueObjectTests<StreamRevision> {
 	}
 
 	public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
-		yield return new object?[] { long.MaxValue + 1UL };
-		yield return new object?[] { ulong.MaxValue - 1UL };
+		yield return [long.MaxValue + 1UL];
+		yield return [ulong.MaxValue - 1UL];
 	}
 
 	[Theory]

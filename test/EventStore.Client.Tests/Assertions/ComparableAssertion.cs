@@ -5,9 +5,7 @@ using AutoFixture.Kernel;
 // ReSharper disable once CheckNamespace
 namespace EventStore.Client;
 
-class ComparableAssertion : CompositeIdiomaticAssertion {
-	public ComparableAssertion(ISpecimenBuilder builder) : base(CreateChildrenAssertions(builder)) { }
-
+class ComparableAssertion(ISpecimenBuilder builder) : CompositeIdiomaticAssertion(CreateChildrenAssertions(builder)) {
 	static IEnumerable<IIdiomaticAssertion> CreateChildrenAssertions(ISpecimenBuilder builder) {
 		yield return new ImplementsIComparableCorrectlyAssertion();
 		yield return new SameValueComparableAssertion(builder);
@@ -22,16 +20,12 @@ class ComparableAssertion : CompositeIdiomaticAssertion {
 			);
 	}
 
-	class SameValueComparableAssertion : IdiomaticAssertion {
-		readonly ISpecimenBuilder _builder;
-
-		public SameValueComparableAssertion(ISpecimenBuilder builder) => _builder = builder;
-
+	class SameValueComparableAssertion(ISpecimenBuilder builder) : IdiomaticAssertion {
 		public override void Verify(Type type) {
 			if (!type.ImplementsGenericIComparable() || !type.ImplementsIComparable())
 				return;
 
-			var context = new SpecimenContext(_builder);
+			var context = new SpecimenContext(builder);
 
 			var instance = context.Resolve(type);
 
@@ -63,10 +57,8 @@ class ComparableAssertion : CompositeIdiomaticAssertion {
 		}
 	}
 
-	class DifferentValueComparableAssertion : IdiomaticAssertion {
-		readonly ISpecimenBuilder _builder;
-
-		public DifferentValueComparableAssertion(ISpecimenBuilder builder) => _builder = builder ?? throw new ArgumentNullException(nameof(builder));
+	class DifferentValueComparableAssertion(ISpecimenBuilder builder) : IdiomaticAssertion {
+		readonly ISpecimenBuilder _builder = builder ?? throw new ArgumentNullException(nameof(builder));
 
 		public override void Verify(Type type) {
 			if (!type.ImplementsGenericIComparable() || !type.ImplementsIComparable())
@@ -96,7 +88,7 @@ class ComparableAssertion : CompositeIdiomaticAssertion {
 				}
 			);
 
-			Assert.Equal("Object is not a " + type.Name, ex.Message);
+			Assert.Equal($"Object is not a {type.Name}", ex.Message);
 
 			if (compareToGeneric < 0) {
 				Assert.False(

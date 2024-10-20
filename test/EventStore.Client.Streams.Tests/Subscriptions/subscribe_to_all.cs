@@ -4,6 +4,13 @@ namespace EventStore.Client.Streams.Tests.Subscriptions;
 [Trait("Category", "Target:All")]
 public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fixture)
 	: EventStoreTests<SubscriptionsFixture>(output, fixture) {
+	Task<IWriteResult> AppendTestEvent(EventData evt, string prefix = "stream") =>
+		Fixture.Streams.AppendToStreamAsync(
+			$"{prefix}-{evt.EventId.ToGuid():N}",
+			StreamState.NoStream,
+			[evt]
+		);
+
 	[Fact]
 	public async Task receives_all_events_from_start() {
 		var seedEvents = Fixture.CreateTestEvents(10).ToArray();
@@ -12,11 +19,7 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
 
 		foreach (var evt in seedEvents.Take(pageSize))
-			await Fixture.Streams.AppendToStreamAsync(
-				$"stream-{evt.EventId.ToGuid():N}",
-				StreamState.NoStream,
-				new[] { evt }
-			);
+			await AppendTestEvent(evt);
 
 		await using var subscription = Fixture.Streams.SubscribeToAll(FromAll.Start);
 		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
@@ -26,11 +29,7 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 		Assert.IsType<StreamMessage.SubscriptionConfirmation>(enumerator.Current);
 
 		foreach (var evt in seedEvents.Skip(pageSize))
-			await Fixture.Streams.AppendToStreamAsync(
-				$"stream-{evt.EventId.ToGuid():N}",
-				StreamState.NoStream,
-				new[] { evt }
-			);
+			await AppendTestEvent(evt);
 
 		await Subscribe().WithTimeout();
 
@@ -66,11 +65,7 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 
 		// add the events we want to receive after we start the subscription
 		foreach (var evt in seedEvents)
-			await Fixture.Streams.AppendToStreamAsync(
-				$"stream-{evt.EventId.ToGuid():N}",
-				StreamState.NoStream,
-				new[] { evt }
-			);
+			await AppendTestEvent(evt);
 
 		await Subscribe().WithTimeout();
 
@@ -101,11 +96,7 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 
 		IWriteResult writeResult = new SuccessResult();
 		foreach (var evt in seedEvents.Take(pageSize))
-			writeResult = await Fixture.Streams.AppendToStreamAsync(
-				$"stream-{evt.EventId.ToGuid():N}",
-				StreamState.NoStream,
-				new[] { evt }
-			);
+			writeResult = await AppendTestEvent(evt);
 
 		var position = FromAll.After(writeResult.LogPosition);
 
@@ -117,11 +108,7 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 		Assert.IsType<StreamMessage.SubscriptionConfirmation>(enumerator.Current);
 
 		foreach (var evt in seedEvents.Skip(pageSize))
-			await Fixture.Streams.AppendToStreamAsync(
-				$"stream-{evt.EventId.ToGuid():N}",
-				StreamState.NoStream,
-				new[] { evt }
-			);
+			await AppendTestEvent(evt);
 
 		await Subscribe().WithTimeout();
 
@@ -210,11 +197,7 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 
 		// add some of the events we want to see before we start the subscription
 		foreach (var evt in seedEvents.Take(pageSize))
-			await Fixture.Streams.AppendToStreamAsync(
-				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
-				StreamState.NoStream,
-				new[] { evt }
-			);
+			await AppendTestEvent(evt, streamPrefix);
 
 		var filterOptions = new SubscriptionFilterOptions(filter.Create(streamPrefix), 1);
 
@@ -227,11 +210,7 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 
 		// add some of the events we want to see after we start the subscription
 		foreach (var evt in seedEvents.Skip(pageSize))
-			await Fixture.Streams.AppendToStreamAsync(
-				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
-				StreamState.NoStream,
-				new[] { evt }
-			);
+			await AppendTestEvent(evt, streamPrefix);
 
 		bool checkpointReached = false;
 
@@ -297,11 +276,7 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 
 		// add some of the events we want to see before we start the subscription
 		foreach (var evt in seedEvents.Take(pageSize))
-			await Fixture.Streams.AppendToStreamAsync(
-				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
-				StreamState.NoStream,
-				new[] { evt }
-			);
+			await AppendTestEvent(evt, streamPrefix);
 
 		var filterOptions = new SubscriptionFilterOptions(filter.Create(streamPrefix), 1);
 
@@ -314,11 +289,7 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 
 		// add some of the events we want to see after we start the subscription
 		foreach (var evt in seedEvents.Skip(pageSize))
-			await Fixture.Streams.AppendToStreamAsync(
-				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
-				StreamState.NoStream,
-				new[] { evt }
-			);
+			await AppendTestEvent(evt, streamPrefix);
 
 		bool checkpointReached = false;
 
@@ -381,12 +352,8 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 		// add some of the events that are a match to the filter but will not be received
 		IWriteResult writeResult = new SuccessResult();
 		foreach (var evt in seedEvents.Take(pageSize))
-			writeResult = await Fixture.Streams.AppendToStreamAsync(
-				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
-				StreamState.NoStream,
-				new[] { evt }
-			);
-
+			writeResult = await AppendTestEvent(evt, streamPrefix);
+		
 		var position = FromAll.After(writeResult.LogPosition);
 
 		var filterOptions = new SubscriptionFilterOptions(filter.Create(streamPrefix), 1);
@@ -400,11 +367,7 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 
 		// add the events we want to receive after we start the subscription
 		foreach (var evt in seedEvents.Skip(pageSize))
-			await Fixture.Streams.AppendToStreamAsync(
-				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
-				StreamState.NoStream,
-				new[] { evt }
-			);
+			await AppendTestEvent(evt, streamPrefix);
 
 		bool checkpointReached = false;
 
@@ -445,9 +408,7 @@ public class subscribe_to_all(ITestOutputHelper output, SubscriptionsFixture fix
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
 
-		var filterOptions = new SubscriptionFilterOptions(
-			StreamFilter.Prefix($"$et-{EventStoreFixture.TestEventType}")
-		);
+		var filterOptions = new SubscriptionFilterOptions(StreamFilter.Prefix($"$et-{EventStoreFixture.TestEventType}"));
 
 		await using var subscription =
 			Fixture.Streams.SubscribeToAll(FromAll.Start, true, filterOptions: filterOptions);

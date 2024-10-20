@@ -28,7 +28,7 @@ public class GossipChannelSelectorTests {
 			channelCache,
 			new FakeGossipClient(
 				new(
-					new ClusterMessages.MemberInfo[] {
+					[
 						new(
 							firstId,
 							ClusterMessages.VNodeState.Leader,
@@ -41,7 +41,7 @@ public class GossipChannelSelectorTests {
 							true,
 							secondSelection
 						)
-					}
+					]
 				)
 			)
 		);
@@ -74,16 +74,12 @@ public class GossipChannelSelectorTests {
 		Assert.Equal(3, ex.MaxDiscoverAttempts);
 	}
 
-	class FakeGossipClient : IGossipClient {
-		readonly ClusterMessages.ClusterInfo _clusterInfo;
-
-		public FakeGossipClient(ClusterMessages.ClusterInfo clusterInfo) => _clusterInfo = clusterInfo;
-
+	class FakeGossipClient(ClusterMessages.ClusterInfo clusterInfo) : IGossipClient {
 		public ValueTask<ClusterMessages.ClusterInfo> GetAsync(
 			ChannelBase channel,
 			CancellationToken cancellationToken
 		) =>
-			new(_clusterInfo);
+			new(clusterInfo);
 	}
 
 	class BadGossipClient : IGossipClient {

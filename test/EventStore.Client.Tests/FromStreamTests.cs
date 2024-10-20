@@ -2,9 +2,7 @@ using AutoFixture;
 
 namespace EventStore.Client.Tests;
 
-public class FromStreamTests : ValueObjectTests<FromStream> {
-	public FromStreamTests() : base(new ScenarioFixture()) { }
-
+public class FromStreamTests() : ValueObjectTests<FromStream>(new ScenarioFixture()) {
 	[Fact]
 	public void IsComparable() => Assert.IsAssignableFrom<IComparable<FromStream>>(_fixture.Create<FromStream>());
 
@@ -19,9 +17,9 @@ public class FromStreamTests : ValueObjectTests<FromStream> {
 	public static IEnumerable<object?[]> ToStringCases() {
 		var fixture  = new ScenarioFixture();
 		var position = fixture.Create<StreamPosition>();
-		yield return new object?[] { FromStream.After(position), position.ToString() };
-		yield return new object?[] { FromStream.Start, "Start" };
-		yield return new object?[] { FromStream.End, "Live" };
+		yield return [FromStream.After(position), position.ToString()];
+		yield return [FromStream.Start, "Start"];
+		yield return [FromStream.End, "Live"];
 	}
 
 	[Theory]

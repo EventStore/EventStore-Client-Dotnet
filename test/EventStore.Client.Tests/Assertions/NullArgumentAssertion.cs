@@ -5,13 +5,9 @@ using AutoFixture.Kernel;
 // ReSharper disable once CheckNamespace
 namespace EventStore.Client;
 
-class NullArgumentAssertion : IdiomaticAssertion {
-	readonly ISpecimenBuilder _builder;
-
-	public NullArgumentAssertion(ISpecimenBuilder builder) => _builder = builder;
-
+class NullArgumentAssertion(ISpecimenBuilder builder) : IdiomaticAssertion {
 	public override void Verify(Type type) {
-		var context = new SpecimenContext(_builder);
+		var context = new SpecimenContext(builder);
 
 		Assert.All(
 			type.GetConstructors(),

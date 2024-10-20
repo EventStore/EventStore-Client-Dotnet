@@ -40,10 +40,10 @@ static class ActivitySourceExtensions {
 		if (parentContext == default(ActivityContext)) return;
 
 		var tags = new ActivityTagsCollection()
-			.WithRequiredTag(TelemetryTags.EventStore.Stream, resolvedEvent.OriginalEvent.EventStreamId)
+			.WithRequiredTag(TelemetryTags.EventStore.Stream, resolvedEvent.Event.EventStreamId)
 			.WithOptionalTag(TelemetryTags.EventStore.SubscriptionId, subscriptionId)
-			.WithRequiredTag(TelemetryTags.EventStore.EventId, resolvedEvent.OriginalEvent.EventId.ToString())
-			.WithRequiredTag(TelemetryTags.EventStore.EventType, resolvedEvent.OriginalEvent.EventType)
+			.WithRequiredTag(TelemetryTags.EventStore.EventId, resolvedEvent.Event.EventId.ToString())
+			.WithRequiredTag(TelemetryTags.EventStore.EventType, resolvedEvent.Event.EventType)
 			// Ensure consistent server.address attribute when connecting to cluster via dns discovery
 			.WithGrpcChannelServerTags(channelInfo)
 			.WithClientSettingsServerTags(settings)

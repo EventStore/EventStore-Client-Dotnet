@@ -2,9 +2,7 @@ using AutoFixture;
 
 namespace EventStore.Client.Tests;
 
-public class FromAllTests : ValueObjectTests<FromAll> {
-	public FromAllTests() : base(new ScenarioFixture()) { }
-
+public class FromAllTests() : ValueObjectTests<FromAll>(new ScenarioFixture()) {
 	[Fact]
 	public void IsComparable() => Assert.IsAssignableFrom<IComparable<FromAll>>(_fixture.Create<FromAll>());
 
@@ -19,9 +17,9 @@ public class FromAllTests : ValueObjectTests<FromAll> {
 	public static IEnumerable<object?[]> ToStringCases() {
 		var fixture  = new ScenarioFixture();
 		var position = fixture.Create<Position>();
-		yield return new object?[] { FromAll.After(position), position.ToString() };
-		yield return new object?[] { FromAll.Start, "Start" };
-		yield return new object?[] { FromAll.End, "Live" };
+		yield return [FromAll.After(position), position.ToString()];
+		yield return [FromAll.Start, "Start"];
+		yield return [FromAll.End, "Live"];
 	}
 
 	[Theory]

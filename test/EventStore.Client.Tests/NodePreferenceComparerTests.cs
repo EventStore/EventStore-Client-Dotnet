@@ -10,11 +10,11 @@ public class NodePreferenceComparerTests {
 			.First();
 
 	public static IEnumerable<object?[]> LeaderTestCases() {
-		yield return new object?[] { Leader, Leader, Follower, Follower, ReadOnlyReplica };
-		yield return new object?[] { Follower, Follower, Follower, ReadOnlyReplica };
-		yield return new object?[] { ReadOnlyReplica, ReadOnlyReplica, PreReadOnlyReplica, ReadOnlyLeaderless };
-		yield return new object?[] { PreReadOnlyReplica, PreReadOnlyReplica, ReadOnlyLeaderless };
-		yield return new object?[] { ReadOnlyLeaderless, ReadOnlyLeaderless, DiscoverLeader };
+		yield return [Leader, Leader, Follower, Follower, ReadOnlyReplica];
+		yield return [Follower, Follower, Follower, ReadOnlyReplica];
+		yield return [ReadOnlyReplica, ReadOnlyReplica, PreReadOnlyReplica, ReadOnlyLeaderless];
+		yield return [PreReadOnlyReplica, PreReadOnlyReplica, ReadOnlyLeaderless];
+		yield return [ReadOnlyLeaderless, ReadOnlyLeaderless, DiscoverLeader];
 	}
 
 	[Theory]
@@ -26,11 +26,11 @@ public class NodePreferenceComparerTests {
 	}
 
 	public static IEnumerable<object?[]> FollowerTestCases() {
-		yield return new object?[] { Follower, Leader, Follower, Follower, ReadOnlyReplica };
-		yield return new object?[] { Leader, Leader, ReadOnlyReplica, ReadOnlyReplica };
-		yield return new object?[] { ReadOnlyReplica, ReadOnlyReplica, PreReadOnlyReplica, ReadOnlyLeaderless };
-		yield return new object?[] { PreReadOnlyReplica, PreReadOnlyReplica, ReadOnlyLeaderless };
-		yield return new object?[] { ReadOnlyLeaderless, ReadOnlyLeaderless, DiscoverLeader };
+		yield return [Follower, Leader, Follower, Follower, ReadOnlyReplica];
+		yield return [Leader, Leader, ReadOnlyReplica, ReadOnlyReplica];
+		yield return [ReadOnlyReplica, ReadOnlyReplica, PreReadOnlyReplica, ReadOnlyLeaderless];
+		yield return [PreReadOnlyReplica, PreReadOnlyReplica, ReadOnlyLeaderless];
+		yield return [ReadOnlyLeaderless, ReadOnlyLeaderless, DiscoverLeader];
 	}
 
 	[Theory]
@@ -42,11 +42,11 @@ public class NodePreferenceComparerTests {
 	}
 
 	public static IEnumerable<object?[]> ReadOnlyReplicaTestCases() {
-		yield return new object?[] { ReadOnlyReplica, Leader, Follower, Follower, ReadOnlyReplica };
-		yield return new object?[] { PreReadOnlyReplica, Leader, Follower, Follower, PreReadOnlyReplica };
-		yield return new object?[] { ReadOnlyLeaderless, Leader, Follower, Follower, ReadOnlyLeaderless };
-		yield return new object?[] { Leader, Leader, Follower, Follower };
-		yield return new object?[] { Follower, DiscoverLeader, Follower, Follower };
+		yield return [ReadOnlyReplica, Leader, Follower, Follower, ReadOnlyReplica];
+		yield return [PreReadOnlyReplica, Leader, Follower, Follower, PreReadOnlyReplica];
+		yield return [ReadOnlyLeaderless, Leader, Follower, Follower, ReadOnlyLeaderless];
+		yield return [Leader, Leader, Follower, Follower];
+		yield return [Follower, DiscoverLeader, Follower, Follower];
 	}
 
 	[Theory]

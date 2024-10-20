@@ -188,13 +188,11 @@ public class ReportLeaderInterceptorTests {
 				Marshaller
 			),
 			null,
-			new(new())
+			new([])
 		);
 
-	class TestAsyncStreamReader : IAsyncStreamReader<object> {
-		readonly Task<object> _response;
-
-		public TestAsyncStreamReader(Task<object>? response = null) => _response = response ?? Task.FromResult(new object());
+	class TestAsyncStreamReader(Task<object>? response = null) : IAsyncStreamReader<object> {
+		readonly Task<object> _response = response ?? Task.FromResult(new object());
 
 		public Task<bool> MoveNext(CancellationToken cancellationToken) =>
 			_response.IsFaulted
@@ -204,10 +202,8 @@ public class ReportLeaderInterceptorTests {
 		public object Current => _response.Result;
 	}
 
-	class TestAsyncStreamWriter : IClientStreamWriter<object> {
-		readonly Task<object> _response;
-
-		public TestAsyncStreamWriter(Task<object>? response = null) => _response = response ?? Task.FromResult(new object());
+	class TestAsyncStreamWriter(Task<object>? response = null) : IClientStreamWriter<object> {
+		readonly Task<object> _response = response ?? Task.FromResult(new object());
 
 		public WriteOptions? WriteOptions {
 			get => throw new NotImplementedException();

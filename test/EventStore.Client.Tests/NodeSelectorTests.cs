@@ -35,10 +35,10 @@ public class NodeSelectorTests {
 
 			yield return new object?[] {
 				new ClusterMessages.ClusterInfo(
-					new ClusterMessages.MemberInfo[] {
+					[
 						new(allowedNodeId, ClusterMessages.VNodeState.Leader, true, allowedNode),
 						new(notAllowedNodeId, state, true, notAllowedNode)
-					}
+					]
 				),
 				settings,
 				allowedNode
@@ -70,7 +70,7 @@ public class NodeSelectorTests {
 
 		var settings = new EventStoreClientSettings {
 			ConnectivitySettings = {
-				DnsGossipSeeds = new[] { allowedNode, notAllowedNode },
+				DnsGossipSeeds = [allowedNode, notAllowedNode],
 				Insecure       = true
 			}
 		};
@@ -79,10 +79,10 @@ public class NodeSelectorTests {
 
 		var selectedNode = sut.SelectNode(
 			new(
-				new ClusterMessages.MemberInfo[] {
+				[
 					new(allowedNodeId, ClusterMessages.VNodeState.Follower, true, allowedNode),
 					new(notAllowedNodeId, ClusterMessages.VNodeState.Leader, false, notAllowedNode)
-				}
+				]
 			)
 		);
 
@@ -105,12 +105,12 @@ public class NodeSelectorTests {
 		var sut = new NodeSelector(settings);
 		var selectedNode = sut.SelectNode(
 			new(
-				new ClusterMessages.MemberInfo[] {
+				[
 					new(Uuid.NewUuid(), ClusterMessages.VNodeState.Follower, false, new("follower1", 2113)),
 					new(Uuid.NewUuid(), ClusterMessages.VNodeState.Leader, true, new("leader", 2113)),
 					new(Uuid.NewUuid(), ClusterMessages.VNodeState.Follower, true, new("follower2", 2113)),
 					new(Uuid.NewUuid(), ClusterMessages.VNodeState.ReadOnlyReplica, true, new("readOnlyReplica", 2113))
-				}
+				]
 			)
 		);
 

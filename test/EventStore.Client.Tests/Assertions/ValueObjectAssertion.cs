@@ -4,9 +4,7 @@ using AutoFixture.Kernel;
 // ReSharper disable once CheckNamespace
 namespace EventStore.Client;
 
-class ValueObjectAssertion : CompositeIdiomaticAssertion {
-	public ValueObjectAssertion(ISpecimenBuilder builder) : base(CreateChildrenAssertions(builder)) { }
-
+class ValueObjectAssertion(ISpecimenBuilder builder) : CompositeIdiomaticAssertion(CreateChildrenAssertions(builder)) {
 	static IEnumerable<IIdiomaticAssertion> CreateChildrenAssertions(ISpecimenBuilder builder) {
 		yield return new EqualityAssertion(builder);
 		yield return new ComparableAssertion(builder);
