@@ -1,3 +1,5 @@
+// ReSharper disable ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+
 using EventStore.Client.Diagnostics;
 using EventStore.Diagnostics.Tracing;
 
@@ -172,54 +174,48 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 		}
 	}
 
-    [Fact]
-    [Trait("Category", "Special cases")]
-    public async Task should_not_trace_when_event_is_null() {
-	    var category   = Guid.NewGuid().ToString("N");
-	    var streamName = category + "-123";
+	[Fact]
+	[Trait("Category", "Special cases")]
+	public async Task should_not_trace_when_event_is_null() {
+		var category   = Guid.NewGuid().ToString("N");
+		var streamName = category + "-123";
 
-	    var seedEvents = Fixture.CreateTestEvents(type: $"{category}-{Fixture.GetStreamName()}").ToArray();
-	    await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
-	    await Fixture.Streams.DeleteAsync(streamName, StreamState.StreamExists);
+		var seedEvents = Fixture.CreateTestEvents(type: $"{category}-{Fixture.GetStreamName()}").ToArray();
+		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
 
-	    await using var subscription = Fixture.Streams.SubscribeToStream("$ce-" + category, FromStream.Start, resolveLinkTos: true);
+		await Fixture.Streams.DeleteAsync(streamName, StreamState.StreamExists);
 
-	    var ex = await Assert.ThrowsAsync<NullReferenceException>(
-		    async () => {
-			    await using var enumerator = subscription.Messages.GetAsyncEnumerator();
+		await using var subscription = Fixture.Streams.SubscribeToStream("$ce-" + category, FromStream.Start, resolveLinkTos: true);
 
-			    Assert.True(await enumerator.MoveNextAsync());
+		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
 
-			    Assert.IsType<StreamMessage.SubscriptionConfirmation>(enumerator.Current);
+		Assert.True(await enumerator.MoveNextAsync());
 
-			    await Subscribe().WithTimeout();
+		Assert.IsType<StreamMessage.SubscriptionConfirmation>(enumerator.Current);
 
-			    var appendActivities = Fixture
-				    .GetActivitiesForOperation(TracingConstants.Operations.Append, "$ce-" + category)
-				    .ShouldNotBeNull();
+		await Subscribe().WithTimeout();
 
-			    var subscribeActivities = Fixture
-				    .GetActivitiesForOperation(TracingConstants.Operations.Subscribe, "$ce-" + category)
-				    .ToArray();
+		var appendActivities = Fixture
+			.GetActivitiesForOperation(TracingConstants.Operations.Append, streamName)
+			.ShouldNotBeNull();
 
-			    appendActivities.ShouldHaveSingleItem();
-			    subscribeActivities.ShouldBeEmpty();
+		var subscribeActivities = Fixture
+			.GetActivitiesForOperation(TracingConstants.Operations.Subscribe, "$ce-" + category)
+			.ToArray();
 
-			    return;
+		appendActivities.ShouldHaveSingleItem();
+		subscribeActivities.ShouldBeEmpty();
 
-			    async Task Subscribe() {
-				    while (await enumerator.MoveNextAsync()) {
-					    if (enumerator.Current is not StreamMessage.Event(var resolvedEvent))
-						    continue;
+		return;
 
-					    resolvedEvent.Event.Data.ShouldNotBe(null);
+		async Task Subscribe() {
+			while (await enumerator.MoveNextAsync()) {
+				if (enumerator.Current is not StreamMessage.Event(var resolvedEvent))
+					continue;
 
-					    return;
-				    }
-			    }
-		    }
-	    ).WithTimeout();
-
-	    Assert.NotNull(ex);
-    }
+				if (resolvedEvent.Event?.EventType is "$metadata")
+					return;
+			}
+		}
+	}
 }

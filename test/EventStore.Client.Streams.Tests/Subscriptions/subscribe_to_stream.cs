@@ -233,6 +233,7 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 
     [Fact]
     [Trait("Category", "Special cases")]
+    [Description("This is normal behavior for EventStoreDB")]
     public async Task should_throw_exception_when_subscribing_to_deleted_stream_category() {
 	    var category   = Guid.NewGuid().ToString("N");
 	    var streamName = category + "-123";
@@ -257,18 +258,15 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 
 			    async Task Subscribe() {
 				    while (await enumerator.MoveNextAsync()) {
-					    if (enumerator.Current is not StreamMessage.Event(var resolvedEvent)) {
+					    if (enumerator.Current is not StreamMessage.Event(var resolvedEvent))
 						    continue;
-					    }
 
-					    resolvedEvent.Event.Data.ShouldNotBe(null);
-
-					    return;
+					    _ = resolvedEvent.Event.Data;
 				    }
 			    }
 		    }
 	    ).WithTimeout();
 
-	    Assert.NotNull(ex);
+	    ex.ShouldNotBeNull();
     }
 }
