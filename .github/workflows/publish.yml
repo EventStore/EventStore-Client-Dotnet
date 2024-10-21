@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Generate certificates
       run: |
         mkdir -p certs
@@ -89,7 +89,7 @@ jobs:
         sudo chown -R $USER:$USER certs
         sudo chmod -R 755 certs
     - name: Upload certificates
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: certs
         path: certs
@@ -123,7 +123,7 @@ jobs:
       run: |
         dotnet build --configuration ${{ matrix.configuration }} --framework ${{ matrix.framework }} src/EventStore.Client
     - name: Download certificates
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
         name: certs
         path: certs
@@ -191,7 +191,7 @@ jobs:
           /p:RepositoryUrl=https://github.com/EventStore/EventStore-Client-Dotnet \
           /p:RepositoryType=git
     - name: Publish Artifacts
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         path: packages
         name: nuget-packages
