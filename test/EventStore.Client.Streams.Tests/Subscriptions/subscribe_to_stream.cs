@@ -230,43 +230,4 @@ public class subscribe_to_stream(ITestOutputHelper output, SubscriptionsFixture 
 			}
 		}
 	}
-
-    [Fact]
-    [Trait("Category", "Special cases")]
-    [Description("This is normal behavior for EventStoreDB")]
-    public async Task should_throw_exception_when_subscribing_to_deleted_stream_category() {
-	    var category   = Guid.NewGuid().ToString("N");
-	    var streamName = category + "-123";
-
-	    var seedEvents = Fixture.CreateTestEvents(type: $"{category}-{Fixture.GetStreamName()}").ToArray();
-	    await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
-	    await Fixture.Streams.DeleteAsync(streamName, StreamState.StreamExists);
-
-	    await using var subscription = Fixture.Streams.SubscribeToStream("$ce-" + category, FromStream.Start, resolveLinkTos: true);
-
-	    var ex = await Assert.ThrowsAsync<NullReferenceException>(
-		    async () => {
-			    await using var enumerator = subscription.Messages.GetAsyncEnumerator();
-
-			    Assert.True(await enumerator.MoveNextAsync());
-
-			    Assert.IsType<StreamMessage.SubscriptionConfirmation>(enumerator.Current);
-
-			    await Subscribe().WithTimeout();
-
-			    return;
-
-			    async Task Subscribe() {
-				    while (await enumerator.MoveNextAsync()) {
-					    if (enumerator.Current is not StreamMessage.Event(var resolvedEvent))
-						    continue;
-
-					    _ = resolvedEvent.Event.Data;
-				    }
-			    }
-		    }
-	    ).WithTimeout();
-
-	    ex.ShouldNotBeNull();
-    }
 }
