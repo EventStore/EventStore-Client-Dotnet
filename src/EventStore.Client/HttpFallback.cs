@@ -21,14 +21,27 @@ namespace EventStore.Client {
 			if (!settings.ConnectivitySettings.Insecure) {
 				handler.ClientCertificateOptions = ClientCertificateOption.Manual;
 
-				if (settings.ConnectivitySettings.TlsCaFile != null)
-					handler.ClientCertificates.Add(settings.ConnectivitySettings.TlsCaFile);
-
-				if (settings.ConnectivitySettings.ClientCertificate != null)
+				if (settings.ConnectivitySettings.ClientCertificate is not null)
 					handler.ClientCertificates.Add(settings.ConnectivitySettings.ClientCertificate);
 
-				if (!settings.ConnectivitySettings.TlsVerifyCert)
-					handler.ServerCertificateCustomValidationCallback = delegate { return true; };
+				handler.ServerCertificateCustomValidationCallback = settings.ConnectivitySettings.TlsVerifyCert switch {
+					false => delegate { return true; },
+					true when settings.ConnectivitySettings.TlsCaFile is not null => (sender, certificate, chain, errors) => {
+						if (certificate is null || chain is null) return false;
+
+						chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+
+#if NET48
+						chain.ChainPolicy.ExtraStore.Add(settings.ConnectivitySettings.TlsCaFile);
+#else
+						chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+						chain.ChainPolicy.CustomTrustStore.Add(settings.ConnectivitySettings.TlsCaFile);
+#endif
+
+						return chain.Build(certificate);
+					},
+					_ => null
+				};
 			}
 
 			_httpClient = new HttpClient(handler);
@@ -45,9 +58,9 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials, Action onNotFound, CancellationToken cancellationToken) {
 
 			var request = CreateRequest(path, HttpMethod.Get, channelInfo, userCredentials);
-			
+
 			var httpResult = await HttpSendAsync(request, onNotFound, deadline, cancellationToken).ConfigureAwait(false);
-			
+
 #if NET
 			var json = await httpResult.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 #else
@@ -66,7 +79,7 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials, Action onNotFound, CancellationToken cancellationToken) {
 
 			var request = CreateRequest(path, query, HttpMethod.Post, channelInfo, userCredentials);
-			
+
 			await HttpSendAsync(request, onNotFound, deadline, cancellationToken).ConfigureAwait(false);
 		}
 
@@ -74,18 +87,18 @@ namespace EventStore.Client {
 			TimeSpan? deadline, CancellationToken cancellationToken) {
 
 			if (!deadline.HasValue) {
-				return await HttpSendAsync(request, onNotFound, cancellationToken).ConfigureAwait(false);				
+				return await HttpSendAsync(request, onNotFound, cancellationToken).ConfigureAwait(false);
 			}
-			
+
 			using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 			cts.CancelAfter(deadline.Value);
-				
+
 			return await HttpSendAsync(request, onNotFound, cts.Token).ConfigureAwait(false);
 		}
-		
+
 		async Task<HttpResponseMessage> HttpSendAsync(HttpRequestMessage request, Action onNotFound,
 			CancellationToken cancellationToken) {
-			
+
 			var httpResult = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
 			if (httpResult.IsSuccessStatusCode) {
 				return httpResult;
@@ -107,7 +120,7 @@ namespace EventStore.Client {
 
 		private HttpRequestMessage CreateRequest(string path, string query, HttpMethod method, ChannelInfo channelInfo,
 			UserCredentials? credentials) {
-			
+
 			var uriBuilder = new UriBuilder($"{_addressScheme}://{channelInfo.Channel.Target}") {
 				Path = path,
 				Query = query
@@ -119,7 +132,7 @@ namespace EventStore.Client {
 			if (credentials != null) {
 				httpRequest.Headers.Add(Constants.Headers.Authorization, credentials.ToString());
 			}
-			
+
 			return httpRequest;
 		}
 

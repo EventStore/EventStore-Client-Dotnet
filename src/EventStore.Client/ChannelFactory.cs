@@ -5,7 +5,7 @@ using EndPoint = System.Net.EndPoint;
 using TChannel = Grpc.Net.Client.GrpcChannel;
 
 namespace EventStore.Client {
-	
+
 	internal static class ChannelFactory {
 		private const int MaxReceiveMessageLength = 17 * 1024 * 1024;
 
@@ -38,14 +38,8 @@ namespace EventStore.Client {
 
 #if NET48
 		static HttpMessageHandler CreateHandler(EventStoreClientSettings settings) {
-			if (settings.CreateHttpMessageHandler != null) {
+			if (settings.CreateHttpMessageHandler is not null)
 				return settings.CreateHttpMessageHandler.Invoke();
-			}
-
-			var certificate = settings.ConnectivitySettings.ClientCertificate ??
-			                  settings.ConnectivitySettings.TlsCaFile;
-
-			var configureClientCert = settings.ConnectivitySettings is { Insecure: false } && certificate != null;
 
 			var handler = new WinHttpHandler {
 				TcpKeepAliveEnabled = true,
@@ -56,42 +50,53 @@ namespace EventStore.Client {
 
 			if (settings.ConnectivitySettings.Insecure) return handler;
 
-			if (configureClientCert) {
-				handler.ClientCertificates.Add(certificate!);
-			}
+			if (settings.ConnectivitySettings.ClientCertificate is not null)
+				handler.ClientCertificates.Add(settings.ConnectivitySettings.ClientCertificate);
 
-			if (!settings.ConnectivitySettings.TlsVerifyCert) {
-				handler.ServerCertificateValidationCallback = delegate { return true; };
-			}
+			handler.ServerCertificateValidationCallback = settings.ConnectivitySettings.TlsVerifyCert switch {
+				false => delegate { return true; },
+				true when settings.ConnectivitySettings.TlsCaFile is not null => (sender, certificate, chain, errors) => {
+					if (chain is null) return false;
+
+					chain.ChainPolicy.ExtraStore.Add(settings.ConnectivitySettings.TlsCaFile);
+					return chain.Build(certificate);
+				},
+				_ => null
+			};
 
 			return handler;
 		}
 #else
 		static HttpMessageHandler CreateHandler(EventStoreClientSettings settings) {
-			if (settings.CreateHttpMessageHandler != null) {
+			if (settings.CreateHttpMessageHandler is not null)
 				return settings.CreateHttpMessageHandler.Invoke();
-			}
-
-			var certificate = settings.ConnectivitySettings.ClientCertificate ??
-			                  settings.ConnectivitySettings.TlsCaFile;
-
-			var configureClientCert = settings.ConnectivitySettings is { Insecure: false } && certificate != null;
 
 			var handler = new SocketsHttpHandler {
 				KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
 				KeepAlivePingTimeout           = settings.ConnectivitySettings.KeepAliveTimeout,
-				EnableMultipleHttp2Connections = true,
+				EnableMultipleHttp2Connections = true
 			};
 
-			if (settings.ConnectivitySettings.Insecure) return handler;
+			if (settings.ConnectivitySettings.Insecure)
+				return handler;
 
-			if (configureClientCert) {
-				handler.SslOptions.ClientCertificates = new X509CertificateCollection { certificate! };
+			if (settings.ConnectivitySettings.ClientCertificate is not null) {
+				handler.SslOptions.ClientCertificates = new X509CertificateCollection {
+					settings.ConnectivitySettings.ClientCertificate
+				};
 			}
 
-			if (!settings.ConnectivitySettings.TlsVerifyCert) {
-				handler.SslOptions.RemoteCertificateValidationCallback = delegate { return true; };
-			}
+			handler.SslOptions.RemoteCertificateValidationCallback = settings.ConnectivitySettings.TlsVerifyCert switch {
+				false => delegate { return true; },
+				true when settings.ConnectivitySettings.TlsCaFile is not null => (sender, certificate, chain, errors) => {
+					if (certificate is not X509Certificate2 peerCertificate || chain is null) return false;
+
+					chain.ChainPolicy.TrustMode                   = X509ChainTrustMode.CustomRootTrust;
+					chain.ChainPolicy.CustomTrustStore.Add(settings.ConnectivitySettings.TlsCaFile);
+					return chain.Build(peerCertificate);
+				},
+				_ => null
+			};
 
 			return handler;
 		}

@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Generate certificates
       run: |
         mkdir -p certs
@@ -89,7 +89,7 @@ jobs:
         sudo chown -R $USER:$USER certs
         sudo chmod -R 755 certs
     - name: Upload certificates
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: certs
         path: certs
@@ -123,21 +123,10 @@ jobs:
       run: |
         dotnet build --configuration ${{ matrix.configuration }} --framework ${{ matrix.framework }} src/EventStore.Client
     - name: Download certificates
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
         name: certs
         path: certs
-    - name: Import certificates (Linux)
-      if: runner.os == 'Linux'
-      shell: bash
-      run: |
-        sudo cp certs/ca/ca.crt /usr/local/share/ca-certificates/eventstore_ca.crt
-        sudo update-ca-certificates
-    - name: Import certificates (Windows)
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: |
-        Import-Certificate -FilePath "certs\ca\ca.crt" -CertStoreLocation "Cert:\LocalMachine\Root"
     - name: Run Tests (Linux)
       if: runner.os == 'Linux'
       shell: bash
@@ -191,7 +180,7 @@ jobs:
           /p:RepositoryUrl=https://github.com/EventStore/EventStore-Client-Dotnet \
           /p:RepositoryType=git
     - name: Publish Artifacts
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         path: packages
         name: nuget-packages

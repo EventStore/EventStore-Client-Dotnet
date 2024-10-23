@@ -21,5 +21,3 @@ docker run --rm --volume .\certs:/tmp docker.eventstore.com/eventstore-utils/es-
 
 # Set permissions recursively for the directory
 icacls .\certs /grant:r "$($env:UserName):(OI)(CI)F"
-
-Import-Certificate -FilePath ".\certs\ca\ca.crt" -CertStoreLocation Cert:\CurrentUser\Root
