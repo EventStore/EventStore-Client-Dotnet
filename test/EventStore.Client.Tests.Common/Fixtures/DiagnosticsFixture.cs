@@ -11,7 +11,7 @@ namespace EventStore.Client.Tests;
 public class DiagnosticsFixture : EventStoreFixture {
 	readonly ConcurrentDictionary<(string Operation, string Stream), List<Activity>> _activities = [];
 
-	public DiagnosticsFixture() {
+	public DiagnosticsFixture() : base(x => x.RunProjections()) {
 		var diagnosticActivityListener = new ActivityListener {
 			ShouldListenTo = source => source.Name == EventStoreClientDiagnostics.InstrumentationName,
 			Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,

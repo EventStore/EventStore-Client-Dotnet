@@ -1,3 +1,5 @@
+// ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+
 using System.Diagnostics;
 using EventStore.Diagnostics;
 using EventStore.Diagnostics.Telemetry;
@@ -32,7 +34,7 @@ static class ActivitySourceExtensions {
 		EventStoreClientSettings settings,
 		UserCredentials? userCredentials
 	) {
-		if (source.HasNoActiveListeners())
+		if (source.HasNoActiveListeners() || resolvedEvent.Event is null)
 			return;
 
 		var parentContext = resolvedEvent.Event.Metadata.ExtractPropagationContext();
