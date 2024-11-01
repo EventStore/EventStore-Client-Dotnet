@@ -1,3 +1,5 @@
+// ReSharper disable ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+
 using EventStore.Client.Diagnostics;
 using EventStore.Diagnostics.Tracing;
 
@@ -167,6 +169,51 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 				availableEvents.Remove(resolvedEvent.Event.EventId);
 
 				if (availableEvents.Count == 0)
+					return;
+			}
+		}
+	}
+
+	[Fact]
+	[Trait("Category", "Special cases")]
+	public async Task should_not_trace_when_event_is_null() {
+		var category   = Guid.NewGuid().ToString("N");
+		var streamName = category + "-123";
+
+		var seedEvents = Fixture.CreateTestEvents(type: $"{category}-{Fixture.GetStreamName()}").ToArray();
+		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
+
+		await Fixture.Streams.DeleteAsync(streamName, StreamState.StreamExists);
+
+		await using var subscription = Fixture.Streams.SubscribeToStream("$ce-" + category, FromStream.Start, resolveLinkTos: true);
+
+		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
+
+		Assert.True(await enumerator.MoveNextAsync());
+
+		Assert.IsType<StreamMessage.SubscriptionConfirmation>(enumerator.Current);
+
+		await Subscribe().WithTimeout();
+
+		var appendActivities = Fixture
+			.GetActivitiesForOperation(TracingConstants.Operations.Append, streamName)
+			.ShouldNotBeNull();
+
+		var subscribeActivities = Fixture
+			.GetActivitiesForOperation(TracingConstants.Operations.Subscribe, "$ce-" + category)
+			.ToArray();
+
+		appendActivities.ShouldHaveSingleItem();
+		subscribeActivities.ShouldBeEmpty();
+
+		return;
+
+		async Task Subscribe() {
+			while (await enumerator.MoveNextAsync()) {
+				if (enumerator.Current is not StreamMessage.Event(var resolvedEvent))
+					continue;
+
+				if (resolvedEvent.Event?.EventType is "$metadata")
 					return;
 			}
 		}
