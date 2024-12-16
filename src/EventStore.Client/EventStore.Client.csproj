@@ -18,15 +18,40 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Protobuf 
-            Include="..\EventStore.Client\Common\protos\shared.proto;..\EventStore.Client\Common\protos\status.proto;..\EventStore.Client\Common\protos\code.proto;"
-            ProtoRoot="..\EventStore.Client\Common\protos"
-            GrpcServices="Client"
+<!--        <Protobuf -->
+<!--            Include="..\EventStore.Client\Common\protos\shared.proto;..\EventStore.Client\Common\protos\status.proto;..\EventStore.Client\Common\protos\code.proto;"-->
+<!--            ProtoRoot="..\EventStore.Client\Common\protos"-->
+<!--            GrpcServices="Client"-->
+<!--        />-->
+
+       
+        <Protobuf
+                Include="..\EventStore.Client\Common\protos\shared.proto;..\EventStore.Client\Common\protos\status.proto;..\EventStore.Client\Common\protos\code.proto;"
+                ProtoRoot="..\EventStore.Client\Common\protos"
+                GrpcServices="Client"
         />
-        
+
+        <Protobuf Access="internal" Include="$(ESProtoFilePath)" GrpcServices="Client" Link="protos/%(FileName)%(Extension)" />
+
         <Protobuf Include="..\EventStore.Client\Common\protos\gossip.proto" ProtoRoot="..\EventStore.Client\Common\protos" />
         <Protobuf Include="..\EventStore.Client\Common\protos\serverfeatures.proto" ProtoRoot="..\EventStore.Client\Common\protos" />
+        <Protobuf Include="Core\Common\protos\code.proto">
+          <Generator>MSBuild:Compile</Generator>
+        </Protobuf>
+        <Protobuf Include="Core\Common\protos\gossip.proto">
+          <Generator>MSBuild:Compile</Generator>
+        </Protobuf>
+        <Protobuf Include="Core\Common\protos\serverfeatures.proto">
+          <Generator>MSBuild:Compile</Generator>
+        </Protobuf>
+        <Protobuf Include="Core\Common\protos\shared.proto">
+          <Generator>MSBuild:Compile</Generator>
+        </Protobuf>
+        <Protobuf Include="Core\Common\protos\status.proto">
+          <Generator>MSBuild:Compile</Generator>
+        </Protobuf>
     </ItemGroup>
+    
     
     <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
         <PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0"/>

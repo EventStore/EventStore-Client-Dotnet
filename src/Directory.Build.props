@@ -1,6 +1,6 @@
 <Project>
     <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
-    
+
     <PropertyGroup>
         <RootNamespace>EventStore.Client</RootNamespace>
     </PropertyGroup>
@@ -16,7 +16,7 @@
         <PackageId>EventStore.Client.Grpc.$(PackageIdSuffix)</PackageId>
         <ESProtoFilePath>../EventStore.Client/Common/protos/$(PackageIdSuffix.ToLower()).proto</ESProtoFilePath>
     </PropertyGroup>
-    
+
     <!-- Configure grpc services -->
     <ItemGroup Condition="$(MSBuildProjectName) != 'EventStore.Client' And $(MSBuildProjectName) != 'EventStore.Client.Extensions.OpenTelemetry'">
         <Protobuf Access="internal" Include="$(ESProtoFilePath)" GrpcServices="Client" Link="protos/%(FileName)%(Extension)" />
@@ -38,7 +38,7 @@
         <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
         <None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
     </ItemGroup>
-    
+
     <ItemGroup>
         <PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="4.0.0">
             <PrivateAssets>all</PrivateAssets>
@@ -50,7 +50,7 @@
         </PackageReference>
         <PackageReference Include="MinVer" Version="3.0.0" PrivateAssets="All" />
     </ItemGroup>
-    
+
     <ItemGroup>
         <InternalsVisibleTo Include="$(ProjectName)" />
         <InternalsVisibleTo Include="$(ProjectName).Operations" />
