@@ -3,7 +3,7 @@ using Google.Protobuf;
 
 namespace EventStore.Client {
 #pragma warning disable 1591
-	public partial class StreamIdentifier {
+    internal partial class StreamIdentifier {
 		private string? _cached;
 
 		public static implicit operator string?(StreamIdentifier? source) {

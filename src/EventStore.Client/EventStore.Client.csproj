@@ -7,54 +7,46 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.25.1"/>
-        <PackageReference Include="Grpc.Net.Client" Version="$(GrpcPackageVersion)"/>
-        <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
-        <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.1" />
+        <PackageReference Include="Google.Protobuf" Version="3.29.1" />
+        <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0"/>
+        <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.0" />
         <PackageReference Include="System.Linq.Async" Version="6.0.1"/>
-        <PackageReference Include="System.Text.Json" Version="8.0.5"/>
+
+        <PackageReference Include="Grpc.Tools" Version="2.68.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
-<!--        <Protobuf -->
-<!--            Include="..\EventStore.Client\Common\protos\shared.proto;..\EventStore.Client\Common\protos\status.proto;..\EventStore.Client\Common\protos\code.proto;"-->
-<!--            ProtoRoot="..\EventStore.Client\Common\protos"-->
-<!--            GrpcServices="Client"-->
-<!--        />-->
-
-       
         <Protobuf
-                Include="..\EventStore.Client\Common\protos\shared.proto;..\EventStore.Client\Common\protos\status.proto;..\EventStore.Client\Common\protos\code.proto;"
-                ProtoRoot="..\EventStore.Client\Common\protos"
+                ProtoRoot="Core/protos"
+                Include="Core/protos/**/*.proto"
+                Link="Core\protos\%(RecursiveDir)/%(FileName)%(Extension)"
                 GrpcServices="Client"
+                Access="internal"
         />
-
-        <Protobuf Access="internal" Include="$(ESProtoFilePath)" GrpcServices="Client" Link="protos/%(FileName)%(Extension)" />
-
-        <Protobuf Include="..\EventStore.Client\Common\protos\gossip.proto" ProtoRoot="..\EventStore.Client\Common\protos" />
-        <Protobuf Include="..\EventStore.Client\Common\protos\serverfeatures.proto" ProtoRoot="..\EventStore.Client\Common\protos" />
-        <Protobuf Include="Core\Common\protos\code.proto">
-          <Generator>MSBuild:Compile</Generator>
-        </Protobuf>
-        <Protobuf Include="Core\Common\protos\gossip.proto">
-          <Generator>MSBuild:Compile</Generator>
-        </Protobuf>
-        <Protobuf Include="Core\Common\protos\serverfeatures.proto">
-          <Generator>MSBuild:Compile</Generator>
-        </Protobuf>
-        <Protobuf Include="Core\Common\protos\shared.proto">
-          <Generator>MSBuild:Compile</Generator>
-        </Protobuf>
-        <Protobuf Include="Core\Common\protos\status.proto">
-          <Generator>MSBuild:Compile</Generator>
-        </Protobuf>
+        
+<!--       -->
+<!--        <Protobuf-->
+<!--                Access="internal"-->
+<!--                Include="..\EventStore.Client\Common\protos\shared.proto;..\EventStore.Client\Common\protos\status.proto;..\EventStore.Client\Core\Common\protos\code.proto;"-->
+<!--                ProtoRoot="..\EventStore.Client\Core\Common\protos"-->
+<!--                GrpcServices="Client"-->
+<!--        />-->
     </ItemGroup>
     
-    
+<!--    <ItemGroup Condition="'$(TargetFramework)' == 'net48'">-->
+<!--        <PackageReference Include="System.Net.Http.WinHttpHandler" Version="9.0.0"/>-->
+<!--        <PackageReference Include="System.Threading.Channels" Version="9.0.0"/>-->
+<!--        <PackageReference Include="BouncyCastle.Cryptography" Version="2.5.0" />-->
+<!--    </ItemGroup>-->
+
     <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+<!--        <PackageReference Include="System.Net.Http" Version="4.3.4"/>-->
         <PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0"/>
+        <PackageReference Include="System.Text.Json" Version="8.0.5" />
         <PackageReference Include="System.Threading.Channels" Version="8.0.0"/>
         <PackageReference Include="BouncyCastle.Cryptography" Version="2.3.1" />
     </ItemGroup>

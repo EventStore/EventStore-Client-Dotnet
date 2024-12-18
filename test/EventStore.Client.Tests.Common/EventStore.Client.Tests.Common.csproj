@@ -4,39 +4,33 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\EventStore.Client.Operations\EventStore.Client.Operations.csproj"/>
-        <ProjectReference Include="..\..\src\EventStore.Client.PersistentSubscriptions\EventStore.Client.PersistentSubscriptions.csproj"/>
-        <ProjectReference Include="..\..\src\EventStore.Client.ProjectionManagement\EventStore.Client.ProjectionManagement.csproj"/>
-        <ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj"/>
-        <ProjectReference Include="..\..\src\EventStore.Client.UserManagement\EventStore.Client.UserManagement.csproj"/>
         <ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="JetBrains.Annotations" Version="2023.3.0"/>
         <PackageReference Include="Ductus.FluentDocker" Version="2.10.59"/>
-        <PackageReference Include="Polly" Version="8.2.0"/>
+        <PackageReference Include="Polly" Version="8.5.0"/>
         <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1"/>
-        <PackageReference Include="Serilog" Version="3.1.1"/>
-        <PackageReference Include="Serilog.AspNetCore" Version="8.0.0"/>
-        <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0"/>
-        <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0"/>
-        <PackageReference Include="Serilog.Settings.Configuration" Version="8.0.0"/>
-        <PackageReference Include="Serilog.Sinks.Observable" Version="2.0.2"/>
-        <PackageReference Include="Serilog.Sinks.Seq" Version="6.0.0"/>
-        <PackageReference Include="System.Reactive" Version="6.0.0"/>
+        <PackageReference Include="Serilog" Version="4.2.0"/>
+        <PackageReference Include="Serilog.AspNetCore" Version="9.0.0"/>
+        <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0"/>
+        <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0"/>
+        <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0"/>
+        <PackageReference Include="Serilog.Sinks.Observable" Version="3.0.0"/>
+        <PackageReference Include="Serilog.Sinks.Seq" Version="8.0.0"/>
+        <PackageReference Include="System.Reactive" Version="6.0.1"/>
         <PackageReference Include="xunit.categories" Version="2.0.8"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" Condition="'$(TargetFramework)' == 'net48'"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" Condition="'$(TargetFramework)' == 'net48'"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" Condition="'$(TargetFramework)' == 'net48'"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.0" Condition="'$(TargetFramework)' == 'net48'"/>
     </ItemGroup>
 
-    <!-- Vulnerable Transitive Packages -->
-    <ItemGroup>
-        <!-- https://github.com/advisories/GHSA-7jgj-8wvc-jh57 -->
-        <PackageReference Include="System.Net.Http " Version="4.3.4"/>
-        <!-- https://github.com/advisories/GHSA-cmhx-cq75-c4mj -->
-        <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1"/>
-    </ItemGroup>
+<!--    &lt;!&ndash; Vulnerable Transitive Packages &ndash;&gt;-->
+<!--    <ItemGroup>-->
+<!--        &lt;!&ndash; https://github.com/advisories/GHSA-7jgj-8wvc-jh57 &ndash;&gt;-->
+<!--        <PackageReference Include="System.Net.Http " Version="4.3.4"/>-->
+<!--        &lt;!&ndash; https://github.com/advisories/GHSA-cmhx-cq75-c4mj &ndash;&gt;-->
+<!--        <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1"/>-->
+<!--    </ItemGroup>-->
 
     <ItemGroup>
         <Content Include="..\..\certs\**\*">

@@ -14,16 +14,16 @@ using static System.TimeSpan;
 namespace EventStore.Client.Tests;
 
 public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : TestContainerService {
-	
+
 	static readonly NetworkPortProvider NetworkPortProvider = new(NetworkPortProvider.DefaultEsdbPort);
-	
+
 	EventStoreFixtureOptions Options { get; } = options ?? DefaultOptions();
 
 	public static EventStoreFixtureOptions DefaultOptions() {
 		const string connString = "esdb://admin:changeit@localhost:{port}/?tlsVerifyCert=false";
-		
+
 		var port = NetworkPortProvider.NextAvailablePort;
-		
+
 		var defaultSettings = EventStoreClientSettings
 			.Create(connString.Replace("{port}", $"{port}"))
 			.With(x => x.LoggerFactory = new SerilogLoggerFactory(Log.Logger))
@@ -32,6 +32,7 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			.With(x => x.ConnectivitySettings.DiscoveryInterval = FromSeconds(1));
 
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
+            ["EVENTSTORE_TELEMETRY_OPTOUT"]                 = "true",
 			["EVENTSTORE_MEM_DB"]                           = "true",
 			["EVENTSTORE_CHUNK_SIZE"]                       = (1024 * 1024 * 1024).ToString(),
 			["EVENTSTORE_CERTIFICATE_FILE"]                 = "/etc/eventstore/certs/node/node.crt",
@@ -39,6 +40,7 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"]     = "10000",
 			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]       = "10000",
 			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]        = "true",
+            ["EVENTSTORE_LOG_LEVEL"]                        = "Default", // required to use serilog settings
 			["EVENTSTORE_DISABLE_LOG_FILE"]                 = "true",
 			["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}"
 		};
@@ -55,7 +57,7 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			else
 				defaultEnvironment["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{port}";
 		}
-		
+
 		return new(defaultSettings, defaultEnvironment);
 	}
 
@@ -75,9 +77,16 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			.UseContainer()
 			.UseImage(Options.Environment["ES_DOCKER_IMAGE"])
 			.WithName(containerName)
+            .WithPublicEndpointResolver()
 			.WithEnvironment(env)
 			.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
-			.ExposePort(port, 2113);
+			.ExposePort(port, 2113)
+            //.KeepContainer().KeepRunning().ReuseIfExists()
+            .WaitUntilReadyWithConstantBackoff(1_000, 60, service => {
+                var output = service.ExecuteCommand("curl -o - -I http://admin:changeit@localhost:2113/health/live");
+                if (!output.Success)
+                    throw new Exception(output.Error);
+            });
 	}
 
 	/// <summary>
@@ -114,7 +123,7 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 /// <param name="port"></param>
 class NetworkPortProvider(int port = 2114) {
 	public const int DefaultEsdbPort = 2113;
-	
+
 	static readonly SemaphoreSlim Semaphore = new(1, 1);
 
 	public async Task<int> GetNextAvailablePort(TimeSpan delay = default) {
@@ -123,13 +132,13 @@ class NetworkPortProvider(int port = 2114) {
 			return port;
 
 		await Semaphore.WaitAsync();
-		
+
 		try {
 			using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-		
+
 			while (true) {
 				var nexPort = Interlocked.Increment(ref port);
-		
+
 				try {
 					await socket.ConnectAsync(IPAddress.Any, nexPort);
 				}
@@ -137,7 +146,7 @@ class NetworkPortProvider(int port = 2114) {
 					if (ex.SocketErrorCode is SocketError.ConnectionRefused or not SocketError.IsConnected) {
 						return nexPort;
 					}
-		
+
 					await Task.Delay(delay);
 				}
 				finally {

@@ -2,35 +2,20 @@
     <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
     <PropertyGroup>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <RootNamespace>EventStore.Client</RootNamespace>
+        <PackageId>Kurrent.Client</PackageId>
     </PropertyGroup>
-
-    <!-- Reference client base project -->
-    <ItemGroup Condition="$(MSBuildProjectName) != 'EventStore.Client'">
-        <ProjectReference Include="..\EventStore.Client\EventStore.Client.csproj" />
-    </ItemGroup>
-
-    <!-- Set package id and generate proto file path-->
-    <PropertyGroup Condition="$(MSBuildProjectName) != 'EventStore.Client' And $(MSBuildProjectName) != 'EventStore.Client.Extensions.OpenTelemetry'">
-        <PackageIdSuffix>$(MSBuildProjectName.Remove(0,18))</PackageIdSuffix>
-        <PackageId>EventStore.Client.Grpc.$(PackageIdSuffix)</PackageId>
-        <ESProtoFilePath>../EventStore.Client/Common/protos/$(PackageIdSuffix.ToLower()).proto</ESProtoFilePath>
-    </PropertyGroup>
-
-    <!-- Configure grpc services -->
-    <ItemGroup Condition="$(MSBuildProjectName) != 'EventStore.Client' And $(MSBuildProjectName) != 'EventStore.Client.Extensions.OpenTelemetry'">
-        <Protobuf Access="internal" Include="$(ESProtoFilePath)" GrpcServices="Client" Link="protos/%(FileName)%(Extension)" />
-    </ItemGroup>
 
     <PropertyGroup>
         <PackageIcon>ouro.png</PackageIcon>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-        <PackageProjectUrl>https://eventstore.com</PackageProjectUrl>
+        <PackageProjectUrl>https://kurrent.io</PackageProjectUrl>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>https://eventstore.com/blog/</PackageReleaseNotes>
-        <PackageTags>eventstore client grpc</PackageTags>
-        <Authors>Event Store Ltd</Authors>
-			  <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Event Store Ltd</Copyright>
+        <PackageTags>kurrent eventstore client grpc</PackageTags>
+        <Authors>Kurrent Ltd</Authors>
+        <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Kurrent Ltd</Copyright>
         <MinVerTagPrefix>v</MinVerTagPrefix>
     </PropertyGroup>
 
@@ -40,28 +25,25 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="4.0.0">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Grpc.Tools" Version="$(GrpcToolsPackageVersion)">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-        </PackageReference>
+<!--        <PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="5.0.0.1">-->
+<!--            <PrivateAssets>all</PrivateAssets>-->
+<!--            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>-->
+<!--        </PackageReference>-->
+<!--        <PackageReference Include="Grpc.Tools" Version="$(GrpcToolsPackageVersion)">-->
+<!--            <PrivateAssets>all</PrivateAssets>-->
+<!--            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>-->
+<!--        </PackageReference>-->
+        <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
         <PackageReference Include="MinVer" Version="3.0.0" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup>
         <InternalsVisibleTo Include="$(ProjectName)" />
-        <InternalsVisibleTo Include="$(ProjectName).Operations" />
         <InternalsVisibleTo Include="$(ProjectName).Operations.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).PersistentSubscriptions" />
         <InternalsVisibleTo Include="$(ProjectName).PersistentSubscriptions.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).ProjectionManagement" />
         <InternalsVisibleTo Include="$(ProjectName).ProjectionManagement.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).Streams" />
         <InternalsVisibleTo Include="$(ProjectName).Streams.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).UserManagement" />
         <InternalsVisibleTo Include="$(ProjectName).UserManagement.Tests" />
         <InternalsVisibleTo Include="$(ProjectName).Extensions.OpenTelemetry" />
         <InternalsVisibleTo Include="$(ProjectName).Tests" />

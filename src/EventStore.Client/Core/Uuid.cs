@@ -51,7 +51,7 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="dto"></param>
 		/// <returns><see cref="Uuid"/></returns>
-		public static Uuid FromDto(UUID dto) =>
+		internal static Uuid FromDto(UUID dto) =>
 			dto == null
 				? throw new ArgumentNullException(nameof(dto))
 				: dto.ValueCase switch {
@@ -106,7 +106,7 @@ namespace EventStore.Client {
 		/// Converts the <see cref="Uuid"/> to the gRPC wire format.
 		/// </summary>
 		/// <returns><see cref="UUID"/></returns>
-		public UUID ToDto() =>
+        internal UUID ToDto() =>
 			new UUID {
 				Structured = new UUID.Types.Structured {
 					LeastSignificantBits = _lsb,
