@@ -5,16 +5,6 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{EA59C1CB-16DA-4F68-AF8A-642A969B4CF8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client.UserManagement", "src\EventStore.Client.UserManagement\EventStore.Client.UserManagement.csproj", "{D3744A86-DD35-4104-AAEE-84B79062C4A2}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client.Streams", "src\EventStore.Client.Streams\EventStore.Client.Streams.csproj", "{362C0CF9-81C9-400F-94C7-A8B190ECE94A}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client.Operations", "src\EventStore.Client.Operations\EventStore.Client.Operations.csproj", "{6EFB980F-C72C-40F1-9232-479BE5617580}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client.ProjectionManagement", "src\EventStore.Client.ProjectionManagement\EventStore.Client.ProjectionManagement.csproj", "{B275EF4B-80D3-4205-9C7A-337A2A2BD99C}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client.PersistentSubscriptions", "src\EventStore.Client.PersistentSubscriptions\EventStore.Client.PersistentSubscriptions.csproj", "{66FDEE78-836E-49F0-A4DD-BF7539C34E54}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client", "src\EventStore.Client\EventStore.Client.csproj", "{8853D875-4A8E-450B-A1BE-9CEF8BEDABC3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{C51F2C69-45A9-4D0D-A708-4FC319D5D340}"
@@ -46,26 +36,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D3744A86-DD35-4104-AAEE-84B79062C4A2}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{D3744A86-DD35-4104-AAEE-84B79062C4A2}.Debug|x64.Build.0 = Debug|Any CPU
-		{D3744A86-DD35-4104-AAEE-84B79062C4A2}.Release|x64.ActiveCfg = Release|Any CPU
-		{D3744A86-DD35-4104-AAEE-84B79062C4A2}.Release|x64.Build.0 = Release|Any CPU
-		{362C0CF9-81C9-400F-94C7-A8B190ECE94A}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{362C0CF9-81C9-400F-94C7-A8B190ECE94A}.Debug|x64.Build.0 = Debug|Any CPU
-		{362C0CF9-81C9-400F-94C7-A8B190ECE94A}.Release|x64.ActiveCfg = Release|Any CPU
-		{362C0CF9-81C9-400F-94C7-A8B190ECE94A}.Release|x64.Build.0 = Release|Any CPU
-		{6EFB980F-C72C-40F1-9232-479BE5617580}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{6EFB980F-C72C-40F1-9232-479BE5617580}.Debug|x64.Build.0 = Debug|Any CPU
-		{6EFB980F-C72C-40F1-9232-479BE5617580}.Release|x64.ActiveCfg = Release|Any CPU
-		{6EFB980F-C72C-40F1-9232-479BE5617580}.Release|x64.Build.0 = Release|Any CPU
-		{B275EF4B-80D3-4205-9C7A-337A2A2BD99C}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{B275EF4B-80D3-4205-9C7A-337A2A2BD99C}.Debug|x64.Build.0 = Debug|Any CPU
-		{B275EF4B-80D3-4205-9C7A-337A2A2BD99C}.Release|x64.ActiveCfg = Release|Any CPU
-		{B275EF4B-80D3-4205-9C7A-337A2A2BD99C}.Release|x64.Build.0 = Release|Any CPU
-		{66FDEE78-836E-49F0-A4DD-BF7539C34E54}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{66FDEE78-836E-49F0-A4DD-BF7539C34E54}.Debug|x64.Build.0 = Debug|Any CPU
-		{66FDEE78-836E-49F0-A4DD-BF7539C34E54}.Release|x64.ActiveCfg = Release|Any CPU
-		{66FDEE78-836E-49F0-A4DD-BF7539C34E54}.Release|x64.Build.0 = Release|Any CPU
 		{8853D875-4A8E-450B-A1BE-9CEF8BEDABC3}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{8853D875-4A8E-450B-A1BE-9CEF8BEDABC3}.Debug|x64.Build.0 = Debug|Any CPU
 		{8853D875-4A8E-450B-A1BE-9CEF8BEDABC3}.Release|x64.ActiveCfg = Release|Any CPU
@@ -108,11 +78,6 @@ Global
 		{7D929D45-F1D9-462B-BE49-84BEC11D5039}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{D3744A86-DD35-4104-AAEE-84B79062C4A2} = {EA59C1CB-16DA-4F68-AF8A-642A969B4CF8}
-		{362C0CF9-81C9-400F-94C7-A8B190ECE94A} = {EA59C1CB-16DA-4F68-AF8A-642A969B4CF8}
-		{6EFB980F-C72C-40F1-9232-479BE5617580} = {EA59C1CB-16DA-4F68-AF8A-642A969B4CF8}
-		{B275EF4B-80D3-4205-9C7A-337A2A2BD99C} = {EA59C1CB-16DA-4F68-AF8A-642A969B4CF8}
-		{66FDEE78-836E-49F0-A4DD-BF7539C34E54} = {EA59C1CB-16DA-4F68-AF8A-642A969B4CF8}
 		{8853D875-4A8E-450B-A1BE-9CEF8BEDABC3} = {EA59C1CB-16DA-4F68-AF8A-642A969B4CF8}
 		{8F8548D6-694C-4BAE-9EF3-A020140E04C7} = {C51F2C69-45A9-4D0D-A708-4FC319D5D340}
 		{4BA2E05E-6B45-47C3-9001-8B039244ECA9} = {C51F2C69-45A9-4D0D-A708-4FC319D5D340}
