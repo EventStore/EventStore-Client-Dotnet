@@ -23,9 +23,11 @@ public static class GlobalEnvironment {
 			configuration.EnsureValue("ES_USE_EXTERNAL_SERVER", "false");
 
 			configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.eventstore.com/eventstore-ce/eventstoredb-ce");
-			configuration.EnsureValue("ES_DOCKER_TAG", "ci");
+			configuration.EnsureValue("ES_DOCKER_TAG", "previous-lts");
 			configuration.EnsureValue("ES_DOCKER_IMAGE", $"{configuration["ES_DOCKER_REGISTRY"]}:{configuration["ES_DOCKER_TAG"]}");
 
+			configuration.EnsureValue("EVENTSTORE_TELEMETRY_OPTOUT", "true");
+			configuration.EnsureValue("EVENTSTORE_ALLOW_UNKNOWN_OPTIONS", "true");
 			configuration.EnsureValue("EVENTSTORE_MEM_DB", "false");
 			configuration.EnsureValue("EVENTSTORE_RUN_PROJECTIONS", "None");
 			configuration.EnsureValue("EVENTSTORE_START_STANDARD_PROJECTIONS", "false");
