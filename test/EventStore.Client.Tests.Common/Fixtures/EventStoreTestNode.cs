@@ -32,7 +32,6 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			.With(x => x.ConnectivitySettings.DiscoveryInterval = FromSeconds(1));
 
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
-            ["EVENTSTORE_TELEMETRY_OPTOUT"]                 = "true",
 			["EVENTSTORE_MEM_DB"]                           = "true",
 			["EVENTSTORE_CHUNK_SIZE"]                       = (1024 * 1024 * 1024).ToString(),
 			["EVENTSTORE_CERTIFICATE_FILE"]                 = "/etc/eventstore/certs/node/node.crt",
@@ -81,40 +80,40 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			.WithEnvironment(env)
 			.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
 			.ExposePort(port, 2113)
-            //.KeepContainer().KeepRunning().ReuseIfExists()
+            // .KeepContainer().KeepRunning().ReuseIfExists()
             .WaitUntilReadyWithConstantBackoff(1_000, 60, service => {
-                var output = service.ExecuteCommand("curl -o - -I http://admin:changeit@localhost:2113/health/live");
+                var output = service.ExecuteCommand("curl -u admin:changeit --cacert /etc/eventstore/certs/ca/ca.crt https://localhost:2113/health/live");
                 if (!output.Success)
                     throw new Exception(output.Error);
             });
 	}
 
-	/// <summary>
-	/// max of 30 seconds (300 * 100ms)
-	/// </summary>
-	static readonly IEnumerable<TimeSpan> DefaultBackoffDelay = Backoff.ConstantBackoff(FromMilliseconds(100), 300);
-
-	protected override async Task OnServiceStarted() {
-		using var http = new HttpClient(
-#if NET
-			new SocketsHttpHandler { SslOptions = { RemoteCertificateValidationCallback = delegate { return true; } } }
-#else
-            new WinHttpHandler { ServerCertificateValidationCallback = delegate { return true; } }
-#endif
-		) {
-			BaseAddress = Options.ClientSettings.ConnectivitySettings.Address
-		};
-
-		await Policy.Handle<Exception>()
-			.WaitAndRetryAsync(DefaultBackoffDelay)
-			.ExecuteAsync(
-				async () => {
-					using var response = await http.GetAsync("/health/live", CancellationToken.None);
-					if (response.StatusCode >= HttpStatusCode.BadRequest)
-						throw new FluentDockerException($"Health check failed with status code: {response.StatusCode}.");
-				}
-			);
-	}
+// 	/// <summary>
+// 	/// max of 30 seconds (300 * 100ms)
+// 	/// </summary>
+// 	static readonly IEnumerable<TimeSpan> DefaultBackoffDelay = Backoff.ConstantBackoff(FromMilliseconds(100), 300);
+//
+// 	protected override async Task OnServiceStarted() {
+// 		using var http = new HttpClient(
+// #if NET
+// 			new SocketsHttpHandler { SslOptions = { RemoteCertificateValidationCallback = delegate { return true; } } }
+// #else
+//             new WinHttpHandler { ServerCertificateValidationCallback = delegate { return true; } }
+// #endif
+// 		) {
+// 			BaseAddress = Options.ClientSettings.ConnectivitySettings.Address
+// 		};
+//
+// 		await Policy.Handle<Exception>()
+// 			.WaitAndRetryAsync(DefaultBackoffDelay)
+// 			.ExecuteAsync(
+// 				async () => {
+// 					using var response = await http.GetAsync("/health/live", CancellationToken.None);
+// 					if (response.StatusCode >= HttpStatusCode.BadRequest)
+// 						throw new FluentDockerException($"Health check failed with status code: {response.StatusCode}.");
+// 				}
+// 			);
+// 	}
 }
 
 /// <summary>

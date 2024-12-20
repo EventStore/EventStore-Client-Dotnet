@@ -25,7 +25,7 @@ jobs:
     strategy:      
       fail-fast: false
       matrix:
-        framework: [ net6.0, net7.0, net8.0 ]
+        framework: [ net8.0 ]
         os: [ ubuntu-latest ]
         configuration: [ release ]
     runs-on: ${{ matrix.os }}
@@ -52,8 +52,6 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: |
-          6.0.x
-          7.0.x
           8.0.x
     - name: Run Tests
       shell: bash

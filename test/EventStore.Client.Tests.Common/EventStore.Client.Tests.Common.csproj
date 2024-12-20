@@ -24,13 +24,13 @@
         <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.0" Condition="'$(TargetFramework)' == 'net48'"/>
     </ItemGroup>
 
-<!--    &lt;!&ndash; Vulnerable Transitive Packages &ndash;&gt;-->
-<!--    <ItemGroup>-->
-<!--        &lt;!&ndash; https://github.com/advisories/GHSA-7jgj-8wvc-jh57 &ndash;&gt;-->
-<!--        <PackageReference Include="System.Net.Http " Version="4.3.4"/>-->
-<!--        &lt;!&ndash; https://github.com/advisories/GHSA-cmhx-cq75-c4mj &ndash;&gt;-->
-<!--        <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1"/>-->
-<!--    </ItemGroup>-->
+    <!-- Vulnerable Transitive Packages -->
+    <ItemGroup>
+        <!-- https://github.com/advisories/GHSA-7jgj-8wvc-jh57 -->
+        <PackageReference Include="System.Net.Http" Version="4.3.4"/>
+        <!-- https://github.com/advisories/GHSA-cmhx-cq75-c4mj -->
+        <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1"/>
+    </ItemGroup>
 
     <ItemGroup>
         <Content Include="..\..\certs\**\*">

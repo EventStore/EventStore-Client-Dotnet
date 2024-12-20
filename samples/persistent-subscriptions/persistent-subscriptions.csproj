@@ -5,8 +5,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <!-- Use NuGet instead of ProjectReferences -->
-        <ProjectReference Include="..\..\src\EventStore.Client.PersistentSubscriptions\EventStore.Client.PersistentSubscriptions.csproj" />
         <ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />
     </ItemGroup>
 </Project>
