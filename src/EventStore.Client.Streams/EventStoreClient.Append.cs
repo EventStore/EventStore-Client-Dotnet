@@ -115,7 +115,7 @@ namespace EventStore.Client {
 		) {
 			var tags = new ActivityTagsCollection()
 				.WithRequiredTag(TelemetryTags.EventStore.Stream, header.Options.StreamIdentifier.StreamName.ToStringUtf8())
-				.WithGrpcChannelServerTags(channelInfo)
+				.WithGrpcChannelServerTags(Settings, channelInfo)
 				.WithClientSettingsServerTags(Settings)
 				.WithOptionalTag(TelemetryTags.Database.User, userCredentials?.Username ?? Settings.DefaultCredentials?.Username);
 
@@ -284,7 +284,7 @@ namespace EventStore.Client {
 			) {
 				var tags = new ActivityTagsCollection()
 					.WithRequiredTag(TelemetryTags.EventStore.Stream, options.StreamIdentifier.StreamName.ToStringUtf8())
-					.WithGrpcChannelServerTags(_channelInfo)
+					.WithGrpcChannelServerTags(_settings, _channelInfo)
 					.WithClientSettingsServerTags(_settings)
 					.WithOptionalTag(TelemetryTags.Database.User, _settings.DefaultCredentials?.Username);
 

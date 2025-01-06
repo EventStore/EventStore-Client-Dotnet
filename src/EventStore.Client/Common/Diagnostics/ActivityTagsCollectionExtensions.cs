@@ -7,16 +7,21 @@ namespace EventStore.Client.Diagnostics;
 
 static class ActivityTagsCollectionExtensions {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ActivityTagsCollection WithGrpcChannelServerTags(this ActivityTagsCollection tags, ChannelInfo? channelInfo) {
+	public static ActivityTagsCollection WithGrpcChannelServerTags(this ActivityTagsCollection tags, EventStoreClientSettings settings, ChannelInfo? channelInfo) {
         if (channelInfo is null)
             return tags;
-        
-        var authorityParts = channelInfo.Channel.Target.Split(':');
 
-        return tags
-            .WithRequiredTag(TelemetryTags.Server.Address, authorityParts[0])
-            .WithRequiredTag(TelemetryTags.Server.Port, int.Parse(authorityParts[1]));
-    }
+		var authorityParts = channelInfo.Channel.Target.Split([':'], StringSplitOptions.RemoveEmptyEntries);
+
+		string host = authorityParts[0];
+		int port = authorityParts.Length == 1
+			? settings.ConnectivitySettings.Insecure ? 80 : 443
+			: int.Parse(authorityParts[1]);
+
+		return tags
+			.WithRequiredTag(TelemetryTags.Server.Address, host)
+			.WithRequiredTag(TelemetryTags.Server.Port, port);
+	}
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ActivityTagsCollection WithClientSettingsServerTags(this ActivityTagsCollection source, EventStoreClientSettings settings) {

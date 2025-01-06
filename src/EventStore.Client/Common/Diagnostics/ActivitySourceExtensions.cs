@@ -14,6 +14,9 @@ static class ActivitySourceExtensions {
 		string operationName,
 		ActivityTagsCollection? tags = null
 	) {
+		if (source.HasNoActiveListeners())
+			return await tracedOperation().ConfigureAwait(false);
+
 		using var activity = StartActivity(source, operationName, ActivityKind.Client, tags, Activity.Current?.Context);
 
 		try {
@@ -47,7 +50,7 @@ static class ActivitySourceExtensions {
 			.WithRequiredTag(TelemetryTags.EventStore.EventId, resolvedEvent.OriginalEvent.EventId.ToString())
 			.WithRequiredTag(TelemetryTags.EventStore.EventType, resolvedEvent.OriginalEvent.EventType)
 			// Ensure consistent server.address attribute when connecting to cluster via dns discovery
-			.WithGrpcChannelServerTags(channelInfo)
+			.WithGrpcChannelServerTags(settings, channelInfo)
 			.WithClientSettingsServerTags(settings)
 			.WithOptionalTag(
 				TelemetryTags.Database.User,
