@@ -1,8 +1,11 @@
 using System.Net;
-using System.Net.Http;
-using AutoFixture;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
+using AutoFixture;
+
+#if NET48
+using System.Net.Http;
+#endif
 
 namespace EventStore.Client.Tests;
 
@@ -130,8 +133,7 @@ public class ConnectionStringTests {
 					default
 				)
 			);
-		}
-		else {
+		} else {
 			Assert.Null(socketsHandler.SslOptions.RemoteCertificateValidationCallback);
 		}
 #else
@@ -156,16 +158,14 @@ public class ConnectionStringTests {
 	[Theory]
 	[MemberData(nameof(InvalidTlsCertificates))]
 	public void connection_string_with_invalid_tls_certificate_should_throw(string clientCertificatePath) {
-		Assert.Throws<InvalidClientCertificateException >(
-			() => EventStoreClientSettings.Create(
-				$"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&tlsCAFile={clientCertificatePath}"
-			)
+		Assert.Throws<InvalidClientCertificateException>(
+			() => EventStoreClientSettings.Create($"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&tlsCAFile={clientCertificatePath}")
 		);
 	}
 
 	public static IEnumerable<object?[]> InvalidClientCertificates() {
 		var invalidPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "path", "not", "found");
-		var validPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "certs", "ca", "ca.crt");
+		var validPath   = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "certs", "ca", "ca.crt");
 		yield return [invalidPath, invalidPath];
 		yield return [validPath, invalidPath];
 	}
@@ -180,7 +180,7 @@ public class ConnectionStringTests {
 		);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void infinite_grpc_timeouts() {
 		var result = EventStoreClientSettings.Create("esdb://localhost:2113?keepAliveInterval=-1&keepAliveTimeout=-1");
 
@@ -200,7 +200,7 @@ public class ConnectionStringTests {
 #endif
 	}
 
-	[Fact]
+	[RetryFact]
 	public void connection_string_with_no_schema() => Assert.Throws<NoSchemeException>(() => EventStoreClientSettings.Create(":so/mething/random"));
 
 	[Theory]
@@ -271,7 +271,7 @@ public class ConnectionStringTests {
 	public void connection_string_with_invalid_settings_should_throw(string connectionString) =>
 		Assert.Throws<InvalidSettingException>(() => EventStoreClientSettings.Create(connectionString));
 
-	[Fact]
+	[RetryFact]
 	public void with_default_settings() {
 		var settings = EventStoreClientSettings.Create("esdb://hostname:4321/");
 

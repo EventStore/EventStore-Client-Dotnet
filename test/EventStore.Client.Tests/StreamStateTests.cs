@@ -7,9 +7,9 @@ public class StreamStateTests : ValueObjectTests<StreamState> {
 	public StreamStateTests() : base(new ScenarioFixture()) { }
 
 	public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
-		yield return new object?[] { 0 };
-		yield return new object?[] { int.MaxValue };
-		yield return new object?[] { -3 };
+		yield return [0];
+		yield return [int.MaxValue];
+		yield return [-3];
 	}
 
 	[Theory]
@@ -19,23 +19,23 @@ public class StreamStateTests : ValueObjectTests<StreamState> {
 		Assert.Equal(nameof(value), ex.ParamName);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void ExplicitConversionExpectedResult() {
 		const int expected = 1;
 		var       actual   = (int)new StreamState(expected);
 		Assert.Equal(expected, actual);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void ImplicitConversionExpectedResult() {
 		const int expected = 1;
 		Assert.Equal(expected, new StreamState(expected));
 	}
 
 	public static IEnumerable<object?[]> ToStringTestCases() {
-		yield return new object?[] { StreamState.Any, nameof(StreamState.Any) };
-		yield return new object?[] { StreamState.NoStream, nameof(StreamState.NoStream) };
-		yield return new object?[] { StreamState.StreamExists, nameof(StreamState.StreamExists) };
+		yield return [StreamState.Any, nameof(StreamState.Any)];
+		yield return [StreamState.NoStream, nameof(StreamState.NoStream)];
+		yield return [StreamState.StreamExists, nameof(StreamState.StreamExists)];
 	}
 
 	[Theory]

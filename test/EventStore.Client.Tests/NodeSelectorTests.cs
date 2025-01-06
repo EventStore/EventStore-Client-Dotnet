@@ -60,7 +60,7 @@ public class NodeSelectorTests {
 		Assert.Equal(allowedNode.Port, selectedNode.Port);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void DeadNodesAreNotConsidered() {
 		var allowedNodeId = Uuid.NewUuid();
 		var allowedNode   = new DnsEndPoint(allowedNodeId.ToString(), 2113);

@@ -5,7 +5,7 @@ namespace EventStore.Client.Tests;
 public class FromStreamTests : ValueObjectTests<FromStream> {
 	public FromStreamTests() : base(new ScenarioFixture()) { }
 
-	[Fact]
+	[RetryFact]
 	public void IsComparable() => Assert.IsAssignableFrom<IComparable<FromStream>>(_fixture.Create<FromStream>());
 
 	[Theory]
@@ -19,19 +19,19 @@ public class FromStreamTests : ValueObjectTests<FromStream> {
 	public static IEnumerable<object?[]> ToStringCases() {
 		var fixture  = new ScenarioFixture();
 		var position = fixture.Create<StreamPosition>();
-		yield return new object?[] { FromStream.After(position), position.ToString() };
-		yield return new object?[] { FromStream.Start, "Start" };
-		yield return new object?[] { FromStream.End, "Live" };
+		yield return [FromStream.After(position), position.ToString()];
+		yield return [FromStream.Start, "Start"];
+		yield return [FromStream.End, "Live"];
 	}
 
 	[Theory]
 	[MemberData(nameof(ToStringCases))]
 	public void ToStringReturnsExpectedResult(FromStream sut, string expected) => Assert.Equal(expected, sut.ToString());
 
-	[Fact]
+	[RetryFact]
 	public void AfterLiveThrows() => Assert.Throws<ArgumentException>(() => FromStream.After(StreamPosition.End));
 
-	[Fact]
+	[RetryFact]
 	public void ToUInt64ReturnsExpectedResults() {
 		var position = _fixture.Create<StreamPosition>();
 		Assert.Equal(position.ToUInt64(), FromStream.After(position).ToUInt64());

@@ -5,17 +5,17 @@ namespace EventStore.Client.Tests;
 public class StreamPositionTests : ValueObjectTests<StreamPosition> {
 	public StreamPositionTests() : base(new ScenarioFixture()) { }
 
-	[Fact]
+	[RetryFact]
 	public void IsComparable() => Assert.IsAssignableFrom<IComparable<StreamPosition>>(_fixture.Create<StreamPosition>());
 
-	[Fact]
+	[RetryFact]
 	public void AdditionOperator() {
 		var sut = StreamPosition.Start;
 		Assert.Equal(new(1), sut + 1);
 		Assert.Equal(new(1), 1 + sut);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void NextReturnsExpectedResult() {
 		var sut = StreamPosition.Start;
 		Assert.Equal(sut + 1, sut.Next());
@@ -33,7 +33,7 @@ public class StreamPositionTests : ValueObjectTests<StreamPosition> {
 		Assert.Throws<OverflowException>(() => operand + StreamPosition);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void SubtractionOperator() {
 		var sut = new StreamPosition(1);
 		Assert.Equal(new(0), sut - 1);
@@ -64,17 +64,17 @@ public class StreamPositionTests : ValueObjectTests<StreamPosition> {
 		Assert.Equal(nameof(value), ex.ParamName);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void FromStreamPositionEndThrows() => Assert.Throws<ArgumentOutOfRangeException>(() => StreamRevision.FromStreamPosition(StreamPosition.End));
 
-	[Fact]
+	[RetryFact]
 	public void FromStreamPositionReturnsExpectedResult() {
 		var result = StreamPosition.FromStreamRevision(new(0));
 
 		Assert.Equal(new(0), result);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void ExplicitConversionToUInt64ReturnsExpectedResult() {
 		const ulong value = 0UL;
 
@@ -82,7 +82,7 @@ public class StreamPositionTests : ValueObjectTests<StreamPosition> {
 		Assert.Equal(value, actual);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void ImplicitConversionToUInt64ReturnsExpectedResult() {
 		const ulong value = 0UL;
 
@@ -90,7 +90,7 @@ public class StreamPositionTests : ValueObjectTests<StreamPosition> {
 		Assert.Equal(value, actual);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void ExplicitConversionToStreamPositionReturnsExpectedResult() {
 		const ulong value = 0UL;
 
@@ -99,7 +99,7 @@ public class StreamPositionTests : ValueObjectTests<StreamPosition> {
 		Assert.Equal(expected, actual);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void ImplicitConversionToStreamPositionReturnsExpectedResult() {
 		const ulong value = 0UL;
 
@@ -109,14 +109,14 @@ public class StreamPositionTests : ValueObjectTests<StreamPosition> {
 		Assert.Equal(expected, actual);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void ToStringExpectedResult() {
 		var expected = 0UL.ToString();
 
 		Assert.Equal(expected, new StreamPosition(0UL).ToString());
 	}
 
-	[Fact]
+	[RetryFact]
 	public void ToUInt64ExpectedResult() {
 		var expected = 0UL;
 

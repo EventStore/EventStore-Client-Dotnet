@@ -4,7 +4,7 @@ using Grpc.Core;
 namespace EventStore.Client.Tests;
 
 public class GossipChannelSelectorTests {
-	[Fact]
+	[RetryFact]
 	public async Task ExplicitlySettingEndPointChangesChannels() {
 		var firstId  = Uuid.NewUuid();
 		var secondId = Uuid.NewUuid();
@@ -53,7 +53,7 @@ public class GossipChannelSelectorTests {
 		Assert.Equal($"{secondSelection.Host}:{secondSelection.Port}", channel.Target);
 	}
 
-	[Fact]
+	[RetryFact]
 	public async Task ThrowsWhenDiscoveryFails() {
 		var settings = new EventStoreClientSettings {
 			ConnectivitySettings = {

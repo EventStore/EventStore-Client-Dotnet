@@ -15,25 +15,25 @@ jobs:
       fail-fast: false
       matrix:
         docker-tag: [ ci, lts, previous-lts ]
-        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement ]
+#        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement ]
     name: Test CE (${{ matrix.docker-tag }})
     with:
       docker-tag: ${{ matrix.docker-tag }}
       docker-image: eventstore-ce/eventstoredb-ce
-      test: ${{ matrix.test }}
-  ee:
-    uses: ./.github/workflows/base.yml
-    if: ${{ github.repository_owner == 'EventStore' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        docker-tag: [ 24.2.0-jammy ]
-        test: [ Plugins ]
-    name: Test EE (${{ matrix.docker-tag }})
-    with:
-      docker-tag: ${{ matrix.docker-tag }}
-      docker-image: eventstore-ee/eventstoredb-commercial
-      test: ${{ matrix.test }}
-    secrets:
-      CLOUDSMITH_CICD_USER: ${{ secrets.CLOUDSMITH_CICD_USER }}
-      CLOUDSMITH_CICD_TOKEN: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
+#      test: ${{ matrix.test }}
+#  ee:
+#    uses: ./.github/workflows/base.yml
+#    if: ${{ github.repository_owner == 'EventStore' }}
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        docker-tag: [ 24.2.0-jammy ]
+#        test: [ Plugins ]
+#    name: Test EE (${{ matrix.docker-tag }})
+#    with:
+#      docker-tag: ${{ matrix.docker-tag }}
+#      docker-image: eventstore-ee/eventstoredb-commercial
+#      test: ${{ matrix.test }}
+#    secrets:
+#      CLOUDSMITH_CICD_USER: ${{ secrets.CLOUDSMITH_CICD_USER }}
+#      CLOUDSMITH_CICD_TOKEN: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}

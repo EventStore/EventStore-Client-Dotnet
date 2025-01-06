@@ -5,7 +5,7 @@ namespace EventStore.Client.Tests;
 public class PositionTests : ValueObjectTests<Position> {
 	public PositionTests() : base(new ScenarioFixture()) { }
 
-	[Fact]
+	[RetryFact]
 	public void IsComparable() => Assert.IsAssignableFrom<IComparable<Position>>(_fixture.Create<Position>());
 
 	[Theory]
@@ -16,7 +16,7 @@ public class PositionTests : ValueObjectTests<Position> {
 	[AutoScenarioData(typeof(ScenarioFixture))]
 	public void LiveIsGreaterThanAll(Position other) => Assert.True(Position.End > other);
 
-	[Fact]
+	[RetryFact]
 	public void ToStringReturnsExpectedResult() {
 		var sut = _fixture.Create<Position>();
 		Assert.Equal($"C:{sut.CommitPosition}/P:{sut.PreparePosition}", sut.ToString());

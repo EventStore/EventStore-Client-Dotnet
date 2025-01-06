@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <NoWarn>CS0612;xUnit1031</NoWarn>
-    </PropertyGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\EventStore.Client.Tests.Common\EventStore.Client.Tests.Common.csproj" />
-    </ItemGroup>
-</Project>

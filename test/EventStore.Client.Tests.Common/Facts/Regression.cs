@@ -4,14 +4,14 @@ namespace EventStore.Client.Tests;
 public class Regression {
 	public class FactAttribute(int major, string skipMessage) : Xunit.FactAttribute {
 		public override string? Skip {
-			get => (EventStoreTestServer.Version?.Major ?? int.MaxValue) < major ? skipMessage : null;
+			get => (KurrentPermanentTestNode.Version?.Major ?? int.MaxValue) < major ? skipMessage : null;
 			set => throw new NotSupportedException();
 		}
 	}
 
 	public class TheoryAttribute(int major, string skipMessage) : Xunit.TheoryAttribute {
 		public override string? Skip {
-			get => (EventStoreTestServer.Version?.Major ?? int.MaxValue) < major ? skipMessage : null;
+			get => (KurrentPermanentTestNode.Version?.Major ?? int.MaxValue) < major ? skipMessage : null;
 			set => throw new NotSupportedException();
 		}
 	}

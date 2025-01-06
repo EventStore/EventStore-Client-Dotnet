@@ -4,7 +4,7 @@
 public class Deprecation {
 	public class FactAttribute(Version since, string skipMessage) : Xunit.FactAttribute {
 		public override string? Skip {
-			get => EventStoreTestServer.Version >= since ? skipMessage : null;
+			get => KurrentPermanentTestNode.Version >= since ? skipMessage : null;
 			set => throw new NotSupportedException();
 		}
 	}
@@ -19,7 +19,7 @@ public class Deprecation {
 		}
 
 		public override string? Skip {
-			get => EventStoreTestServer.Version >= _legacySince ? _skipMessage : null;
+			get => KurrentPermanentTestNode.Version >= _legacySince ? _skipMessage : null;
 			set => throw new NotSupportedException();
 		}
 	}

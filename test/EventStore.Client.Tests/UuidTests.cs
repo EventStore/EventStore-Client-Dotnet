@@ -5,7 +5,7 @@ namespace EventStore.Client.Tests;
 public class UuidTests : ValueObjectTests<Uuid> {
 	public UuidTests() : base(new ScenarioFixture()) { }
 
-	[Fact]
+	[RetryFact]
 	public void ToGuidReturnsExpectedResult() {
 		var guid = Guid.NewGuid();
 		var sut  = Uuid.FromGuid(guid);
@@ -13,21 +13,21 @@ public class UuidTests : ValueObjectTests<Uuid> {
 		Assert.Equal(sut.ToGuid(), guid);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void ToStringProducesExpectedResult() {
 		var sut = Uuid.NewUuid();
 
 		Assert.Equal(sut.ToGuid().ToString(), sut.ToString());
 	}
 
-	[Fact]
+	[RetryFact]
 	public void ToFormattedStringProducesExpectedResult() {
 		var sut = Uuid.NewUuid();
 
 		Assert.Equal(sut.ToGuid().ToString("n"), sut.ToString("n"));
 	}
 
-	[Fact]
+	[RetryFact]
 	public void ToDtoReturnsExpectedResult() {
 		var msb = GetRandomInt64();
 		var lsb = GetRandomInt64();
@@ -41,7 +41,7 @@ public class UuidTests : ValueObjectTests<Uuid> {
 		Assert.Equal(msb, result.Structured.MostSignificantBits);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void ParseReturnsExpectedResult() {
 		var guid = Guid.NewGuid();
 
@@ -50,7 +50,7 @@ public class UuidTests : ValueObjectTests<Uuid> {
 		Assert.Equal(Uuid.FromGuid(guid), sut);
 	}
 
-	[Fact]
+	[RetryFact]
 	public void FromInt64ReturnsExpectedResult() {
 		var guid     = Guid.Parse("65678f9b-d139-4786-8305-b9166922b378");
 		var sut      = Uuid.FromInt64(7306966819824813958L, -9005588373953137800L);

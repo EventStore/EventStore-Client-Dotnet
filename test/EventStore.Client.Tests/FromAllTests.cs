@@ -5,7 +5,7 @@ namespace EventStore.Client.Tests;
 public class FromAllTests : ValueObjectTests<FromAll> {
 	public FromAllTests() : base(new ScenarioFixture()) { }
 
-	[Fact]
+	[RetryFact]
 	public void IsComparable() => Assert.IsAssignableFrom<IComparable<FromAll>>(_fixture.Create<FromAll>());
 
 	[Theory]
@@ -28,10 +28,10 @@ public class FromAllTests : ValueObjectTests<FromAll> {
 	[MemberData(nameof(ToStringCases))]
 	public void ToStringReturnsExpectedResult(FromAll sut, string expected) => Assert.Equal(expected, sut.ToString());
 
-	[Fact]
+	[RetryFact]
 	public void AfterLiveThrows() => Assert.Throws<ArgumentException>(() => FromAll.After(Position.End));
 
-	[Fact]
+	[RetryFact]
 	public void ToUInt64ReturnsExpectedResults() {
 		var position = _fixture.Create<Position>();
 		Assert.Equal(

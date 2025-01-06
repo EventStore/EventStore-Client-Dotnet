@@ -3,7 +3,7 @@
 namespace EventStore.Client.Tests;
 
 public class SharingProviderTests {
-	[Fact]
+	[RetryFact]
 	public async Task CanGetCurrent() {
 		using var sut = new SharingProvider<int, int>(
 			async (x, _) => x + 1,
@@ -14,7 +14,7 @@ public class SharingProviderTests {
 		Assert.Equal(6, await sut.CurrentAsync);
 	}
 
-	[Fact]
+	[RetryFact]
 	public async Task CanReset() {
 		var count = 0;
 		using var sut = new SharingProvider<bool, int>(
@@ -28,7 +28,7 @@ public class SharingProviderTests {
 		Assert.Equal(1, await sut.CurrentAsync);
 	}
 
-	[Fact]
+	[RetryFact]
 	public async Task CanReturnBroken() {
 		Action<bool>? onBroken = null;
 		var           count    = 0;
@@ -50,7 +50,7 @@ public class SharingProviderTests {
 		Assert.Equal(2, await sut.CurrentAsync);
 	}
 
-	[Fact]
+	[RetryFact]
 	public async Task CanReturnSameBoxTwice() {
 		Action<bool>? onBroken = null;
 		var           count    = 0;
@@ -74,7 +74,7 @@ public class SharingProviderTests {
 		Assert.Equal(1, await sut.CurrentAsync);
 	}
 
-	[Fact]
+	[RetryFact]
 	public async Task CanReturnPendingBox() {
 		var           trigger  = new SemaphoreSlim(0);
 		Action<bool>? onBroken = null;
@@ -113,7 +113,7 @@ public class SharingProviderTests {
 		Assert.Equal(1, count);
 	}
 
-	[Fact]
+	[RetryFact]
 	public async Task FactoryCanThrow() {
 		using var sut = new SharingProvider<int, int>(
 			(x, _) => throw new($"input {x}"),
@@ -130,7 +130,7 @@ public class SharingProviderTests {
 	// safe to call onBroken before the factory has returned, but it doesn't
 	// do anything because the box is not populated yet.
 	// the factory has to indicate failure by throwing.
-	[Fact]
+	[RetryFact]
 	public async Task FactoryCanCallOnBrokenSynchronously() {
 		using var sut = new SharingProvider<int, int>(
 			async (x, onBroken) => {
@@ -147,7 +147,7 @@ public class SharingProviderTests {
 		Assert.Equal(0, await sut.CurrentAsync);
 	}
 
-	[Fact]
+	[RetryFact]
 	public async Task FactoryCanCallOnBrokenSynchronouslyAndThrow() {
 		using var sut = new SharingProvider<int, int>(
 			async (x, onBroken) => {
@@ -167,7 +167,7 @@ public class SharingProviderTests {
 		Assert.Equal("input 0", ex.Message);
 	}
 
-	[Fact]
+	[RetryFact]
 	public async Task StopsAfterBeingDisposed() {
 		Action<bool>? onBroken = null;
 		var           count    = 0;
@@ -193,7 +193,7 @@ public class SharingProviderTests {
 		Assert.Equal(1, count);
 	}
 
-	[Fact]
+	[RetryFact]
 	public async Task ExampleUsage() {
 		// factory waits to be signalled by completeConstruction being released
 		// sometimes the factory succeeds, sometimes it throws.

@@ -4,7 +4,7 @@
     <PropertyGroup>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <RootNamespace>EventStore.Client</RootNamespace>
-        <PackageId>Kurrent.Client</PackageId>
+        <PackageId>EventStore.Client</PackageId>
     </PropertyGroup>
 
     <PropertyGroup>

@@ -27,6 +27,7 @@
         <Using Include="Bogus"/>
         <Using Include="Shouldly"/>
         <Using Include="Xunit"/>
+        <Using Include="xRetry"/>
         <Using Include="Xunit.Abstractions"/>
         <Using Include="Xunit.Categories"/>
         <Using Include="EventStore.Client.Tests"/>

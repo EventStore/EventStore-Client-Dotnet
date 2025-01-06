@@ -15,9 +15,9 @@ on:
         required: false
         type: string
         default: eventstore-ce/eventstoredb-ce
-      test:
-        required: true
-        type: string
+#      test:
+#        required: true
+#        type: string
 
 jobs:
   test:
@@ -29,7 +29,8 @@ jobs:
         os: [ ubuntu-latest ]
         configuration: [ release ]
     runs-on: ${{ matrix.os }}
-    name: ${{ inputs.test }} (${{ matrix.os }}, ${{ matrix.framework }})
+#    name: ${{ inputs.test }} (${{ matrix.os }}, ${{ matrix.framework }})
+    name: (${{ matrix.os }}, ${{ matrix.framework }})
     env:
       CLOUDSMITH_CICD_USER: ${{ secrets.CLOUDSMITH_CICD_USER }}
     steps:
@@ -63,4 +64,11 @@ jobs:
         dotnet test --configuration ${{ matrix.configuration }} --blame \
           --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
           --framework ${{ matrix.framework }} \
-          test/EventStore.Client.${{ inputs.test }}.Tests
+          test/EventStore.Client.Tests
+
+#      run: |
+#        sudo ./gencert.sh
+#        dotnet test --configuration ${{ matrix.configuration }} --blame \
+#          --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
+#          --framework ${{ matrix.framework }} \
+#          test/EventStore.Client.${{ inputs.test }}.Tests

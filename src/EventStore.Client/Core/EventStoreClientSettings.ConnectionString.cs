@@ -41,7 +41,7 @@ namespace EventStore.Client {
 			private const string ThrowOnAppendFailure = nameof(ThrowOnAppendFailure);
 			private const string KeepAliveInterval    = nameof(KeepAliveInterval);
 			private const string KeepAliveTimeout     = nameof(KeepAliveTimeout);
-			private const string UserCertFile             = nameof(UserCertFile);
+			private const string UserCertFile         = nameof(UserCertFile);
 			private const string UserKeyFile          = nameof(UserKeyFile);
 
 			private const string UriSchemeDiscover = "esdb+discover";
@@ -64,8 +64,8 @@ namespace EventStore.Client {
 					{ ThrowOnAppendFailure, typeof(bool) },
 					{ KeepAliveInterval, typeof(int) },
 					{ KeepAliveTimeout, typeof(int) },
-					{ UserCertFile, typeof(string)},
-					{ UserKeyFile, typeof(string)},
+					{ UserCertFile, typeof(string) },
+					{ UserKeyFile, typeof(string) },
 				};
 
 			public static EventStoreClientSettings Parse(string connectionString) {
@@ -77,10 +77,10 @@ namespace EventStore.Client {
 				var scheme = ParseScheme(connectionString.Substring(0, schemeIndex));
 
 				currentIndex = schemeIndex + SchemeSeparator.Length;
-				var userInfoIndex = connectionString.IndexOf(UserInfoSeparator, currentIndex, StringComparison.Ordinal);
-				(string user, string pass)? userInfo = null;
+				var                         userInfoIndex = connectionString.IndexOf(UserInfoSeparator, currentIndex, StringComparison.Ordinal);
+				(string user, string pass)? userInfo      = null;
 				if (userInfoIndex != -1) {
-					userInfo = ParseUserInfo(connectionString.Substring(currentIndex, userInfoIndex - currentIndex));
+					userInfo     = ParseUserInfo(connectionString.Substring(currentIndex, userInfoIndex - currentIndex));
 					currentIndex = userInfoIndex + UserInfoSeparator.Length;
 				}
 
@@ -93,7 +93,7 @@ namespace EventStore.Client {
 				if (questionMarkIndex == -1) questionMarkIndex = int.MaxValue;
 
 				var hostSeparatorIndex = Math.Min(Math.Min(slashIndex, questionMarkIndex), endIndex);
-				var hosts = ParseHosts(connectionString.Substring(currentIndex, hostSeparatorIndex - currentIndex));
+				var hosts              = ParseHosts(connectionString.Substring(currentIndex, hostSeparatorIndex - currentIndex));
 				currentIndex = hostSeparatorIndex;
 
 				string path = "";
@@ -163,11 +163,11 @@ namespace EventStore.Client {
 
 				if (typedOptions.TryGetValue(NodePreference, out object? nodePreference)) {
 					settings.ConnectivitySettings.NodePreference = ((string)nodePreference).ToLowerInvariant() switch {
-						"leader" => EventStore.Client.NodePreference.Leader,
-						"follower" => EventStore.Client.NodePreference.Follower,
-						"random" => EventStore.Client.NodePreference.Random,
+						"leader"          => EventStore.Client.NodePreference.Leader,
+						"follower"        => EventStore.Client.NodePreference.Follower,
+						"random"          => EventStore.Client.NodePreference.Random,
 						"readonlyreplica" => EventStore.Client.NodePreference.ReadOnlyReplica,
-						_ => throw new InvalidSettingException($"Invalid NodePreference: {nodePreference}")
+						_                 => throw new InvalidSettingException($"Invalid NodePreference: {nodePreference}")
 					};
 				}
 
@@ -184,17 +184,17 @@ namespace EventStore.Client {
 
 				if (typedOptions.TryGetValue(KeepAliveInterval, out var keepAliveIntervalMs)) {
 					settings.ConnectivitySettings.KeepAliveInterval = keepAliveIntervalMs switch {
-						-1 => Timeout_.InfiniteTimeSpan,
+						-1                 => Timeout_.InfiniteTimeSpan,
 						int value and >= 0 => TimeSpan.FromMilliseconds(value),
-						_ => throw new InvalidSettingException($"Invalid KeepAliveInterval: {keepAliveIntervalMs}")
+						_                  => throw new InvalidSettingException($"Invalid KeepAliveInterval: {keepAliveIntervalMs}")
 					};
 				}
 
 				if (typedOptions.TryGetValue(KeepAliveTimeout, out var keepAliveTimeoutMs)) {
 					settings.ConnectivitySettings.KeepAliveTimeout = keepAliveTimeoutMs switch {
-						-1 => Timeout_.InfiniteTimeSpan,
+						-1                 => Timeout_.InfiniteTimeSpan,
 						int value and >= 0 => TimeSpan.FromMilliseconds(value),
-						_ => throw new InvalidSettingException($"Invalid KeepAliveTimeout: {keepAliveTimeoutMs}")
+						_                  => throw new InvalidSettingException($"Invalid KeepAliveTimeout: {keepAliveTimeoutMs}")
 					};
 				}
 
@@ -221,7 +221,11 @@ namespace EventStore.Client {
 					}
 
 					try {
+#if NET9_0_OR_GREATER
+						settings.ConnectivitySettings.TlsCaFile = X509CertificateLoader.LoadCertificateFromFile(tlsCaFilePath);
+#else
 						settings.ConnectivitySettings.TlsCaFile = new X509Certificate2(tlsCaFilePath);
+#endif
 					} catch (CryptographicException) {
 						throw new InvalidClientCertificateException("Failed to load certificate. Invalid file format.");
 					}
@@ -239,9 +243,9 @@ namespace EventStore.Client {
 						return settings.CreateHttpMessageHandler.Invoke();
 
 					var handler = new WinHttpHandler {
-						TcpKeepAliveEnabled            = true,
-						TcpKeepAliveTime               = settings.ConnectivitySettings.KeepAliveTimeout,
-						TcpKeepAliveInterval           = settings.ConnectivitySettings.KeepAliveInterval,
+						TcpKeepAliveEnabled = true,
+						TcpKeepAliveTime = settings.ConnectivitySettings.KeepAliveTimeout,
+						TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
 						EnableMultipleHttp2Connections = true
 					};
 
@@ -285,7 +289,7 @@ namespace EventStore.Client {
 						true when settings.ConnectivitySettings.TlsCaFile is not null => (sender, certificate, chain, errors) => {
 							if (certificate is not X509Certificate2 peerCertificate || chain is null) return false;
 
-							chain.ChainPolicy.TrustMode                   = X509ChainTrustMode.CustomRootTrust;
+							chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
 							chain.ChainPolicy.CustomTrustStore.Add(settings.ConnectivitySettings.TlsCaFile);
 							return chain.Build(peerCertificate);
 						},

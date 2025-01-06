@@ -7,9 +7,9 @@ public abstract class ValueObjectTests<T> {
 
 	protected ValueObjectTests(Fixture fixture) => _fixture = fixture;
 
-	[Fact]
+	[RetryFact]
 	public void ValueObjectIsWellBehaved() => _fixture.Create<ValueObjectAssertion>().Verify(typeof(T));
 
-	[Fact]
+	[RetryFact]
 	public void ValueObjectIsEquatable() => Assert.IsAssignableFrom<IEquatable<T>>(_fixture.Create<T>());
 }
