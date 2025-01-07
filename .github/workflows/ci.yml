@@ -14,14 +14,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-#        docker-tag: [ ci, lts, previous-lts ]
-        docker-tag: [ ci ]
-#        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement ]
+        docker-tag: [ ci, lts, previous-lts ]
     name: Test CE (${{ matrix.docker-tag }})
     with:
       docker-tag: ${{ matrix.docker-tag }}
       docker-image: eventstore-ce/eventstoredb-ce
-#      test: ${{ matrix.test }}
 #  ee:
 #    uses: ./.github/workflows/base.yml
 #    if: ${{ github.repository_owner == 'EventStore' }}

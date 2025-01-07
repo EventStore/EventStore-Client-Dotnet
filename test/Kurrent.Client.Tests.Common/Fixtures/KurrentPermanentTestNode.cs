@@ -189,7 +189,7 @@ class NetworkPortProvider(int port = 2114) {
 #if NET
 					if (socket.Connected) await socket.DisconnectAsync(true);
 #else
-                    if (socket.Connected) socket.Disconnect(true);
+					if (socket.Connected) socket.Disconnect(true);
 #endif
 				}
 			}

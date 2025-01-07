@@ -89,7 +89,7 @@ public partial class KurrentTemporaryFixture : IAsyncLifetime, IAsyncDisposable 
 		await ContainerSemaphore.WaitAsync();
 		try {
 			await Service.Start();
-			EventStoreVersion               = GetEventStoreVersion();
+			EventStoreVersion               = GetKurrentVersion();
 			EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
 			// EventStoreHasLastStreamPosition = true;
 		} finally {
@@ -135,7 +135,7 @@ public partial class KurrentTemporaryFixture : IAsyncLifetime, IAsyncDisposable 
 			return client;
 		}
 
-		static Version GetEventStoreVersion() {
+		static Version GetKurrentVersion() {
 			const string versionPrefix = "EventStoreDB version";
 
 			using var cancellator = new CancellationTokenSource(FromSeconds(30));
@@ -148,8 +148,7 @@ public partial class KurrentTemporaryFixture : IAsyncLifetime, IAsyncDisposable 
 
 			using var log = eventstore.Logs(true, cancellator.Token);
 			foreach (var line in log.ReadToEnd()) {
-				Logger.Warning("line---> {line}", line);
-
+				Logger.Information("EventStoreDB: {Line}", line);
 				if (line.StartsWith(versionPrefix) &&
 				    Version.TryParse(
 					    new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()),

@@ -15,9 +15,6 @@ on:
         required: false
         type: string
         default: eventstore-ce/eventstoredb-ce
-#      test:
-#        required: true
-#        type: string
 
 jobs:
   test:
@@ -25,11 +22,10 @@ jobs:
     strategy:      
       fail-fast: false
       matrix:
-        framework: [ net9.0 ]
+        framework: [ net8.0, net9.0 ]
         os: [ ubuntu-latest ]
         configuration: [ release ]
     runs-on: ${{ matrix.os }}
-#    name: ${{ inputs.test }} (${{ matrix.os }}, ${{ matrix.framework }})
     name: (${{ matrix.os }}, ${{ matrix.framework }})
     env:
       CLOUDSMITH_CICD_USER: ${{ secrets.CLOUDSMITH_CICD_USER }}
@@ -66,10 +62,3 @@ jobs:
           --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
           --framework ${{ matrix.framework }} \
           test/Kurrent.Client.Tests
-
-#      run: |
-#        sudo ./gencert.sh
-#        dotnet test --configuration ${{ matrix.configuration }} --blame \
-#          --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
-#          --framework ${{ matrix.framework }} \
-#          test/EventStore.Client.${{ inputs.test }}.Tests
