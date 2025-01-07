@@ -44,7 +44,7 @@ public partial class KurrentTemporaryFixture : IAsyncLifetime, IAsyncDisposable 
 	public KurrentFixtureOptions Options { get; }
 	public Faker                 Faker   { get; } = new Faker();
 
-	// public Version EventStoreVersion               { get; private set; } = null!;
+	public Version EventStoreVersion               { get; private set; } = null!;
 	public bool    EventStoreHasLastStreamPosition { get; private set; }
 
 	public KurrentClient                        Streams       { get; private set; } = null!;
@@ -89,9 +89,9 @@ public partial class KurrentTemporaryFixture : IAsyncLifetime, IAsyncDisposable 
 		await ContainerSemaphore.WaitAsync();
 		try {
 			await Service.Start();
-			// EventStoreVersion               = GetEventStoreVersion();
-			// EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
-			EventStoreHasLastStreamPosition = true;
+			EventStoreVersion               = GetEventStoreVersion();
+			EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
+			// EventStoreHasLastStreamPosition = true;
 		} finally {
 			ContainerSemaphore.Release();
 		}
@@ -135,36 +135,38 @@ public partial class KurrentTemporaryFixture : IAsyncLifetime, IAsyncDisposable 
 			return client;
 		}
 
-		// static Version GetEventStoreVersion() {
-		// 	const string versionPrefix = "EventStoreDB version";
-		//
-		// 	using var cancellator = new CancellationTokenSource(FromSeconds(30));
-		// 	using var eventstore = new Builder()
-		// 		.UseContainer()
-		// 		.UseImage(GlobalEnvironment.DockerImage)
-		// 		.Command("--version")
-		// 		.Build()
-		// 		.Start();
-		//
-		// 	using var log = eventstore.Logs(true, cancellator.Token);
-		// 	foreach (var line in log.ReadToEnd()) {
-		// 		if (line.StartsWith(versionPrefix) &&
-		// 		    Version.TryParse(
-		// 			    new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()),
-		// 			    out var version
-		// 		    )) {
-		// 			return version;
-		// 		}
-		// 	}
-		//
-		// 	throw new InvalidOperationException("Could not determine server version.");
-		//
-		// 	IEnumerable<char> ReadVersion(string s) {
-		// 		foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) {
-		// 			yield return c;
-		// 		}
-		// 	}
-		// }
+		static Version GetEventStoreVersion() {
+			const string versionPrefix = "EventStoreDB version";
+
+			using var cancellator = new CancellationTokenSource(FromSeconds(30));
+			using var eventstore = new Builder()
+				.UseContainer()
+				.UseImage(GlobalEnvironment.DockerImage)
+				.Command("--version")
+				.Build()
+				.Start();
+
+			using var log = eventstore.Logs(true, cancellator.Token);
+			foreach (var line in log.ReadToEnd()) {
+				Logger.Warning("line---> {line}", line);
+
+				if (line.StartsWith(versionPrefix) &&
+				    Version.TryParse(
+					    new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()),
+					    out var version
+				    )) {
+					return version;
+				}
+			}
+
+			throw new InvalidOperationException("Could not determine server version.");
+
+			IEnumerable<char> ReadVersion(string s) {
+				foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) {
+					yield return c;
+				}
+			}
+		}
 	}
 
 	public async Task DisposeAsync() {
