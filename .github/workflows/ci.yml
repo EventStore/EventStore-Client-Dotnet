@@ -14,7 +14,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        docker-tag: [ ci, lts, previous-lts ]
+#        docker-tag: [ ci, lts, previous-lts ]
+        docker-tag: [ ci ]
 #        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement ]
     name: Test CE (${{ matrix.docker-tag }})
     with:

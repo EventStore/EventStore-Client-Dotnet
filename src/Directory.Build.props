@@ -3,8 +3,8 @@
 
     <PropertyGroup>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <RootNamespace>EventStore.Client</RootNamespace>
-        <PackageId>EventStore.Client</PackageId>
+        <RootNamespace>Kurrent.Client</RootNamespace>
+        <PackageId>Kurrent.Client</PackageId>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -12,8 +12,8 @@
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageProjectUrl>https://kurrent.io</PackageProjectUrl>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <PackageReleaseNotes>https://eventstore.com/blog/</PackageReleaseNotes>
-        <PackageTags>kurrent eventstore client grpc</PackageTags>
+        <PackageReleaseNotes>https://kurrent.io/blog/</PackageReleaseNotes>
+        <PackageTags>kurrent client grpc</PackageTags>
         <Authors>Kurrent Ltd</Authors>
         <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Kurrent Ltd</Copyright>
         <MinVerTagPrefix>v</MinVerTagPrefix>

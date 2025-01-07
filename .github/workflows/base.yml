@@ -53,7 +53,7 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: |
-          8.0.x
+          9.0.x
     - name: Run Tests
       shell: bash
       env:
@@ -64,7 +64,7 @@ jobs:
         dotnet test --configuration ${{ matrix.configuration }} --blame \
           --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
           --framework ${{ matrix.framework }} \
-          test/EventStore.Client.Tests
+          test/Kurrent.Client.Tests
 
 #      run: |
 #        sudo ./gencert.sh

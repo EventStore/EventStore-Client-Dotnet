@@ -30,7 +30,7 @@
         <Using Include="xRetry"/>
         <Using Include="Xunit.Abstractions"/>
         <Using Include="Xunit.Categories"/>
-        <Using Include="EventStore.Client.Tests"/>
+        <Using Include="Kurrent.Client.Tests"/>
         <Using Include="JetBrains.Annotations"/>
     </ItemGroup>
 
@@ -39,6 +39,6 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-        <Compile Include="..\src\EventStore.Client\Common\Shims\*.cs" LinkBase="Shims"/>
+        <Compile Include="..\src\Kurrent.Client\Common\Shims\*.cs" LinkBase="Shims"/>
     </ItemGroup>
 </Project>
