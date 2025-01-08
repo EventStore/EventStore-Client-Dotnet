@@ -2,6 +2,7 @@
 
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+#pragma warning disable SYSLIB0057
 
 #if NET48
 using Org.BouncyCastle.Crypto;
@@ -13,35 +14,20 @@ using Org.BouncyCastle.Security;
 namespace EventStore.Client;
 
 static class X509Certificates {
-	// TODO SS: Use .NET 8 X509Certificate2.CreateFromPemFile(certPemFilePath, keyPemFilePath) once the Windows32Exception issue is resolved
 	public static X509Certificate2 CreateFromPemFile(string certPemFilePath, string keyPemFilePath) {
 		try {
-#if NET9_0_OR_GREATER
-			using var publicCert = X509CertificateLoader.LoadCertificateFromFile(certPemFilePath);
+#if NET8_0_OR_GREATER
+			using var certificate = X509Certificate2.CreateFromPemFile(certPemFilePath, keyPemFilePath);
 #else
 			using var publicCert = new X509Certificate2(certPemFilePath);
-#endif
-			using var privateKey  = RSA.Create().ImportPrivateKeyFromFile(keyPemFilePath);
+			using var privateKey = RSA.Create().ImportPrivateKeyFromFile(keyPemFilePath);
 			using var certificate = publicCert.CopyWithPrivateKey(privateKey);
-
-#if NET48
-			return new(certificate.Export(X509ContentType.Pfx));
-#else
-			return X509Certificate2.CreateFromPemFile(certPemFilePath, keyPemFilePath);
 #endif
+
+			return new X509Certificate2(certificate.Export(X509ContentType.Pfx));
 		} catch (Exception ex) {
 			throw new CryptographicException($"Failed to load private key: {ex.Message}");
 		}
-
-		// Notes:
-		// using X509Certificate2.CreateFromPemFile(certPemFilePath, keyPemFilePath) would be the ideal choice here,
-		// but it's currently causing a Win32Exception specifically on Windows. Alternative implementation is used until the issue is resolved.
-		//
-		// Error: The SSL connection could not be established, see inner exception. AuthenticationException: Authentication failed because the platform
-		// does not support ephemeral keys. Win32Exception: No credentials are available in the security package
-		//
-		// public static X509Certificate2 CreateFromPemFile(string certPemFilePath, string keyPemFilePath) =>
-		//  X509Certificate2.CreateFromPemFile(certPemFilePath, keyPemFilePath);
 	}
 }
 
@@ -66,7 +52,7 @@ public static class RsaExtensions {
 	public static RSA ImportPrivateKeyFromFile(this RSA rsa, string privateKeyPath) {
 		var (content, label) = LoadPemKeyFile(privateKeyPath);
 
-		var privateKey = string.Join(string.Empty, content[1..^1]);
+		var privateKey      = string.Join(string.Empty, content[1..^1]);
 		var privateKeyBytes = Convert.FromBase64String(privateKey);
 
 		if (label == RsaPemLabels.Pkcs8PrivateKey)

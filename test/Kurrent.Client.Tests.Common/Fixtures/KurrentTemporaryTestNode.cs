@@ -82,6 +82,11 @@ public class KurrentTemporaryTestNode(KurrentFixtureOptions? options = null) : T
 			["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}"
 		};
 
+		if (GlobalEnvironment.DockerImage.Contains("commercial")) {
+			defaultEnvironment["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/eventstore/certs/ca";
+			defaultEnvironment["EventStore__Plugins__UserCertificates__Enabled"] = "true";
+		}
+
 		if (port != NetworkPortProvider.DefaultEsdbPort) {
 			if (GlobalEnvironment.Variables.TryGetValue("ES_DOCKER_TAG", out var tag) && tag == "ci")
 				defaultEnvironment["EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS"] = $"{port}";
@@ -181,7 +186,7 @@ class NetworkPortProvider(int port = 2114) {
 #if NET
 					if (socket.Connected) await socket.DisconnectAsync(true);
 #else
-                    if (socket.Connected) socket.Disconnect(true);
+					if (socket.Connected) socket.Disconnect(true);
 #endif
 				}
 			}

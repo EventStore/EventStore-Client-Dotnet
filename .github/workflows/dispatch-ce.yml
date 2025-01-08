@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test: [ Streams, PersistentSubscriptions, Operations, Projections, Security, Misc ]
+        test: [ Streams, PersistentSubscriptions, Operations, ProjectionManagement, UserManagement, Security, Misc ]
     name: Test CE (${{ inputs.docker-tag }})
     with:
       docker-tag: ${{ inputs.docker-tag }}

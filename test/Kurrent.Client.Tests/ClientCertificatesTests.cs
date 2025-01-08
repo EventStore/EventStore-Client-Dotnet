@@ -1,18 +1,21 @@
 using EventStore.Client;
 using Humanizer;
+using Kurrent.Client.Tests.TestNode;
 
 namespace Kurrent.Client.Tests;
 
 [Trait("Category", "Target:Misc")]
 [Trait("Category", "Target:Plugins")]
 [Trait("Category", "Type:UserCertificate")]
-public class ClientCertificateTests(ITestOutputHelper output, KurrentPermanentFixture fixture)
-	: KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
+public class ClientCertificateTests(ITestOutputHelper output, KurrentTemporaryFixture fixture)
+	: KurrentTemporaryTests<KurrentTemporaryFixture>(output, fixture) {
 	[SupportsPlugins.Theory(EventStoreRepository.Commercial, "This server version does not support plugins"), BadClientCertificatesTestCases]
 	async Task bad_certificates_combinations_should_return_authentication_error(string userCertFile, string userKeyFile, string tlsCaFile) {
-		var stream           = Fixture.GetStreamName();
-		var seedEvents       = Fixture.CreateTestEvents();
-		var connectionString = $"esdb://localhost:2113/?tls=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
+		var stream     = Fixture.GetStreamName();
+		var seedEvents = Fixture.CreateTestEvents();
+		var port       = Fixture.Options.ClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
+
+		var connectionString = $"esdb://localhost:{port}/?tls=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
 
 		var settings = KurrentClientSettings.Create(connectionString);
 		settings.ConnectivitySettings.TlsVerifyCert.ShouldBeTrue();
@@ -24,9 +27,11 @@ public class ClientCertificateTests(ITestOutputHelper output, KurrentPermanentFi
 
 	[SupportsPlugins.Theory(EventStoreRepository.Commercial, "This server version does not support plugins"), ValidClientCertificatesTestCases]
 	async Task valid_certificates_combinations_should_write_to_stream(string userCertFile, string userKeyFile, string tlsCaFile) {
-		var stream           = Fixture.GetStreamName();
-		var seedEvents       = Fixture.CreateTestEvents();
-		var connectionString = $"esdb://localhost:2113/?userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
+		var stream     = Fixture.GetStreamName();
+		var seedEvents = Fixture.CreateTestEvents();
+		var port       = Fixture.Options.ClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
+
+		var connectionString = $"esdb://localhost:{port}/?userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
 
 		var settings = KurrentClientSettings.Create(connectionString);
 		settings.ConnectivitySettings.TlsVerifyCert.ShouldBeTrue();
@@ -39,9 +44,11 @@ public class ClientCertificateTests(ITestOutputHelper output, KurrentPermanentFi
 
 	[SupportsPlugins.Theory(EventStoreRepository.Commercial, "This server version does not support plugins"), BadClientCertificatesTestCases]
 	async Task basic_authentication_should_take_precedence(string userCertFile, string userKeyFile, string tlsCaFile) {
-		var stream           = Fixture.GetStreamName();
-		var seedEvents       = Fixture.CreateTestEvents();
-		var connectionString = $"esdb://admin:changeit@localhost:2113/?userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
+		var stream     = Fixture.GetStreamName();
+		var seedEvents = Fixture.CreateTestEvents();
+		var port       = Fixture.Options.ClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
+
+		var connectionString = $"esdb://admin:changeit@localhost:{port}/?userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
 
 		var settings = KurrentClientSettings.Create(connectionString);
 		settings.ConnectivitySettings.TlsVerifyCert.ShouldBeTrue();

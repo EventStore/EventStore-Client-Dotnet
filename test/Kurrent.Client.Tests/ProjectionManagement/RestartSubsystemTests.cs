@@ -3,7 +3,7 @@ using Kurrent.Client.Tests.TestNode;
 
 namespace Kurrent.Client.Tests.Projections;
 
-[Trait("Category", "Target:Projections")]
+[Trait("Category", "Target:ProjectionManagement")]
 public class RestartSubsystemTests(ITestOutputHelper output, RestartSubsystemTests.CustomFixture fixture)
 	: KurrentTemporaryTests<RestartSubsystemTests.CustomFixture>(output, fixture) {
 	[Fact]

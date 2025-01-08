@@ -3,12 +3,13 @@ using Kurrent.Client.Tests.TestNode;
 
 namespace Kurrent.Client.Tests.Projections;
 
-[Trait("Category", "Target:Projections")]
-public class GetProjectionStateTests(ITestOutputHelper output, GetProjectionStateTests.CustomFixture fixture)
-	: KurrentTemporaryTests<GetProjectionStateTests.CustomFixture>(output, fixture) {
+[Trait("Category", "Target:ProjectionManagement")]
+public class GetProjectionResultTests(ITestOutputHelper output, GetProjectionResultTests.CustomFixture fixture)
+	: KurrentTemporaryTests<GetProjectionResultTests.CustomFixture>(output, fixture) {
 	[Fact]
-	public async Task get_state() {
-		var name = Fixture.GetProjectionName();
+	public async Task get_result() {
+		var     name   = Fixture.GetProjectionName();
+		Result? result = null;
 
 		var projection = $$"""
 		                   fromStream('{{name}}').when({
@@ -16,8 +17,6 @@ public class GetProjectionStateTests(ITestOutputHelper output, GetProjectionStat
 		                   	"$any": function(s, e) { s.Count++; return s; }
 		                   });
 		                   """;
-
-		Result? result = null;
 
 		await Fixture.Projections.CreateContinuousAsync(
 			name,
@@ -33,7 +32,7 @@ public class GetProjectionStateTests(ITestOutputHelper output, GetProjectionStat
 
 		await AssertEx.IsOrBecomesTrue(
 			async () => {
-				result = await Fixture.Projections.GetStateAsync<Result>(name, userCredentials: TestCredentials.Root);
+				result = await Fixture.Projections.GetResultAsync<Result>(name, userCredentials: TestCredentials.Root);
 				return result.Count > 0;
 			}
 		);

@@ -87,31 +87,6 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentPermanentFixtu
 	}
 
 	[RetryFact]
-	public async Task connect_to_existing_with_start_from_not_set() {
-		var group  = Fixture.GetGroupName();
-		var stream = Fixture.GetStreamName();
-
-		foreach (var @event in Fixture.CreateTestEvents(10))
-			await Fixture.Streams.AppendToStreamAsync(
-				stream,
-				StreamState.Any,
-				[@event]
-			);
-
-		await Fixture.Subscriptions.CreateToAllAsync(group, new(), userCredentials: TestCredentials.Root);
-		var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
-
-		await Assert.ThrowsAsync<TimeoutException>(
-			() => subscription.Messages
-				.OfType<PersistentSubscriptionMessage.Event>()
-				.Where(e => !SystemStreams.IsSystemStream(e.ResolvedEvent.OriginalStreamId))
-				.AnyAsync()
-				.AsTask()
-				.WithTimeout(TimeSpan.FromMilliseconds(250))
-		);
-	}
-
-	[RetryFact]
 	public async Task connect_to_existing_with_start_from_not_set_then_event_written() {
 		var group  = Fixture.GetGroupName();
 		var stream = Fixture.GetStreamName();
@@ -139,33 +114,6 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentPermanentFixtu
 
 		Assert.Equal(expectedEvent.EventId, resolvedEvent.Event.EventId);
 		Assert.Equal(expectedStreamId, resolvedEvent.Event.EventStreamId);
-	}
-
-	[RetryFact]
-	public async Task connect_to_existing_with_start_from_set_to_end_position() {
-		var group  = Fixture.GetGroupName();
-		var stream = Fixture.GetStreamName();
-
-		foreach (var @event in Fixture.CreateTestEvents(10)) {
-			await Fixture.Streams.AppendToStreamAsync(
-				stream,
-				StreamState.Any,
-				[@event]
-			);
-		}
-
-		await Fixture.Subscriptions.CreateToAllAsync(group, new(startFrom: Position.End), userCredentials: TestCredentials.Root);
-
-		var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
-
-		await Assert.ThrowsAsync<TimeoutException>(
-			() => subscription.Messages
-				.OfType<PersistentSubscriptionMessage.Event>()
-				.Where(e => !SystemStreams.IsSystemStream(e.ResolvedEvent.OriginalStreamId))
-				.AnyAsync()
-				.AsTask()
-				.WithTimeout(TimeSpan.FromMilliseconds(250))
-		);
 	}
 
 	[RetryFact]

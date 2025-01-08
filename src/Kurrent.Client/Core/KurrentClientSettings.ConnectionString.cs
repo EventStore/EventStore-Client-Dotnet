@@ -317,8 +317,7 @@ namespace EventStore.Client {
 					);
 
 				try {
-					settings.ConnectivitySettings.ClientCertificate =
-						X509Certificates.CreateFromPemFile(certPemFilePath, keyPemFilePath);
+					settings.ConnectivitySettings.ClientCertificate = X509Certificates.CreateFromPemFile(certPemFilePath, keyPemFilePath);
 				} catch (Exception ex) {
 					throw new InvalidClientCertificateException("Failed to create client certificate.", ex);
 				}
