@@ -5,13 +5,9 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{EA59C1CB-16DA-4F68-AF8A-642A969B4CF8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client", "src\EventStore.Client\EventStore.Client.csproj", "{8853D875-4A8E-450B-A1BE-9CEF8BEDABC3}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{C51F2C69-45A9-4D0D-A708-4FC319D5D340}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.Tests", "test\Kurrent.Client.Tests\Kurrent.Client.Tests.csproj", "{FC829F1B-43AD-4C96-9002-23D04BBA3AF3}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Client.Extensions.OpenTelemetry", "src\EventStore.Client.Extensions.OpenTelemetry\EventStore.Client.Extensions.OpenTelemetry.csproj", "{F6A7B391-36F1-4838-AD08-E0EE0F2FE57E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client", "src\Kurrent.Client\Kurrent.Client.csproj", "{762EECAA-122E-4B0C-BC50-5AA4F72CA4E0}"
 EndProject
@@ -26,18 +22,10 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{8853D875-4A8E-450B-A1BE-9CEF8BEDABC3}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{8853D875-4A8E-450B-A1BE-9CEF8BEDABC3}.Debug|x64.Build.0 = Debug|Any CPU
-		{8853D875-4A8E-450B-A1BE-9CEF8BEDABC3}.Release|x64.ActiveCfg = Release|Any CPU
-		{8853D875-4A8E-450B-A1BE-9CEF8BEDABC3}.Release|x64.Build.0 = Release|Any CPU
 		{FC829F1B-43AD-4C96-9002-23D04BBA3AF3}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{FC829F1B-43AD-4C96-9002-23D04BBA3AF3}.Debug|x64.Build.0 = Debug|Any CPU
 		{FC829F1B-43AD-4C96-9002-23D04BBA3AF3}.Release|x64.ActiveCfg = Release|Any CPU
 		{FC829F1B-43AD-4C96-9002-23D04BBA3AF3}.Release|x64.Build.0 = Release|Any CPU
-		{F6A7B391-36F1-4838-AD08-E0EE0F2FE57E}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{F6A7B391-36F1-4838-AD08-E0EE0F2FE57E}.Debug|x64.Build.0 = Debug|Any CPU
-		{F6A7B391-36F1-4838-AD08-E0EE0F2FE57E}.Release|x64.ActiveCfg = Release|Any CPU
-		{F6A7B391-36F1-4838-AD08-E0EE0F2FE57E}.Release|x64.Build.0 = Release|Any CPU
 		{762EECAA-122E-4B0C-BC50-5AA4F72CA4E0}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{762EECAA-122E-4B0C-BC50-5AA4F72CA4E0}.Debug|x64.Build.0 = Debug|Any CPU
 		{762EECAA-122E-4B0C-BC50-5AA4F72CA4E0}.Release|x64.ActiveCfg = Release|Any CPU
@@ -48,9 +36,7 @@ Global
 		{47BF715B-A0BF-4044-B335-717E56422550}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{8853D875-4A8E-450B-A1BE-9CEF8BEDABC3} = {EA59C1CB-16DA-4F68-AF8A-642A969B4CF8}
 		{FC829F1B-43AD-4C96-9002-23D04BBA3AF3} = {C51F2C69-45A9-4D0D-A708-4FC319D5D340}
-		{F6A7B391-36F1-4838-AD08-E0EE0F2FE57E} = {EA59C1CB-16DA-4F68-AF8A-642A969B4CF8}
 		{762EECAA-122E-4B0C-BC50-5AA4F72CA4E0} = {EA59C1CB-16DA-4F68-AF8A-642A969B4CF8}
 		{47BF715B-A0BF-4044-B335-717E56422550} = {C51F2C69-45A9-4D0D-A708-4FC319D5D340}
 	EndGlobalSection
