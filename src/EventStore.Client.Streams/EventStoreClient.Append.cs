@@ -113,13 +113,7 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials,
 			CancellationToken cancellationToken
 		) {
-			var tags = new ActivityTagsCollection()
-				.WithRequiredTag(TelemetryTags.EventStore.Stream, header.Options.StreamIdentifier.StreamName.ToStringUtf8())
-				.WithGrpcChannelServerTags(channelInfo)
-				.WithClientSettingsServerTags(Settings)
-				.WithOptionalTag(TelemetryTags.Database.User, userCredentials?.Username ?? Settings.DefaultCredentials?.Username);
-
-			return EventStoreClientDiagnostics.ActivitySource.TraceClientOperation(Operation, TracingConstants.Operations.Append, tags);
+			return EventStoreClientDiagnostics.ActivitySource.TraceClientOperation(Operation, TracingConstants.Operations.Append, AppendTags);
 
 			async ValueTask<IWriteResult> Operation() {
 				using var call = new StreamsClient(channelInfo.CallInvoker)
@@ -157,6 +151,12 @@ namespace EventStore.Client {
 
 				return HandleWrongExpectedRevision(response, header, operationOptions);
 			}
+
+			ActivityTagsCollection AppendTags() => new ActivityTagsCollection()
+				.WithRequiredTag(TelemetryTags.EventStore.Stream, header.Options.StreamIdentifier.StreamName.ToStringUtf8())
+				.WithGrpcChannelServerTags(Settings, channelInfo)
+				.WithClientSettingsServerTags(Settings)
+				.WithOptionalTag(TelemetryTags.Database.User, userCredentials?.Username ?? Settings.DefaultCredentials?.Username);
 		}
 
 		IWriteResult HandleSuccessAppend(AppendResp response, AppendReq header) {
@@ -282,16 +282,10 @@ namespace EventStore.Client {
 				IEnumerable<EventData> events,
 				CancellationToken cancellationToken
 			) {
-				var tags = new ActivityTagsCollection()
-					.WithRequiredTag(TelemetryTags.EventStore.Stream, options.StreamIdentifier.StreamName.ToStringUtf8())
-					.WithGrpcChannelServerTags(_channelInfo)
-					.WithClientSettingsServerTags(_settings)
-					.WithOptionalTag(TelemetryTags.Database.User, _settings.DefaultCredentials?.Username);
-
 				return EventStoreClientDiagnostics.ActivitySource.TraceClientOperation(
 					Operation,
 					TracingConstants.Operations.Append,
-					tags
+					AppendTags
 				);
 
 				async ValueTask<IWriteResult> Operation() {
@@ -310,6 +304,12 @@ namespace EventStore.Client {
 
 					return await complete.Task.ConfigureAwait(false);
 				}
+
+				ActivityTagsCollection AppendTags() => new ActivityTagsCollection()
+					.WithRequiredTag(TelemetryTags.EventStore.Stream, options.StreamIdentifier.StreamName.ToStringUtf8())
+					.WithGrpcChannelServerTags(_settings, _channelInfo)
+					.WithClientSettingsServerTags(_settings)
+					.WithOptionalTag(TelemetryTags.Database.User, _settings.DefaultCredentials?.Username);
 			}
 
 			async Task Duplex(ValueTask<ChannelInfo> channelInfoTask) {
