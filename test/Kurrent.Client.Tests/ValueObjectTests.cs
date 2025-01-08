@@ -2,6 +2,7 @@ using AutoFixture;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Misc")]
 public abstract class ValueObjectTests<T> {
 	protected readonly Fixture _fixture;
 

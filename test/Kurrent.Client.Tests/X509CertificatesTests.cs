@@ -3,6 +3,7 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Misc")]
 public class X509CertificatesTests {
 	[RetryFact]
 	public void create_from_pem_file() {

@@ -3,7 +3,7 @@ using EventStore.Client;
 namespace Kurrent.Client.Tests.Streams;
 
 [Trait("Category", "Subscriptions")]
-[Trait("Category", "Target:Stream")]
+[Trait("Category", "Target:Streams")]
 public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamTests.CustomFixture fixture)
 	: KurrentPermanentTests<SubscribeToStreamTests.CustomFixture>(output, fixture) {
 	[RetryFact]

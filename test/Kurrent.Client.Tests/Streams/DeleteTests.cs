@@ -3,7 +3,7 @@ using Grpc.Core;
 
 namespace Kurrent.Client.Tests.Streams;
 
-[Trait("Category", "Target:Stream")]
+[Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Delete")]
 public class DeleteTests(ITestOutputHelper output, KurrentPermanentFixture fixture) : KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
 	[Theory, ExpectedStreamStateCases]

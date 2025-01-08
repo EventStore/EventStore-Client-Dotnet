@@ -3,6 +3,7 @@ using Kurrent.Client.Tests.TestNode;
 
 namespace Kurrent.Client.Tests.PersistentSubscriptions;
 
+[Trait("Category", "Target:PersistentSubscriptions")]
 public class SubscribeToAllConnectWithoutReadPermissionsTests(ITestOutputHelper output, KurrentTemporaryFixture fixture)
 	: KurrentTemporaryTests<KurrentTemporaryFixture>(output, fixture) {
 	[RetryFact]

@@ -4,6 +4,7 @@ using Grpc.Core;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Misc")]
 public class GossipChannelSelectorTests {
 	[RetryFact]
 	public async Task ExplicitlySettingEndPointChangesChannels() {

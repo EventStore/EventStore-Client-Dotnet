@@ -3,6 +3,7 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Misc")]
 public class NodeSelectorTests {
 	static readonly ClusterMessages.VNodeState[] NotAllowedStates = {
 		ClusterMessages.VNodeState.Manager,

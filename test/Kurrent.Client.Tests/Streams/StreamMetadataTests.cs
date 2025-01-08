@@ -4,7 +4,7 @@ using Grpc.Core;
 
 namespace Kurrent.Client.Tests.Streams;
 
-[Trait("Category", "Target:Stream")]
+[Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Metadata")]
 public class StreamMetadataTests(ITestOutputHelper output, KurrentPermanentFixture fixture) : KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
 	[Fact]

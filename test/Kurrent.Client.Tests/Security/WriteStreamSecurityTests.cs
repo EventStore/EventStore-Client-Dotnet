@@ -2,7 +2,7 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Tests;
 
-[Trait("Category", "Security")]
+[Trait("Category", "Target:Security")]
 public class WriteStreamSecurityTests : IClassFixture<SecurityFixture> {
 	public WriteStreamSecurityTests(ITestOutputHelper output, SecurityFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
 

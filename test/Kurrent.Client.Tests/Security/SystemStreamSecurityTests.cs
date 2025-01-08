@@ -4,7 +4,7 @@ using Kurrent.Client.Tests;
 
 namespace Kurrent.Client.Tests;
 
-[Trait("Category", "Security")]
+[Trait("Category", "Target:Security")]
 public class SystemStreamSecurityTests(ITestOutputHelper output, SecurityFixture fixture) : KurrentTemporaryTests<SecurityFixture>(output, fixture) {
 	[Fact]
 	public async Task operations_on_system_stream_with_no_acl_set_fail_for_non_admin() {

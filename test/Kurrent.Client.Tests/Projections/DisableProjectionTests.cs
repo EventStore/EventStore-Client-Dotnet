@@ -2,6 +2,7 @@ using Kurrent.Client.Tests.TestNode;
 
 namespace Kurrent.Client.Tests.Projections;
 
+[Trait("Category", "Target:Projections")]
 public class DisableProjectionTests(ITestOutputHelper output, DisableProjectionTests.CustomFixture fixture)
 	: KurrentTemporaryTests<DisableProjectionTests.CustomFixture>(output, fixture) {
 	[Fact]

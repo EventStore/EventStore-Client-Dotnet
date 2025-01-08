@@ -3,6 +3,7 @@ using Kurrent.Client.Tests;
 
 namespace Kurrent.Client.Tests.PersistentSubscriptions;
 
+[Trait("Category", "Target:PersistentSubscriptions")]
 public class SubscribeToAllResultWithNormalUserCredentialsTests(ITestOutputHelper output, KurrentTemporaryFixture fixture)
 	: KurrentTemporaryTests<KurrentTemporaryFixture>(output, fixture) {
 	[RetryFact]

@@ -3,6 +3,7 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Misc")]
 public class UuidTests : ValueObjectTests<Uuid> {
 	public UuidTests() : base(new ScenarioFixture()) { }
 

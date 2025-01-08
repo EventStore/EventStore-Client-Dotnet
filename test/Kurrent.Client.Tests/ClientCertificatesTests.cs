@@ -3,6 +3,7 @@ using Humanizer;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Misc")]
 [Trait("Category", "Target:Plugins")]
 [Trait("Category", "Type:UserCertificate")]
 public class ClientCertificateTests(ITestOutputHelper output, KurrentPermanentFixture fixture)

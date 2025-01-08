@@ -3,6 +3,7 @@ using Kurrent.Client.Tests.TestNode;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Streams")]
 [Trait("Category", "Target:All")]
 [Trait("Category", "Operation:Read")]
 [Trait("Category", "Database:Dedicated")]

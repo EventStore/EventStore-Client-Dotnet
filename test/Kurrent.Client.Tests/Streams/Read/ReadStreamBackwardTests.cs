@@ -4,7 +4,8 @@ using Grpc.Core;
 
 namespace Kurrent.Client.Tests;
 
-[Trait("Category", "Target:Stream")]
+[Trait("Category", "Target:Streams")]
+[Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Read")]
 [Trait("Category", "Operation:Read:Backwards")]
 public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentTemporaryFixture fixture)

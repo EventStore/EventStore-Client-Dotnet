@@ -7,7 +7,8 @@ using Kurrent.Client.Tests;
 
 namespace Kurrent.Client.Tests;
 
-[Trait("Category", "Target:Stream")]
+[Trait("Category", "Target:Streams")]
+[Trait("Category", "Target:Streams")]
 public abstract class ReadStreamEventsLinkedToDeletedStreamTests(ReadEventsLinkedToDeletedStreamFixture fixture) {
 	ReadEventsLinkedToDeletedStreamFixture Fixture { get; } = fixture;
 

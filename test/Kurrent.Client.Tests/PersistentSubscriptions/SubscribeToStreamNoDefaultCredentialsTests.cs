@@ -2,6 +2,7 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Tests.PersistentSubscriptions;
 
+[Trait("Category", "Target:PersistentSubscriptions")]
 public class SubscribeToStreamNoDefaultCredentialsTests(ITestOutputHelper output, SubscribeToStreamNoDefaultCredentialsTests.CustomFixture fixture)
 	: KurrentPermanentTests<SubscribeToStreamNoDefaultCredentialsTests.CustomFixture>(output, fixture) {
 	[RetryFact]

@@ -4,6 +4,7 @@
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Misc")]
 public class SharingProviderTests {
 	[RetryFact]
 	public async Task CanGetCurrent() {

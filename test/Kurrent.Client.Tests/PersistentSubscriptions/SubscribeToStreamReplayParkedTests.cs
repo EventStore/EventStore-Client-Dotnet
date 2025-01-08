@@ -2,6 +2,7 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Tests.PersistentSubscriptions;
 
+[Trait("Category", "Target:PersistentSubscriptions")]
 public class SubscribeToStreamReplayParkedTests(ITestOutputHelper output, SubscribeToStreamReplayParkedTests.CustomFixture fixture)
 	: KurrentPermanentTests<SubscribeToStreamReplayParkedTests.CustomFixture>(output, fixture) {
 	[RetryFact]

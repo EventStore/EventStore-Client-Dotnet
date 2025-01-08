@@ -3,6 +3,7 @@ using Kurrent.Client.Tests.TestNode;
 
 namespace Kurrent.Client.Tests.Projections;
 
+[Trait("Category", "Target:Projections")]
 public class GetProjectionResultTests(ITestOutputHelper output, GetProjectionResultTests.CustomFixture fixture)
 	: KurrentTemporaryTests<GetProjectionResultTests.CustomFixture>(output, fixture) {
 	[Fact]

@@ -4,6 +4,7 @@ using Kurrent.Client.Tests;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Operations")]
 public class ShutdownNodeAuthenticationTests(ITestOutputHelper output, ShutdownNodeAuthenticationTests.CustomFixture fixture)
 	: KurrentTemporaryTests<ShutdownNodeAuthenticationTests.CustomFixture>(output, fixture) {
 	[RetryFact]

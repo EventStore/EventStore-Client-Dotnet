@@ -3,7 +3,7 @@ using Kurrent.Client.Tests.TestNode;
 
 namespace Kurrent.Client.Tests;
 
-[Trait("Category", "Security")]
+[Trait("Category", "Target:Security")]
 public class OverridenUserStreamSecurityTests(ITestOutputHelper output, OverridenUserStreamSecurityTests.CustomFixture fixture)
 	: KurrentTemporaryTests<OverridenUserStreamSecurityTests.CustomFixture>(output, fixture) {
 	[Fact]

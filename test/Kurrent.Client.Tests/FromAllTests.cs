@@ -3,6 +3,7 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Misc")]
 public class FromAllTests : ValueObjectTests<FromAll> {
 	public FromAllTests() : base(new ScenarioFixture()) { }
 

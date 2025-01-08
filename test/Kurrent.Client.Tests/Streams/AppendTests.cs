@@ -4,7 +4,7 @@ using Humanizer;
 
 namespace Kurrent.Client.Tests.Streams;
 
-[Trait("Category", "Target:Stream")]
+[Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Append")]
 public class AppendTests(ITestOutputHelper output, KurrentPermanentFixture fixture) : KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
 	[Theory, ExpectedVersionCreateStreamTestCases]

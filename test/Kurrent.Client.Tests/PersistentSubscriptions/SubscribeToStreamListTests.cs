@@ -3,6 +3,7 @@ using Kurrent.Client.Tests.TestNode;
 
 namespace Kurrent.Client.Tests.PersistentSubscriptions;
 
+[Trait("Category", "Target:PersistentSubscriptions")]
 public class SubscribeToStreamListTests(ITestOutputHelper output, SubscribeToStreamListTests.CustomFixture fixture)
 	: KurrentTemporaryTests<SubscribeToStreamListTests.CustomFixture>(output, fixture) {
 	[RetryFact]

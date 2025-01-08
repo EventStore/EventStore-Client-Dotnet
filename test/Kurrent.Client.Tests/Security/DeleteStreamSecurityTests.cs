@@ -4,7 +4,7 @@ using Kurrent.Client.Tests;
 
 namespace Kurrent.Client.Tests;
 
-[Trait("Category", "Security")]
+[Trait("Category", "Target:Security")]
 public class DeleteStreamSecurityTests(ITestOutputHelper output, SecurityFixture fixture) : KurrentTemporaryTests<SecurityFixture>(output, fixture) {
 	[Fact]
 	public async Task delete_of_all_is_never_allowed() {

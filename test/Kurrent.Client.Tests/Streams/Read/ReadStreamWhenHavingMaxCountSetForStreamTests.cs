@@ -4,7 +4,8 @@ using Kurrent.Client.Tests;
 
 namespace Kurrent.Client.Tests;
 
-[Trait("Category", "Target:Stream")]
+[Trait("Category", "Target:Streams")]
+[Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Read")]
 public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper output, KurrentTemporaryFixture fixture)
 	: KurrentTemporaryTests<KurrentTemporaryFixture>(output, fixture) {

@@ -3,6 +3,7 @@ using static EventStore.Client.ClusterMessages.VNodeState;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Misc")]
 public class NodePreferenceComparerTests {
 	static ClusterMessages.VNodeState RunTest(IComparer<ClusterMessages.VNodeState> sut, params ClusterMessages.VNodeState[] states) =>
 		states

@@ -2,6 +2,7 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Operations")]
 public class AuthenticationTests(ITestOutputHelper output, AuthenticationTests.CustomFixture fixture)
 	: KurrentPermanentTests<AuthenticationTests.CustomFixture>(output, fixture) {
 	public enum CredentialsCase { None, TestUser, RootUser }

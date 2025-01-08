@@ -2,6 +2,7 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Operations")]
 public class MergeIndexTests(ITestOutputHelper output, MergeIndexTests.CustomFixture fixture)
 	: KurrentPermanentTests<MergeIndexTests.CustomFixture>(output, fixture) {
 	[RetryFact]

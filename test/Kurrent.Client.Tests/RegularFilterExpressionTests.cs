@@ -4,6 +4,7 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Misc")]
 public class RegularFilterExpressionTests : ValueObjectTests<RegularFilterExpression> {
 	public RegularFilterExpressionTests() : base(new ScenarioFixture()) { }
 

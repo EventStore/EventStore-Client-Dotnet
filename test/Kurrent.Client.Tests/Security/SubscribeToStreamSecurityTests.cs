@@ -4,7 +4,7 @@ using Kurrent.Client.Tests;
 
 namespace Kurrent.Client.Tests;
 
-[Trait("Category", "Security")]
+[Trait("Category", "Target:Security")]
 public class SubscribeToStreamSecurityTests(ITestOutputHelper output, SecurityFixture fixture)
 	: KurrentTemporaryTests<SecurityFixture>(output, fixture) {
 	[Fact]

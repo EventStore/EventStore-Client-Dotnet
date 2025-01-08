@@ -15,10 +15,10 @@ on:
 jobs:
   test:
     uses: ./.github/workflows/base.yml
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement ]
+    strategy:
+      fail-fast: false
+      matrix:
+        test: [ Streams, PersistentSubscriptions, Operations, Projections, Security, Misc ]
     name: Test CE (${{ inputs.docker-tag }})
     with:
       docker-tag: ${{ inputs.docker-tag }}

@@ -3,7 +3,7 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Tests.Streams;
 
-[Trait("Category", "Target:Stream")]
+[Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Delete")]
 public class SoftDeleteTests(ITestOutputHelper output, KurrentPermanentFixture fixture) : KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
 	static JsonDocument CustomMetadata { get; }

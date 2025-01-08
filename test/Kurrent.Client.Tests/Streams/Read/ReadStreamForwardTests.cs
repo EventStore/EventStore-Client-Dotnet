@@ -2,7 +2,8 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Tests;
 
-[Trait("Category", "Target:Stream")]
+[Trait("Category", "Target:Streams")]
+[Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Read")]
 [Trait("Category", "Operation:Read:Forwards")]
 public class ReadStreamForwardTests(ITestOutputHelper output, KurrentPermanentFixture fixture) : KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {

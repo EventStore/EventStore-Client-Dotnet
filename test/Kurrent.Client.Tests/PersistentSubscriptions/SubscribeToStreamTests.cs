@@ -4,6 +4,7 @@ using Grpc.Core;
 
 namespace Kurrent.Client.Tests.PersistentSubscriptions;
 
+[Trait("Category", "Target:PersistentSubscriptions")]
 public class SubscribeToStreamTests(ITestOutputHelper output, KurrentPermanentFixture fixture)
 	: KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
 	[RetryFact]

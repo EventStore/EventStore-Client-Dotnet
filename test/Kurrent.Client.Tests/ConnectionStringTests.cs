@@ -8,6 +8,7 @@ using HashCode = EventStore.Client.HashCode;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Misc")]
 public class ConnectionStringTests {
 	public static IEnumerable<object?[]> ValidCases() {
 		var fixture = new Fixture();

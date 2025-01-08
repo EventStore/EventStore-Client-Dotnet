@@ -15,50 +15,54 @@ on:
         required: false
         type: string
         default: eventstore-ce/eventstoredb-ce
+      test:
+        required: true
+        type: string
 
 jobs:
   test:
     timeout-minutes: 20
-    strategy:      
+    strategy:
       fail-fast: false
       matrix:
-        framework: [ net8.0, net9.0 ]
+        framework: [ net9.0 ]
         os: [ ubuntu-latest ]
         configuration: [ release ]
     runs-on: ${{ matrix.os }}
-    name: (${{ matrix.os }}, ${{ matrix.framework }})
+    name: ${{ inputs.test }} (${{ matrix.os }}, ${{ matrix.framework }})
     env:
       CLOUDSMITH_CICD_USER: ${{ secrets.CLOUDSMITH_CICD_USER }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - name: Login to Cloudsmith
-      if: ${{ env.CLOUDSMITH_CICD_USER != '' }}
-      uses: docker/login-action@v3
-      with:
-        registry: docker.eventstore.com
-        username: ${{ secrets.CLOUDSMITH_CICD_USER }}
-        password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
-    - name: Pull EventStore Image
-      shell: bash
-      run: |
-        docker pull docker.eventstore.com/${{ inputs.docker-image }}:${{ inputs.docker-tag }}
-    - name: Install dotnet SDKs
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: |
-          8.0.x
-          9.0.x
-    - name: Run Tests
-      shell: bash
-      env:
-        ES_DOCKER_TAG: ${{ inputs.docker-tag }}
-        ES_DOCKER_REGISTRY: docker.eventstore.com/${{ inputs.docker-image }}
-      run: |
-        sudo ./gencert.sh
-        dotnet test --configuration ${{ matrix.configuration }} --blame \
-          --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
-          --framework ${{ matrix.framework }} \
-          test/Kurrent.Client.Tests
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Login to Cloudsmith
+        if: ${{ env.CLOUDSMITH_CICD_USER != '' }}
+        uses: docker/login-action@v3
+        with:
+          registry: docker.eventstore.com
+          username: ${{ secrets.CLOUDSMITH_CICD_USER }}
+          password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
+      - name: Pull EventStore Image
+        shell: bash
+        run: |
+          docker pull docker.eventstore.com/${{ inputs.docker-image }}:${{ inputs.docker-tag }}
+      - name: Install dotnet SDKs
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+      - name: Run Tests
+        shell: bash
+        env:
+          ES_DOCKER_TAG: ${{ inputs.docker-tag }}
+          ES_DOCKER_REGISTRY: docker.eventstore.com/${{ inputs.docker-image }}
+        run: |
+          sudo ./gencert.sh
+          dotnet test --configuration ${{ matrix.configuration }} --blame \
+            --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
+            --framework ${{ matrix.framework }} \
+            --filter "Category=Target:${{ inputs.test }}" \
+            test/Kurrent.Client.Tests

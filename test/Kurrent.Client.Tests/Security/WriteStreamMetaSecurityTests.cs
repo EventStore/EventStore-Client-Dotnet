@@ -4,7 +4,7 @@ using Kurrent.Client.Tests;
 
 namespace Kurrent.Client.Tests;
 
-[Trait("Category", "Security")]
+[Trait("Category", "Target:Security")]
 public class WriteStreamMetaSecurityTests(ITestOutputHelper output, SecurityFixture fixture) : KurrentTemporaryTests<SecurityFixture>(output, fixture) {
 	[Fact]
 	public async Task writing_meta_with_not_existing_credentials_is_not_authenticated() =>

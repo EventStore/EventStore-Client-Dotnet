@@ -4,6 +4,7 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Tests.Bugs.Obsolete;
 
+[Trait("Category", "Target:Streams")]
 [Trait("Category", "Bug")]
 [Obsolete("Tests will be removed in future release when older subscriptions APIs are removed from the client")]
 public class Issue2544 : IClassFixture<KurrentPermanentFixture> {

@@ -4,7 +4,7 @@ using Kurrent.Client.Tests;
 
 namespace Kurrent.Client.Tests;
 
-[Trait("Category", "Security")]
+[Trait("Category", "Target:Security")]
 public class MultipleRoleSecurityTests(ITestOutputHelper output, MultipleRoleSecurityTests.CustomFixture fixture)
 	: KurrentTemporaryTests<MultipleRoleSecurityTests.CustomFixture>(output, fixture) {
 	[Fact]

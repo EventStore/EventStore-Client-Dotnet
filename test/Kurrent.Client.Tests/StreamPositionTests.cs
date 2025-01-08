@@ -3,6 +3,7 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Misc")]
 public class StreamPositionTests : ValueObjectTests<StreamPosition> {
 	public StreamPositionTests() : base(new ScenarioFixture()) { }
 

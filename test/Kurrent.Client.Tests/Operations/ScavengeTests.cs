@@ -4,6 +4,7 @@ using Kurrent.Client.Tests;
 
 namespace Kurrent.Client.Tests;
 
+[Trait("Category", "Target:Operations")]
 public class ScavengeTests(ITestOutputHelper output, ScavengeTests.CustomFixture fixture)
 	: KurrentTemporaryTests<ScavengeTests.CustomFixture>(output, fixture) {
 	[RetryFact]

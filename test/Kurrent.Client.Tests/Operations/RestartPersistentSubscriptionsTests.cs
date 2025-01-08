@@ -3,6 +3,7 @@ using Kurrent.Client.Tests.TestNode;
 
 namespace Kurrent.Client.Tests.Operations;
 
+[Trait("Category", "Target:Operations")]
 public class RestartPersistentSubscriptionsTests(ITestOutputHelper output, RestartPersistentSubscriptionsTests.CustomFixture fixture)
 	: KurrentTemporaryTests<RestartPersistentSubscriptionsTests.CustomFixture>(output, fixture) {
 	[RetryFact]

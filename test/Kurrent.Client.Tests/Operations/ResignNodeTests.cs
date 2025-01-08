@@ -4,6 +4,7 @@ using Kurrent.Client.Tests;
 
 namespace Kurrent.Client.Tests.Operations;
 
+[Trait("Category", "Target:Operations")]
 public class ResignNodeTests(ITestOutputHelper output, ResignNodeTests.CustomFixture fixture)
 	: KurrentTemporaryTests<ResignNodeTests.CustomFixture>(output, fixture) {
 	[RetryFact]
