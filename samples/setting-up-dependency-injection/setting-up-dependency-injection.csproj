@@ -4,6 +4,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />
+        <ProjectReference Include="..\..\src\Kurrent.Client\Kurrent.Client.csproj" />
     </ItemGroup>
 </Project>

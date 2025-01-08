@@ -14,6 +14,6 @@ public static class TracerProviderBuilderExtensions {
 	/// </summary>
 	/// <param name="builder"><see cref="TracerProviderBuilder"/> being configured.</param>
 	/// <returns>The instance of <see cref="TracerProviderBuilder"/> to chain configuration.</returns>
-	public static TracerProviderBuilder AddEventStoreClientInstrumentation(this TracerProviderBuilder builder) =>
+	public static TracerProviderBuilder AddKurrentClientInstrumentation(this TracerProviderBuilder builder) =>
 		builder.AddSource(KurrentClientDiagnostics.InstrumentationName);
 }

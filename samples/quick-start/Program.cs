@@ -7,9 +7,9 @@ var cancellationToken = tokenSource.Token;
 
 const string connectionString = "esdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false";
 
-var settings = EventStoreClientSettings.Create(connectionString);
+var settings = KurrentClientSettings.Create(connectionString);
 
-var client = new EventStoreClient(settings);
+var client = new KurrentClient(settings);
 
 #endregion createClient
 
