@@ -1,6 +1,5 @@
 using EventStore.Client;
 using Kurrent.Client.Tests.TestNode;
-using Kurrent.Client.Tests;
 
 namespace Kurrent.Client.Tests;
 

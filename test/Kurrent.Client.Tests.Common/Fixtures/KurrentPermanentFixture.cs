@@ -1,3 +1,5 @@
+// ReSharper disable InconsistentNaming
+
 using System.Net;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
@@ -71,10 +73,8 @@ public partial class KurrentPermanentFixture : IAsyncLifetime, IAsyncDisposable 
 			DefaultDeadline          = Options.ClientSettings.DefaultDeadline
 		};
 
-	InterlockedBoolean WarmUpCompleted  { get; } = new InterlockedBoolean();
-	SemaphoreSlim      WarmUpGatekeeper { get; } = new(1, 1);
-
-	static readonly SemaphoreSlim ContainerSemaphore = new(1, 1);
+	InterlockedBoolean            WarmUpCompleted { get; } = new InterlockedBoolean();
+	static readonly SemaphoreSlim WarmUpGatekeeper = new(1, 1);
 
 	public void CaptureTestRun(ITestOutputHelper outputHelper) {
 		var testRunId = Logging.CaptureLogs(outputHelper);
@@ -84,19 +84,13 @@ public partial class KurrentPermanentFixture : IAsyncLifetime, IAsyncDisposable 
 	}
 
 	public async Task InitializeAsync() {
-		await ContainerSemaphore.WaitAsync();
+		await WarmUpGatekeeper.WaitAsync();
+
 		try {
 			await Service.Start();
 			EventStoreVersion               = GetKurrentVersion();
 			EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
-			// EventStoreHasLastStreamPosition = true;
-		} finally {
-			ContainerSemaphore.Release();
-		}
 
-		await WarmUpGatekeeper.WaitAsync();
-
-		try {
 			if (!WarmUpCompleted.CurrentValue) {
 				Logger.Warning("*** Warmup started ***");
 
