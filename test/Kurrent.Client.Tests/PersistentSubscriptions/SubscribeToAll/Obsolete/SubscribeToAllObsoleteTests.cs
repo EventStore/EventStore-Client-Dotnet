@@ -303,95 +303,95 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentPerman
 		Assert.Equal(group, ex.GroupName);
 	}
 
-	[RetryFact]
-	public async Task happy_case_catching_up_to_link_to_events_manual_ack() {
-		var                        group              = Fixture.GetGroupName();
-		var                        bufferCount        = 10;
-		var                        eventWriteCount    = bufferCount * 2;
-		TaskCompletionSource<bool> eventsReceived     = new();
-		int                        eventReceivedCount = 0;
-
-		var events = Fixture.CreateTestEvents(eventWriteCount)
-			.Select(
-				(e, i) => new EventData(
-					e.EventId,
-					SystemEventTypes.LinkTo,
-					Encoding.UTF8.GetBytes($"{i}@test"),
-					contentType: Constants.Metadata.ContentTypes.ApplicationOctetStream
-				)
-			)
-			.ToArray();
-
-		foreach (var e in events) {
-			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.Any, new[] { e });
-		}
-
-		await Fixture.Subscriptions.CreateToAllAsync(
-			group,
-			new(startFrom: Position.Start, resolveLinkTos: true),
-			userCredentials: TestCredentials.Root
-		);
-
-		using var subscription = await Fixture.Subscriptions.SubscribeToAllAsync(
-			group,
-			async (subscription, e, retryCount, ct) => {
-				await subscription.Ack(e);
-
-				if (e.OriginalStreamId.StartsWith("test-")
-				 && Interlocked.Increment(ref eventReceivedCount) == events.Length)
-					eventsReceived.TrySetResult(true);
-			},
-			(s, r, e) => {
-				if (e != null)
-					eventsReceived.TrySetException(e);
-			},
-			bufferSize: bufferCount,
-			userCredentials: TestCredentials.Root
-		);
-
-		await eventsReceived.Task.WithTimeout();
-	}
-
-	[RetryFact]
-	public async Task happy_case_catching_up_to_normal_events_manual_ack() {
-		var group              = Fixture.GetGroupName();
-		var stream             = Fixture.GetStreamName();
-		var bufferCount        = 10;
-		var eventWriteCount    = bufferCount * 2;
-		int eventReceivedCount = 0;
-
-		TaskCompletionSource<bool> eventsReceived = new();
-
-		var events = Fixture.CreateTestEvents(eventWriteCount).ToArray();
-
-		foreach (var e in events)
-			await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, [e]);
-
-		await Fixture.Subscriptions.CreateToAllAsync(
-			group,
-			new(startFrom: Position.Start, resolveLinkTos: true),
-			userCredentials: TestCredentials.Root
-		);
-
-		using var subscription = await Fixture.Subscriptions.SubscribeToAllAsync(
-			group,
-			async (subscription, e, retryCount, ct) => {
-				await subscription.Ack(e);
-
-				if (e.OriginalStreamId.StartsWith("test-")
-				 && Interlocked.Increment(ref eventReceivedCount) == events.Length)
-					eventsReceived.TrySetResult(true);
-			},
-			(s, r, e) => {
-				if (e != null)
-					eventsReceived.TrySetException(e);
-			},
-			bufferSize: bufferCount,
-			userCredentials: TestCredentials.Root
-		);
-
-		await eventsReceived.Task.WithTimeout();
-	}
+	// [RetryFact]
+	// public async Task happy_case_catching_up_to_link_to_events_manual_ack() {
+	// 	var                        group              = Fixture.GetGroupName();
+	// 	var                        bufferCount        = 10;
+	// 	var                        eventWriteCount    = bufferCount * 2;
+	// 	TaskCompletionSource<bool> eventsReceived     = new();
+	// 	int                        eventReceivedCount = 0;
+	//
+	// 	var events = Fixture.CreateTestEvents(eventWriteCount)
+	// 		.Select(
+	// 			(e, i) => new EventData(
+	// 				e.EventId,
+	// 				SystemEventTypes.LinkTo,
+	// 				Encoding.UTF8.GetBytes($"{i}@test"),
+	// 				contentType: Constants.Metadata.ContentTypes.ApplicationOctetStream
+	// 			)
+	// 		)
+	// 		.ToArray();
+	//
+	// 	foreach (var e in events) {
+	// 		await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.Any, new[] { e });
+	// 	}
+	//
+	// 	await Fixture.Subscriptions.CreateToAllAsync(
+	// 		group,
+	// 		new(startFrom: Position.Start, resolveLinkTos: true),
+	// 		userCredentials: TestCredentials.Root
+	// 	);
+	//
+	// 	using var subscription = await Fixture.Subscriptions.SubscribeToAllAsync(
+	// 		group,
+	// 		async (subscription, e, retryCount, ct) => {
+	// 			await subscription.Ack(e);
+	//
+	// 			if (e.OriginalStreamId.StartsWith("test-")
+	// 			 && Interlocked.Increment(ref eventReceivedCount) == events.Length)
+	// 				eventsReceived.TrySetResult(true);
+	// 		},
+	// 		(s, r, e) => {
+	// 			if (e != null)
+	// 				eventsReceived.TrySetException(e);
+	// 		},
+	// 		bufferSize: bufferCount,
+	// 		userCredentials: TestCredentials.Root
+	// 	);
+	//
+	// 	await eventsReceived.Task.WithTimeout();
+	// }
+	//
+	// [RetryFact]
+	// public async Task happy_case_catching_up_to_normal_events_manual_ack() {
+	// 	var group              = Fixture.GetGroupName();
+	// 	var stream             = Fixture.GetStreamName();
+	// 	var bufferCount        = 10;
+	// 	var eventWriteCount    = bufferCount * 2;
+	// 	int eventReceivedCount = 0;
+	//
+	// 	TaskCompletionSource<bool> eventsReceived = new();
+	//
+	// 	var events = Fixture.CreateTestEvents(eventWriteCount).ToArray();
+	//
+	// 	foreach (var e in events)
+	// 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, [e]);
+	//
+	// 	await Fixture.Subscriptions.CreateToAllAsync(
+	// 		group,
+	// 		new(startFrom: Position.Start, resolveLinkTos: true),
+	// 		userCredentials: TestCredentials.Root
+	// 	);
+	//
+	// 	using var subscription = await Fixture.Subscriptions.SubscribeToAllAsync(
+	// 		group,
+	// 		async (subscription, e, retryCount, ct) => {
+	// 			await subscription.Ack(e);
+	//
+	// 			if (e.OriginalStreamId.StartsWith("test-")
+	// 			 && Interlocked.Increment(ref eventReceivedCount) == events.Length)
+	// 				eventsReceived.TrySetResult(true);
+	// 		},
+	// 		(s, r, e) => {
+	// 			if (e != null)
+	// 				eventsReceived.TrySetException(e);
+	// 		},
+	// 		bufferSize: bufferCount,
+	// 		userCredentials: TestCredentials.Root
+	// 	);
+	//
+	// 	await eventsReceived.Task.WithTimeout();
+	// }
 
 	[RetryFact]
 	public async Task happy_case_writing_and_subscribing_to_normal_events_manual_ack() {

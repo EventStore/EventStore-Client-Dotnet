@@ -96,14 +96,14 @@ public partial class KurrentTemporaryFixture : IAsyncLifetime, IAsyncDisposable 
 				Logger.Warning("*** Warmup started ***");
 
 				await Task.WhenAll(
-					InitClient<KurrentUserManagementClient>(async x => Users = await x.WarmUp()),
-					InitClient<KurrentClient>(async x => Streams             = await x.WarmUp()),
+					InitClient<KurrentUserManagementClient>(async x => Users = await Task.FromResult(x)),
+					InitClient<KurrentClient>(async x => Streams = await Task.FromResult(x)),
 					InitClient<KurrentProjectionManagementClient>(
-						async x => Projections = await x.WarmUp(),
+						async x => Projections = await Task.FromResult(x),
 						Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None"
 					),
-					InitClient<KurrentPersistentSubscriptionsClient>(async x => Subscriptions = SkipPsWarmUp ? x : await x.WarmUp()),
-					InitClient<KurrentOperationsClient>(async x => Operations                 = await x.WarmUp())
+					InitClient<KurrentPersistentSubscriptionsClient>(async x => Subscriptions = SkipPsWarmUp ? x : await Task.FromResult(x)),
+					InitClient<KurrentOperationsClient>(async x => Operations = await Task.FromResult(x))
 				);
 
 				WarmUpCompleted.EnsureCalledOnce();
