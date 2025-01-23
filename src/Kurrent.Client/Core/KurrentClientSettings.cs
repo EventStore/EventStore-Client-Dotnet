@@ -57,5 +57,7 @@ namespace EventStore.Client {
 		/// The default deadline for calls. Will not be applied to reads or subscriptions.
 		/// </summary>
 		public TimeSpan? DefaultDeadline { get; set; } = TimeSpan.FromSeconds(10);
+
+		public KurrentClientSerializationSettings Serialization = KurrentClientSerializationSettings.Default();
 	}
 }
