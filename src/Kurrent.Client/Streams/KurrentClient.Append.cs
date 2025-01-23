@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Text;
 using System.Threading.Channels;
 using Google.Protobuf;
 using EventStore.Client.Streams;
@@ -14,6 +15,75 @@ using static EventStore.Client.Streams.Streams;
 
 namespace EventStore.Client {
 	public partial class KurrentClient {
+		/// <summary>
+		/// Appends events asynchronously to a stream.
+		/// </summary>
+		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream to append to.</param>
+		/// <param name="events">Messages to append to the stream.</param>
+		/// <param name="configureOperationOptions">An <see cref="Action{KurrentClientOperationOptions}"/> to configure the operation's options.</param>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public Task<IWriteResult> AppendToStreamAsync(
+			string streamName,
+			StreamState expectedState,
+			IEnumerable<object> events,
+			Action<KurrentClientOperationOptions>? configureOperationOptions = null,
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default
+		) {
+			IEnumerable<EventData> serializedEvents = events.Select(
+				_ => new EventData(Uuid.NewUuid(), "dummy", Encoding.UTF8.GetBytes("""{"dummy":"data"}"""))
+			).AsEnumerable()!; // Yes, I know 😅
+
+			return AppendToStreamAsync(
+				streamName,
+				expectedState,
+				serializedEvents,
+				configureOperationOptions,
+				deadline,
+				userCredentials,
+				cancellationToken
+			);
+		}
+
+		/// <summary>
+		/// Appends events asynchronously to a stream.
+		/// </summary>
+		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream to append to.</param>
+		/// <param name="events">Messages to append to the stream.</param>
+		/// <param name="configureOperationOptions">An <see cref="Action{KurrentClientOperationOptions}"/> to configure the operation's options.</param>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public Task<IWriteResult> AppendToStreamAsync(
+			string streamName,
+			StreamRevision expectedRevision,
+			IEnumerable<object> events,
+			Action<KurrentClientOperationOptions>? configureOperationOptions = null,
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default
+		) {
+			IEnumerable<EventData>
+				serializedEvents = events.Select(_ => null as EventData).AsEnumerable()!; // Yes, I know 😅
+
+			return AppendToStreamAsync(
+				streamName,
+				expectedRevision,
+				serializedEvents,
+				configureOperationOptions,
+				deadline,
+				userCredentials,
+				cancellationToken
+			);
+		}
+		
 		/// <summary>
 		/// Appends events asynchronously to a stream.
 		/// </summary>
