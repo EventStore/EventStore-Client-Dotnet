@@ -21,10 +21,13 @@ public class SerializationTests : KurrentPermanentTests<KurrentPermanentFixture>
 
 		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
 
-		var count = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 2)
-			.CountAsync();
+		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 2).ToListAsync();
+		Assert.Single(resolvedEvents);
 
-		Assert.Equal(1, count);
+		var resolvedEvent = resolvedEvents.Single();
+
+		Assert.True(resolvedEvent.TryDeserialize(out var message));
+		Assert.NotNull(message);
 	}
 
 	private IEnumerable<UserRegistered> GenerateEvents(int count = 1) =>

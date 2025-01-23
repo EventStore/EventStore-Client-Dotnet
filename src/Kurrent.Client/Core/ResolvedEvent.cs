@@ -56,5 +56,10 @@ namespace EventStore.Client {
 				? new Position(commitPosition.Value, (link ?? @event).Position.PreparePosition)
 				: new Position?();
 		}
+
+		public bool TryDeserialize(out object o) {
+			o = true;
+			return true;
+		}
 	}
 }
