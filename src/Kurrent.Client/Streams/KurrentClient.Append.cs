@@ -30,6 +30,7 @@ namespace EventStore.Client {
 			string streamName,
 			StreamState expectedState,
 			IEnumerable<object> events,
+			// TODO: I don't like those numerous options, but I'd prefer to tackle that in a dedicated PR
 			Action<KurrentClientOperationOptions>? configureOperationOptions = null,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
@@ -65,13 +66,18 @@ namespace EventStore.Client {
 			string streamName,
 			StreamRevision expectedRevision,
 			IEnumerable<object> events,
+			// TODO: I don't like those numerous options, but I'd prefer to tackle that in a dedicated PR
 			Action<KurrentClientOperationOptions>? configureOperationOptions = null,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) {
-			IEnumerable<EventData>
-				serializedEvents = events.Select(_ => null as EventData).AsEnumerable()!; // Yes, I know 😅
+			var serializedEvents = events.Select(
+				@event => {
+					var (bytes, typeName) = _schemaSerializer.Serialize(@event);
+					return new EventData(Uuid.NewUuid(), typeName, bytes);
+				}
+			).AsEnumerable();
 
 			return AppendToStreamAsync(
 				streamName,
@@ -83,7 +89,7 @@ namespace EventStore.Client {
 				cancellationToken
 			);
 		}
-		
+
 		/// <summary>
 		/// Appends events asynchronously to a stream.
 		/// </summary>
@@ -184,16 +190,28 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken
 		) {
 			var tags = new ActivityTagsCollection()
-				.WithRequiredTag(TelemetryTags.Kurrent.Stream, header.Options.StreamIdentifier.StreamName.ToStringUtf8())
+				.WithRequiredTag(
+					TelemetryTags.Kurrent.Stream,
+					header.Options.StreamIdentifier.StreamName.ToStringUtf8()
+				)
 				.WithGrpcChannelServerTags(channelInfo)
 				.WithClientSettingsServerTags(Settings)
-				.WithOptionalTag(TelemetryTags.Database.User, userCredentials?.Username ?? Settings.DefaultCredentials?.Username);
+				.WithOptionalTag(
+					TelemetryTags.Database.User,
+					userCredentials?.Username ?? Settings.DefaultCredentials?.Username
+				);
 
-			return KurrentClientDiagnostics.ActivitySource.TraceClientOperation(Operation, TracingConstants.Operations.Append, tags);
+			return KurrentClientDiagnostics.ActivitySource.TraceClientOperation(
+				Operation,
+				TracingConstants.Operations.Append,
+				tags
+			);
 
 			async ValueTask<IWriteResult> Operation() {
 				using var call = new StreamsClient(channelInfo.CallInvoker)
-					.Append(KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+					.Append(
+						KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken)
+					);
 
 				await call.RequestStream
 					.WriteAsync(header)
@@ -230,11 +248,13 @@ namespace EventStore.Client {
 		}
 
 		IWriteResult HandleSuccessAppend(AppendResp response, AppendReq header) {
-			var currentRevision = response.Success.CurrentRevisionOptionCase == AppendResp.Types.Success.CurrentRevisionOptionOneofCase.NoStream
+			var currentRevision = response.Success.CurrentRevisionOptionCase
+			                   == AppendResp.Types.Success.CurrentRevisionOptionOneofCase.NoStream
 				? StreamRevision.None
 				: new StreamRevision(response.Success.CurrentRevision);
 
-			var position = response.Success.PositionOptionCase == AppendResp.Types.Success.PositionOptionOneofCase.Position
+			var position = response.Success.PositionOptionCase
+			            == AppendResp.Types.Success.PositionOptionOneofCase.Position
 				? new Position(response.Success.Position.CommitPosition, response.Success.Position.PreparePosition)
 				: default;
 
@@ -251,7 +271,8 @@ namespace EventStore.Client {
 		IWriteResult HandleWrongExpectedRevision(
 			AppendResp response, AppendReq header, KurrentClientOperationOptions operationOptions
 		) {
-			var actualStreamRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase == CurrentRevisionOptionOneofCase.CurrentRevision
+			var actualStreamRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase
+			                        == CurrentRevisionOptionOneofCase.CurrentRevision
 				? new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
 				: StreamRevision.None;
 
@@ -263,7 +284,8 @@ namespace EventStore.Client {
 			);
 
 			if (operationOptions.ThrowOnAppendFailure) {
-				if (response.WrongExpectedVersion.ExpectedRevisionOptionCase == ExpectedRevisionOptionOneofCase.ExpectedRevision) {
+				if (response.WrongExpectedVersion.ExpectedRevisionOptionCase
+				 == ExpectedRevisionOptionOneofCase.ExpectedRevision) {
 					throw new WrongExpectedVersionException(
 						header.Options.StreamIdentifier!,
 						new StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
@@ -285,7 +307,8 @@ namespace EventStore.Client {
 				);
 			}
 
-			var expectedRevision = response.WrongExpectedVersion.ExpectedRevisionOptionCase == ExpectedRevisionOptionOneofCase.ExpectedRevision
+			var expectedRevision = response.WrongExpectedVersion.ExpectedRevisionOptionCase
+			                    == ExpectedRevisionOptionOneofCase.ExpectedRevision
 				? new StreamRevision(response.WrongExpectedVersion.ExpectedRevision)
 				: StreamRevision.None;
 
@@ -297,7 +320,7 @@ namespace EventStore.Client {
 		}
 
 		class StreamAppender : IDisposable {
-			readonly KurrentClientSettings                                       _settings;
+			readonly KurrentClientSettings                                          _settings;
 			readonly CancellationToken                                              _cancellationToken;
 			readonly Action<Exception>                                              _onException;
 			readonly Channel<BatchAppendReq>                                        _channel;
@@ -372,8 +395,7 @@ namespace EventStore.Client {
 					try {
 						foreach (var appendRequest in GetRequests(events, options, correlationId))
 							await _channel.Writer.WriteAsync(appendRequest, cancellationToken).ConfigureAwait(false);
-					}
-					catch (ChannelClosedException ex) {
+					} catch (ChannelClosedException ex) {
 						// channel is closed, our tcs won't necessarily get completed, don't wait for it.
 						throw ex.InnerException ?? ex;
 					}
@@ -403,8 +425,7 @@ namespace EventStore.Client {
 					_ = Task.Run(Receive, _cancellationToken);
 
 					_isUsable.TrySetResult(true);
-				}
-				catch (Exception ex) {
+				} catch (Exception ex) {
 					_isUsable.TrySetException(ex);
 					_onException(ex);
 				}
@@ -414,7 +435,8 @@ namespace EventStore.Client {
 				async Task Send() {
 					if (_call is null) return;
 
-					await foreach (var appendRequest in _channel.Reader.ReadAllAsync(_cancellationToken).ConfigureAwait(false))
+					await foreach (var appendRequest in _channel.Reader.ReadAllAsync(_cancellationToken)
+						               .ConfigureAwait(false))
 						await _call.RequestStream.WriteAsync(appendRequest).ConfigureAwait(false);
 
 					await _call.RequestStream.CompleteAsync().ConfigureAwait(false);
@@ -424,20 +446,22 @@ namespace EventStore.Client {
 					if (_call is null) return;
 
 					try {
-						await foreach (var response in _call.ResponseStream.ReadAllAsync(_cancellationToken).ConfigureAwait(false)) {
-							if (!_pendingRequests.TryRemove(Uuid.FromDto(response.CorrelationId), out var writeResult)) {
+						await foreach (var response in _call.ResponseStream.ReadAllAsync(_cancellationToken)
+							               .ConfigureAwait(false)) {
+							if (!_pendingRequests.TryRemove(
+								    Uuid.FromDto(response.CorrelationId),
+								    out var writeResult
+							    )) {
 								continue; // TODO: Log?
 							}
 
 							try {
 								writeResult.TrySetResult(response.ToWriteResult());
-							}
-							catch (Exception ex) {
+							} catch (Exception ex) {
 								writeResult.TrySetException(ex);
 							}
 						}
-					}
-					catch (Exception ex) {
+					} catch (Exception ex) {
 						// signal that no tcs added to _pendingRequests after this point will necessarily complete
 						_channel.Writer.TryComplete(ex);
 
@@ -450,7 +474,9 @@ namespace EventStore.Client {
 				}
 			}
 
-			IEnumerable<BatchAppendReq> GetRequests(IEnumerable<EventData> events, BatchAppendReq.Types.Options options, Uuid correlationId) {
+			IEnumerable<BatchAppendReq> GetRequests(
+				IEnumerable<EventData> events, BatchAppendReq.Types.Options options, Uuid correlationId
+			) {
 				var batchSize        = 0;
 				var first            = true;
 				var correlationIdDto = correlationId.ToDto();

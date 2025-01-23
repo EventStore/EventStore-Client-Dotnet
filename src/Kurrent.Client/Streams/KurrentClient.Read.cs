@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using EventStore.Client.Serialization;
 using EventStore.Client.Streams;
 using Grpc.Core;
 using static EventStore.Client.Streams.ReadResp;
@@ -91,6 +92,7 @@ namespace EventStore.Client {
 				Settings,
 				deadline,
 				userCredentials,
+				_schemaSerializer,
 				cancellationToken
 			);
 		}
@@ -139,8 +141,12 @@ namespace EventStore.Client {
 			}
 
 			internal ReadAllStreamResult(
-				Func<CancellationToken, Task<CallInvoker>> selectCallInvoker, ReadReq request,
-				KurrentClientSettings settings, TimeSpan? deadline, UserCredentials? userCredentials,
+				Func<CancellationToken, Task<CallInvoker>> selectCallInvoker,
+				ReadReq request,
+				KurrentClientSettings settings,
+				TimeSpan? deadline,
+				UserCredentials? userCredentials,
+				ISchemaSerializer schemaSerializer,
 				CancellationToken cancellationToken
 			) {
 				var callOptions = KurrentCallOptions.CreateStreaming(
@@ -172,7 +178,7 @@ namespace EventStore.Client {
 							await _channel.Writer.WriteAsync(
 								response.ContentCase switch {
 									StreamNotFound      => StreamMessage.NotFound.Instance,
-									Event               => new StreamMessage.Event(ConvertToResolvedEvent(response.Event)),
+									Event               => new StreamMessage.Event(ConvertToResolvedEvent(response.Event, schemaSerializer)),
 									FirstStreamPosition => new StreamMessage.FirstStreamPosition(new StreamPosition(response.FirstStreamPosition)),
 									LastStreamPosition  => new StreamMessage.LastStreamPosition(new StreamPosition(response.LastStreamPosition)),
 									LastAllStreamPosition => new StreamMessage.LastAllStreamPosition(
@@ -267,6 +273,7 @@ namespace EventStore.Client {
 				Settings,
 				deadline,
 				userCredentials,
+				_schemaSerializer,
 				cancellationToken
 			);
 		}
@@ -338,8 +345,12 @@ namespace EventStore.Client {
 			public Task<ReadState> ReadState { get; }
 
 			internal ReadStreamResult(
-				Func<CancellationToken, Task<CallInvoker>> selectCallInvoker, ReadReq request,
-				KurrentClientSettings settings, TimeSpan? deadline, UserCredentials? userCredentials,
+				Func<CancellationToken, Task<CallInvoker>> selectCallInvoker,
+				ReadReq request,
+				KurrentClientSettings settings,
+				TimeSpan? deadline,
+				UserCredentials? userCredentials,
+				ISchemaSerializer schemaSerializer,
 				CancellationToken cancellationToken
 			) {
 				var callOptions = KurrentCallOptions.CreateStreaming(
@@ -391,7 +402,7 @@ namespace EventStore.Client {
 							await _channel.Writer.WriteAsync(
 								response.ContentCase switch {
 									StreamNotFound => StreamMessage.NotFound.Instance,
-									Event          => new StreamMessage.Event(ConvertToResolvedEvent(response.Event)),
+									Event          => new StreamMessage.Event(ConvertToResolvedEvent(response.Event, schemaSerializer)),
 									ContentOneofCase.FirstStreamPosition => new StreamMessage.FirstStreamPosition(
 										new StreamPosition(response.FirstStreamPosition)
 									),
@@ -442,14 +453,15 @@ namespace EventStore.Client {
 			}
 		}
 
-		static ResolvedEvent ConvertToResolvedEvent(ReadResp.Types.ReadEvent readEvent) =>
+		static ResolvedEvent ConvertToResolvedEvent(ReadResp.Types.ReadEvent readEvent, ISchemaSerializer schemaSerializer) =>
 			new ResolvedEvent(
 				ConvertToEventRecord(readEvent.Event)!,
 				ConvertToEventRecord(readEvent.Link),
 				readEvent.PositionCase switch {
 					ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => readEvent.CommitPosition,
 					_                                                         => null
-				}
+				},
+				schemaSerializer
 			);
 
 		static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>

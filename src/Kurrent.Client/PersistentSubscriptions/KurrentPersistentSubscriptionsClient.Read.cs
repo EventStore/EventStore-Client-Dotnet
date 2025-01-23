@@ -1,6 +1,7 @@
 using System.Threading.Channels;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Client.Diagnostics;
+using EventStore.Client.Serialization;
 using Grpc.Core;
 
 using static EventStore.Client.PersistentSubscriptions.PersistentSubscriptions;
@@ -128,6 +129,7 @@ namespace EventStore.Client {
 				new() { Options = readOptions },
 				Settings,
 				userCredentials,
+				_schemaSerializer,
 				cancellationToken
 			);
 		}
@@ -221,9 +223,13 @@ namespace EventStore.Client {
 			}
 
 			internal PersistentSubscriptionResult(
-				string streamName, string groupName,
+				string streamName,
+				string groupName,
 				Func<CancellationToken, Task<ChannelInfo>> selectChannelInfo,
-				ReadReq request, KurrentClientSettings settings, UserCredentials? userCredentials,
+				ReadReq request, 
+				KurrentClientSettings settings, 
+				UserCredentials? userCredentials,
+				ISchemaSerializer schemaSerializer,
 				CancellationToken cancellationToken
 			) {
 				StreamName = streamName;
@@ -260,7 +266,7 @@ namespace EventStore.Client {
 									response.SubscriptionConfirmation.SubscriptionId
 								),
 								Event => new PersistentSubscriptionMessage.Event(
-									ConvertToResolvedEvent(response),
+									ConvertToResolvedEvent(response, schemaSerializer),
 									response.Event.CountCase switch {
 										ReadResp.Types.ReadEvent.CountOneofCase.RetryCount => response.Event.RetryCount,
 										_                                                  => null
@@ -363,13 +369,14 @@ namespace EventStore.Client {
 			public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params ResolvedEvent[] resolvedEvents) => 
                 Nack(action, reason, Array.ConvertAll(resolvedEvents, re => re.OriginalEvent.EventId));
 
-            static ResolvedEvent ConvertToResolvedEvent(ReadResp response) => new(
+            static ResolvedEvent ConvertToResolvedEvent(ReadResp response, ISchemaSerializer schemaSerializer) => new(
 				ConvertToEventRecord(response.Event.Event)!,
 				ConvertToEventRecord(response.Event.Link),
 				response.Event.PositionCase switch {
 					ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => response.Event.CommitPosition,
 					_                                                         => null
-				}
+				},
+				schemaSerializer
 			);
 
             Task AckInternal(params Uuid[] eventIds) {

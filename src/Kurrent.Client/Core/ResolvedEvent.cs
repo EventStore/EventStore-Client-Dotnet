@@ -1,3 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
+using EventStore.Client.Serialization;
+
 namespace EventStore.Client {
 	/// <summary>
 	/// A structure representing a single event or a resolved link event.
@@ -43,23 +46,31 @@ namespace EventStore.Client {
 		/// </summary>
 		public bool IsResolved => Link != null && Event != null;
 
+		readonly ISchemaSerializer _serializer;
+
 		/// <summary>
 		/// Constructs a new <see cref="ResolvedEvent"/>.
 		/// </summary>
 		/// <param name="event"></param>
 		/// <param name="link"></param>
 		/// <param name="commitPosition"></param>
-		public ResolvedEvent(EventRecord @event, EventRecord? link, ulong? commitPosition) {
-			Event = @event;
-			Link = link;
+		/// <param name="serializer"></param>
+		public ResolvedEvent(EventRecord @event, EventRecord? link, ulong? commitPosition, ISchemaSerializer serializer) {
+			Event            = @event;
+			Link             = link;
+			_serializer = serializer;
 			OriginalPosition = commitPosition.HasValue
 				? new Position(commitPosition.Value, (link ?? @event).Position.PreparePosition)
 				: new Position?();
 		}
 
-		public bool TryDeserialize(out object o) {
-			o = true;
-			return true;
+#if NET48
+		public bool TryDeserialize(out object? deserialized) {
+#else 
+		public bool TryDeserialize([NotNullWhen(true)] out object? deserialized) {
+#endif
+			deserialized = _serializer.Deserialize(OriginalEvent.Data, OriginalEvent.EventType);
+			return deserialized != null;
 		}
 	}
 }
