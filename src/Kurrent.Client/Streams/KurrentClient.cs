@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Threading.Channels;
+using EventStore.Client.Serialization;
 using Grpc.Core;
+using Kurrent.Client.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -23,10 +25,10 @@ namespace EventStore.Client {
 			AllowSynchronousContinuations = true
 		};
 
-		readonly ILogger<KurrentClient> _log;
-		Lazy<StreamAppender>               _batchAppenderLazy;
-		StreamAppender                     BatchAppender => _batchAppenderLazy.Value;
-		readonly CancellationTokenSource   _disposedTokenSource;
+		readonly ILogger<KurrentClient>  _log;
+		Lazy<StreamAppender>             _batchAppenderLazy;
+		StreamAppender                   BatchAppender => _batchAppenderLazy.Value;
+		readonly CancellationTokenSource _disposedTokenSource;
 
 		static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
 			[Constants.Exceptions.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),
@@ -66,9 +68,10 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="settings"></param>
 		public KurrentClient(KurrentClientSettings? settings = null) : base(settings, ExceptionMap) {
-			_log                 = Settings.LoggerFactory?.CreateLogger<KurrentClient>() ?? new NullLogger<KurrentClient>();
+			_log = Settings.LoggerFactory?.CreateLogger<KurrentClient>() ?? new NullLogger<KurrentClient>();
 			_disposedTokenSource = new CancellationTokenSource();
-			_batchAppenderLazy   = new Lazy<StreamAppender>(CreateStreamAppender);
+			_batchAppenderLazy = new Lazy<StreamAppender>(CreateStreamAppender);
+			_schemaRegistry = SchemaRegistry.From(settings?.Serialization ?? KurrentClientSerializationSettings.Default());
 		}
 
 		void SwapStreamAppender(Exception ex) =>

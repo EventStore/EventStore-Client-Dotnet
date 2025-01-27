@@ -4,6 +4,7 @@ using EventStore.Client.Streams;
 using Grpc.Core;
 using static EventStore.Client.Streams.ReadResp;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
+using DeserializationContext = Kurrent.Client.Core.Serialization.DeserializationContext;
 
 namespace EventStore.Client {
 	public partial class KurrentClient {
@@ -92,7 +93,7 @@ namespace EventStore.Client {
 				Settings,
 				deadline,
 				userCredentials,
-				_schemaSerializer,
+				new DeserializationContext(_schemaRegistry, Settings.Serialization.AutomaticDeserialization),
 				cancellationToken
 			);
 		}
@@ -132,8 +133,7 @@ namespace EventStore.Client {
 
 								yield return message;
 							}
-						}
-						finally {
+						} finally {
 							_cts.Cancel();
 						}
 					}
@@ -146,7 +146,7 @@ namespace EventStore.Client {
 				KurrentClientSettings settings,
 				TimeSpan? deadline,
 				UserCredentials? userCredentials,
-				ISchemaSerializer schemaSerializer,
+				DeserializationContext deserializationContext,
 				CancellationToken cancellationToken
 			) {
 				var callOptions = KurrentCallOptions.CreateStreaming(
@@ -163,7 +163,7 @@ namespace EventStore.Client {
 
 				if (request.Options.FilterOptionCase == ReadReq.Types.Options.FilterOptionOneofCase.None)
 					request.Options.NoFilter = new();
-				
+
 				_ = PumpMessages();
 
 				return;
@@ -173,14 +173,21 @@ namespace EventStore.Client {
 						var       callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
 						var       client      = new Streams.Streams.StreamsClient(callInvoker);
 						using var call        = client.Read(request, callOptions);
+						
 						await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken)
 							               .ConfigureAwait(false)) {
 							await _channel.Writer.WriteAsync(
 								response.ContentCase switch {
-									StreamNotFound      => StreamMessage.NotFound.Instance,
-									Event               => new StreamMessage.Event(ConvertToResolvedEvent(response.Event, schemaSerializer)),
-									FirstStreamPosition => new StreamMessage.FirstStreamPosition(new StreamPosition(response.FirstStreamPosition)),
-									LastStreamPosition  => new StreamMessage.LastStreamPosition(new StreamPosition(response.LastStreamPosition)),
+									StreamNotFound => StreamMessage.NotFound.Instance,
+									Event => new StreamMessage.Event(
+										ConvertToResolvedEvent(response.Event, deserializationContext)
+									),
+									FirstStreamPosition => new StreamMessage.FirstStreamPosition(
+										new StreamPosition(response.FirstStreamPosition)
+									),
+									LastStreamPosition => new StreamMessage.LastStreamPosition(
+										new StreamPosition(response.LastStreamPosition)
+									),
 									LastAllStreamPosition => new StreamMessage.LastAllStreamPosition(
 										new Position(
 											response.LastAllStreamPosition.CommitPosition,
@@ -194,8 +201,7 @@ namespace EventStore.Client {
 						}
 
 						_channel.Writer.Complete();
-					}
-					catch (Exception ex) {
+					} catch (Exception ex) {
 						_channel.Writer.TryComplete(ex);
 					}
 				}
@@ -206,15 +212,15 @@ namespace EventStore.Client {
 				CancellationToken cancellationToken = default
 			) {
 				try {
-					await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
+					await foreach (var message in
+					               _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
 						if (message is not StreamMessage.Event e) {
 							continue;
 						}
 
 						yield return e.ResolvedEvent;
 					}
-				}
-				finally {
+				} finally {
 					_cts.Cancel();
 				}
 			}
@@ -273,7 +279,7 @@ namespace EventStore.Client {
 				Settings,
 				deadline,
 				userCredentials,
-				_schemaSerializer,
+				new DeserializationContext(_schemaRegistry, Settings.Serialization.AutomaticDeserialization),
 				cancellationToken
 			);
 		}
@@ -315,7 +321,8 @@ namespace EventStore.Client {
 						}
 
 						try {
-							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
+							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)
+								               .ConfigureAwait(false)) {
 								switch (message) {
 									case StreamMessage.FirstStreamPosition(var streamPosition):
 										FirstStreamPosition = streamPosition;
@@ -331,8 +338,7 @@ namespace EventStore.Client {
 
 								yield return message;
 							}
-						}
-						finally {
+						} finally {
 							_cts.Cancel();
 						}
 					}
@@ -350,7 +356,7 @@ namespace EventStore.Client {
 				KurrentClientSettings settings,
 				TimeSpan? deadline,
 				UserCredentials? userCredentials,
-				ISchemaSerializer schemaSerializer,
+				DeserializationContext deserializationContext,
 				CancellationToken cancellationToken
 			) {
 				var callOptions = KurrentCallOptions.CreateStreaming(
@@ -393,8 +399,7 @@ namespace EventStore.Client {
 										.ConfigureAwait(false);
 
 									tcs.SetResult(Client.ReadState.Ok);
-								}
-								else {
+								} else {
 									tcs.SetResult(Client.ReadState.StreamNotFound);
 								}
 							}
@@ -402,7 +407,9 @@ namespace EventStore.Client {
 							await _channel.Writer.WriteAsync(
 								response.ContentCase switch {
 									StreamNotFound => StreamMessage.NotFound.Instance,
-									Event          => new StreamMessage.Event(ConvertToResolvedEvent(response.Event, schemaSerializer)),
+									Event => new StreamMessage.Event(
+										ConvertToResolvedEvent(response.Event, deserializationContext)
+									),
 									ContentOneofCase.FirstStreamPosition => new StreamMessage.FirstStreamPosition(
 										new StreamPosition(response.FirstStreamPosition)
 									),
@@ -422,8 +429,7 @@ namespace EventStore.Client {
 						}
 
 						_channel.Writer.Complete();
-					}
-					catch (Exception ex) {
+					} catch (Exception ex) {
 						tcs.TrySetException(ex);
 						_channel.Writer.TryComplete(ex);
 					}
@@ -435,7 +441,8 @@ namespace EventStore.Client {
 				CancellationToken cancellationToken = default
 			) {
 				try {
-					await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
+					await foreach (var message in
+					               _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
 						if (message is StreamMessage.NotFound) {
 							throw new StreamNotFoundException(StreamName);
 						}
@@ -446,22 +453,24 @@ namespace EventStore.Client {
 
 						yield return e.ResolvedEvent;
 					}
-				}
-				finally {
+				} finally {
 					_cts.Cancel();
 				}
 			}
 		}
 
-		static ResolvedEvent ConvertToResolvedEvent(ReadResp.Types.ReadEvent readEvent, ISchemaSerializer schemaSerializer) =>
-			new ResolvedEvent(
+		static ResolvedEvent ConvertToResolvedEvent(
+			Types.ReadEvent readEvent, 
+			DeserializationContext deserializationContext
+		) =>
+			ResolvedEvent.From(
 				ConvertToEventRecord(readEvent.Event)!,
 				ConvertToEventRecord(readEvent.Link),
 				readEvent.PositionCase switch {
-					ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => readEvent.CommitPosition,
-					_                                                         => null
+					Types.ReadEvent.PositionOneofCase.CommitPosition => readEvent.CommitPosition,
+					_                                                => null
 				},
-				schemaSerializer
+				deserializationContext
 			);
 
 		static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>

@@ -3,9 +3,9 @@ using EventStore.Client.PersistentSubscriptions;
 using EventStore.Client.Diagnostics;
 using EventStore.Client.Serialization;
 using Grpc.Core;
-
 using static EventStore.Client.PersistentSubscriptions.PersistentSubscriptions;
 using static EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase;
+using DeserializationContext = Kurrent.Client.Core.Serialization.DeserializationContext;
 
 namespace EventStore.Client {
 	partial class KurrentPersistentSubscriptionsClient {
@@ -129,7 +129,10 @@ namespace EventStore.Client {
 				new() { Options = readOptions },
 				Settings,
 				userCredentials,
-				_schemaSerializer,
+				new DeserializationContext(
+					_schemaRegistry, 
+					Settings.Serialization.AutomaticDeserialization
+				),
 				cancellationToken
 			);
 		}
@@ -171,15 +174,15 @@ namespace EventStore.Client {
 
 		/// <inheritdoc />
 		public class PersistentSubscriptionResult : IAsyncEnumerable<ResolvedEvent>, IAsyncDisposable, IDisposable {
-            const int MaxEventIdLength = 2000;
-            
-            readonly ReadReq                                _request;
-            readonly Channel<PersistentSubscriptionMessage> _channel;
-            readonly CancellationTokenSource                _cts;
-            readonly CallOptions                            _callOptions;
+			const int MaxEventIdLength = 2000;
 
-            AsyncDuplexStreamingCall<ReadReq, ReadResp>? _call;
-            int                                          _messagesEnumerated;
+			readonly ReadReq                                _request;
+			readonly Channel<PersistentSubscriptionMessage> _channel;
+			readonly CancellationTokenSource                _cts;
+			readonly CallOptions                            _callOptions;
+
+			AsyncDuplexStreamingCall<ReadReq, ReadResp>? _call;
+			int                                          _messagesEnumerated;
 
 			/// <summary>
 			/// The server-generated unique identifier for the subscription.
@@ -202,22 +205,22 @@ namespace EventStore.Client {
 			public IAsyncEnumerable<PersistentSubscriptionMessage> Messages {
 				get {
 					if (Interlocked.Exchange(ref _messagesEnumerated, 1) == 1)
-                        throw new InvalidOperationException("Messages may only be enumerated once.");
+						throw new InvalidOperationException("Messages may only be enumerated once.");
 
 					return GetMessages();
 
 					async IAsyncEnumerable<PersistentSubscriptionMessage> GetMessages() {
-                        try {
-                            await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)) {
-                                if (message is PersistentSubscriptionMessage.SubscriptionConfirmation(var subscriptionId)) 
-                                    SubscriptionId = subscriptionId;
+						try {
+							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)) {
+								if (message is PersistentSubscriptionMessage.SubscriptionConfirmation(var subscriptionId
+								    ))
+									SubscriptionId = subscriptionId;
 
-                                yield return message;
-                            }
-                        }
-                        finally {
-                            _cts.Cancel();
-                        }
+								yield return message;
+							}
+						} finally {
+							_cts.Cancel();
+						}
 					}
 				}
 			}
@@ -226,10 +229,10 @@ namespace EventStore.Client {
 				string streamName,
 				string groupName,
 				Func<CancellationToken, Task<ChannelInfo>> selectChannelInfo,
-				ReadReq request, 
-				KurrentClientSettings settings, 
+				ReadReq request,
+				KurrentClientSettings settings,
 				UserCredentials? userCredentials,
-				ISchemaSerializer schemaSerializer,
+				DeserializationContext deserializationContext,
 				CancellationToken cancellationToken
 			) {
 				StreamName = streamName;
@@ -253,20 +256,21 @@ namespace EventStore.Client {
 
 				async Task PumpMessages() {
 					try {
-                        var channelInfo = await selectChannelInfo(_cts.Token).ConfigureAwait(false);
-                        var client      = new PersistentSubscriptionsClient(channelInfo.CallInvoker);
+						var channelInfo = await selectChannelInfo(_cts.Token).ConfigureAwait(false);
+						var client      = new PersistentSubscriptionsClient(channelInfo.CallInvoker);
 
 						_call = client.Read(_callOptions);
 
 						await _call.RequestStream.WriteAsync(_request).ConfigureAwait(false);
 
-						await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
+						await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token)
+							               .ConfigureAwait(false)) {
 							PersistentSubscriptionMessage subscriptionMessage = response.ContentCase switch {
 								SubscriptionConfirmation => new PersistentSubscriptionMessage.SubscriptionConfirmation(
 									response.SubscriptionConfirmation.SubscriptionId
 								),
 								Event => new PersistentSubscriptionMessage.Event(
-									ConvertToResolvedEvent(response, schemaSerializer),
+									ConvertToResolvedEvent(response, deserializationContext),
 									response.Event.CountCase switch {
 										ReadResp.Types.ReadEvent.CountOneofCase.RetryCount => response.Event.RetryCount,
 										_                                                  => null
@@ -298,17 +302,18 @@ namespace EventStore.Client {
 							// The absence of this header leads to an RpcException with the status code 'Cancelled' and the message "No grpc-status found on response".
 							// The switch statement below handles these specific exceptions and translates them into the appropriate
 							// PersistentSubscriptionDroppedByServerException exception.
-							case RpcException { StatusCode: StatusCode.Unavailable } rex1 when rex1.Status.Detail.Contains("WinHttpException: Error 12030"):
+							case RpcException { StatusCode: StatusCode.Unavailable } rex1
+								when rex1.Status.Detail.Contains("WinHttpException: Error 12030"):
 							case RpcException { StatusCode: StatusCode.Cancelled } rex2
-						        when rex2.Status.Detail.Contains("No grpc-status found on response"):
+								when rex2.Status.Detail.Contains("No grpc-status found on response"):
 								ex = new PersistentSubscriptionDroppedByServerException(StreamName, GroupName, ex);
 								break;
 						}
 #endif
 						if (ex is PersistentSubscriptionNotFoundException) {
 							await _channel.Writer
-                                .WriteAsync(PersistentSubscriptionMessage.NotFound.Instance, cancellationToken)
-                                .ConfigureAwait(false);
+								.WriteAsync(PersistentSubscriptionMessage.NotFound.Instance, cancellationToken)
+								.ConfigureAwait(false);
 
 							_channel.Writer.TryComplete();
 							return;
@@ -366,20 +371,26 @@ namespace EventStore.Client {
 			/// <param name="reason">A reason given.</param>
 			/// <param name="resolvedEvents">The <see cref="ResolvedEvent" />s to nak. There should not be more than 2000 to nak at a time.</param>
 			/// <exception cref="ArgumentException">The number of resolvedEvents exceeded the limit of 2000.</exception>
-			public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params ResolvedEvent[] resolvedEvents) => 
-                Nack(action, reason, Array.ConvertAll(resolvedEvents, re => re.OriginalEvent.EventId));
+			public Task Nack(
+				PersistentSubscriptionNakEventAction action, string reason, params ResolvedEvent[] resolvedEvents
+			) =>
+				Nack(action, reason, Array.ConvertAll(resolvedEvents, re => re.OriginalEvent.EventId));
 
-            static ResolvedEvent ConvertToResolvedEvent(ReadResp response, ISchemaSerializer schemaSerializer) => new(
-				ConvertToEventRecord(response.Event.Event)!,
-				ConvertToEventRecord(response.Event.Link),
-				response.Event.PositionCase switch {
-					ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => response.Event.CommitPosition,
-					_                                                         => null
-				},
-				schemaSerializer
-			);
+			static ResolvedEvent ConvertToResolvedEvent(
+				ReadResp response, 
+				DeserializationContext deserializationContext
+			) =>
+				ResolvedEvent.From(
+					ConvertToEventRecord(response.Event.Event)!,
+					ConvertToEventRecord(response.Event.Link),
+					response.Event.PositionCase switch {
+						ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => response.Event.CommitPosition,
+						_                                                         => null
+					},
+					deserializationContext
+				);
 
-            Task AckInternal(params Uuid[] eventIds) {
+			Task AckInternal(params Uuid[] eventIds) {
 				if (eventIds.Length > MaxEventIdLength) {
 					throw new ArgumentException(
 						$"The number of eventIds exceeds the maximum length of {MaxEventIdLength}.",
@@ -400,7 +411,7 @@ namespace EventStore.Client {
 					);
 			}
 
-            Task NackInternal(Uuid[] eventIds, PersistentSubscriptionNakEventAction action, string reason) {
+			Task NackInternal(Uuid[] eventIds, PersistentSubscriptionNakEventAction action, string reason) {
 				if (eventIds.Length > MaxEventIdLength) {
 					throw new ArgumentException(
 						$"The number of eventIds exceeds the maximum length of {MaxEventIdLength}.",
@@ -429,7 +440,7 @@ namespace EventStore.Client {
 					);
 			}
 
-            static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>
+			static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>
 				e is null
 					? null
 					: new EventRecord(
@@ -472,10 +483,12 @@ namespace EventStore.Client {
 			}
 
 			/// <inheritdoc />
-			public async IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(CancellationToken cancellationToken = default) {
+			public async IAsyncEnumerator<ResolvedEvent> GetAsyncEnumerator(
+				CancellationToken cancellationToken = default
+			) {
 				await foreach (var message in Messages.WithCancellation(cancellationToken)) {
 					if (message is not PersistentSubscriptionMessage.Event(var resolvedEvent, _))
-                        continue;
+						continue;
 
 					yield return resolvedEvent;
 				}

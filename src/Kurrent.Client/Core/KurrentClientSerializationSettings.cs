@@ -1,49 +1,45 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Kurrent.Client.Core.Serialization;
+
 namespace EventStore.Client;
 
-public enum SchemaDefinitionType {
-	Undefined = 0,
-	Json      = 1,
-	Protobuf  = 2,
-	Avro      = 3,
-	Bytes     = 4
+public enum AutomaticDeserialization {
+	Disabled = 0,
+	Enabled  = 1
 }
 
-public abstract class KurrentClientSerializationSettings {
-	public abstract SchemaDefinitionType SchemaType { get; }
+public class KurrentClientSerializationSettings {
+	public JsonSerializationSettings  Json  { get; set; } = new SystemTextJsonSerializationSettings();
+	public BytesSerializationSettings Bytes { get; set; } = new BytesSerializationSettings();
+
+	public AutomaticDeserialization AutomaticDeserialization { get; set; } = AutomaticDeserialization.Disabled;
 
 	public static KurrentClientSerializationSettings Default(
-		SchemaDefinitionType schemaDefinitionType = SchemaDefinitionType.Json
-	) =>
-		schemaDefinitionType switch {
-			SchemaDefinitionType.Json      => new SystemTextJsonSerializationSettings(),
-			SchemaDefinitionType.Protobuf  => throw new NotImplementedException("Not implemented yet, sorry!"),
-			SchemaDefinitionType.Avro      => throw new NotImplementedException("Not implemented yet, sorry!"),
-			SchemaDefinitionType.Bytes     => new BytesSerializationSettings(),
-			SchemaDefinitionType.Undefined => throw new NotImplementedException("Not implemented yet, sorry!"),
-			_                              => throw new ArgumentOutOfRangeException(nameof(schemaDefinitionType), schemaDefinitionType, null)
-		};
-	
-	public static JSONSerializationSettings Json() => 
-		new JSONSerializationSettings();
-	
-	public static BytesSerializationSettings Bytes() => 
-		new BytesSerializationSettings();
-	
-	public static CustomSerializationSettings Custom() => 
-		new CustomSerializationSettings();
-}
+		Action<KurrentClientSerializationSettings>? configure = null
+	) {
+		var settings = new KurrentClientSerializationSettings();
 
-public class JSONSerializationSettings: KurrentClientSerializationSettings {
-	public override SchemaDefinitionType SchemaType { get => SchemaDefinitionType.Json; }
-}
+		configure?.Invoke(settings);
 
-public class SystemTextJsonSerializationSettings: JSONSerializationSettings {
-}
+		return settings;
+	}
 
-public class BytesSerializationSettings: KurrentClientSerializationSettings {
-	public override SchemaDefinitionType SchemaType { get => SchemaDefinitionType.Bytes; }
-}
+	public KurrentClientSerializationSettings WithJsonSettings(JsonSerializationSettings jsonSerializationSettings) {
+		Json = jsonSerializationSettings;
 
-public class CustomSerializationSettings: KurrentClientSerializationSettings {
-	public override SchemaDefinitionType SchemaType { get => SchemaDefinitionType.Undefined; }
+		return this;
+	}
+
+	public KurrentClientSerializationSettings WithBytesSettings(BytesSerializationSettings bytesSerialization) {
+		Bytes = bytesSerialization;
+
+		return this;
+	}
+
+	public KurrentClientSerializationSettings EnableAutomaticDeserialization() {
+		AutomaticDeserialization = AutomaticDeserialization.Enabled;
+
+		return this;
+	}
 }

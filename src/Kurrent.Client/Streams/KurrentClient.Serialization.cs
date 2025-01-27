@@ -4,10 +4,6 @@ using Kurrent.Client.Tests.Streams.Serialization;
 
 namespace EventStore.Client {
 	public partial class KurrentClient {
-		// TODO: Resolve based on options
-		ISchemaSerializer _schemaSerializer = new SchemaSerializer(
-			new SystemTextJsonSerializer(),
-			EventTypeMapper.Instance
-		);
+		readonly SchemaRegistry _schemaRegistry;
 	}
 }

@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using EventStore.Client.Serialization;
+using Kurrent.Client.Core.Serialization;
 
 namespace EventStore.Client {
 	/// <summary>
@@ -26,6 +27,13 @@ namespace EventStore.Client {
 		public EventRecord OriginalEvent => Link ?? Event;
 
 		/// <summary>
+		/// Returns the deserialized event payload.
+		/// It will be provided or equal to null, depending on the automatic deserialization settings you choose.
+		/// If it's null, you can use  <see cref="OriginalEvent"/> to deserialize it manually. 
+		/// </summary>
+		public readonly object? DeserializedEvent;
+
+		/// <summary>
 		/// Position of the <see cref="OriginalEvent"/> if available.
 		/// </summary>
 		public readonly Position? OriginalPosition;
@@ -46,31 +54,51 @@ namespace EventStore.Client {
 		/// </summary>
 		public bool IsResolved => Link != null && Event != null;
 
-		readonly ISchemaSerializer _serializer;
-
 		/// <summary>
 		/// Constructs a new <see cref="ResolvedEvent"/>.
 		/// </summary>
 		/// <param name="event"></param>
 		/// <param name="link"></param>
 		/// <param name="commitPosition"></param>
-		/// <param name="serializer"></param>
-		public ResolvedEvent(EventRecord @event, EventRecord? link, ulong? commitPosition, ISchemaSerializer serializer) {
-			Event            = @event;
-			Link             = link;
-			_serializer = serializer;
+		/// <param name="deserializedEvent"></param>
+		public ResolvedEvent(EventRecord @event, EventRecord? link, ulong? commitPosition) : this(
+			@event,
+			link,
+			null,
+			commitPosition
+		) { }
+
+		/// <summary>
+		/// Constructs a new <see cref="ResolvedEvent"/>.
+		/// </summary>
+		/// <param name="event"></param>
+		/// <param name="link"></param>
+		/// <param name="deserializedEvent"></param>
+		/// <param name="commitPosition"></param>
+		ResolvedEvent(
+			EventRecord @event,
+			EventRecord? link,
+			object? deserializedEvent,
+			ulong? commitPosition
+		) {
+			Event             = @event;
+			Link              = link;
+			DeserializedEvent = deserializedEvent;
 			OriginalPosition = commitPosition.HasValue
 				? new Position(commitPosition.Value, (link ?? @event).Position.PreparePosition)
 				: new Position?();
 		}
 
-#if NET48
-		public bool TryDeserialize(out object? deserialized) {
-#else 
-		public bool TryDeserialize([NotNullWhen(true)] out object? deserialized) {
-#endif
-			deserialized = _serializer.Deserialize(OriginalEvent.Data, OriginalEvent.EventType);
-			return deserialized != null;
+		public static ResolvedEvent From(
+			EventRecord @event,
+			EventRecord? link,
+			ulong? commitPosition,
+			DeserializationContext deserializationContext
+		) {
+			var originalEvent = link ?? @event;
+			return deserializationContext.TryDeserialize(originalEvent, out var deserialized)
+				? new ResolvedEvent(@event, link, deserialized, commitPosition)
+				: new ResolvedEvent(@event, link, commitPosition);
 		}
 	}
 }

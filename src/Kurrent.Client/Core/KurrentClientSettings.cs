@@ -58,7 +58,6 @@ namespace EventStore.Client {
 		/// </summary>
 		public TimeSpan? DefaultDeadline { get; set; } = TimeSpan.FromSeconds(10);
 
-		// TODO: This should be a dictionary or class with registered serializers for different types
-		public KurrentClientSerializationSettings Serialization = KurrentClientSerializationSettings.Default();
+		public KurrentClientSerializationSettings Serialization  { get; set; } = KurrentClientSerializationSettings.Default();
 	}
 }

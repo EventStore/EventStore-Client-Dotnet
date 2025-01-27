@@ -7,6 +7,7 @@ using EventStore.Client.Streams;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using EventStore.Client.Diagnostics;
+using Kurrent.Client.Core.Serialization;
 using Kurrent.Diagnostics;
 using Kurrent.Diagnostics.Telemetry;
 using Kurrent.Diagnostics.Tracing;
@@ -36,9 +37,14 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) {
-			IEnumerable<EventData> serializedEvents = events.Select(
-				_ => new EventData(Uuid.NewUuid(), "dummy", Encoding.UTF8.GetBytes("""{"dummy":"data"}"""))
-			).AsEnumerable()!; // Yes, I know 😅
+			var serializer = _schemaRegistry.GetSerializer(SchemaDefinitionType.Json);
+			
+			var serializedEvents = events.Select(
+				@event => {
+					var (bytes, typeName) = serializer.Serialize(@event);
+					return new EventData(Uuid.NewUuid(), typeName, bytes);
+				}
+			).AsEnumerable();
 
 			return AppendToStreamAsync(
 				streamName,
@@ -72,9 +78,11 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) {
+			var serializer = _schemaRegistry.GetSerializer(SchemaDefinitionType.Json);
+			
 			var serializedEvents = events.Select(
 				@event => {
-					var (bytes, typeName) = _schemaSerializer.Serialize(@event);
+					var (bytes, typeName) = serializer.Serialize(@event);
 					return new EventData(Uuid.NewUuid(), typeName, bytes);
 				}
 			).AsEnumerable();

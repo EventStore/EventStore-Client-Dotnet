@@ -4,57 +4,56 @@ namespace Kurrent.Client.Tests.Streams.Serialization;
 
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Append")]
-public class SerializationTests : KurrentPermanentTests<KurrentPermanentFixture> {
-	public SerializationTests(ITestOutputHelper output, KurrentPermanentFixture fixture) : base(output, fixture) {
-		Fixture.ClientSettings.Serialization = KurrentClientSerializationSettings.Default();
-	}
-	
+public class SerializationTests(ITestOutputHelper output, SerializationTests.CustomSerializationFixture fixture)
+	: KurrentPermanentTests<SerializationTests.CustomSerializationFixture>(output, fixture) {
 	[RetryFact]
 	public async Task appends_with_revision_serializes_using_default_json_serialization() {
-		var stream = $"{Fixture.GetStreamName()}_{StreamState.Any}";
+		var stream = $"{Fixture.GetStreamName()}_{0}";
 
 		var events = GenerateEvents();
 
 		var writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
-			StreamRevision.None, 
+			StreamRevision.None,
 			events
 		);
 
 		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
 
-		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 2).ToListAsync();
+		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+			.ToListAsync();
+
 		Assert.Single(resolvedEvents);
 
 		var resolvedEvent = resolvedEvents.Single();
 
-		Assert.True(resolvedEvent.TryDeserialize(out var message));
-		Assert.Equal(events.First(), message);
+		Assert.NotNull(resolvedEvent.DeserializedEvent);
+		Assert.Equal(events.First(), resolvedEvent.DeserializedEvent);
 	}
-	
 
 	[RetryFact]
 	public async Task appends_with_stream_state_serializes_using_default_json_serialization() {
 		var stream = $"{Fixture.GetStreamName()}_{StreamState.Any}";
 
+		var events = GenerateEvents();
+		
 		var writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
 			StreamState.Any,
-			GenerateEvents()
+			events
 		);
-		
-		var events = GenerateEvents();
 
 		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
 
-		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 2).ToListAsync();
+		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+			.ToListAsync();
+
 		Assert.Single(resolvedEvents);
 
 		var resolvedEvent = resolvedEvents.Single();
 
-		Assert.True(resolvedEvent.TryDeserialize(out var message));
-		Assert.NotNull(message);
-		Assert.Equal(events.First(), message);
+		Assert.NotNull(resolvedEvent.DeserializedEvent);
+		Assert.Equal(events.First(), resolvedEvent.DeserializedEvent);
 	}
 
 	private List<UserRegistered> GenerateEvents(int count = 1) =>
@@ -69,4 +68,14 @@ public class SerializationTests : KurrentPermanentTests<KurrentPermanentFixture>
 	public record Address(string Street, int Number);
 
 	public record UserRegistered(Guid UserId, Address Address);
+
+	public class CustomSerializationFixture() : KurrentPermanentFixture(
+		x => {
+			x.ClientSettings.Serialization = KurrentClientSerializationSettings
+				.Default()
+				.EnableAutomaticDeserialization();
+
+			return x;
+		}
+	);
 }
