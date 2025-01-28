@@ -11,8 +11,8 @@ public enum AutomaticDeserialization {
 }
 
 public class KurrentClientSerializationSettings {
-	public ISerializer JsonSerializer  { get; set; } = new SystemTextJsonSerializer();
-	public ISerializer BytesSerializer { get; set; } = new SystemTextJsonSerializer();
+	public ISerializer? JsonSerializer  { get; set; }
+	public ISerializer? BytesSerializer { get; set; }
 
 	public AutomaticDeserialization AutomaticDeserialization { get; set; } = AutomaticDeserialization.Disabled;
 

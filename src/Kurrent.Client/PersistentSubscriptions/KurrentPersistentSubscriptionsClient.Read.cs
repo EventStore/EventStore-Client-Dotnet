@@ -1,13 +1,27 @@
 using System.Threading.Channels;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Client.Diagnostics;
-using EventStore.Client.Serialization;
 using Grpc.Core;
 using static EventStore.Client.PersistentSubscriptions.PersistentSubscriptions;
 using static EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase;
 using DeserializationContext = Kurrent.Client.Core.Serialization.DeserializationContext;
 
 namespace EventStore.Client {
+	public class SubscribeToPersistentSubscriptionOptions {
+		/// <summary>
+		/// The size of the buffer.
+		/// </summary>
+		public int                                BufferSize            { get; set; } = 10;
+		/// <summary>
+		/// The optional settings to customize the default serialization for the specific persistent subscription
+		/// </summary>
+		public KurrentClientSerializationSettings SerializationSettings { get; set; } = KurrentClientSerializationSettings.Default();
+		/// <summary>
+		/// The optional user credentials to perform operation with.
+		/// </summary>
+		public UserCredentials?                   UserCredentials       { get; set; } = null;
+	}
+
 	partial class KurrentPersistentSubscriptionsClient {
 		/// <summary>
 		/// Subscribes to a persistent subscription.
@@ -47,20 +61,49 @@ namespace EventStore.Client {
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
-		public async Task<PersistentSubscription> SubscribeToStreamAsync(
-			string streamName, string groupName,
+		public Task<PersistentSubscription> SubscribeToStreamAsync(
+			string streamName, 
+			string groupName,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-			UserCredentials? userCredentials = null, int bufferSize = 10,
+			UserCredentials? userCredentials = null, 
+			int bufferSize = 10,
+			CancellationToken cancellationToken = default
+		) {
+			return SubscribeToStreamAsync(
+				streamName,
+				groupName,
+				eventAppeared,
+				new SubscribeToPersistentSubscriptionOptions {
+					UserCredentials = userCredentials,
+					BufferSize      = bufferSize
+				},
+				subscriptionDropped,
+				cancellationToken
+			);
+		}
+
+		/// <summary>
+		/// Subscribes to a persistent subscription. Messages must be manually acknowledged
+		/// </summary>
+		/// <exception cref="ArgumentNullException"></exception>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
+		public async Task<PersistentSubscription> SubscribeToStreamAsync(
+			string streamName, 
+			string groupName,
+			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+			SubscribeToPersistentSubscriptionOptions options,
+			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
 			CancellationToken cancellationToken = default
 		) {
 			return await PersistentSubscription
 				.Confirm(
-					SubscribeToStream(streamName, groupName, bufferSize, userCredentials, cancellationToken),
+					SubscribeToStream(streamName, groupName, options, cancellationToken),
 					eventAppeared,
 					subscriptionDropped ?? delegate { },
 					_log,
-					userCredentials,
+					options.UserCredentials,
 					cancellationToken
 				)
 				.ConfigureAwait(false);
@@ -76,8 +119,35 @@ namespace EventStore.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public PersistentSubscriptionResult SubscribeToStream(
-			string streamName, string groupName, int bufferSize = 10,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
+			string streamName, 
+			string groupName, 
+			int bufferSize = 10,
+			UserCredentials? userCredentials = null, 
+			CancellationToken cancellationToken = default
+		) {
+			return SubscribeToStream(
+				streamName,
+				groupName,
+				new SubscribeToPersistentSubscriptionOptions {
+					BufferSize      = bufferSize,
+					UserCredentials = userCredentials
+				},
+				cancellationToken
+			);
+		}
+
+		/// <summary>
+		/// Subscribes to a persistent subscription. Messages must be manually acknowledged.
+		/// </summary>
+		/// <param name="streamName">The name of the stream to read events from.</param>
+		/// <param name="groupName">The name of the persistent subscription group.</param>
+		/// <param name="options">Optional settings to configure subscription</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public PersistentSubscriptionResult SubscribeToStream(
+			string streamName, string groupName, 
+			SubscribeToPersistentSubscriptionOptions options, 
+			CancellationToken cancellationToken = default
 		) {
 			if (streamName == null) {
 				throw new ArgumentNullException(nameof(streamName));
@@ -95,12 +165,12 @@ namespace EventStore.Client {
 				throw new ArgumentException($"{nameof(groupName)} may not be empty.", nameof(groupName));
 			}
 
-			if (bufferSize <= 0) {
-				throw new ArgumentOutOfRangeException(nameof(bufferSize));
+			if (options.BufferSize <= 0) {
+				throw new ArgumentOutOfRangeException(nameof(options.BufferSize));
 			}
 
 			var readOptions = new ReadReq.Types.Options {
-				BufferSize = bufferSize,
+				BufferSize = options.BufferSize,
 				GroupName  = groupName,
 				UuidOption = new ReadReq.Types.Options.Types.UUIDOption { Structured = new Empty() }
 			};
@@ -128,9 +198,9 @@ namespace EventStore.Client {
 				},
 				new() { Options = readOptions },
 				Settings,
-				userCredentials,
+				options.UserCredentials,
 				new DeserializationContext(
-					_schemaRegistry, 
+					_schemaRegistry,
 					Settings.Serialization.AutomaticDeserialization
 				),
 				cancellationToken
@@ -377,7 +447,7 @@ namespace EventStore.Client {
 				Nack(action, reason, Array.ConvertAll(resolvedEvents, re => re.OriginalEvent.EventId));
 
 			static ResolvedEvent ConvertToResolvedEvent(
-				ReadResp response, 
+				ReadResp response,
 				DeserializationContext deserializationContext
 			) =>
 				ResolvedEvent.From(

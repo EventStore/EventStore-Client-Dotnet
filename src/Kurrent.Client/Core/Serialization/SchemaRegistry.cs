@@ -35,10 +35,10 @@ public class SchemaRegistry(
 		var serializers = new Dictionary<SchemaDefinitionType, SchemaSerializer> {
 			{
 				SchemaDefinitionType.Json,
-				new SchemaSerializer(settings.JsonSerializer, typeMapper)
+				new SchemaSerializer(settings.JsonSerializer ?? new SystemTextJsonSerializer(), typeMapper)
 			}, {
 				SchemaDefinitionType.Bytes,
-				new SchemaSerializer(settings.BytesSerializer, typeMapper)
+				new SchemaSerializer(settings.BytesSerializer ?? new SystemTextJsonSerializer(), typeMapper)
 			}
 		};
 
