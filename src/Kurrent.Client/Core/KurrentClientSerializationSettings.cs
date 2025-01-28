@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using EventStore.Client.Serialization;
 using Kurrent.Client.Core.Serialization;
 
 namespace EventStore.Client;
@@ -10,8 +11,8 @@ public enum AutomaticDeserialization {
 }
 
 public class KurrentClientSerializationSettings {
-	public JsonSerializationSettings  Json  { get; set; } = new SystemTextJsonSerializationSettings();
-	public BytesSerializationSettings Bytes { get; set; } = new BytesSerializationSettings();
+	public ISerializer JsonSerializer  { get; set; } = new SystemTextJsonSerializer();
+	public ISerializer BytesSerializer { get; set; } = new SystemTextJsonSerializer();
 
 	public AutomaticDeserialization AutomaticDeserialization { get; set; } = AutomaticDeserialization.Disabled;
 
@@ -25,14 +26,20 @@ public class KurrentClientSerializationSettings {
 		return settings;
 	}
 
-	public KurrentClientSerializationSettings WithJsonSettings(JsonSerializationSettings jsonSerializationSettings) {
-		Json = jsonSerializationSettings;
+	public KurrentClientSerializationSettings UseJsonSettings(SystemTextJsonSerializationSettings jsonSerializationSettings) {
+		JsonSerializer = new SystemTextJsonSerializer(jsonSerializationSettings);
 
 		return this;
 	}
 
-	public KurrentClientSerializationSettings WithBytesSettings(BytesSerializationSettings bytesSerialization) {
-		Bytes = bytesSerialization;
+	public KurrentClientSerializationSettings UseJsonSerializer(ISerializer serializer) {
+		JsonSerializer = serializer;
+
+		return this;
+	}
+
+	public KurrentClientSerializationSettings UseBytesSerializer(ISerializer serializer) {
+		BytesSerializer = serializer;
 
 		return this;
 	}

@@ -32,18 +32,13 @@ public class SchemaRegistry(
 	public static SchemaRegistry From(KurrentClientSerializationSettings settings) {
 		var typeMapper = EventTypeMapper.Instance;
 
-		var systemTextJsonSerializerOption =
-			settings.Json as SystemTextJsonSerializationSettings;
-
-		var serializer = new SystemTextJsonSerializer(systemTextJsonSerializerOption);
-
 		var serializers = new Dictionary<SchemaDefinitionType, SchemaSerializer> {
 			{
 				SchemaDefinitionType.Json,
-				new SchemaSerializer(serializer, typeMapper)
+				new SchemaSerializer(settings.JsonSerializer, typeMapper)
 			}, {
 				SchemaDefinitionType.Bytes,
-				new SchemaSerializer(serializer, typeMapper)
+				new SchemaSerializer(settings.BytesSerializer, typeMapper)
 			}
 		};
 
