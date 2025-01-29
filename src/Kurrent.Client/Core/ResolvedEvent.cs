@@ -93,10 +93,10 @@ namespace EventStore.Client {
 			EventRecord @event,
 			EventRecord? link,
 			ulong? commitPosition,
-			DeserializationContext deserializationContext
+			SerializationContext serializationContext
 		) {
 			var originalEvent = link ?? @event;
-			return deserializationContext.TryDeserialize(originalEvent, out var deserialized)
+			return serializationContext.TryDeserialize(originalEvent, out var deserialized)
 				? new ResolvedEvent(@event, link, deserialized, commitPosition)
 				: new ResolvedEvent(@event, link, commitPosition);
 		}

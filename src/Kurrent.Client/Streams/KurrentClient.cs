@@ -6,8 +6,8 @@ using Kurrent.Client.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using DeserializationContext = Kurrent.Client.Core.Serialization.DeserializationContext;
 using ReadReq = EventStore.Client.Streams.ReadReq;
+using SerializationContext = Kurrent.Client.Core.Serialization.SerializationContext;
 
 namespace EventStore.Client {
 	/// <summary>
@@ -75,11 +75,7 @@ namespace EventStore.Client {
 
 			var serializationSettings = settings?.Serialization ?? KurrentClientSerializationSettings.Default();
 			
-			_schemaRegistry = SchemaRegistry.From(serializationSettings);
-			_defaultDeserializationContext = new DeserializationContext(
-				_schemaRegistry,
-				serializationSettings.AutomaticDeserialization
-			);
+			_defaultSerializationContext = SerializationContext.From(serializationSettings);
 		}
 
 		void SwapStreamAppender(Exception ex) =>

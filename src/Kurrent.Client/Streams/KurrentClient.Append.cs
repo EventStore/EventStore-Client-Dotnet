@@ -37,19 +37,12 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) {
-			var serializer = _schemaRegistry.GetSerializer(SchemaDefinitionType.Json);
+			var eventsData = _defaultSerializationContext.Serialize(events);
 			
-			var serializedEvents = events.Select(
-				@event => {
-					var (bytes, typeName) = serializer.Serialize(@event);
-					return new EventData(Uuid.NewUuid(), typeName, bytes);
-				}
-			).AsEnumerable();
-
 			return AppendToStreamAsync(
 				streamName,
 				expectedState,
-				serializedEvents,
+				eventsData,
 				configureOperationOptions,
 				deadline,
 				userCredentials,
@@ -78,19 +71,12 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) {
-			var serializer = _schemaRegistry.GetSerializer(SchemaDefinitionType.Json);
+			var eventsData = _defaultSerializationContext.Serialize(events);
 			
-			var serializedEvents = events.Select(
-				@event => {
-					var (bytes, typeName) = serializer.Serialize(@event);
-					return new EventData(Uuid.NewUuid(), typeName, bytes);
-				}
-			).AsEnumerable();
-
 			return AppendToStreamAsync(
 				streamName,
 				expectedRevision,
-				serializedEvents,
+				eventsData,
 				configureOperationOptions,
 				deadline,
 				userCredentials,

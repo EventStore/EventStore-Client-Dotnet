@@ -4,7 +4,7 @@ using EventStore.Client.Streams;
 using Grpc.Core;
 using static EventStore.Client.Streams.ReadResp;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
-using DeserializationContext = Kurrent.Client.Core.Serialization.DeserializationContext;
+using SerializationContext = Kurrent.Client.Core.Serialization.SerializationContext;
 
 namespace EventStore.Client {
 	public partial class KurrentClient {
@@ -93,7 +93,7 @@ namespace EventStore.Client {
 				Settings,
 				deadline,
 				userCredentials,
-				new DeserializationContext(_schemaRegistry, Settings.Serialization.AutomaticDeserialization),
+				_defaultSerializationContext,
 				cancellationToken
 			);
 		}
@@ -146,7 +146,7 @@ namespace EventStore.Client {
 				KurrentClientSettings settings,
 				TimeSpan? deadline,
 				UserCredentials? userCredentials,
-				DeserializationContext deserializationContext,
+				SerializationContext serializationContext,
 				CancellationToken cancellationToken
 			) {
 				var callOptions = KurrentCallOptions.CreateStreaming(
@@ -173,14 +173,14 @@ namespace EventStore.Client {
 						var       callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
 						var       client      = new Streams.Streams.StreamsClient(callInvoker);
 						using var call        = client.Read(request, callOptions);
-						
+
 						await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken)
 							               .ConfigureAwait(false)) {
 							await _channel.Writer.WriteAsync(
 								response.ContentCase switch {
 									StreamNotFound => StreamMessage.NotFound.Instance,
 									Event => new StreamMessage.Event(
-										ConvertToResolvedEvent(response.Event, deserializationContext)
+										ConvertToResolvedEvent(response.Event, serializationContext)
 									),
 									FirstStreamPosition => new StreamMessage.FirstStreamPosition(
 										new StreamPosition(response.FirstStreamPosition)
@@ -279,7 +279,7 @@ namespace EventStore.Client {
 				Settings,
 				deadline,
 				userCredentials,
-				new DeserializationContext(_schemaRegistry, Settings.Serialization.AutomaticDeserialization),
+				_defaultSerializationContext,
 				cancellationToken
 			);
 		}
@@ -356,7 +356,7 @@ namespace EventStore.Client {
 				KurrentClientSettings settings,
 				TimeSpan? deadline,
 				UserCredentials? userCredentials,
-				DeserializationContext deserializationContext,
+				SerializationContext serializationContext,
 				CancellationToken cancellationToken
 			) {
 				var callOptions = KurrentCallOptions.CreateStreaming(
@@ -408,7 +408,7 @@ namespace EventStore.Client {
 								response.ContentCase switch {
 									StreamNotFound => StreamMessage.NotFound.Instance,
 									Event => new StreamMessage.Event(
-										ConvertToResolvedEvent(response.Event, deserializationContext)
+										ConvertToResolvedEvent(response.Event, serializationContext)
 									),
 									ContentOneofCase.FirstStreamPosition => new StreamMessage.FirstStreamPosition(
 										new StreamPosition(response.FirstStreamPosition)
@@ -460,8 +460,8 @@ namespace EventStore.Client {
 		}
 
 		static ResolvedEvent ConvertToResolvedEvent(
-			Types.ReadEvent readEvent, 
-			DeserializationContext deserializationContext
+			Types.ReadEvent readEvent,
+			SerializationContext serializationContext
 		) =>
 			ResolvedEvent.From(
 				ConvertToEventRecord(readEvent.Event)!,
@@ -470,7 +470,7 @@ namespace EventStore.Client {
 					Types.ReadEvent.PositionOneofCase.CommitPosition => readEvent.CommitPosition,
 					_                                                => null
 				},
-				deserializationContext
+				serializationContext
 			);
 
 		static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>

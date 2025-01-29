@@ -4,7 +4,7 @@ using Grpc.Core;
 using Kurrent.Client.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using DeserializationContext = Kurrent.Client.Core.Serialization.DeserializationContext;
+using SerializationContext = Kurrent.Client.Core.Serialization.SerializationContext;
 
 namespace EventStore.Client {
 	/// <summary>
@@ -43,8 +43,9 @@ namespace EventStore.Client {
 			var serializationSettings = settings?.Serialization ?? KurrentClientSerializationSettings.Default();
 			
 			_schemaRegistry                = SchemaRegistry.From(serializationSettings);
-			_defaultDeserializationContext = new DeserializationContext(
+			_defaultSerializationContext = new SerializationContext(
 				_schemaRegistry,
+				serializationSettings.DefaultSerializationType,
 				serializationSettings.AutomaticDeserialization
 			);
 		}

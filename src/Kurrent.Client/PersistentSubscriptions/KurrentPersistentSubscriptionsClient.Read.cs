@@ -4,7 +4,7 @@ using EventStore.Client.Diagnostics;
 using Grpc.Core;
 using static EventStore.Client.PersistentSubscriptions.PersistentSubscriptions;
 using static EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase;
-using DeserializationContext = Kurrent.Client.Core.Serialization.DeserializationContext;
+using SerializationContext = Kurrent.Client.Core.Serialization.SerializationContext;
 
 namespace EventStore.Client {
 	public class SubscribeToPersistentSubscriptionOptions {
@@ -199,8 +199,9 @@ namespace EventStore.Client {
 				new() { Options = readOptions },
 				Settings,
 				options.UserCredentials,
-				new DeserializationContext(
+				new SerializationContext(
 					_schemaRegistry,
+					Settings.Serialization.DefaultSerializationType,
 					Settings.Serialization.AutomaticDeserialization
 				),
 				cancellationToken
@@ -302,7 +303,7 @@ namespace EventStore.Client {
 				ReadReq request,
 				KurrentClientSettings settings,
 				UserCredentials? userCredentials,
-				DeserializationContext deserializationContext,
+				SerializationContext serializationContext,
 				CancellationToken cancellationToken
 			) {
 				StreamName = streamName;
@@ -340,7 +341,7 @@ namespace EventStore.Client {
 									response.SubscriptionConfirmation.SubscriptionId
 								),
 								Event => new PersistentSubscriptionMessage.Event(
-									ConvertToResolvedEvent(response, deserializationContext),
+									ConvertToResolvedEvent(response, serializationContext),
 									response.Event.CountCase switch {
 										ReadResp.Types.ReadEvent.CountOneofCase.RetryCount => response.Event.RetryCount,
 										_                                                  => null
@@ -448,7 +449,7 @@ namespace EventStore.Client {
 
 			static ResolvedEvent ConvertToResolvedEvent(
 				ReadResp response,
-				DeserializationContext deserializationContext
+				SerializationContext serializationContext
 			) =>
 				ResolvedEvent.From(
 					ConvertToEventRecord(response.Event.Event)!,
@@ -457,7 +458,7 @@ namespace EventStore.Client {
 						ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => response.Event.CommitPosition,
 						_                                                         => null
 					},
-					deserializationContext
+					serializationContext
 				);
 
 			Task AckInternal(params Uuid[] eventIds) {
