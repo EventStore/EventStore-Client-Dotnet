@@ -20,7 +20,7 @@ public class SystemTextJsonSerializationSettings : JsonSerializationSettings {
 			}
 		};
 
-	public override SchemaDefinitionType SchemaType { get => SchemaDefinitionType.Json; }
+	public override ContentType SchemaType { get => ContentType.Json; }
 
 	public JsonSerializerOptions Options { get; set; } = DefaultJsonSerializerOptions;
 }

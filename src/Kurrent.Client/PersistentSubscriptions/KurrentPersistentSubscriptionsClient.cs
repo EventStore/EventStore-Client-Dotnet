@@ -45,7 +45,7 @@ namespace EventStore.Client {
 			_schemaRegistry                = SchemaRegistry.From(serializationSettings);
 			_defaultSerializationContext = new SerializationContext(
 				_schemaRegistry,
-				serializationSettings.DefaultSerializationType,
+				serializationSettings.DefaultContentType,
 				serializationSettings.AutomaticDeserialization
 			);
 		}

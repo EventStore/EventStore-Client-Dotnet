@@ -201,7 +201,7 @@ namespace EventStore.Client {
 				options.UserCredentials,
 				new SerializationContext(
 					_schemaRegistry,
-					Settings.Serialization.DefaultSerializationType,
+					Settings.Serialization.DefaultContentType,
 					Settings.Serialization.AutomaticDeserialization
 				),
 				cancellationToken

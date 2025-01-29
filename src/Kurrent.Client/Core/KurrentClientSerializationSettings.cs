@@ -10,18 +10,12 @@ public enum AutomaticDeserialization {
 	Enabled  = 1
 }
 
-public enum SerializationType {
-	Json      = 1,
-	// Protobuf  = 2,
-	// Avro      = 3,
-	Bytes = 4
-}
-
 public class KurrentClientSerializationSettings {
-	public ISerializer?             JsonSerializer           { get; set; }
-	public ISerializer?             BytesSerializer          { get; set; }
-	public SerializationType        DefaultSerializationType { get; set; } = SerializationType.Json;
-	public AutomaticDeserialization AutomaticDeserialization { get; set; } = AutomaticDeserialization.Disabled;
+	public ISerializer?                    JsonSerializer           { get; set; }
+	public ISerializer?                    BytesSerializer          { get; set; }
+	public ContentType                     DefaultContentType       { get; set; } = ContentType.Json;
+	public AutomaticDeserialization        AutomaticDeserialization { get; set; } = AutomaticDeserialization.Disabled;
+	public IMessageTypeResolutionStrategy? MessageTypeResolutionStrategy { get; set; }
 
 	public static KurrentClientSerializationSettings Default(
 		Action<KurrentClientSerializationSettings>? configure = null

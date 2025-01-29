@@ -3,27 +3,24 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Core.Serialization;
 
+using static ContentTypeExtensions;
+
 public record SerializationContext(
 	SchemaRegistry SchemaRegistry,
-	SerializationType DefaultSerializationType,
+	ContentType DefaultContentType,
 	AutomaticDeserialization AutomaticDeserialization
 ) {
 	public EventData[] Serialize(IEnumerable<object> messages) {
-		return Serialize(DefaultSerializationType, messages);
+		return Serialize(DefaultContentType, messages);
 	}
 
-	public EventData[] Serialize(SerializationType serializationType, IEnumerable<object> messages) {
+	public EventData[] Serialize(ContentType contentType, IEnumerable<object> messages) {
 		if (AutomaticDeserialization == AutomaticDeserialization.Disabled)
 			throw new InvalidOperationException("Cannot serialize, automatic deserialization is disabled");
-		
-		var serializer = SchemaRegistry.GetSerializer((SchemaDefinitionType)(int)serializationType);
 
-		return messages.Select(
-			@event => {
-				var (bytes, typeName) = serializer.Serialize(@event);
-				return new EventData(Uuid.NewUuid(), typeName, bytes);
-			}
-		).ToArray();
+		var serializer = SchemaRegistry.GetSerializer(contentType);
+
+		return messages.Select(serializer.Serialize).ToArray();
 	}
 
 #if NET48
@@ -36,12 +33,9 @@ public record SerializationContext(
 			return false;
 		}
 
-		var schemaDefinitionType = SchemaDefinitionTypeExtensions.FromContentType(eventRecord.ContentType);
-
-		deserialized = SchemaRegistry.GetSerializer(schemaDefinitionType)
-			.Deserialize(eventRecord.Data, eventRecord.EventType);
-
-		return deserialized != null;
+		return SchemaRegistry
+			.GetSerializer(FromMessageContentType(eventRecord.ContentType))
+			.TryDeserialize(eventRecord, out deserialized);
 	}
 
 	public static SerializationContext From(KurrentClientSerializationSettings? settings = null) {
@@ -49,7 +43,7 @@ public record SerializationContext(
 
 		return new SerializationContext(
 			SchemaRegistry.From(settings),
-			settings.DefaultSerializationType,
+			settings.DefaultContentType,
 			settings.AutomaticDeserialization
 		);
 	}
