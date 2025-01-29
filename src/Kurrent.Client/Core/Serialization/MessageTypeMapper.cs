@@ -2,9 +2,6 @@ using System.Collections.Concurrent;
 
 namespace Kurrent.Client.Tests.Streams.Serialization;
 
-// TODO: Discuss how to proceed with that and whether to move the Schema Registry code here
-// The scanning part and registration seems to be more robust there
-// I used this for simplicity
 public interface IMessageTypeMapper {
 	void AddType(Type messageType, string messageTypeName);
 	string? GetTypeName(Type messageType);

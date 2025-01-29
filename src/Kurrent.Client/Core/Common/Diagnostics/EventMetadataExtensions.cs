@@ -115,11 +115,11 @@ static class EventMetadataExtensions {
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	static ReadOnlySpan<byte> InjectSerializationMetadata(
+	public static ReadOnlyMemory<byte> InjectSerializationMetadata(
 		this ReadOnlyMemory<byte> eventMetadata, SerializationMetadata serializationMetadata
 	) {
 		if (serializationMetadata == SerializationMetadata.None || !serializationMetadata.IsValid)
-			return eventMetadata.Span;
+			return ReadOnlyMemory<byte>.Empty;
 
 		return eventMetadata.IsEmpty
 			? JsonSerializer.SerializeToUtf8Bytes(serializationMetadata)

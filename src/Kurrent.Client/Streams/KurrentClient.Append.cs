@@ -37,7 +37,8 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) {
-			var eventsData = _defaultSerializationContext.Serialize(events);
+			var serializationContext = new MessageSerializationContext(streamName);
+			var eventsData = _defaultSerializationContext.Serialize(events.Select(e => new Message(e)), serializationContext);
 			
 			return AppendToStreamAsync(
 				streamName,
@@ -71,7 +72,8 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) {
-			var eventsData = _defaultSerializationContext.Serialize(events);
+			var serializationContext = new MessageSerializationContext(streamName);
+			var eventsData = _defaultSerializationContext.Serialize(events.Select(e => new Message(e)), serializationContext);
 			
 			return AppendToStreamAsync(
 				streamName,

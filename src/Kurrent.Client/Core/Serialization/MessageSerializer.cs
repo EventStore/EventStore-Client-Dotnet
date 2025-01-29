@@ -1,11 +1,10 @@
-using System.Diagnostics.CodeAnalysis;
+using EventStore.Client.Diagnostics;
 using Kurrent.Client.Core.Serialization;
-using Kurrent.Client.Tests.Streams.Serialization;
 
 namespace EventStore.Client.Serialization;
 
 public interface IMessageSerializer {
-	public EventData Serialize(object value);
+	public EventData Serialize(Message value, MessageSerializationContext context);
 
 	public bool TryDeserialize(EventRecord messageRecord, out object? deserialized);
 }
@@ -16,12 +15,21 @@ public class MessageSerializer(
 	ISerializer jsonSerializer,
 	IMessageTypeResolutionStrategy messageTypeResolutionStrategy
 ) : IMessageSerializer {
-	public EventData Serialize(object value) {
-		var eventType = messageTypeResolutionStrategy.ResolveTypeName(value);
-		var bytes     = serializer.Serialize(value);
-		var metadata  = jsonSerializer.Serialize(SerializationMetadata.From(value.GetType()));
+	readonly string _messageContentType = contentType.ToMessageContentType();
+	
+	public EventData Serialize(Message message, MessageSerializationContext serializationContext) {
+		var (data, metadata, eventId) = message;
+		var eventType          = messageTypeResolutionStrategy.ResolveTypeName(message, serializationContext);
+		var serializedData     = serializer.Serialize(data);
+		var serializedMetadata = metadata != null ? jsonSerializer.Serialize(metadata) : ReadOnlyMemory<byte>.Empty;
 
-		return new EventData(Uuid.NewUuid(), eventType, bytes, metadata, contentType.ToMessageContentType());
+		return new EventData(
+			eventId,
+			eventType,
+			serializedData,
+			serializedMetadata.InjectSerializationMetadata(SerializationMetadata.From(data.GetType())).ToArray(),
+			_messageContentType
+		);
 	}
 
 	public bool TryDeserialize(EventRecord messageRecord, out object? deserialized) {

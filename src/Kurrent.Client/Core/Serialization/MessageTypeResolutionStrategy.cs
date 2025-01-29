@@ -1,11 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using Kurrent.Client.Tests.Streams.Serialization;
 using EventStore.Client.Diagnostics;
+using Kurrent.Client.Core.Serialization;
 
 namespace EventStore.Client.Serialization;
 
 public interface IMessageTypeResolutionStrategy {
-	string ResolveTypeName(object messageData);
+	string ResolveTypeName(Message message, MessageSerializationContext serializationContext);
 
 #if NET48
 	bool TryResolveClrType(EventRecord messageRecord, out Type? type);
@@ -18,10 +20,10 @@ public class MessageTypeResolutionStrategyWrapper(
 	IMessageTypeMapper messageTypeMapper,
 	IMessageTypeResolutionStrategy messageTypeResolutionStrategy
 ) : IMessageTypeResolutionStrategy {
-	public string ResolveTypeName(object messageData) {
+	public string ResolveTypeName(Message message, MessageSerializationContext serializationContext) {
 		return messageTypeMapper.GetOrAddTypeName(
-			messageData.GetType(),
-			_ => messageTypeResolutionStrategy.ResolveTypeName(messageData)
+			message.Data.GetType(),
+			_ => messageTypeResolutionStrategy.ResolveTypeName(message, serializationContext)
 		);
 	}
 
@@ -43,8 +45,8 @@ public class MessageTypeResolutionStrategyWrapper(
 
 public class DefaultMessageTypeResolutionStrategy
 	: IMessageTypeResolutionStrategy {
-	public string ResolveTypeName(object messageData) =>
-		messageData.GetType().FullName!;
+	public string ResolveTypeName(Message message, MessageSerializationContext serializationContext) =>
+		$"{serializationContext.CategoryName}-{JsonNamingPolicy.SnakeCaseLower.ConvertName(message.Data.GetType().Name.ToLower())}"; 
 
 #if NET48
 	public bool TryResolveClrType(EventRecord messageRecord, out Type? type) {
