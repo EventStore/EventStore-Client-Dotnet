@@ -3,9 +3,8 @@ using EventStore.Client.Diagnostics;
 using EventStore.Client.Serialization;
 using EventStore.Client.Streams;
 using Grpc.Core;
-
+using Kurrent.Client.Core.Serialization;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
-using SerializationContext = Kurrent.Client.Core.Serialization.SerializationContext;
 
 namespace EventStore.Client {
 	public partial class KurrentClient {
@@ -66,7 +65,7 @@ namespace EventStore.Client {
 			},
 			Settings,
 			userCredentials,
-			_defaultSerializationContext,
+			_messageSerializer,
 			cancellationToken
 		);
 
@@ -125,7 +124,7 @@ namespace EventStore.Client {
 			},
 			Settings,
 			userCredentials,
-			_defaultSerializationContext,
+			_messageSerializer,
 			cancellationToken
 		);
 
@@ -182,7 +181,7 @@ namespace EventStore.Client {
 				ReadReq request, 
 				KurrentClientSettings settings, 
 				UserCredentials? userCredentials,
-				SerializationContext serializationContext,
+				MessageSerializerWrapper _messageSerializer,
 				CancellationToken cancellationToken
 			) {
 				_request  = request;
@@ -215,7 +214,7 @@ namespace EventStore.Client {
                             StreamMessage subscriptionMessage =
                                 response.ContentCase switch {
                                     Confirmation          => new StreamMessage.SubscriptionConfirmation(response.Confirmation.SubscriptionId),
-                                    Event                 => new StreamMessage.Event(ConvertToResolvedEvent(response.Event, serializationContext)),
+                                    Event                 => new StreamMessage.Event(ConvertToResolvedEvent(response.Event, _messageSerializer)),
                                     FirstStreamPosition   => new StreamMessage.FirstStreamPosition(new StreamPosition(response.FirstStreamPosition)),
                                     LastStreamPosition    => new StreamMessage.LastStreamPosition(new StreamPosition(response.LastStreamPosition)),
                                     LastAllStreamPosition => new StreamMessage.LastAllStreamPosition(

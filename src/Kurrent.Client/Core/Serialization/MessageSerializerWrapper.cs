@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using EventStore.Client;
+using EventStore.Client.Serialization;
 
 namespace Kurrent.Client.Core.Serialization;
 
@@ -44,27 +45,15 @@ public readonly struct Message {
 	}
 }
 
-public record MessageSerializationContext(
-	string StreamName,
-	ContentType? ContentType = null
-) {
-	public string CategoryName => 
-		// TODO: This is dangerous, as separator can be changed in database settings
-		StreamName.Split('-').FirstOrDefault() ?? "no_stream_category";
-}
-
-public record SerializationContext(
-	SchemaRegistry SchemaRegistry,
-	ContentType DefaultContentType,
-	AutomaticDeserialization AutomaticDeserialization
-) {
-	public EventData[] Serialize(IEnumerable<Message> messages, MessageSerializationContext context) {
-		if (AutomaticDeserialization == AutomaticDeserialization.Disabled)
+public class MessageSerializerWrapper(
+	IMessageSerializer messageSerializer,
+	AutomaticDeserialization automaticDeserialization
+): IMessageSerializer {
+	public EventData Serialize(Message value, MessageSerializationContext context) {
+		if (automaticDeserialization == AutomaticDeserialization.Disabled)
 			throw new InvalidOperationException("Cannot serialize, automatic deserialization is disabled");
 
-		var serializer = SchemaRegistry.GetSerializer(context.ContentType ?? DefaultContentType);
-
-		return messages.Select(m => serializer.Serialize(m, context)).ToArray();
+		return messageSerializer.Serialize(value, context);
 	}
 
 #if NET48
@@ -72,22 +61,20 @@ public record SerializationContext(
 #else
 	public bool TryDeserialize(EventRecord eventRecord, [NotNullWhen(true)] out object? deserialized) {
 #endif
-		if (AutomaticDeserialization == AutomaticDeserialization.Disabled) {
+		if (automaticDeserialization == AutomaticDeserialization.Disabled) {
 			deserialized = null;
 			return false;
 		}
 
-		return SchemaRegistry
-			.GetSerializer(FromMessageContentType(eventRecord.ContentType))
+		return messageSerializer
 			.TryDeserialize(eventRecord, out deserialized);
 	}
 
-	public static SerializationContext From(KurrentClientSerializationSettings? settings = null) {
+	public static MessageSerializerWrapper From(KurrentClientSerializationSettings? settings = null) {
 		settings ??= new KurrentClientSerializationSettings();
 
-		return new SerializationContext(
-			SchemaRegistry.From(settings),
-			settings.DefaultContentType,
+		return new MessageSerializerWrapper(
+			new MessageSerializer(SchemaRegistry.From(settings)),
 			settings.AutomaticDeserialization
 		);
 	}

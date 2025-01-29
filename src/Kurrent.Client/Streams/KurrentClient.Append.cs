@@ -7,6 +7,7 @@ using EventStore.Client.Streams;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using EventStore.Client.Diagnostics;
+using EventStore.Client.Serialization;
 using Kurrent.Client.Core.Serialization;
 using Kurrent.Diagnostics;
 using Kurrent.Diagnostics.Telemetry;
@@ -37,8 +38,11 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) {
-			var serializationContext = new MessageSerializationContext(streamName);
-			var eventsData = _defaultSerializationContext.Serialize(events.Select(e => new Message(e)), serializationContext);
+			var serializationContext = new MessageSerializationContext(
+				streamName,
+				Settings.Serialization.DefaultContentType
+			);
+			var eventsData = _messageSerializer.Serialize(events.Select(e => new Message(e)), serializationContext);
 			
 			return AppendToStreamAsync(
 				streamName,
@@ -72,8 +76,11 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) {
-			var serializationContext = new MessageSerializationContext(streamName);
-			var eventsData = _defaultSerializationContext.Serialize(events.Select(e => new Message(e)), serializationContext);
+			var serializationContext = new MessageSerializationContext(
+				streamName,
+				Settings.Serialization.DefaultContentType
+			);
+			var eventsData = _messageSerializer.Serialize(events.Select(e => new Message(e)), serializationContext);
 			
 			return AppendToStreamAsync(
 				streamName,

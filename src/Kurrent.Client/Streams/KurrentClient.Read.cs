@@ -2,9 +2,9 @@ using System.Threading.Channels;
 using EventStore.Client.Serialization;
 using EventStore.Client.Streams;
 using Grpc.Core;
+using Kurrent.Client.Core.Serialization;
 using static EventStore.Client.Streams.ReadResp;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
-using SerializationContext = Kurrent.Client.Core.Serialization.SerializationContext;
 
 namespace EventStore.Client {
 	public partial class KurrentClient {
@@ -93,7 +93,7 @@ namespace EventStore.Client {
 				Settings,
 				deadline,
 				userCredentials,
-				_defaultSerializationContext,
+				_messageSerializer,
 				cancellationToken
 			);
 		}
@@ -146,7 +146,7 @@ namespace EventStore.Client {
 				KurrentClientSettings settings,
 				TimeSpan? deadline,
 				UserCredentials? userCredentials,
-				SerializationContext serializationContext,
+				MessageSerializerWrapper _messageSerializer,
 				CancellationToken cancellationToken
 			) {
 				var callOptions = KurrentCallOptions.CreateStreaming(
@@ -180,7 +180,7 @@ namespace EventStore.Client {
 								response.ContentCase switch {
 									StreamNotFound => StreamMessage.NotFound.Instance,
 									Event => new StreamMessage.Event(
-										ConvertToResolvedEvent(response.Event, serializationContext)
+										ConvertToResolvedEvent(response.Event, _messageSerializer)
 									),
 									FirstStreamPosition => new StreamMessage.FirstStreamPosition(
 										new StreamPosition(response.FirstStreamPosition)
@@ -279,7 +279,7 @@ namespace EventStore.Client {
 				Settings,
 				deadline,
 				userCredentials,
-				_defaultSerializationContext,
+				_messageSerializer,
 				cancellationToken
 			);
 		}
@@ -356,7 +356,7 @@ namespace EventStore.Client {
 				KurrentClientSettings settings,
 				TimeSpan? deadline,
 				UserCredentials? userCredentials,
-				SerializationContext serializationContext,
+				MessageSerializerWrapper _messageSerializer,
 				CancellationToken cancellationToken
 			) {
 				var callOptions = KurrentCallOptions.CreateStreaming(
@@ -408,7 +408,7 @@ namespace EventStore.Client {
 								response.ContentCase switch {
 									StreamNotFound => StreamMessage.NotFound.Instance,
 									Event => new StreamMessage.Event(
-										ConvertToResolvedEvent(response.Event, serializationContext)
+										ConvertToResolvedEvent(response.Event, _messageSerializer)
 									),
 									ContentOneofCase.FirstStreamPosition => new StreamMessage.FirstStreamPosition(
 										new StreamPosition(response.FirstStreamPosition)
@@ -461,7 +461,7 @@ namespace EventStore.Client {
 
 		static ResolvedEvent ConvertToResolvedEvent(
 			Types.ReadEvent readEvent,
-			SerializationContext serializationContext
+			MessageSerializerWrapper _messageSerializer
 		) =>
 			ResolvedEvent.From(
 				ConvertToEventRecord(readEvent.Event)!,
@@ -470,7 +470,7 @@ namespace EventStore.Client {
 					Types.ReadEvent.PositionOneofCase.CommitPosition => readEvent.CommitPosition,
 					_                                                => null
 				},
-				serializationContext
+				_messageSerializer
 			);
 
 		static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>

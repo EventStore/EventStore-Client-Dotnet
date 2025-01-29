@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using ReadReq = EventStore.Client.Streams.ReadReq;
-using SerializationContext = Kurrent.Client.Core.Serialization.SerializationContext;
 
 namespace EventStore.Client {
 	/// <summary>
@@ -75,7 +74,7 @@ namespace EventStore.Client {
 
 			var serializationSettings = settings?.Serialization ?? KurrentClientSerializationSettings.Default();
 			
-			_defaultSerializationContext = SerializationContext.From(serializationSettings);
+			_messageSerializer = MessageSerializerWrapper.From(serializationSettings);
 		}
 
 		void SwapStreamAppender(Exception ex) =>

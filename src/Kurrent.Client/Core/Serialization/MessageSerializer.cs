@@ -3,42 +3,78 @@ using Kurrent.Client.Core.Serialization;
 
 namespace EventStore.Client.Serialization;
 
+using static ContentTypeExtensions;
+
 public interface IMessageSerializer {
 	public EventData Serialize(Message value, MessageSerializationContext context);
 
 	public bool TryDeserialize(EventRecord messageRecord, out object? deserialized);
 }
 
-public class MessageSerializer(
-	ContentType contentType,
-	ISerializer serializer,
-	ISerializer jsonSerializer,
-	IMessageTypeResolutionStrategy messageTypeResolutionStrategy
-) : IMessageSerializer {
-	readonly string _messageContentType = contentType.ToMessageContentType();
-	
+public record MessageSerializationContext(
+	string StreamName,
+	ContentType ContentType
+) {
+	public string CategoryName => 
+		// TODO: This is dangerous, as separator can be changed in database settings
+		StreamName.Split('-').FirstOrDefault() ?? "no_stream_category";
+}
+
+public static class MessageSerializerExtensions {
+	public static EventData[] Serialize(
+		this IMessageSerializer serializer,
+		IEnumerable<Message> messages,
+		MessageSerializationContext context
+	) {
+		return messages.Select(m => serializer.Serialize(m, context)).ToArray();
+	}
+}
+
+public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializer {
+	readonly ISerializer _jsonSerializer =
+		schemaRegistry.GetSerializer(ContentType.Json);
+
+	readonly IMessageTypeResolutionStrategy _messageTypeResolutionStrategy =
+		schemaRegistry.MessageTypeResolutionStrategy;
+
 	public EventData Serialize(Message message, MessageSerializationContext serializationContext) {
 		var (data, metadata, eventId) = message;
-		var eventType          = messageTypeResolutionStrategy.ResolveTypeName(message, serializationContext);
-		var serializedData     = serializer.Serialize(data);
-		var serializedMetadata = metadata != null ? jsonSerializer.Serialize(metadata) : ReadOnlyMemory<byte>.Empty;
+
+		var eventType = _messageTypeResolutionStrategy
+			.ResolveTypeName(message, serializationContext);
+
+		var serializedData = schemaRegistry
+			.GetSerializer(serializationContext.ContentType)
+			.Serialize(data);
+
+		var serializedMetadata = metadata != null
+			? _jsonSerializer.Serialize(metadata)
+			: ReadOnlyMemory<byte>.Empty;
+
+		var metadataWithSerialization = serializedMetadata
+			.InjectSerializationMetadata(SerializationMetadata.From(data.GetType()))
+			.ToArray();
 
 		return new EventData(
 			eventId,
 			eventType,
 			serializedData,
-			serializedMetadata.InjectSerializationMetadata(SerializationMetadata.From(data.GetType())).ToArray(),
-			_messageContentType
+			metadataWithSerialization,
+			serializationContext.ContentType.ToMessageContentType()
 		);
 	}
 
 	public bool TryDeserialize(EventRecord messageRecord, out object? deserialized) {
-		if (!messageTypeResolutionStrategy.TryResolveClrType(messageRecord, out var clrType)) {
+		if (!schemaRegistry
+			    .MessageTypeResolutionStrategy
+			    .TryResolveClrType(messageRecord, out var clrType)) {
 			deserialized = null;
 			return false;
 		}
 
-		deserialized = serializer.Deserialize(messageRecord.Data, clrType!);
+		deserialized = schemaRegistry
+			.GetSerializer(FromMessageContentType(messageRecord.ContentType))
+			.Deserialize(messageRecord.Data, clrType!);
 
 		return true;
 	}

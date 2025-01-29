@@ -30,30 +30,30 @@ public static class ContentTypeExtensions {
 
 // TODO: We need to discuss how to include the full Schema Registry code here
 public class SchemaRegistry(
-	IDictionary<ContentType, MessageSerializer> serializers
+	IDictionary<ContentType, ISerializer> serializers,
+	IMessageTypeResolutionStrategy messageTypeResolutionStrategy
 ) {
-	public IMessageSerializer GetSerializer(ContentType schemaType) =>
+	public IMessageTypeResolutionStrategy MessageTypeResolutionStrategy { get; } = messageTypeResolutionStrategy;
+
+	public ISerializer GetSerializer(ContentType schemaType) =>
 		serializers[schemaType];
 
 	public static SchemaRegistry From(KurrentClientSerializationSettings settings) {
-		var jsonSerializer  = settings.JsonSerializer ?? new SystemTextJsonSerializer();
-		var bytesSerializer = settings.BytesSerializer ?? new SystemTextJsonSerializer();
-
 		var messageTypeResolutionStrategy = new MessageTypeResolutionStrategyWrapper(
 			MessageTypeMapper.Instance,
 			settings.MessageTypeResolutionStrategy ?? new DefaultMessageTypeResolutionStrategy()
 		);
 
-		var serializers = new Dictionary<ContentType, MessageSerializer> {
+		var serializers = new Dictionary<ContentType, ISerializer> {
 			{
 				ContentType.Json,
-				new MessageSerializer(ContentType.Json, jsonSerializer, jsonSerializer, messageTypeResolutionStrategy)
+				settings.JsonSerializer ?? new SystemTextJsonSerializer()
 			}, {
 				ContentType.Bytes,
-				new MessageSerializer(ContentType.Bytes, bytesSerializer, jsonSerializer, messageTypeResolutionStrategy)
+				settings.BytesSerializer ?? new SystemTextJsonSerializer()
 			}
 		};
 
-		return new SchemaRegistry(serializers);
+		return new SchemaRegistry(serializers, messageTypeResolutionStrategy);
 	}
 }
