@@ -6,9 +6,7 @@ namespace Kurrent.Client.Tests.Streams.Serialization;
 // The scanning part and registration seems to be more robust there
 // I used this for simplicity
 public interface IMessageTypeMapper {
-	void    AddType<T>(string messageTypeName);
-	void    AddType(Type messageType, string eventTypeName);
-	string? GetTypeName<TEventType>();
+	void AddType(Type messageType, string messageTypeName);
 	string? GetTypeName(Type messageType);
 	string  GetOrAddTypeName(Type clrType, Func<Type, string> getTypeName);
 	Type?   GetClrType(string messageTypeName);
@@ -20,14 +18,10 @@ public class MessageTypeMapper : IMessageTypeMapper {
 	readonly               ConcurrentDictionary<string, Type?> _typeMap     = new();
 	readonly               ConcurrentDictionary<Type, string>  _typeNameMap = new();
 
-	public void AddType<T>(string messageTypeName) => AddType(typeof(T), messageTypeName);
-
-	public void AddType(Type messageType, string eventTypeName) {
-		_typeNameMap.AddOrUpdate(messageType, eventTypeName, (_, typeName) => typeName);
-		_typeMap.AddOrUpdate(eventTypeName, messageType, (_, type) => type);
+	public void AddType(Type messageType, string messageTypeName) {
+		_typeNameMap.AddOrUpdate(messageType, messageTypeName, (_, typeName) => typeName);
+		_typeMap.AddOrUpdate(messageTypeName, messageType, (_, type) => type);
 	}
-
-	public string? GetTypeName<TMessageType>() => GetTypeName(typeof(TMessageType));
 
 	public string? GetTypeName(Type messageType) =>
 #if NET48
@@ -35,17 +29,18 @@ public class MessageTypeMapper : IMessageTypeMapper {
 #else
 		_typeNameMap.GetValueOrDefault(messageType);
 #endif
-	
+
 	public string GetOrAddTypeName(Type clrType, Func<Type, string> getTypeName) =>
-		_typeNameMap.GetOrAdd(clrType,
+		_typeNameMap.GetOrAdd(
+			clrType,
 			_ => {
 				var typeName = getTypeName(clrType);
-				
+
 				_typeMap.TryAdd(typeName, clrType);
 
 				return typeName;
-			});
-	
+			}
+		);
 
 	public Type? GetClrType(string messageTypeName) =>
 #if NET48
@@ -55,15 +50,25 @@ public class MessageTypeMapper : IMessageTypeMapper {
 #endif
 
 	public Type? GetOrAddClrType(string messageTypeName, Func<string, Type?> getClrType) =>
-		_typeMap.GetOrAdd(messageTypeName,
+		_typeMap.GetOrAdd(
+			messageTypeName,
 			_ => {
 				var clrType = getClrType(messageTypeName);
 
 				if (clrType == null)
 					return null;
-				
+
 				_typeNameMap.TryAdd(clrType, messageTypeName);
 
 				return clrType;
-			});
+			}
+		);
+}
+
+public static class MessageTypeMapperExtensions {
+	public static void AddType<T>(this IMessageTypeMapper messageTypeMapper, string messageTypeName) =>
+		messageTypeMapper.AddType(typeof(T), messageTypeName);
+
+	public static string? GetTypeName<TMessageType>(this IMessageTypeMapper messageTypeMapper) => 
+		messageTypeMapper.GetTypeName(typeof(TMessageType));
 }

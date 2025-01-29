@@ -14,12 +14,14 @@ public interface IMessageTypeResolutionStrategy {
 #endif
 }
 
-public class DefaultMessageTypeResolutionStrategy(IMessageTypeMapper messageTypeMapper)
-	: IMessageTypeResolutionStrategy {
+public class MessageTypeResolutionStrategyWrapper(
+	IMessageTypeMapper messageTypeMapper,
+	IMessageTypeResolutionStrategy messageTypeResolutionStrategy
+) : IMessageTypeResolutionStrategy {
 	public string ResolveTypeName(object messageData) {
 		return messageTypeMapper.GetOrAddTypeName(
 			messageData.GetType(),
-			clrType => clrType.FullName!
+			_ => messageTypeResolutionStrategy.ResolveTypeName(messageData)
 		);
 	}
 
@@ -30,18 +32,36 @@ public class DefaultMessageTypeResolutionStrategy(IMessageTypeMapper messageType
 #endif
 		type = messageTypeMapper.GetOrAddClrType(
 			messageRecord.EventType,
-			_ => {
-				var serializationMetadata = messageRecord.Metadata.ExtractSerializationMetadata();
-
-				if (!serializationMetadata.IsValid)
-					return null;
-
-				return Type.GetType(
-					serializationMetadata.MessageTypeAssemblyQualifiedName
-				 ?? serializationMetadata.MessageTypeClrTypeName!
-				);
-			}
+			_ => messageTypeResolutionStrategy.TryResolveClrType(messageRecord, out var resolvedType)
+				? resolvedType
+				: null
 		);
+
+		return type != null;
+	}
+}
+
+public class DefaultMessageTypeResolutionStrategy
+	: IMessageTypeResolutionStrategy {
+	public string ResolveTypeName(object messageData) =>
+		messageData.GetType().FullName!;
+
+#if NET48
+	public bool TryResolveClrType(EventRecord messageRecord, out Type? type) {
+#else
+	public bool TryResolveClrType(EventRecord messageRecord, [NotNullWhen(true)] out Type? type) {
+#endif
+		var serializationMetadata = messageRecord.Metadata.ExtractSerializationMetadata();
+
+		if (!serializationMetadata.IsValid) {
+			type = null;
+			return false;
+		}
+
+		type = Type.GetType(serializationMetadata.MessageTypeAssemblyQualifiedName!)
+		    ?? TypeProvider.GetFirstMatchingTypeFromCurrentDomainAssembly(
+			       serializationMetadata.MessageTypeClrTypeName!
+		       );
 
 		return type != null;
 	}
