@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using EventStore.Client.Serialization;
 using Kurrent.Diagnostics;
 using Kurrent.Diagnostics.Tracing;
 
@@ -72,6 +73,80 @@ static class EventMetadataExtensions {
 			writer.WriteStringValue(tracingMetadata.TraceId);
 			writer.WritePropertyName(TracingConstants.Metadata.SpanId);
 			writer.WriteStringValue(tracingMetadata.SpanId);
+
+			writer.WriteEndObject();
+			writer.Flush();
+
+			return stream.ToArray();
+		} catch (Exception) {
+			return utf8Json;
+		}
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static SerializationMetadata ExtractSerializationMetadata(this ReadOnlyMemory<byte> eventMetadata) {
+		if (eventMetadata.IsEmpty)
+			return SerializationMetadata.None;
+
+		var reader = new Utf8JsonReader(eventMetadata.Span);
+		try {
+			if (!JsonDocument.TryParseValue(ref reader, out var doc))
+				return SerializationMetadata.None;
+
+			using (doc) {
+				if (!doc.RootElement.TryGetProperty(
+					    SerializationMetadata.Constants.MessageTypeAssemblyQualifiedName,
+					    out var messageTypeAssemblyQualifiedName
+				    )
+				 || !doc.RootElement.TryGetProperty(
+					    SerializationMetadata.Constants.MessageTypeClrTypeName,
+					    out var messageTypeClrTypeName
+				    ))
+					return SerializationMetadata.None;
+
+				return new SerializationMetadata(
+					messageTypeAssemblyQualifiedName.GetString(),
+					messageTypeClrTypeName.GetString()
+				);
+			}
+		} catch (Exception) {
+			return SerializationMetadata.None;
+		}
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	static ReadOnlySpan<byte> InjectSerializationMetadata(
+		this ReadOnlyMemory<byte> eventMetadata, SerializationMetadata serializationMetadata
+	) {
+		if (serializationMetadata == SerializationMetadata.None || !serializationMetadata.IsValid)
+			return eventMetadata.Span;
+
+		return eventMetadata.IsEmpty
+			? JsonSerializer.SerializeToUtf8Bytes(serializationMetadata)
+			: TryInjectSerializationMetadata(eventMetadata, serializationMetadata).ToArray();
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	static ReadOnlyMemory<byte> TryInjectSerializationMetadata(
+		this ReadOnlyMemory<byte> utf8Json, SerializationMetadata serializationMetadata
+	) {
+		try {
+			using var doc    = JsonDocument.Parse(utf8Json);
+			using var stream = new MemoryStream();
+			using var writer = new Utf8JsonWriter(stream);
+
+			writer.WriteStartObject();
+
+			if (doc.RootElement.ValueKind != JsonValueKind.Object)
+				return utf8Json;
+
+			foreach (var prop in doc.RootElement.EnumerateObject())
+				prop.WriteTo(writer);
+
+			writer.WritePropertyName(SerializationMetadata.Constants.MessageTypeAssemblyQualifiedName);
+			writer.WriteStringValue(serializationMetadata.MessageTypeAssemblyQualifiedName);
+			writer.WritePropertyName(SerializationMetadata.Constants.MessageTypeClrTypeName);
+			writer.WriteStringValue(serializationMetadata.MessageTypeClrTypeName);
 
 			writer.WriteEndObject();
 			writer.Flush();

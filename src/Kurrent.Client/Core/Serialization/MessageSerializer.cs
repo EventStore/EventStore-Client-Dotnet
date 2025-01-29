@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
 using Kurrent.Client.Core.Serialization;
 using Kurrent.Client.Tests.Streams.Serialization;
 
@@ -11,17 +10,6 @@ public interface IMessageSerializer {
 	public bool TryDeserialize(EventRecord messageRecord, out object? deserialized);
 }
 
-public record MessageDefaultMetadata(
-	[property: JsonPropertyName("$clrTypeAssemblyQualifiedName")]
-	string? MessageTypeAssemblyQualifiedName,
-	[property: JsonPropertyName("$clrTypeName")]
-	string? MessageTypeClrTypeName
-) {
-	public static MessageDefaultMetadata From(Type clrType) =>
-		new MessageDefaultMetadata(clrType.AssemblyQualifiedName, clrType.Name);
-}
-
-
 public class MessageSerializer(
 	ContentType contentType,
 	ISerializer serializer,
@@ -31,7 +19,7 @@ public class MessageSerializer(
 	public EventData Serialize(object value) {
 		var eventType = messageTypeResolutionStrategy.ResolveTypeName(value);
 		var bytes     = serializer.Serialize(value);
-		var metadata  = jsonSerializer.Serialize(MessageDefaultMetadata.From(value.GetType()));
+		var metadata  = jsonSerializer.Serialize(SerializationMetadata.From(value.GetType()));
 
 		return new EventData(Uuid.NewUuid(), eventType, bytes, metadata, contentType.ToMessageContentType());
 	}
