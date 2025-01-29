@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Kurrent.Client.Tests.Streams.Serialization;
+using EventStore.Client.Diagnostics;
 
 namespace EventStore.Client.Serialization;
 
@@ -19,7 +20,7 @@ public class DefaultMessageTypeResolutionStrategy(IMessageTypeMapper messageType
 		return messageTypeMapper.GetOrAddTypeName(
 			messageData.GetType(),
 			clrType => clrType.FullName!
-		)!;
+		);
 	}
 
 #if NET48
@@ -29,7 +30,17 @@ public class DefaultMessageTypeResolutionStrategy(IMessageTypeMapper messageType
 #endif
 		type = messageTypeMapper.GetOrAddClrType(
 			messageRecord.EventType,
-			TypeProvider.GetFirstMatchingTypeFromCurrentDomainAssembly
+			_ => {
+				var serializationMetadata = messageRecord.Metadata.ExtractSerializationMetadata();
+
+				if (!serializationMetadata.IsValid)
+					return null;
+
+				return Type.GetType(
+					serializationMetadata.MessageTypeAssemblyQualifiedName
+				 ?? serializationMetadata.MessageTypeClrTypeName!
+				);
+			}
 		);
 
 		return type != null;

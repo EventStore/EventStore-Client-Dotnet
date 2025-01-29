@@ -15,12 +15,12 @@ public static class TypeProvider
 
 		return AppDomain.CurrentDomain.GetAssemblies()
 			.Where(a => referencedAssemblies.Contains(a.FullName))
-			.SelectMany(a => a.GetTypes().Where(x => x.FullName == typeName || x.Name == typeName))
+			.SelectMany(a => a.GetTypes().Where(x => x.AssemblyQualifiedName == typeName || x.Name == typeName))
 			.FirstOrDefault();
 	}
 
 	public static Type? GetFirstMatchingTypeFromCurrentDomainAssembly(string typeName) =>
 		AppDomain.CurrentDomain.GetAssemblies()
-			.SelectMany(a => a.GetTypes().Where(x => x.FullName == typeName || x.Name == typeName))
+			.SelectMany(a => a.GetTypes().Where(x => x.AssemblyQualifiedName == typeName || x.Name == typeName))
 			.FirstOrDefault();
 }
