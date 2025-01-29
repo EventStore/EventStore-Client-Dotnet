@@ -11,32 +11,6 @@ public interface IMessageSerializer {
 	public bool TryDeserialize(EventRecord messageRecord, out object? deserialized);
 }
 
-public interface IMessageTypeResolutionStrategy {
-	string ResolveTypeName(object messageData);
-
-#if NET48
-	bool TryResolveClrType(EventRecord messageRecord, out Type? type);
-#else
-	bool TryResolveClrType(EventRecord messageRecord, [NotNullWhen(true)] out Type? type);
-#endif
-}
-
-public class DefaultMessageTypeResolutionStrategy(IMessageTypeMapper messageTypeMapper) : IMessageTypeResolutionStrategy {
-	public string ResolveTypeName(object messageData) {
-		return messageTypeMapper.GetTypeName(messageData.GetType())!;
-	}
-
-#if NET48
-	public bool TryResolveClrType(EventRecord messageRecord, out Type? type){
-#else
-	public bool TryResolveClrType(EventRecord messageRecord, [NotNullWhen(true)] out Type? type) {
-#endif
-		type = messageTypeMapper.GetClrType(messageRecord.EventType);
-
-		return type != null;
-	}
-}
-
 public record MessageDefaultMetadata(
 	[property: JsonPropertyName("$clrTypeAssemblyQualifiedName")]
 	string? MessageTypeAssemblyQualifiedName,

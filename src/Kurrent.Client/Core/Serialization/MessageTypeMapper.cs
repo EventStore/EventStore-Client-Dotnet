@@ -6,11 +6,13 @@ namespace Kurrent.Client.Tests.Streams.Serialization;
 // The scanning part and registration seems to be more robust there
 // I used this for simplicity
 public interface IMessageTypeMapper {
-	void    AddType<T>(string eventTypeName);
-	void    AddType(Type eventType, string eventTypeName);
+	void    AddType<T>(string messageTypeName);
+	void    AddType(Type messageType, string eventTypeName);
 	string? GetTypeName<TEventType>();
-	string? GetTypeName(Type eventType);
-	Type?   GetClrType(string eventTypeName);
+	string? GetTypeName(Type messageType);
+	string  GetOrAddTypeName(Type clrType, Func<Type, string> getTypeName);
+	Type?   GetClrType(string messageTypeName);
+	Type?   GetOrAddClrType(string messageTypeName, Func<string, Type?> getClrType);
 }
 
 public class MessageTypeMapper : IMessageTypeMapper {
@@ -18,41 +20,50 @@ public class MessageTypeMapper : IMessageTypeMapper {
 	readonly               ConcurrentDictionary<string, Type?> _typeMap     = new();
 	readonly               ConcurrentDictionary<Type, string>  _typeNameMap = new();
 
-	public void AddType<T>(string eventTypeName) => AddType(typeof(T), eventTypeName);
+	public void AddType<T>(string messageTypeName) => AddType(typeof(T), messageTypeName);
 
-	public void AddType(Type eventType, string eventTypeName) {
-		_typeNameMap.AddOrUpdate(eventType, eventTypeName, (_, typeName) => typeName);
-		_typeMap.AddOrUpdate(eventTypeName, eventType, (_, type) => type);
+	public void AddType(Type messageType, string eventTypeName) {
+		_typeNameMap.AddOrUpdate(messageType, eventTypeName, (_, typeName) => typeName);
+		_typeMap.AddOrUpdate(eventTypeName, messageType, (_, type) => type);
 	}
 
-	public string? GetTypeName<TEventType>() => GetTypeName(typeof(TEventType));
+	public string? GetTypeName<TMessageType>() => GetTypeName(typeof(TMessageType));
 
-	public string? GetTypeName(Type eventType) =>
+	public string? GetTypeName(Type messageType) =>
 #if NET48
-		_typeNameMap.TryGetValue(eventType, out var typeName) ? typeName : null;
+		_typeNameMap.TryGetValue(messageType, out var typeName) ? typeName : null;
 #else
-		_typeNameMap.GetValueOrDefault(eventType);
+		_typeNameMap.GetValueOrDefault(messageType);
+#endif
+	
+	public string GetOrAddTypeName(Type clrType, Func<Type, string> getTypeName) =>
+		_typeNameMap.GetOrAdd(clrType,
+			_ => {
+				var typeName = getTypeName(clrType);
+				
+				_typeMap.TryAdd(typeName, clrType);
+
+				return typeName;
+			});
+	
+
+	public Type? GetClrType(string messageTypeName) =>
+#if NET48
+		_typeMap.TryGetValue(messageTypeName, out var clrType) ? clrType : null;
+#else
+		_typeMap.GetValueOrDefault(messageTypeName);
 #endif
 
-	public Type? GetClrType(string eventTypeName) =>
-#if NET48
-		_typeMap.TryGetValue(eventTypeName, out var clrType) ? clrType : null;
-#else
-		_typeMap.GetValueOrDefault(eventTypeName);
-#endif
+	public Type? GetOrAddClrType(string messageTypeName, Func<string, Type?> getClrType) =>
+		_typeMap.GetOrAdd(messageTypeName,
+			_ => {
+				var clrType = getClrType(messageTypeName);
 
-	public Type? GetClrTypeOrAdd(string eventTypeName, Func<string, Type?> getClrType) =>
-		_typeMap.GetOrAdd(eventTypeName, getClrType);
+				if (clrType == null)
+					return null;
+				
+				_typeNameMap.TryAdd(clrType, messageTypeName);
 
-	// _ => {
-	// 	var type = TypeProvider.GetFirstMatchingTypeFromCurrentDomainAssembly(eventTypeName);
-	//
-	// 	if (type == null)
-	// 		return null;
-	//
-	// 	_typeNameMap.TryAdd(type, eventTypeName);
-	//
-	// 	return type;
-	// }
-	// );
+				return clrType;
+			});
 }
