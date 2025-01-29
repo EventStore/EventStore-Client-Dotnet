@@ -40,7 +40,7 @@ public class SchemaRegistry(
 		var bytesSerializer = settings.BytesSerializer ?? new SystemTextJsonSerializer();
 
 		var messageTypeResolutionStrategy =
-			settings.MessageTypeResolutionStrategy ?? new DefaultMessageTypeResolutionStrategy();
+			settings.MessageTypeResolutionStrategy ?? new DefaultMessageTypeResolutionStrategy(MessageTypeMapper.Instance);
 
 		var serializers = new Dictionary<ContentType, MessageSerializer> {
 			{

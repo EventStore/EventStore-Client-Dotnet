@@ -21,9 +21,9 @@ public interface IMessageTypeResolutionStrategy {
 #endif
 }
 
-public class DefaultMessageTypeResolutionStrategy : IMessageTypeResolutionStrategy {
+public class DefaultMessageTypeResolutionStrategy(IMessageTypeMapper messageTypeMapper) : IMessageTypeResolutionStrategy {
 	public string ResolveTypeName(object messageData) {
-		return EventTypeMapper.Instance.ToName(messageData.GetType());
+		return messageTypeMapper.GetTypeName(messageData.GetType())!;
 	}
 
 #if NET48
@@ -31,7 +31,7 @@ public class DefaultMessageTypeResolutionStrategy : IMessageTypeResolutionStrate
 #else
 	public bool TryResolveClrType(EventRecord messageRecord, [NotNullWhen(true)] out Type? type) {
 #endif
-		type = EventTypeMapper.Instance.ToType(messageRecord.EventType);
+		type = messageTypeMapper.GetClrType(messageRecord.EventType);
 
 		return type != null;
 	}
@@ -46,6 +46,7 @@ public record MessageDefaultMetadata(
 	public static MessageDefaultMetadata From(Type clrType) =>
 		new MessageDefaultMetadata(clrType.AssemblyQualifiedName, clrType.Name);
 }
+
 
 public class MessageSerializer(
 	ContentType contentType,
