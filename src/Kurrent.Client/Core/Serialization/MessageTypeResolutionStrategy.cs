@@ -17,11 +17,11 @@ public interface IMessageTypeResolutionStrategy {
 }
 
 public class MessageTypeResolutionStrategyWrapper(
-	IMessageTypeMapper messageTypeMapper,
+	IMessageTypeRegistry messageTypeRegistry,
 	IMessageTypeResolutionStrategy messageTypeResolutionStrategy
 ) : IMessageTypeResolutionStrategy {
 	public string ResolveTypeName(Message message, MessageSerializationContext serializationContext) {
-		return messageTypeMapper.GetOrAddTypeName(
+		return messageTypeRegistry.GetOrAddTypeName(
 			message.Data.GetType(),
 			_ => messageTypeResolutionStrategy.ResolveTypeName(message, serializationContext)
 		);
@@ -32,7 +32,7 @@ public class MessageTypeResolutionStrategyWrapper(
 #else
 	public bool TryResolveClrType(EventRecord messageRecord, [NotNullWhen(true)] out Type? type) {
 #endif
-		type = messageTypeMapper.GetOrAddClrType(
+		type = messageTypeRegistry.GetOrAddClrType(
 			messageRecord.EventType,
 			_ => messageTypeResolutionStrategy.TryResolveClrType(messageRecord, out var resolvedType)
 				? resolvedType

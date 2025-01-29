@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using EventStore.Client.Diagnostics;
 using Kurrent.Client.Core.Serialization;
 
@@ -7,8 +8,12 @@ using static ContentTypeExtensions;
 
 public interface IMessageSerializer {
 	public EventData Serialize(Message value, MessageSerializationContext context);
-
+	
+#if NET48
 	public bool TryDeserialize(EventRecord messageRecord, out object? deserialized);
+#else
+	public bool TryDeserialize(EventRecord messageRecord, [NotNullWhen(true)] out object? deserialized);
+#endif
 }
 
 public record MessageSerializationContext(
@@ -63,8 +68,12 @@ public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializ
 			serializationContext.ContentType.ToMessageContentType()
 		);
 	}
-
+	
+#if NET48
 	public bool TryDeserialize(EventRecord messageRecord, out object? deserialized) {
+#else
+	public bool TryDeserialize(EventRecord messageRecord, [NotNullWhen(true)] out object? deserialized) {
+#endif
 		if (!schemaRegistry
 			    .MessageTypeResolutionStrategy
 			    .TryResolveClrType(messageRecord, out var clrType)) {
@@ -76,6 +85,6 @@ public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializ
 			.GetSerializer(FromMessageContentType(messageRecord.ContentType))
 			.Deserialize(messageRecord.Data, clrType!);
 
-		return true;
+		return deserialized != null;
 	}
 }

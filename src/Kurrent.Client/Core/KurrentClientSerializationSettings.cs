@@ -17,6 +17,8 @@ public class KurrentClientSerializationSettings {
 	public AutomaticDeserialization        AutomaticDeserialization { get; set; } = AutomaticDeserialization.Disabled;
 	public IMessageTypeResolutionStrategy? MessageTypeResolutionStrategy { get; set; }
 
+	public IDictionary<Type, string> MessageTypeMap { get; set; } = new Dictionary<Type, string>();
+
 	public static KurrentClientSerializationSettings Default(
 		Action<KurrentClientSerializationSettings>? configure = null
 	) {
@@ -42,6 +44,22 @@ public class KurrentClientSerializationSettings {
 	public KurrentClientSerializationSettings UseBytesSerializer(ISerializer serializer) {
 		BytesSerializer = serializer;
 
+		return this;
+	}
+
+	public KurrentClientSerializationSettings RegisterMessageType<T>(string typeName) =>
+		RegisterMessageType(typeof(T), typeName);
+	
+	public KurrentClientSerializationSettings RegisterMessageType(Type type, string typeName) {
+		MessageTypeMap.Add(type, typeName);
+
+		return this;
+	}
+	public KurrentClientSerializationSettings RegisterMessageTypes(IDictionary<Type, string> typeMap) {
+		foreach (var map in typeMap) {
+			MessageTypeMap.Add(map.Key, map.Value);
+		}
+		
 		return this;
 	}
 

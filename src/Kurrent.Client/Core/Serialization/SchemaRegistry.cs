@@ -39,8 +39,11 @@ public class SchemaRegistry(
 		serializers[schemaType];
 
 	public static SchemaRegistry From(KurrentClientSerializationSettings settings) {
+		var messageTypeRegistry = new MessageTypeRegistry();
+		messageTypeRegistry.AddTypes(settings.MessageTypeMap);
+		
 		var messageTypeResolutionStrategy = new MessageTypeResolutionStrategyWrapper(
-			MessageTypeMapper.Instance,
+			messageTypeRegistry,
 			settings.MessageTypeResolutionStrategy ?? new DefaultMessageTypeResolutionStrategy()
 		);
 

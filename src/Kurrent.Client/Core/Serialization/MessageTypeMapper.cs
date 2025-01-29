@@ -2,16 +2,15 @@ using System.Collections.Concurrent;
 
 namespace Kurrent.Client.Tests.Streams.Serialization;
 
-public interface IMessageTypeMapper {
-	void AddType(Type messageType, string messageTypeName);
+public interface IMessageTypeRegistry {
+	void    AddType(Type messageType, string messageTypeName);
 	string? GetTypeName(Type messageType);
 	string  GetOrAddTypeName(Type clrType, Func<Type, string> getTypeName);
 	Type?   GetClrType(string messageTypeName);
 	Type?   GetOrAddClrType(string messageTypeName, Func<string, Type?> getClrType);
 }
 
-public class MessageTypeMapper : IMessageTypeMapper {
-	public static readonly MessageTypeMapper                   Instance     = new MessageTypeMapper();
+public class MessageTypeRegistry : IMessageTypeRegistry {
 	readonly               ConcurrentDictionary<string, Type?> _typeMap     = new();
 	readonly               ConcurrentDictionary<Type, string>  _typeNameMap = new();
 
@@ -63,9 +62,15 @@ public class MessageTypeMapper : IMessageTypeMapper {
 }
 
 public static class MessageTypeMapperExtensions {
-	public static void AddType<T>(this IMessageTypeMapper messageTypeMapper, string messageTypeName) =>
-		messageTypeMapper.AddType(typeof(T), messageTypeName);
+	public static void AddType<T>(this IMessageTypeRegistry messageTypeRegistry, string messageTypeName) =>
+		messageTypeRegistry.AddType(typeof(T), messageTypeName);
 
-	public static string? GetTypeName<TMessageType>(this IMessageTypeMapper messageTypeMapper) => 
-		messageTypeMapper.GetTypeName(typeof(TMessageType));
+	public static void AddTypes(this IMessageTypeRegistry messageTypeRegistry, IDictionary<Type, string> typeMap) {
+		foreach (var map in typeMap) {
+			messageTypeRegistry.AddType(map.Key, map.Value);
+		}
+	}
+
+	public static string? GetTypeName<TMessageType>(this IMessageTypeRegistry messageTypeRegistry) =>
+		messageTypeRegistry.GetTypeName(typeof(TMessageType));
 }
