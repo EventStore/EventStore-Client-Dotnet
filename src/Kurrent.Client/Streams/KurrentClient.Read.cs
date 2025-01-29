@@ -146,7 +146,7 @@ namespace EventStore.Client {
 				KurrentClientSettings settings,
 				TimeSpan? deadline,
 				UserCredentials? userCredentials,
-				MessageSerializerWrapper _messageSerializer,
+				IMessageSerializer messageSerializer,
 				CancellationToken cancellationToken
 			) {
 				var callOptions = KurrentCallOptions.CreateStreaming(
@@ -180,7 +180,7 @@ namespace EventStore.Client {
 								response.ContentCase switch {
 									StreamNotFound => StreamMessage.NotFound.Instance,
 									Event => new StreamMessage.Event(
-										ConvertToResolvedEvent(response.Event, _messageSerializer)
+										ConvertToResolvedEvent(response.Event, messageSerializer)
 									),
 									FirstStreamPosition => new StreamMessage.FirstStreamPosition(
 										new StreamPosition(response.FirstStreamPosition)
@@ -356,7 +356,7 @@ namespace EventStore.Client {
 				KurrentClientSettings settings,
 				TimeSpan? deadline,
 				UserCredentials? userCredentials,
-				MessageSerializerWrapper _messageSerializer,
+				IMessageSerializer messageSerializer,
 				CancellationToken cancellationToken
 			) {
 				var callOptions = KurrentCallOptions.CreateStreaming(
@@ -408,7 +408,7 @@ namespace EventStore.Client {
 								response.ContentCase switch {
 									StreamNotFound => StreamMessage.NotFound.Instance,
 									Event => new StreamMessage.Event(
-										ConvertToResolvedEvent(response.Event, _messageSerializer)
+										ConvertToResolvedEvent(response.Event, messageSerializer)
 									),
 									ContentOneofCase.FirstStreamPosition => new StreamMessage.FirstStreamPosition(
 										new StreamPosition(response.FirstStreamPosition)
@@ -461,7 +461,7 @@ namespace EventStore.Client {
 
 		static ResolvedEvent ConvertToResolvedEvent(
 			Types.ReadEvent readEvent,
-			MessageSerializerWrapper _messageSerializer
+			IMessageSerializer messageSerializer
 		) =>
 			ResolvedEvent.From(
 				ConvertToEventRecord(readEvent.Event)!,
@@ -470,7 +470,7 @@ namespace EventStore.Client {
 					Types.ReadEvent.PositionOneofCase.CommitPosition => readEvent.CommitPosition,
 					_                                                => null
 				},
-				_messageSerializer
+				messageSerializer
 			);
 
 		static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>

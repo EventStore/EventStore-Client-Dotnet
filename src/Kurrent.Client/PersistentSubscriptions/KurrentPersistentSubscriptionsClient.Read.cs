@@ -1,6 +1,7 @@
 using System.Threading.Channels;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Client.Diagnostics;
+using EventStore.Client.Serialization;
 using Grpc.Core;
 using Kurrent.Client.Core.Serialization;
 using static EventStore.Client.PersistentSubscriptions.PersistentSubscriptions;
@@ -199,7 +200,7 @@ namespace EventStore.Client {
 				new() { Options = readOptions },
 				Settings,
 				options.UserCredentials,
-				MessageSerializerWrapper.From(Settings.Serialization),
+				_messageSerializer,
 				cancellationToken
 			);
 		}
@@ -299,7 +300,7 @@ namespace EventStore.Client {
 				ReadReq request,
 				KurrentClientSettings settings,
 				UserCredentials? userCredentials,
-				MessageSerializerWrapper _messageSerializer,
+				IMessageSerializer messageSerializer,
 				CancellationToken cancellationToken
 			) {
 				StreamName = streamName;
@@ -337,7 +338,7 @@ namespace EventStore.Client {
 									response.SubscriptionConfirmation.SubscriptionId
 								),
 								Event => new PersistentSubscriptionMessage.Event(
-									ConvertToResolvedEvent(response, _messageSerializer),
+									ConvertToResolvedEvent(response, messageSerializer),
 									response.Event.CountCase switch {
 										ReadResp.Types.ReadEvent.CountOneofCase.RetryCount => response.Event.RetryCount,
 										_                                                  => null
@@ -445,7 +446,7 @@ namespace EventStore.Client {
 
 			static ResolvedEvent ConvertToResolvedEvent(
 				ReadResp response,
-				MessageSerializerWrapper _messageSerializer
+				IMessageSerializer messageSerializer
 			) =>
 				ResolvedEvent.From(
 					ConvertToEventRecord(response.Event.Event)!,
@@ -454,7 +455,7 @@ namespace EventStore.Client {
 						ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => response.Event.CommitPosition,
 						_                                                         => null
 					},
-					_messageSerializer
+					messageSerializer
 				);
 
 			Task AckInternal(params Uuid[] eventIds) {

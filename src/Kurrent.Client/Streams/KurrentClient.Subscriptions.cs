@@ -181,7 +181,7 @@ namespace EventStore.Client {
 				ReadReq request, 
 				KurrentClientSettings settings, 
 				UserCredentials? userCredentials,
-				MessageSerializerWrapper _messageSerializer,
+				IMessageSerializer messageSerializer,
 				CancellationToken cancellationToken
 			) {
 				_request  = request;
@@ -214,7 +214,7 @@ namespace EventStore.Client {
                             StreamMessage subscriptionMessage =
                                 response.ContentCase switch {
                                     Confirmation          => new StreamMessage.SubscriptionConfirmation(response.Confirmation.SubscriptionId),
-                                    Event                 => new StreamMessage.Event(ConvertToResolvedEvent(response.Event, _messageSerializer)),
+                                    Event                 => new StreamMessage.Event(ConvertToResolvedEvent(response.Event, messageSerializer)),
                                     FirstStreamPosition   => new StreamMessage.FirstStreamPosition(new StreamPosition(response.FirstStreamPosition)),
                                     LastStreamPosition    => new StreamMessage.LastStreamPosition(new StreamPosition(response.LastStreamPosition)),
                                     LastAllStreamPosition => new StreamMessage.LastAllStreamPosition(

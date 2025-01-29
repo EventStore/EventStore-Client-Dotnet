@@ -93,10 +93,10 @@ namespace EventStore.Client {
 			EventRecord @event,
 			EventRecord? link,
 			ulong? commitPosition,
-			MessageSerializerWrapper _messageSerializer
+			IMessageSerializer messageSerializer
 		) {
 			var originalEvent = link ?? @event;
-			return _messageSerializer.TryDeserialize(originalEvent, out var deserialized)
+			return messageSerializer.TryDeserialize(originalEvent, out var deserialized)
 				? new ResolvedEvent(@event, link, deserialized, commitPosition)
 				: new ResolvedEvent(@event, link, commitPosition);
 		}

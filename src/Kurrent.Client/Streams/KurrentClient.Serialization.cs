@@ -1,7 +1,7 @@
-using Kurrent.Client.Core.Serialization;
+using EventStore.Client.Serialization;
 
 namespace EventStore.Client {
 	public partial class KurrentClient {
-		readonly MessageSerializerWrapper _messageSerializer;
+		readonly IMessageSerializer _messageSerializer;
 	}
 }
