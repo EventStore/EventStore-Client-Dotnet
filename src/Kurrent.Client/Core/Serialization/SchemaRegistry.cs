@@ -28,7 +28,6 @@ public static class ContentTypeExtensions {
 		};
 }
 
-// TODO: We need to discuss how to include the full Schema Registry code here
 public class SchemaRegistry(
 	IDictionary<ContentType, ISerializer> serializers,
 	IMessageTypeResolutionStrategy messageTypeResolutionStrategy

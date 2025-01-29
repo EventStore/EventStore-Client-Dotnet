@@ -5,7 +5,7 @@ using EventStore.Client.Serialization;
 
 namespace Kurrent.Client.Core.Serialization;
 
-public class SystemTextJsonSerializationSettings : JsonSerializationSettings {
+public class SystemTextJsonSerializationSettings {
 	public static readonly JsonSerializerOptions DefaultJsonSerializerOptions =
 		new JsonSerializerOptions(JsonSerializerOptions.Default) {
 			PropertyNamingPolicy        = JsonNamingPolicy.CamelCase,
@@ -19,8 +19,6 @@ public class SystemTextJsonSerializationSettings : JsonSerializationSettings {
 				new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
 			}
 		};
-
-	public override ContentType SchemaType { get => ContentType.Json; }
 
 	public JsonSerializerOptions Options { get; set; } = DefaultJsonSerializerOptions;
 }

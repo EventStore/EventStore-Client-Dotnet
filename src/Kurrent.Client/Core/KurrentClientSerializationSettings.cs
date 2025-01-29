@@ -11,9 +11,9 @@ public enum AutomaticDeserialization {
 }
 
 public class KurrentClientSerializationSettings {
-	public ISerializer?                    JsonSerializer           { get; set; }
-	public ISerializer?                    BytesSerializer          { get; set; }
-	public ContentType                     DefaultContentType       { get; set; } = ContentType.Json;
+	public ISerializer?                    JsonSerializer { get; set; }
+	public ISerializer?                    BytesSerializer { get; set; }
+	public ContentType                     DefaultContentType { get; set; } = ContentType.Json;
 	public AutomaticDeserialization        AutomaticDeserialization { get; set; } = AutomaticDeserialization.Disabled;
 	public IMessageTypeResolutionStrategy? MessageTypeResolutionStrategy { get; set; }
 
@@ -29,7 +29,9 @@ public class KurrentClientSerializationSettings {
 		return settings;
 	}
 
-	public KurrentClientSerializationSettings UseJsonSettings(SystemTextJsonSerializationSettings jsonSerializationSettings) {
+	public KurrentClientSerializationSettings UseJsonSettings(
+		SystemTextJsonSerializationSettings jsonSerializationSettings
+	) {
 		JsonSerializer = new SystemTextJsonSerializer(jsonSerializationSettings);
 
 		return this;
@@ -47,19 +49,32 @@ public class KurrentClientSerializationSettings {
 		return this;
 	}
 
+	public KurrentClientSerializationSettings UseMessageTypeResolutionStrategy<TCustomMessageTypeResolutionStrategy>()
+		where TCustomMessageTypeResolutionStrategy : IMessageTypeResolutionStrategy, new() =>
+		UseMessageTypeResolutionStrategy(new TCustomMessageTypeResolutionStrategy());
+
+	public KurrentClientSerializationSettings UseMessageTypeResolutionStrategy(
+		IMessageTypeResolutionStrategy messageTypeResolutionStrategy
+	) {
+		MessageTypeResolutionStrategy = messageTypeResolutionStrategy;
+
+		return this;
+	}
+
 	public KurrentClientSerializationSettings RegisterMessageType<T>(string typeName) =>
 		RegisterMessageType(typeof(T), typeName);
-	
+
 	public KurrentClientSerializationSettings RegisterMessageType(Type type, string typeName) {
 		MessageTypeMap.Add(type, typeName);
 
 		return this;
 	}
+
 	public KurrentClientSerializationSettings RegisterMessageTypes(IDictionary<Type, string> typeMap) {
 		foreach (var map in typeMap) {
 			MessageTypeMap.Add(map.Key, map.Value);
 		}
-		
+
 		return this;
 	}
 
