@@ -30,9 +30,9 @@ public static class ContentTypeExtensions {
 
 public class SchemaRegistry(
 	IDictionary<ContentType, ISerializer> serializers,
-	IMessageTypeResolutionStrategy messageTypeResolutionStrategy
+	IMessageTypeNamingStrategy messageTypeNamingStrategy
 ) {
-	public IMessageTypeResolutionStrategy MessageTypeResolutionStrategy { get; } = messageTypeResolutionStrategy;
+	public IMessageTypeNamingStrategy MessageTypeNamingStrategy { get; } = messageTypeNamingStrategy;
 
 	public ISerializer GetSerializer(ContentType schemaType) =>
 		serializers[schemaType];
@@ -41,9 +41,9 @@ public class SchemaRegistry(
 		var messageTypeRegistry = new MessageTypeRegistry();
 		messageTypeRegistry.AddTypes(settings.MessageTypeMap);
 		
-		var messageTypeResolutionStrategy = new MessageTypeResolutionStrategyWrapper(
+		var messageTypeResolutionStrategy = new MessageTypeNamingStrategyWrapper(
 			messageTypeRegistry,
-			settings.MessageTypeResolutionStrategy ?? new DefaultMessageTypeResolutionStrategy()
+			settings.MessageTypeResolutionStrategy ?? new DefaultMessageTypeNamingStrategy()
 		);
 
 		var serializers = new Dictionary<ContentType, ISerializer> {

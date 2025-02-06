@@ -39,13 +39,13 @@ public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializ
 	readonly ISerializer _jsonSerializer =
 		schemaRegistry.GetSerializer(ContentType.Json);
 
-	readonly IMessageTypeResolutionStrategy _messageTypeResolutionStrategy =
-		schemaRegistry.MessageTypeResolutionStrategy;
+	readonly IMessageTypeNamingStrategy _messageTypeNamingStrategy =
+		schemaRegistry.MessageTypeNamingStrategy;
 
 	public EventData Serialize(Message message, MessageSerializationContext serializationContext) {
 		var (data, metadata, eventId) = message;
 
-		var eventType = _messageTypeResolutionStrategy
+		var eventType = _messageTypeNamingStrategy
 			.ResolveTypeName(message, serializationContext);
 
 		var serializedData = schemaRegistry
@@ -75,7 +75,7 @@ public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializ
 	public bool TryDeserialize(EventRecord messageRecord, [NotNullWhen(true)] out object? deserialized) {
 #endif
 		if (!schemaRegistry
-			    .MessageTypeResolutionStrategy
+			    .MessageTypeNamingStrategy
 			    .TryResolveClrType(messageRecord, out var clrType)) {
 			deserialized = null;
 			return false;

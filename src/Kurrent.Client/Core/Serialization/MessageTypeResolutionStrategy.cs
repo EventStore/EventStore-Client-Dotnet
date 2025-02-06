@@ -6,7 +6,7 @@ using Kurrent.Client.Core.Serialization;
 
 namespace EventStore.Client.Serialization;
 
-public interface IMessageTypeResolutionStrategy {
+public interface IMessageTypeNamingStrategy {
 	string ResolveTypeName(Message message, MessageSerializationContext serializationContext);
 
 #if NET48
@@ -16,14 +16,14 @@ public interface IMessageTypeResolutionStrategy {
 #endif
 }
 
-public class MessageTypeResolutionStrategyWrapper(
+public class MessageTypeNamingStrategyWrapper(
 	IMessageTypeRegistry messageTypeRegistry,
-	IMessageTypeResolutionStrategy messageTypeResolutionStrategy
-) : IMessageTypeResolutionStrategy {
+	IMessageTypeNamingStrategy messageTypeNamingStrategy
+) : IMessageTypeNamingStrategy {
 	public string ResolveTypeName(Message message, MessageSerializationContext serializationContext) {
 		return messageTypeRegistry.GetOrAddTypeName(
 			message.Data.GetType(),
-			_ => messageTypeResolutionStrategy.ResolveTypeName(message, serializationContext)
+			_ => messageTypeNamingStrategy.ResolveTypeName(message, serializationContext)
 		);
 	}
 
@@ -34,7 +34,7 @@ public class MessageTypeResolutionStrategyWrapper(
 #endif
 		type = messageTypeRegistry.GetOrAddClrType(
 			messageRecord.EventType,
-			_ => messageTypeResolutionStrategy.TryResolveClrType(messageRecord, out var resolvedType)
+			_ => messageTypeNamingStrategy.TryResolveClrType(messageRecord, out var resolvedType)
 				? resolvedType
 				: null
 		);
@@ -43,8 +43,8 @@ public class MessageTypeResolutionStrategyWrapper(
 	}
 }
 
-public class DefaultMessageTypeResolutionStrategy
-	: IMessageTypeResolutionStrategy {
+public class DefaultMessageTypeNamingStrategy
+	: IMessageTypeNamingStrategy {
 	public string ResolveTypeName(Message message, MessageSerializationContext serializationContext) =>
 		$"{serializationContext.CategoryName}-{JsonNamingPolicy.SnakeCaseLower.ConvertName(message.Data.GetType().Name.ToLower())}"; 
 

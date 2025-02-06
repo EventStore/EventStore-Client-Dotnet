@@ -15,7 +15,7 @@ public class KurrentClientSerializationSettings {
 	public ISerializer?                    BytesSerializer { get; set; }
 	public ContentType                     DefaultContentType { get; set; } = ContentType.Json;
 	public AutomaticDeserialization        AutomaticDeserialization { get; set; } = AutomaticDeserialization.Disabled;
-	public IMessageTypeResolutionStrategy? MessageTypeResolutionStrategy { get; set; }
+	public IMessageTypeNamingStrategy? MessageTypeResolutionStrategy { get; set; }
 
 	public IDictionary<Type, string> MessageTypeMap { get; set; } = new Dictionary<Type, string>();
 
@@ -50,13 +50,13 @@ public class KurrentClientSerializationSettings {
 	}
 
 	public KurrentClientSerializationSettings UseMessageTypeResolutionStrategy<TCustomMessageTypeResolutionStrategy>()
-		where TCustomMessageTypeResolutionStrategy : IMessageTypeResolutionStrategy, new() =>
+		where TCustomMessageTypeResolutionStrategy : IMessageTypeNamingStrategy, new() =>
 		UseMessageTypeResolutionStrategy(new TCustomMessageTypeResolutionStrategy());
 
 	public KurrentClientSerializationSettings UseMessageTypeResolutionStrategy(
-		IMessageTypeResolutionStrategy messageTypeResolutionStrategy
+		IMessageTypeNamingStrategy messageTypeNamingStrategy
 	) {
-		MessageTypeResolutionStrategy = messageTypeResolutionStrategy;
+		MessageTypeResolutionStrategy = messageTypeNamingStrategy;
 
 		return this;
 	}
