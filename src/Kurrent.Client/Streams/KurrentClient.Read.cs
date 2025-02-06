@@ -2,12 +2,31 @@ using System.Threading.Channels;
 using EventStore.Client.Serialization;
 using EventStore.Client.Streams;
 using Grpc.Core;
-using Kurrent.Client.Core.Serialization;
 using static EventStore.Client.Streams.ReadResp;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
 
 namespace EventStore.Client {
 	public partial class KurrentClient {
+		/// <summary>
+		/// Asynchronously reads all events. By default, it reads all of them from the start. The options parameter allows you to fine-tune it to your needs.
+		/// </summary>
+		/// <param name="options">Optional settings like: max count, <see cref="Direction"/> in which to read, the <see cref="Position"/> to start reading from, etc.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public ReadAllStreamResult ReadAllAsync(
+			ReadAllOptions options,
+			CancellationToken cancellationToken = default
+		) => ReadAllAsync(
+			options.Direction,
+			options.Position,
+			eventFilter: options.EventFilter,
+			options.MaxCount,
+			options.ResolveLinkTos,
+			options.Deadline,
+			options.UserCredentials,
+			cancellationToken
+		);
+
 		/// <summary>
 		/// Asynchronously reads all events.
 		/// </summary>
@@ -225,6 +244,30 @@ namespace EventStore.Client {
 				}
 			}
 		}
+
+		/// <summary>
+		/// Asynchronously reads all the events from a stream.
+		/// 
+		/// The result could also be inspected as a means to avoid handling exceptions as the <see cref="ReadState"/> would indicate whether or not the stream is readable./>
+		/// </summary>
+		/// <param name="streamName">The name of the stream to read.</param>
+		/// <param name="options">Optional settings like: max count, <see cref="Direction"/> in which to read, the <see cref="Position"/> to start reading from, etc.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public ReadStreamResult ReadStreamAsync(
+			string streamName,
+			ReadStreamOptions options,
+			CancellationToken cancellationToken = default
+		) => ReadStreamAsync(
+			options.Direction,
+			streamName,
+			options.StreamPosition,
+			options.MaxCount,
+			options.ResolveLinkTos,
+			options.Deadline,
+			options.UserCredentials,
+			cancellationToken
+		);
 
 		/// <summary>
 		/// Asynchronously reads all the events from a stream.
@@ -485,5 +528,122 @@ namespace EventStore.Client {
 					e.Data.ToByteArray(),
 					e.CustomMetadata.ToByteArray()
 				);
+	}
+
+	/// <summary>
+	/// Optional settings to customize reading all messages, for instance: max count,
+	/// <see cref="Direction"/> in which to read, the <see cref="Position"/> to start reading from, etc.
+	/// </summary>
+	public class ReadAllOptions {
+		/// <summary>
+		/// The <see cref="Direction"/> in which to read.
+		/// </summary>
+		public Direction Direction { get; set; } = Direction.Forwards;
+
+		/// <summary>
+		/// The <see cref="Position"/> to start reading from.
+		/// </summary>
+		public Position Position { get; set; } = Position.Start;
+
+		/// <summary>
+		/// The <see cref="IEventFilter"/> to apply.
+		/// </summary>
+		public IEventFilter? EventFilter { get; set; }
+
+		/// <summary>
+		/// The number of events to read from the stream.
+		/// </summary>
+		public long MaxCount { get; set; } = long.MaxValue;
+
+		/// <summary>
+		/// Whether to resolve LinkTo events automatically.
+		/// </summary>
+		public bool ResolveLinkTos { get; set; }
+
+		/// <summary>
+		/// Maximum time that the operation will be run
+		/// </summary>
+		public TimeSpan? Deadline { get; set; }
+
+		/// <summary>
+		/// The optional <see cref="UserCredentials"/> to perform operation with.
+		/// </summary>
+		public UserCredentials? UserCredentials { get; set; }
+	}
+
+	/// <summary>
+	/// Optional settings to customize reading stream messages, for instance: max count,
+	/// <see cref="Direction"/> in which to read, the <see cref="StreamPosition"/> to start reading from, etc.
+	/// </summary>
+	public class ReadStreamOptions {
+		/// <summary>
+		/// The <see cref="Direction"/> in which to read.
+		/// </summary>
+		public Direction Direction { get; set; } = Direction.Forwards;
+
+		/// <summary>
+		/// The <see cref="StreamRevision"/> to start reading from.
+		/// </summary>
+		public StreamPosition StreamPosition { get; set; } = StreamPosition.Start;
+
+		/// <summary>
+		/// The number of events to read from the stream.
+		/// </summary>
+		public long MaxCount { get; set; } = long.MaxValue;
+
+		/// <summary>
+		/// Whether to resolve LinkTo events automatically.
+		/// </summary>
+		public bool ResolveLinkTos { get; set; }
+
+		/// <summary>
+		/// Maximum time that the operation will be run
+		/// </summary>
+		public TimeSpan? Deadline { get; set; }
+
+		/// <summary>
+		/// The optional <see cref="UserCredentials"/> to perform operation with.
+		/// </summary>
+		public UserCredentials? UserCredentials { get; set; }
+	}
+
+	public static class KurrentClientReadExtensions {
+		/// <summary>
+		/// Asynchronously reads all events. By default, it reads all of them from the start. The options parameter allows you to fine-tune it to your needs.
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="options">Optional settings like: max count, <see cref="Direction"/> in which to read, the <see cref="Position"/> to start reading from, etc.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static KurrentClient.ReadAllStreamResult ReadAllAsync(
+			this KurrentClient client,
+			ReadAllOptions options,
+			CancellationToken cancellationToken = default
+		) =>
+			client.ReadAllAsync(
+				new ReadAllOptions(),
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Asynchronously reads all the events from a stream.
+		/// 
+		/// The result could also be inspected as a means to avoid handling exceptions as the <see cref="ReadState"/> would indicate whether or not the stream is readable./>
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="streamName">The name of the stream to read.</param>
+		/// <param name="options">Optional settings like: max count, <see cref="Direction"/> in which to read, the <see cref="Position"/> to start reading from, etc.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static KurrentClient.ReadStreamResult ReadStreamAsync(
+			this KurrentClient client,
+			string streamName,
+			CancellationToken cancellationToken = default
+		) =>
+			client.ReadStreamAsync(
+				streamName,
+				new ReadStreamOptions(),
+				cancellationToken
+			);
 	}
 }

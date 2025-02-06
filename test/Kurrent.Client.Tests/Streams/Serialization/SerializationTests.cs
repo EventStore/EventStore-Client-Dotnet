@@ -16,7 +16,7 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 
 		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
 
-		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(stream)
 			.ToListAsync();
 
 		Assert.Single(resolvedEvents);

@@ -17,7 +17,7 @@ using static EventStore.Client.Streams.Streams;
 namespace EventStore.Client {
 	public partial class KurrentClient {
 		/// <summary>
-		/// Appends events asynchronously to a stream.
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="EventStore.Client.KurrentClientSettings"/>
 		/// </summary>
 		/// <param name="streamName">The name of the stream to append events to.</param>
 		/// <param name="messages">Messages to append to the stream.</param>
@@ -494,12 +494,11 @@ namespace EventStore.Client {
 
 	public static class KurrentClientAppendToStreamExtensions {
 		/// <summary>
-		/// Appends events asynchronously to a stream.
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="EventStore.Client.KurrentClientSettings"/>
 		/// </summary>
 		/// <param name="client"></param>
 		/// <param name="streamName">The name of the stream to append events to.</param>
 		/// <param name="messages">Messages to append to the stream.</param>
-		/// <param name="options">Optional settings for the append operation, e.g. expected stream position for optimistic concurrency check</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<IWriteResult> AppendToStreamAsync(
@@ -516,7 +515,7 @@ namespace EventStore.Client {
 			);
 
 		/// <summary>
-		/// Appends events asynchronously to a stream.
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="EventStore.Client.KurrentClientSettings"/>
 		/// </summary>
 		/// <param name="client"></param>
 		/// <param name="streamName">The name of the stream to append events to.</param>
@@ -537,7 +536,7 @@ namespace EventStore.Client {
 			);
 
 		/// <summary>
-		/// Appends events asynchronously to a stream.
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="EventStore.Client.KurrentClientSettings"/>
 		/// </summary>
 		/// <param name="client"></param>
 		/// <param name="streamName">The name of the stream to append events to.</param>
