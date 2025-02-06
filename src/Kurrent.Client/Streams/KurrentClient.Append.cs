@@ -42,7 +42,7 @@ namespace EventStore.Client {
 				streamName,
 				Settings.Serialization.DefaultContentType
 			);
-			var eventsData = _messageSerializer.Serialize(events.Select(e => new Message(e)), serializationContext);
+			var eventsData = _messageSerializer.Serialize(events.Select(e => Message.From(e)), serializationContext);
 			
 			return AppendToStreamAsync(
 				streamName,
@@ -80,7 +80,7 @@ namespace EventStore.Client {
 				streamName,
 				Settings.Serialization.DefaultContentType
 			);
-			var eventsData = _messageSerializer.Serialize(events.Select(e => new Message(e)), serializationContext);
+			var eventsData = _messageSerializer.Serialize(events.Select(e => Message.From(e)), serializationContext);
 			
 			return AppendToStreamAsync(
 				streamName,

@@ -61,7 +61,7 @@ public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializ
 			.ToArray();
 
 		return new EventData(
-			eventId,
+			eventId ?? Uuid.NewUuid(),
 			eventType,
 			serializedData,
 			metadataWithSerialization,
