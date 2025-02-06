@@ -12,11 +12,7 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 
 		var events = GenerateEvents();
 
-		var writeResult = await Fixture.Streams.AppendToStreamAsync(
-			stream,
-			StreamRevision.None,
-			events
-		);
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, events);
 
 		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
 
@@ -31,32 +27,7 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 		Assert.Equal(events.First(), resolvedEvent.DeserializedEvent);
 	}
 
-	[RetryFact]
-	public async Task appends_with_stream_state_serializes_using_default_json_serialization() {
-		var stream = $"{Fixture.GetStreamName()}_{StreamState.Any}";
-
-		var events = GenerateEvents();
-		
-		var writeResult = await Fixture.Streams.AppendToStreamAsync(
-			stream,
-			StreamState.Any,
-			events
-		);
-
-		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
-
-		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
-			.ToListAsync();
-
-		Assert.Single(resolvedEvents);
-
-		var resolvedEvent = resolvedEvents.Single();
-
-		Assert.NotNull(resolvedEvent.DeserializedEvent);
-		Assert.Equal(events.First(), resolvedEvent.DeserializedEvent);
-	}
-
-	private List<UserRegistered> GenerateEvents(int count = 1) =>
+	List<UserRegistered> GenerateEvents(int count = 1) =>
 		Enumerable.Range(0, count)
 			.Select(
 				_ => new UserRegistered(

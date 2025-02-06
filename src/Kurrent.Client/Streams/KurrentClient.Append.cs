@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Text;
 using System.Threading.Channels;
 using Google.Protobuf;
 using EventStore.Client.Streams;
@@ -21,76 +20,42 @@ namespace EventStore.Client {
 		/// Appends events asynchronously to a stream.
 		/// </summary>
 		/// <param name="streamName">The name of the stream to append events to.</param>
-		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream to append to.</param>
-		/// <param name="events">Messages to append to the stream.</param>
-		/// <param name="configureOperationOptions">An <see cref="Action{KurrentClientOperationOptions}"/> to configure the operation's options.</param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
+		/// <param name="messages">Messages to append to the stream.</param>
+		/// <param name="options">Optional settings for the append operation, e.g. expected stream position for optimistic concurrency check</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public Task<IWriteResult> AppendToStreamAsync(
 			string streamName,
-			StreamState expectedState,
-			IEnumerable<object> events,
-			// TODO: I don't like those numerous options, but I'd prefer to tackle that in a dedicated PR
-			Action<KurrentClientOperationOptions>? configureOperationOptions = null,
-			TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null,
+			IEnumerable<Message> messages,
+			AppendToStreamOptions options,
 			CancellationToken cancellationToken = default
 		) {
 			var serializationContext = new MessageSerializationContext(
 				streamName,
 				Settings.Serialization.DefaultContentType
 			);
-			var eventsData = _messageSerializer.Serialize(events.Select(e => Message.From(e)), serializationContext);
-			
-			return AppendToStreamAsync(
-				streamName,
-				expectedState,
-				eventsData,
-				configureOperationOptions,
-				deadline,
-				userCredentials,
-				cancellationToken
-			);
-		}
 
-		/// <summary>
-		/// Appends events asynchronously to a stream.
-		/// </summary>
-		/// <param name="streamName">The name of the stream to append events to.</param>
-		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream to append to.</param>
-		/// <param name="events">Messages to append to the stream.</param>
-		/// <param name="configureOperationOptions">An <see cref="Action{KurrentClientOperationOptions}"/> to configure the operation's options.</param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public Task<IWriteResult> AppendToStreamAsync(
-			string streamName,
-			StreamRevision expectedRevision,
-			IEnumerable<object> events,
-			// TODO: I don't like those numerous options, but I'd prefer to tackle that in a dedicated PR
-			Action<KurrentClientOperationOptions>? configureOperationOptions = null,
-			TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default
-		) {
-			var serializationContext = new MessageSerializationContext(
-				streamName,
-				Settings.Serialization.DefaultContentType
-			);
-			var eventsData = _messageSerializer.Serialize(events.Select(e => Message.From(e)), serializationContext);
-			
-			return AppendToStreamAsync(
-				streamName,
-				expectedRevision,
-				eventsData,
-				configureOperationOptions,
-				deadline,
-				userCredentials,
-				cancellationToken
-			);
+			var eventsData = _messageSerializer.Serialize(messages, serializationContext);
+
+			return options.StreamRevision.HasValue
+				? AppendToStreamAsync(
+					streamName,
+					options.StreamRevision.Value,
+					eventsData,
+					options.ConfigureOperationOptions,
+					options.Deadline,
+					options.UserCredentials,
+					cancellationToken
+				)
+				: AppendToStreamAsync(
+					streamName,
+					options.StreamState ?? StreamState.Any,
+					eventsData,
+					options.ConfigureOperationOptions,
+					options.Deadline,
+					options.UserCredentials,
+					cancellationToken
+				);
 		}
 
 		/// <summary>
@@ -525,5 +490,82 @@ namespace EventStore.Client {
 				_call?.Dispose();
 			}
 		}
+	}
+
+	public static class KurrentClientAppendToStreamExtensions {
+		/// <summary>
+		/// Appends events asynchronously to a stream.
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="messages">Messages to append to the stream.</param>
+		/// <param name="options">Optional settings for the append operation, e.g. expected stream position for optimistic concurrency check</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static Task<IWriteResult> AppendToStreamAsync(
+			this KurrentClient client,
+			string streamName,
+			IEnumerable<Message> messages,
+			CancellationToken cancellationToken = default
+		)
+			=> client.AppendToStreamAsync(
+				streamName,
+				messages,
+				new AppendToStreamOptions(),
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Appends events asynchronously to a stream.
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="messages">Messages to append to the stream.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static Task<IWriteResult> AppendToStreamAsync(
+			this KurrentClient client,
+			string streamName,
+			IEnumerable<object> messages,
+			CancellationToken cancellationToken = default
+		)
+			=> client.AppendToStreamAsync(
+				streamName,
+				messages.Select(m => Message.From(m)),
+				new AppendToStreamOptions(),
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Appends events asynchronously to a stream.
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="messages">Messages to append to the stream.</param>
+		/// <param name="options">Optional settings for the append operation, e.g. expected stream position for optimistic concurrency check</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static Task<IWriteResult> AppendToStreamAsync(
+			this KurrentClient client,
+			string streamName,
+			IEnumerable<object> messages,
+			AppendToStreamOptions options,
+			CancellationToken cancellationToken = default
+		)
+			=> client.AppendToStreamAsync(
+				streamName,
+				messages.Select(m => Message.From(m)),
+				options,
+				cancellationToken
+			);
+	}
+
+	// TODO: In the follow up PR merge StreamState and StreamRevision into a one thing
+	public class AppendToStreamOptions {
+		public StreamState?                           StreamState               { get; set; }
+		public StreamRevision?                        StreamRevision            { get; set; }
+		public Action<KurrentClientOperationOptions>? ConfigureOperationOptions { get; set; }
+		public TimeSpan?                              Deadline                  { get; set; }
+		public UserCredentials?                       UserCredentials           { get; set; }
 	}
 }
