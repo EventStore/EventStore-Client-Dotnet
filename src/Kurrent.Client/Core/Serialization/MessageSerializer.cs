@@ -66,7 +66,7 @@ public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializ
 		var (data, metadata, eventId) = message;
 
 		var eventType = _messageTypeNamingStrategy
-			.ResolveTypeName(message, serializationContext);
+			.ResolveTypeName(message.Data.GetType(), serializationContext);
 
 		var serializedData = schemaRegistry
 			.GetSerializer(serializationContext.ContentType)
@@ -76,15 +76,11 @@ public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializ
 			? _jsonSerializer.Serialize(metadata)
 			: ReadOnlyMemory<byte>.Empty;
 
-		var metadataWithSerialization = serializedMetadata
-			.InjectSerializationMetadata(SerializationMetadata.From(data.GetType()))
-			.ToArray();
-
 		return new EventData(
 			eventId ?? Uuid.NewUuid(),
 			eventType,
 			serializedData,
-			metadataWithSerialization,
+			serializedMetadata,
 			serializationContext.ContentType.ToMessageContentType()
 		);
 	}
@@ -96,7 +92,7 @@ public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializ
 #endif
 		if (!schemaRegistry
 			    .MessageTypeNamingStrategy
-			    .TryResolveClrType(messageRecord, out var clrType)) {
+			    .TryResolveClrType(messageRecord.EventType, out var clrType)) {
 			deserialized = null;
 			return false;
 		}
