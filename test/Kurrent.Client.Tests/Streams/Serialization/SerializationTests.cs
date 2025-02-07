@@ -42,9 +42,7 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 
 	public class CustomSerializationFixture() : KurrentPermanentFixture(
 		x => {
-			x.ClientSettings.Serialization = KurrentClientSerializationSettings
-				.Default()
-				.EnableAutomaticDeserialization();
+			x.ClientSettings.Serialization = KurrentClientSerializationSettings.Default();
 
 			return x;
 		}

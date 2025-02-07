@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using System.Threading.Channels;
+using EventStore.Client.Serialization;
 using Grpc.Core;
 using Kurrent.Client.Core.Serialization;
 using Microsoft.Extensions.Logging;
@@ -39,7 +40,7 @@ namespace EventStore.Client {
 			_log = Settings.LoggerFactory?.CreateLogger<KurrentPersistentSubscriptionsClient>()
 			       ?? new NullLogger<KurrentPersistentSubscriptionsClient>();
 
-			_messageSerializer = MessageSerializerWrapper.From(settings?.Serialization);
+			_messageSerializer = MessageSerializer.From(settings?.Serialization);
 		}
 		
 		private static string UrlEncode(string s) {

@@ -49,7 +49,7 @@ namespace EventStore.Client {
 				readReq,
 				Settings,
 				options,
-				_messageSerializer,
+				_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
 				cancellationToken
 			);
 		}
@@ -76,13 +76,14 @@ namespace EventStore.Client {
 		) =>
 			ReadAllAsync(
 				new ReadAllOptions {
-					Direction       = direction,
-					Position        = position,
-					EventFilter     = null,
-					MaxCount        = maxCount,
-					ResolveLinkTos  = resolveLinkTos,
-					Deadline        = deadline,
-					UserCredentials = userCredentials
+					Direction             = direction,
+					Position              = position,
+					EventFilter           = null,
+					MaxCount              = maxCount,
+					ResolveLinkTos        = resolveLinkTos,
+					Deadline              = deadline,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
 				},
 				cancellationToken
 			);
@@ -111,13 +112,14 @@ namespace EventStore.Client {
 		) =>
 			ReadAllAsync(
 				new ReadAllOptions {
-					Direction       = direction,
-					Position        = position,
-					EventFilter     = eventFilter,
-					MaxCount        = maxCount,
-					ResolveLinkTos  = resolveLinkTos,
-					Deadline        = deadline,
-					UserCredentials = userCredentials
+					Direction             = direction,
+					Position              = position,
+					EventFilter           = eventFilter,
+					MaxCount              = maxCount,
+					ResolveLinkTos        = resolveLinkTos,
+					Deadline              = deadline,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
 				},
 				cancellationToken
 			);
@@ -292,7 +294,7 @@ namespace EventStore.Client {
 				Settings,
 				options.Deadline,
 				options.UserCredentials,
-				_messageSerializer,
+				_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
 				cancellationToken
 			);
 		}
@@ -324,12 +326,13 @@ namespace EventStore.Client {
 			ReadStreamAsync(
 				streamName,
 				new ReadStreamOptions {
-					Direction       = direction,
-					StreamPosition  = revision,
-					MaxCount        = maxCount,
-					ResolveLinkTos  = resolveLinkTos,
-					Deadline        = deadline,
-					UserCredentials = userCredentials
+					Direction             = direction,
+					StreamPosition        = revision,
+					MaxCount              = maxCount,
+					ResolveLinkTos        = resolveLinkTos,
+					Deadline              = deadline,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
 				},
 				cancellationToken
 			);
@@ -576,6 +579,11 @@ namespace EventStore.Client {
 		/// The optional <see cref="UserCredentials"/> to perform operation with.
 		/// </summary>
 		public UserCredentials? UserCredentials { get; set; }
+
+		/// <summary>
+		/// Allows to customize or disable the automatic deserialization
+		/// </summary>
+		public OperationSerializationSettings? SerializationSettings { get; set; }
 	}
 
 	/// <summary>
@@ -612,6 +620,11 @@ namespace EventStore.Client {
 		/// The optional <see cref="UserCredentials"/> to perform operation with.
 		/// </summary>
 		public UserCredentials? UserCredentials { get; set; }
+
+		/// <summary>
+		/// Allows to customize or disable the automatic deserialization
+		/// </summary>
+		public OperationSerializationSettings? SerializationSettings { get; set; }
 	}
 
 	public static class KurrentClientReadExtensions {

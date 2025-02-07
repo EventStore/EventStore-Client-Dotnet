@@ -561,10 +561,34 @@ namespace EventStore.Client {
 
 	// TODO: In the follow up PR merge StreamState and StreamRevision into a one thing
 	public class AppendToStreamOptions {
-		public StreamState?                           StreamState               { get; set; }
-		public StreamRevision?                        StreamRevision            { get; set; }
+		/// <summary>
+		/// The expected <see cref="StreamState"/> of the stream to append to.
+		/// </summary>
+		public StreamState? StreamState { get; set; }
+
+		/// <summary>
+		/// The expected <see cref="StreamRevision"/> of the stream to append to.
+		/// </summary>
+		public StreamRevision? StreamRevision { get; set; }
+
+		/// <summary>
+		/// An <see cref="Action{KurrentClientOperationOptions}"/> to configure the operation's options.
+		/// </summary>
 		public Action<KurrentClientOperationOptions>? ConfigureOperationOptions { get; set; }
-		public TimeSpan?                              Deadline                  { get; set; }
-		public UserCredentials?                       UserCredentials           { get; set; }
+
+		/// <summary>
+		/// Maximum time that the operation will be run
+		/// </summary>
+		public TimeSpan? Deadline { get; set; }
+
+		/// <summary>
+		/// The <see cref="UserCredentials"/> for the operation.
+		/// </summary>
+		public UserCredentials? UserCredentials { get; set; }
+
+		/// <summary>
+		/// Allows to customize or disable the automatic deserialization
+		/// </summary>
+		public OperationSerializationSettings? SerializationSettings { get; set; }
 	}
 }

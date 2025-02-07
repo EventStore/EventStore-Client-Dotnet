@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Kurrent.Client.Tests.Streams.Serialization;
 
 public interface IMessageTypeRegistry {
-	void    AddType(Type messageType, string messageTypeName);
+	void    Map(Type messageType, string messageTypeName);
 	string? GetTypeName(Type messageType);
 	string  GetOrAddTypeName(Type clrType, Func<Type, string> getTypeName);
 	Type?   GetClrType(string messageTypeName);
@@ -14,7 +14,7 @@ public class MessageTypeRegistry : IMessageTypeRegistry {
 	readonly               ConcurrentDictionary<string, Type?> _typeMap     = new();
 	readonly               ConcurrentDictionary<Type, string>  _typeNameMap = new();
 
-	public void AddType(Type messageType, string messageTypeName) {
+	public void Map(Type messageType, string messageTypeName) {
 		_typeNameMap.AddOrUpdate(messageType, messageTypeName, (_, typeName) => typeName);
 		_typeMap.AddOrUpdate(messageTypeName, messageType, (_, type) => type);
 	}
@@ -63,11 +63,11 @@ public class MessageTypeRegistry : IMessageTypeRegistry {
 
 public static class MessageTypeMapperExtensions {
 	public static void AddType<T>(this IMessageTypeRegistry messageTypeRegistry, string messageTypeName) =>
-		messageTypeRegistry.AddType(typeof(T), messageTypeName);
+		messageTypeRegistry.Map(typeof(T), messageTypeName);
 
 	public static void AddTypes(this IMessageTypeRegistry messageTypeRegistry, IDictionary<Type, string> typeMap) {
 		foreach (var map in typeMap) {
-			messageTypeRegistry.AddType(map.Key, map.Value);
+			messageTypeRegistry.Map(map.Key, map.Value);
 		}
 	}
 

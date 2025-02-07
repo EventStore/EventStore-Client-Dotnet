@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using EventStore.Client.Serialization;
 using Kurrent.Client.Core.Serialization;
 
@@ -11,13 +9,11 @@ public enum AutomaticDeserialization {
 }
 
 public class KurrentClientSerializationSettings {
-	public ISerializer?                    JsonSerializer { get; set; }
-	public ISerializer?                    BytesSerializer { get; set; }
-	public ContentType                     DefaultContentType { get; set; } = ContentType.Json;
-	public AutomaticDeserialization        AutomaticDeserialization { get; set; } = AutomaticDeserialization.Disabled;
+	public ISerializer?                JsonSerializer                { get; set; }
+	public ISerializer?                BytesSerializer               { get; set; }
+	public ContentType                 DefaultContentType            { get; set; } = ContentType.Json;
 	public IMessageTypeNamingStrategy? MessageTypeResolutionStrategy { get; set; }
-
-	public IDictionary<Type, string> MessageTypeMap { get; set; } = new Dictionary<Type, string>();
+	public IDictionary<Type, string>   MessageTypeMap                { get; set; } = new Dictionary<Type, string>();
 
 	public static KurrentClientSerializationSettings Default(
 		Action<KurrentClientSerializationSettings>? configure = null
@@ -78,9 +74,28 @@ public class KurrentClientSerializationSettings {
 		return this;
 	}
 
-	public KurrentClientSerializationSettings EnableAutomaticDeserialization() {
-		AutomaticDeserialization = AutomaticDeserialization.Enabled;
-
-		return this;
+	internal KurrentClientSerializationSettings Clone() {
+		return new KurrentClientSerializationSettings {
+			BytesSerializer               = BytesSerializer,
+			JsonSerializer                = JsonSerializer,
+			DefaultContentType            = DefaultContentType,
+			MessageTypeMap                = new Dictionary<Type, string>(MessageTypeMap),
+			MessageTypeResolutionStrategy = MessageTypeResolutionStrategy
+		};
 	}
+}
+
+public class OperationSerializationSettings {
+	public AutomaticDeserialization AutomaticDeserialization { get; private set; } = AutomaticDeserialization.Enabled;
+	public Action<KurrentClientSerializationSettings>? ConfigureSettings { get; private set; }
+
+	public static readonly OperationSerializationSettings Disabled = new OperationSerializationSettings {
+		AutomaticDeserialization = AutomaticDeserialization.Disabled
+	};
+
+	public static OperationSerializationSettings Configure(Action<KurrentClientSerializationSettings> configure) =>
+		new OperationSerializationSettings {
+			AutomaticDeserialization = AutomaticDeserialization.Enabled,
+			ConfigureSettings        = configure
+		};
 }

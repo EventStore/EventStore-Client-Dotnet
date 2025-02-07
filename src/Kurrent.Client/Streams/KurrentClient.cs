@@ -71,10 +71,8 @@ namespace EventStore.Client {
 			_log = Settings.LoggerFactory?.CreateLogger<KurrentClient>() ?? new NullLogger<KurrentClient>();
 			_disposedTokenSource = new CancellationTokenSource();
 			_batchAppenderLazy = new Lazy<StreamAppender>(CreateStreamAppender);
-
-			var serializationSettings = settings?.Serialization ?? KurrentClientSerializationSettings.Default();
 			
-			_messageSerializer = MessageSerializerWrapper.From(serializationSettings);
+			_messageSerializer = MessageSerializer.From(settings?.Serialization);
 		}
 
 		void SwapStreamAppender(Exception ex) =>
