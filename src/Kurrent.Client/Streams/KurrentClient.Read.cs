@@ -16,16 +16,43 @@ namespace EventStore.Client {
 		public ReadAllStreamResult ReadAllAsync(
 			ReadAllOptions options,
 			CancellationToken cancellationToken = default
-		) => ReadAllAsync(
-			options.Direction,
-			options.Position,
-			eventFilter: options.EventFilter,
-			options.MaxCount,
-			options.ResolveLinkTos,
-			options.Deadline,
-			options.UserCredentials,
-			cancellationToken
-		);
+		) {
+			if (options.MaxCount <= 0)
+				throw new ArgumentOutOfRangeException(nameof(options.MaxCount));
+
+			var readReq = new ReadReq {
+				Options = new() {
+					ReadDirection = options.Direction switch {
+						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
+						Direction.Forwards  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
+						_                   => throw InvalidOption(options.Direction)
+					},
+					ResolveLinks = options.ResolveLinkTos,
+					All = new() {
+						Position = new() {
+							CommitPosition  = options.Position.CommitPosition,
+							PreparePosition = options.Position.PreparePosition
+						}
+					},
+					Count         = (ulong)options.MaxCount,
+					UuidOption    = new() { Structured    = new() },
+					ControlOption = new() { Compatibility = 1 },
+					Filter        = GetFilterOptions(options.EventFilter)
+				}
+			};
+
+			return new ReadAllStreamResult(
+				async _ => {
+					var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+					return channelInfo.CallInvoker;
+				},
+				readReq,
+				Settings,
+				options,
+				_messageSerializer,
+				cancellationToken
+			);
+		}
 
 		/// <summary>
 		/// Asynchronously reads all events.
@@ -46,16 +73,19 @@ namespace EventStore.Client {
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
-		) => ReadAllAsync(
-			direction,
-			position,
-			eventFilter: null,
-			maxCount,
-			resolveLinkTos,
-			deadline,
-			userCredentials,
-			cancellationToken
-		);
+		) =>
+			ReadAllAsync(
+				new ReadAllOptions {
+					Direction       = direction,
+					Position        = position,
+					EventFilter     = null,
+					MaxCount        = maxCount,
+					ResolveLinkTos  = resolveLinkTos,
+					Deadline        = deadline,
+					UserCredentials = userCredentials
+				},
+				cancellationToken
+			);
 
 		/// <summary>
 		/// Asynchronously reads all events with filtering.
@@ -78,44 +108,19 @@ namespace EventStore.Client {
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
-		) {
-			if (maxCount <= 0)
-				throw new ArgumentOutOfRangeException(nameof(maxCount));
-
-			var readReq = new ReadReq {
-				Options = new() {
-					ReadDirection = direction switch {
-						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
-						Direction.Forwards  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
-						_                   => throw InvalidOption(direction)
-					},
-					ResolveLinks = resolveLinkTos,
-					All = new() {
-						Position = new() {
-							CommitPosition  = position.CommitPosition,
-							PreparePosition = position.PreparePosition
-						}
-					},
-					Count         = (ulong)maxCount,
-					UuidOption    = new() { Structured    = new() },
-					ControlOption = new() { Compatibility = 1 },
-					Filter        = GetFilterOptions(eventFilter)
-				}
-			};
-
-			return new ReadAllStreamResult(
-				async _ => {
-					var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-					return channelInfo.CallInvoker;
+		) =>
+			ReadAllAsync(
+				new ReadAllOptions {
+					Direction       = direction,
+					Position        = position,
+					EventFilter     = eventFilter,
+					MaxCount        = maxCount,
+					ResolveLinkTos  = resolveLinkTos,
+					Deadline        = deadline,
+					UserCredentials = userCredentials
 				},
-				readReq,
-				Settings,
-				deadline,
-				userCredentials,
-				_messageSerializer,
 				cancellationToken
 			);
-		}
 
 		/// <summary>
 		/// A class that represents the result of a read operation on the $all stream. You may either enumerate this instance directly or <see cref="Messages"/>. Do not enumerate more than once.
@@ -163,15 +168,14 @@ namespace EventStore.Client {
 				Func<CancellationToken, Task<CallInvoker>> selectCallInvoker,
 				ReadReq request,
 				KurrentClientSettings settings,
-				TimeSpan? deadline,
-				UserCredentials? userCredentials,
+				ReadAllOptions options,
 				IMessageSerializer messageSerializer,
 				CancellationToken cancellationToken
 			) {
 				var callOptions = KurrentCallOptions.CreateStreaming(
 					settings,
-					deadline,
-					userCredentials,
+					options.Deadline,
+					options.UserCredentials,
 					cancellationToken
 				);
 
@@ -258,16 +262,40 @@ namespace EventStore.Client {
 			string streamName,
 			ReadStreamOptions options,
 			CancellationToken cancellationToken = default
-		) => ReadStreamAsync(
-			options.Direction,
-			streamName,
-			options.StreamPosition,
-			options.MaxCount,
-			options.ResolveLinkTos,
-			options.Deadline,
-			options.UserCredentials,
-			cancellationToken
-		);
+		) {
+			if (options.MaxCount <= 0)
+				throw new ArgumentOutOfRangeException(nameof(options.MaxCount));
+
+			return new ReadStreamResult(
+				async _ => {
+					var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+					return channelInfo.CallInvoker;
+				},
+				new ReadReq {
+					Options = new() {
+						ReadDirection = options.Direction switch {
+							Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
+							Direction.Forwards  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
+							_                   => throw InvalidOption(options.Direction)
+						},
+						ResolveLinks = options.ResolveLinkTos,
+						Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(
+							streamName,
+							options.StreamPosition
+						),
+						Count         = (ulong)options.MaxCount,
+						UuidOption    = new() { Structured = new() },
+						NoFilter      = new(),
+						ControlOption = new() { Compatibility = 1 }
+					}
+				},
+				Settings,
+				options.Deadline,
+				options.UserCredentials,
+				_messageSerializer,
+				cancellationToken
+			);
+		}
 
 		/// <summary>
 		/// Asynchronously reads all the events from a stream.
@@ -292,40 +320,19 @@ namespace EventStore.Client {
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
-		) {
-			if (maxCount <= 0)
-				throw new ArgumentOutOfRangeException(nameof(maxCount));
-
-			return new ReadStreamResult(
-				async _ => {
-					var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-					return channelInfo.CallInvoker;
+		) =>
+			ReadStreamAsync(
+				streamName,
+				new ReadStreamOptions {
+					Direction       = direction,
+					StreamPosition  = revision,
+					MaxCount        = maxCount,
+					ResolveLinkTos  = resolveLinkTos,
+					Deadline        = deadline,
+					UserCredentials = userCredentials
 				},
-				new ReadReq {
-					Options = new() {
-						ReadDirection = direction switch {
-							Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
-							Direction.Forwards  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
-							_                   => throw InvalidOption(direction)
-						},
-						ResolveLinks = resolveLinkTos,
-						Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(
-							streamName,
-							revision
-						),
-						Count         = (ulong)maxCount,
-						UuidOption    = new() { Structured = new() },
-						NoFilter      = new(),
-						ControlOption = new() { Compatibility = 1 }
-					}
-				},
-				Settings,
-				deadline,
-				userCredentials,
-				_messageSerializer,
 				cancellationToken
 			);
-		}
 
 		/// <summary>
 		/// A class that represents the result of a read operation on a stream. You may either enumerate this instance directly or <see cref="Messages"/>. Do not enumerate more than once.
@@ -582,7 +589,7 @@ namespace EventStore.Client {
 		public Direction Direction { get; set; } = Direction.Forwards;
 
 		/// <summary>
-		/// The <see cref="StreamRevision"/> to start reading from.
+		/// The <see cref="Client.StreamRevision"/> to start reading from.
 		/// </summary>
 		public StreamPosition StreamPosition { get; set; } = StreamPosition.Start;
 
