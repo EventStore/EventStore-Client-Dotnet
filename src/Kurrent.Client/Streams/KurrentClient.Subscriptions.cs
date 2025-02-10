@@ -36,6 +36,31 @@ namespace EventStore.Client {
 		public OperationSerializationSettings? SerializationSettings { get; set; }
 	}
 
+	/// <summary>
+	/// Subscribes to all events options.
+	/// </summary>
+	public class SubscribeToStreamOptions {
+		/// <summary>
+		/// A <see cref="FromAll"/> (exclusive of) to start the subscription from.
+		/// </summary>
+		public FromStream Start { get; set; } = FromStream.Start;
+
+		/// <summary>
+		/// Whether to resolve LinkTo events automatically.
+		/// </summary>
+		public bool ResolveLinkTos { get; set; }
+
+		/// <summary>
+		/// The optional user credentials to perform operation with.
+		/// </summary>
+		public UserCredentials? UserCredentials { get; set; }
+
+		/// <summary>
+		/// Allows to customize or disable the automatic deserialization
+		/// </summary>
+		public OperationSerializationSettings? SerializationSettings { get; set; }
+	}
+
 	public class SubscriptionListener {
 #if NET48
 		/// <summary>
@@ -112,12 +137,7 @@ namespace EventStore.Client {
 				SerializationSettings = OperationSerializationSettings.Disabled,
 			};
 
-			return StreamSubscription.Confirm(
-				SubscribeToAll(options, cancellationToken),
-				listener,
-				_log,
-				cancellationToken
-			);
+			return SubscribeToAllAsync(listener, options, cancellationToken);
 		}
 
 		/// <summary>
@@ -127,7 +147,7 @@ namespace EventStore.Client {
 		/// <param name="options">Optional settings like: Position <see cref="FromAll"/> from which to read, <see cref="SubscriptionFilterOptions"/> to apply, etc.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public Task<StreamSubscription> SubscribeToAll(
+		public Task<StreamSubscription> SubscribeToAllAsync(
 			SubscriptionListener listener,
 			SubscribeToAllOptions options,
 			CancellationToken cancellationToken = default
@@ -200,7 +220,7 @@ namespace EventStore.Client {
 		/// Subscribes to a stream from a <see cref="StreamPosition">checkpoint</see>.
 		/// </summary>
 		/// <param name="start">A <see cref="FromStream"/> (exclusive of) to start the subscription from.</param>
-		/// <param name="streamName">The name of the stream to read events from.</param>
+		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
 		/// <param name="eventAppeared">A Task invoked and awaited when a new event is received over the subscription.</param>
 		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
 		/// <param name="subscriptionDropped">An action invoked if the subscription is dropped.</param>
@@ -229,8 +249,30 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Subscribes to a stream from a <see cref="StreamPosition">checkpoint</see>.
 		/// </summary>
+		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
+		/// <param name="listener">Listener configured to receive notifications about new events and subscription state change.</param>
+		/// <param name="options">Optional settings like: Position <see cref="FromStream"/> from which to read, etc.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public Task<StreamSubscription> SubscribeToStreamAsync(
+			string streamName,
+			SubscriptionListener listener,
+			SubscribeToStreamOptions options,
+			CancellationToken cancellationToken = default
+		) {
+			return StreamSubscription.Confirm(
+				SubscribeToStream(streamName, options, cancellationToken),
+				listener,
+				_log,
+				cancellationToken
+			);
+		}
+
+		/// <summary>
+		/// Subscribes to a stream from a <see cref="StreamPosition">checkpoint</see>.
+		/// </summary>
 		/// <param name="start">A <see cref="FromStream"/> (exclusive of) to start the subscription from.</param>
-		/// <param name="streamName">The name of the stream to read events from.</param>
+		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
 		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
 		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
@@ -241,19 +283,45 @@ namespace EventStore.Client {
 			bool resolveLinkTos = false,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
+		) =>
+			SubscribeToStream(
+				streamName,
+				new SubscribeToStreamOptions {
+					Start                 = start,
+					ResolveLinkTos        = resolveLinkTos,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Subscribes to a stream from a <see cref="StreamPosition">checkpoint</see>.
+		/// </summary>
+		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
+		/// <param name="options">Optional settings like: Position <see cref="FromStream"/> from which to read, etc.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public StreamSubscriptionResult SubscribeToStream(
+			string streamName,
+			SubscribeToStreamOptions options,
+			CancellationToken cancellationToken = default
 		) => new(
 			async _ => await GetChannelInfo(cancellationToken).ConfigureAwait(false),
 			new ReadReq {
 				Options = new ReadReq.Types.Options {
 					ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
-					ResolveLinks = resolveLinkTos,
-					Stream = ReadReq.Types.Options.Types.StreamOptions.FromSubscriptionPosition(streamName, start),
+					ResolveLinks  = options.ResolveLinkTos,
+					Stream = ReadReq.Types.Options.Types.StreamOptions.FromSubscriptionPosition(
+						streamName,
+						options.Start
+					),
 					Subscription = new ReadReq.Types.Options.Types.SubscriptionOptions(),
-					UuidOption = new() { Structured = new() }
+					UuidOption   = new() { Structured = new() }
 				}
 			},
 			Settings,
-			userCredentials,
+			options.UserCredentials,
 			_messageSerializer,
 			cancellationToken
 		);
@@ -446,7 +514,7 @@ namespace EventStore.Client {
 		}
 	}
 
-	public static class KurrentClientSubscriptionsExtensions {
+	public static class KurrentClientSubscribeToAllExtensions {
 		/// <summary>
 		/// Subscribes to all events.
 		/// </summary>
@@ -454,12 +522,12 @@ namespace EventStore.Client {
 		/// <param name="listener">Listener configured to receive notifications about new events and subscription state change.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static Task<StreamSubscription> SubscribeToAll(
+		public static Task<StreamSubscription> SubscribeToAllAsync(
 			this KurrentClient kurrentClient,
 			SubscriptionListener listener,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentClient.SubscribeToAll(listener, new SubscribeToAllOptions(), cancellationToken);
+			kurrentClient.SubscribeToAllAsync(listener, new SubscribeToAllOptions(), cancellationToken);
 
 		/// <summary>
 		/// Subscribes to all events.
@@ -468,18 +536,17 @@ namespace EventStore.Client {
 		/// <param name="eventAppeared"></param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static Task<StreamSubscription> SubscribeToAll(
+		public static Task<StreamSubscription> SubscribeToAllAsync(
 			this KurrentClient kurrentClient,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentClient.SubscribeToAll(
+			kurrentClient.SubscribeToAllAsync(
 				eventAppeared,
 				new SubscribeToAllOptions(),
 				cancellationToken
 			);
-		
-		
+
 		/// <summary>
 		/// Subscribes to all events.
 		/// </summary>
@@ -488,54 +555,81 @@ namespace EventStore.Client {
 		/// <param name="options">Optional settings like: Position <see cref="FromAll"/> from which to read, <see cref="SubscriptionFilterOptions"/> to apply, etc.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static Task<StreamSubscription> SubscribeToAll(
+		public static Task<StreamSubscription> SubscribeToAllAsync(
 			this KurrentClient kurrentClient,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			SubscribeToAllOptions options,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentClient.SubscribeToAll(
+			kurrentClient.SubscribeToAllAsync(
 				SubscriptionListener.Handle(eventAppeared),
 				options,
 				cancellationToken
 			);
-		
-		
+	}
+
+	public static class KurrentClientSubscribeToStreamExtensions {
 		/// <summary>
 		/// Subscribes to all events.
 		/// </summary>
 		/// <param name="kurrentClient"></param>
-		/// <param name="eventAppeared">Handler invoked when a new event is received over the subscription.</param>
+		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
+		/// <param name="listener">Listener configured to receive notifications about new events and subscription state change.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static Task<StreamSubscription> SubscribeToAll(
+		public static Task<StreamSubscription> SubscribeToStreamAsync(
 			this KurrentClient kurrentClient,
-			Func<object, CancellationToken, Task> eventAppeared,
+			string streamName,
+			SubscriptionListener listener,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentClient.SubscribeToAll(
-				eventAppeared,
-				new SubscribeToAllOptions(),
+			kurrentClient.SubscribeToStreamAsync(
+				streamName,
+				listener,
+				new SubscribeToStreamOptions(),
 				cancellationToken
 			);
-		
-		
+
 		/// <summary>
 		/// Subscribes to all events.
 		/// </summary>
 		/// <param name="kurrentClient"></param>
+		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
+		/// <param name="eventAppeared"></param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static Task<StreamSubscription> SubscribeToStreamAsync(
+			this KurrentClient kurrentClient,
+			string streamName,
+			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
+			CancellationToken cancellationToken = default
+		) =>
+			kurrentClient.SubscribeToStreamAsync(
+				streamName,
+				eventAppeared,
+				new SubscribeToStreamOptions(),
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Subscribes to all events.
+		/// </summary>
+		/// <param name="kurrentClient"></param>
+		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
 		/// <param name="eventAppeared">Handler invoked when a new event is received over the subscription.</param>
 		/// <param name="options">Optional settings like: Position <see cref="FromAll"/> from which to read, <see cref="SubscriptionFilterOptions"/> to apply, etc.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static Task<StreamSubscription> SubscribeToAll(
+		public static Task<StreamSubscription> SubscribeToStreamAsync(
 			this KurrentClient kurrentClient,
-			Func<object, CancellationToken, Task> eventAppeared,
-			SubscribeToAllOptions options,
+			string streamName,
+			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
+			SubscribeToStreamOptions options,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentClient.SubscribeToAll(
-				SubscriptionListener.Handle((_, resolvedEvent, token) => eventAppeared(resolvedEvent, token)),
+			kurrentClient.SubscribeToStreamAsync(
+				streamName,
+				SubscriptionListener.Handle(eventAppeared),
 				options,
 				cancellationToken
 			);
