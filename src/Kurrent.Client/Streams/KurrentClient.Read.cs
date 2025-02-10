@@ -640,18 +640,13 @@ namespace EventStore.Client {
 		/// Asynchronously reads all events. By default, it reads all of them from the start. The options parameter allows you to fine-tune it to your needs.
 		/// </summary>
 		/// <param name="client"></param>
-		/// <param name="options">Optional settings like: max count, <see cref="Direction"/> in which to read, the <see cref="Position"/> to start reading from, etc.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static KurrentClient.ReadAllStreamResult ReadAllAsync(
 			this KurrentClient client,
-			ReadAllOptions options,
 			CancellationToken cancellationToken = default
 		) =>
-			client.ReadAllAsync(
-				new ReadAllOptions(),
-				cancellationToken
-			);
+			client.ReadAllAsync(new ReadAllOptions(), cancellationToken);
 
 		/// <summary>
 		/// Asynchronously reads all the events from a stream.
