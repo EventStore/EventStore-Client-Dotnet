@@ -23,8 +23,8 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 
 		var resolvedEvent = resolvedEvents.Single();
 
-		Assert.NotNull(resolvedEvent.DeserializedEvent);
-		Assert.Equal(events.First(), resolvedEvent.DeserializedEvent);
+		Assert.NotNull(resolvedEvent.Message);
+		Assert.Equal(events.First(), resolvedEvent.Message);
 	}
 
 	List<UserRegistered> GenerateEvents(int count = 1) =>

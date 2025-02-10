@@ -31,7 +31,7 @@ namespace EventStore.Client {
 		/// It will be provided or equal to null, depending on the automatic deserialization settings you choose.
 		/// If it's null, you can use  <see cref="OriginalEvent"/> to deserialize it manually. 
 		/// </summary>
-		public readonly object? DeserializedEvent;
+		public readonly object? Message;
 
 		/// <summary>
 		/// Position of the <see cref="OriginalEvent"/> if available.
@@ -73,17 +73,17 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="event"></param>
 		/// <param name="link"></param>
-		/// <param name="deserializedEvent"></param>
+		/// <param name="message"></param>
 		/// <param name="commitPosition"></param>
 		ResolvedEvent(
 			EventRecord @event,
 			EventRecord? link,
-			object? deserializedEvent,
+			object? message,
 			ulong? commitPosition
 		) {
-			Event             = @event;
-			Link              = link;
-			DeserializedEvent = deserializedEvent;
+			Event   = @event;
+			Link    = link;
+			Message = message;
 			OriginalPosition = commitPosition.HasValue
 				? new Position(commitPosition.Value, (link ?? @event).Position.PreparePosition)
 				: new Position?();
