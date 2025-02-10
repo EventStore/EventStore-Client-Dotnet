@@ -33,7 +33,7 @@ public static class MessageSerializerExtensions {
 	) {
 		return messages.Select(m => serializer.Serialize(m, context)).ToArray();
 	}
-	
+
 	public static IMessageSerializer With(
 		this IMessageSerializer defaultMessageSerializer,
 		KurrentClientSerializationSettings defaultSettings,
@@ -41,7 +41,7 @@ public static class MessageSerializerExtensions {
 	) {
 		if (operationSettings == null)
 			return defaultMessageSerializer;
-		
+
 		if (operationSettings.AutomaticDeserialization == AutomaticDeserialization.Disabled)
 			return NulloMessageSerializer.Instance;
 
@@ -66,7 +66,10 @@ public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializ
 		var (data, metadata, eventId) = message;
 
 		var eventType = _messageTypeNamingStrategy
-			.ResolveTypeName(message.Data.GetType(), serializationContext);
+			.ResolveTypeName(
+				message.Data.GetType(),
+				new MessageTypeNamingResolutionContext(serializationContext.CategoryName)
+			);
 
 		var serializedData = schemaRegistry
 			.GetSerializer(serializationContext.ContentType)
@@ -113,7 +116,7 @@ public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializ
 
 public class NulloMessageSerializer : IMessageSerializer {
 	public static readonly NulloMessageSerializer Instance = new NulloMessageSerializer();
-	
+
 	public EventData Serialize(Message value, MessageSerializationContext context) {
 		throw new InvalidOperationException("Cannot serialize, automatic deserialization is disabled");
 	}

@@ -38,13 +38,30 @@ public class SchemaRegistry(
 		serializers[schemaType];
 
 	public static SchemaRegistry From(KurrentClientSerializationSettings settings) {
+		var messageTypeNamingStrategy =
+			settings.MessageTypeNamingStrategy ?? new DefaultMessageTypeNamingStrategy();
+
+		var categoriesTypeMap = settings.CategoryMessageTypesMap
+			.SelectMany(
+				categoryTypes => categoryTypes.Value.Select(
+					type =>
+					(
+						Type: type,
+						TypeName: messageTypeNamingStrategy.ResolveTypeName(
+							type,
+							new MessageTypeNamingResolutionContext(categoryTypes.Key)
+						)
+					)
+				)
+			)
+			.ToDictionary(
+				ks => ks.Type,
+				vs => vs.TypeName
+			);
+
 		var messageTypeRegistry = new MessageTypeRegistry();
-		messageTypeRegistry.AddTypes(settings.MessageTypeMap);
-		
-		var messageTypeResolutionStrategy = new MessageTypeNamingStrategyWrapper(
-			messageTypeRegistry,
-			settings.MessageTypeResolutionStrategy ?? new DefaultMessageTypeNamingStrategy()
-		);
+		messageTypeRegistry.Register(settings.MessageTypeMap);
+		messageTypeRegistry.Register(categoriesTypeMap);
 
 		var serializers = new Dictionary<ContentType, ISerializer> {
 			{
@@ -56,6 +73,12 @@ public class SchemaRegistry(
 			}
 		};
 
-		return new SchemaRegistry(serializers, messageTypeResolutionStrategy);
+		return new SchemaRegistry(
+			serializers,
+			new MessageTypeNamingStrategyWrapper(
+				messageTypeRegistry,
+				settings.MessageTypeNamingStrategy ?? new DefaultMessageTypeNamingStrategy()
+			)
+		);
 	}
 }

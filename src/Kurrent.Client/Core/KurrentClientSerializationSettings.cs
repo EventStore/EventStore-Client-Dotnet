@@ -9,11 +9,12 @@ public enum AutomaticDeserialization {
 }
 
 public class KurrentClientSerializationSettings {
-	public ISerializer?                JsonSerializer                { get; set; }
-	public ISerializer?                BytesSerializer               { get; set; }
-	public ContentType                 DefaultContentType            { get; set; } = ContentType.Json;
-	public IMessageTypeNamingStrategy? MessageTypeResolutionStrategy { get; set; }
-	public IDictionary<Type, string>   MessageTypeMap                { get; set; } = new Dictionary<Type, string>();
+	public ISerializer?                JsonSerializer            { get; set; }
+	public ISerializer?                BytesSerializer           { get; set; }
+	public ContentType                 DefaultContentType        { get; set; } = ContentType.Json;
+	public IMessageTypeNamingStrategy? MessageTypeNamingStrategy { get; set; }
+	public IDictionary<Type, string>   MessageTypeMap            { get; set; } = new Dictionary<Type, string>();
+	public IDictionary<string, Type[]> CategoryMessageTypesMap  { get; set; } = new Dictionary<string, Type[]>();
 
 	public static KurrentClientSerializationSettings Default(
 		Action<KurrentClientSerializationSettings>? configure = null
@@ -52,7 +53,18 @@ public class KurrentClientSerializationSettings {
 	public KurrentClientSerializationSettings UseMessageTypeResolutionStrategy(
 		IMessageTypeNamingStrategy messageTypeNamingStrategy
 	) {
-		MessageTypeResolutionStrategy = messageTypeNamingStrategy;
+		MessageTypeNamingStrategy = messageTypeNamingStrategy;
+
+		return this;
+	}
+
+	public KurrentClientSerializationSettings RegisterMessageTypeForCategory<T>(string categoryName) =>
+		RegisterMessageTypeForCategory(categoryName, typeof(T));
+
+	public KurrentClientSerializationSettings RegisterMessageTypeForCategory(string categoryName, params Type[] types) {
+		CategoryMessageTypesMap[categoryName] = CategoryMessageTypesMap.TryGetValue(categoryName, out var current)
+			? [..current, ..types]
+			: types;
 
 		return this;
 	}
@@ -76,11 +88,12 @@ public class KurrentClientSerializationSettings {
 
 	internal KurrentClientSerializationSettings Clone() {
 		return new KurrentClientSerializationSettings {
-			BytesSerializer               = BytesSerializer,
-			JsonSerializer                = JsonSerializer,
-			DefaultContentType            = DefaultContentType,
-			MessageTypeMap                = new Dictionary<Type, string>(MessageTypeMap),
-			MessageTypeResolutionStrategy = MessageTypeResolutionStrategy
+			BytesSerializer           = BytesSerializer,
+			JsonSerializer            = JsonSerializer,
+			DefaultContentType        = DefaultContentType,
+			MessageTypeMap            = new Dictionary<Type, string>(MessageTypeMap),
+			CategoryMessageTypesMap  = new Dictionary<string, Type[]>(CategoryMessageTypesMap),
+			MessageTypeNamingStrategy = MessageTypeNamingStrategy
 		};
 	}
 }

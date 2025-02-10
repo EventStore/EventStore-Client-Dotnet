@@ -4,7 +4,7 @@ using Kurrent.Client.Tests.Streams.Serialization;
 namespace EventStore.Client.Serialization;
 
 public interface IMessageTypeNamingStrategy {
-	string ResolveTypeName(Type messageType, MessageSerializationContext serializationContext);
+	string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext);
 
 #if NET48
 	bool TryResolveClrType(string messageTypeName, out Type? type);
@@ -13,14 +13,16 @@ public interface IMessageTypeNamingStrategy {
 #endif
 }
 
+public record MessageTypeNamingResolutionContext(string CategoryName);
+
 public class MessageTypeNamingStrategyWrapper(
 	IMessageTypeRegistry messageTypeRegistry,
 	IMessageTypeNamingStrategy messageTypeNamingStrategy
 ) : IMessageTypeNamingStrategy {
-	public string ResolveTypeName(Type messageType, MessageSerializationContext serializationContext) {
+	public string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext) {
 		return messageTypeRegistry.GetOrAddTypeName(
 			messageType,
-			_ => messageTypeNamingStrategy.ResolveTypeName(messageType, serializationContext)
+			_ => messageTypeNamingStrategy.ResolveTypeName(messageType, resolutionContext)
 		);
 	}
 
@@ -41,8 +43,8 @@ public class MessageTypeNamingStrategyWrapper(
 }
 
 public class DefaultMessageTypeNamingStrategy: IMessageTypeNamingStrategy {
-	public string ResolveTypeName(Type messageType, MessageSerializationContext serializationContext) =>
-		$"{serializationContext.CategoryName}-{messageType.FullName}"; 
+	public string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext) =>
+		$"{resolutionContext.CategoryName}-{messageType.FullName}"; 
 
 #if NET48
 	public bool TryResolveClrType(string messageTypeName, out Type? type) {

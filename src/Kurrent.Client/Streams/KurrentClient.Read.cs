@@ -109,8 +109,11 @@ namespace EventStore.Client {
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
-		) =>
-			ReadAllAsync(
+		) {
+			if (maxCount <= 0)
+				throw new ArgumentOutOfRangeException(nameof(maxCount));
+
+			return ReadAllAsync(
 				new ReadAllOptions {
 					Direction             = direction,
 					Position              = position,
@@ -123,6 +126,7 @@ namespace EventStore.Client {
 				},
 				cancellationToken
 			);
+		}
 
 		/// <summary>
 		/// A class that represents the result of a read operation on the $all stream. You may either enumerate this instance directly or <see cref="Messages"/>. Do not enumerate more than once.
@@ -322,8 +326,11 @@ namespace EventStore.Client {
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
-		) =>
-			ReadStreamAsync(
+		) {
+			if (maxCount <= 0)
+				throw new ArgumentOutOfRangeException(nameof(maxCount));
+
+			return ReadStreamAsync(
 				streamName,
 				new ReadStreamOptions {
 					Direction             = direction,
@@ -336,6 +343,7 @@ namespace EventStore.Client {
 				},
 				cancellationToken
 			);
+		}
 
 		/// <summary>
 		/// A class that represents the result of a read operation on a stream. You may either enumerate this instance directly or <see cref="Messages"/>. Do not enumerate more than once.
