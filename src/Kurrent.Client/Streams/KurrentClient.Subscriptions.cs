@@ -185,7 +185,7 @@ namespace EventStore.Client {
 			},
 			Settings,
 			options.UserCredentials,
-			_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
+			_messageSerializer.With(options.SerializationSettings, Settings.Serialization),
 			cancellationToken
 		);
 
@@ -235,16 +235,18 @@ namespace EventStore.Client {
 			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = default,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
-		) {
-			var listener = SubscriptionListener.Handle(eventAppeared, subscriptionDropped);
-
-			return StreamSubscription.Confirm(
-				SubscribeToStream(streamName, start, resolveLinkTos, userCredentials, cancellationToken),
-				listener,
-				_log,
+		) =>
+			SubscribeToStreamAsync(
+				streamName,
+				SubscriptionListener.Handle(eventAppeared, subscriptionDropped),
+				new SubscribeToStreamOptions {
+					Start                 = start,
+					ResolveLinkTos        = resolveLinkTos,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
 				cancellationToken
 			);
-		}
 
 		/// <summary>
 		/// Subscribes to a stream from a <see cref="StreamPosition">checkpoint</see>.
@@ -322,7 +324,7 @@ namespace EventStore.Client {
 			},
 			Settings,
 			options.UserCredentials,
-			_messageSerializer,
+			_messageSerializer.With(options.SerializationSettings, Settings.Serialization),
 			cancellationToken
 		);
 
@@ -566,11 +568,23 @@ namespace EventStore.Client {
 				options,
 				cancellationToken
 			);
+
+		/// <summary>
+		/// Subscribes to all events.
+		/// </summary>
+		/// <param name="kurrentClient"></param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static KurrentClient.StreamSubscriptionResult SubscribeToAll(
+			this KurrentClient kurrentClient,
+			CancellationToken cancellationToken = default
+		) =>
+			kurrentClient.SubscribeToAll(new SubscribeToAllOptions(), cancellationToken);
 	}
 
 	public static class KurrentClientSubscribeToStreamExtensions {
 		/// <summary>
-		/// Subscribes to all events.
+		/// Subscribes to messages from a specific stream
 		/// </summary>
 		/// <param name="kurrentClient"></param>
 		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
@@ -591,7 +605,7 @@ namespace EventStore.Client {
 			);
 
 		/// <summary>
-		/// Subscribes to all events.
+		/// Subscribes to messages from a specific stream
 		/// </summary>
 		/// <param name="kurrentClient"></param>
 		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
@@ -612,7 +626,7 @@ namespace EventStore.Client {
 			);
 
 		/// <summary>
-		/// Subscribes to all events.
+		/// Subscribes to messages from a specific stream
 		/// </summary>
 		/// <param name="kurrentClient"></param>
 		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
@@ -633,5 +647,19 @@ namespace EventStore.Client {
 				options,
 				cancellationToken
 			);
+
+		/// <summary>
+		/// Subscribes to messages from a specific stream
+		/// </summary>
+		/// <param name="kurrentClient"></param>
+		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static KurrentClient.StreamSubscriptionResult SubscribeToStream(
+			this KurrentClient kurrentClient,
+			string streamName,
+			CancellationToken cancellationToken = default
+		) =>
+			kurrentClient.SubscribeToStream(streamName, new SubscribeToStreamOptions(), cancellationToken);
 	}
 }

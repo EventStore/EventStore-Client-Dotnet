@@ -11,8 +11,8 @@ public interface IMessageTypeRegistry {
 }
 
 public class MessageTypeRegistry : IMessageTypeRegistry {
-	readonly               ConcurrentDictionary<string, Type?> _typeMap     = new();
-	readonly               ConcurrentDictionary<Type, string>  _typeNameMap = new();
+	readonly ConcurrentDictionary<string, Type?> _typeMap     = new();
+	readonly ConcurrentDictionary<Type, string>  _typeNameMap = new();
 
 	public void Register(Type messageType, string messageTypeName) {
 		_typeNameMap.AddOrUpdate(messageType, messageTypeName, (_, typeName) => typeName);

@@ -41,23 +41,10 @@ public class SchemaRegistry(
 		var messageTypeNamingStrategy =
 			settings.MessageTypeNamingStrategy ?? new DefaultMessageTypeNamingStrategy();
 
-		var categoriesTypeMap = settings.CategoryMessageTypesMap
-			.SelectMany(
-				categoryTypes => categoryTypes.Value.Select(
-					type =>
-					(
-						Type: type,
-						TypeName: messageTypeNamingStrategy.ResolveTypeName(
-							type,
-							new MessageTypeNamingResolutionContext(categoryTypes.Key)
-						)
-					)
-				)
-			)
-			.ToDictionary(
-				ks => ks.Type,
-				vs => vs.TypeName
-			);
+		var categoriesTypeMap = ResolveMessageTypeUsingNamingStrategy(
+			settings.CategoryMessageTypesMap,
+			messageTypeNamingStrategy
+		);
 
 		var messageTypeRegistry = new MessageTypeRegistry();
 		messageTypeRegistry.Register(settings.MessageTypeMap);
@@ -81,4 +68,26 @@ public class SchemaRegistry(
 			)
 		);
 	}
+
+	static Dictionary<Type, string> ResolveMessageTypeUsingNamingStrategy(
+		IDictionary<string, Type[]> categoryMessageTypesMap,
+		IMessageTypeNamingStrategy messageTypeNamingStrategy
+	) =>
+		categoryMessageTypesMap
+			.SelectMany(
+				categoryTypes => categoryTypes.Value.Select(
+					type =>
+					(
+						Type: type,
+						TypeName: messageTypeNamingStrategy.ResolveTypeName(
+							type,
+							new MessageTypeNamingResolutionContext(categoryTypes.Key)
+						)
+					)
+				)
+			)
+			.ToDictionary(
+				ks => ks.Type,
+				vs => vs.TypeName
+			);
 }

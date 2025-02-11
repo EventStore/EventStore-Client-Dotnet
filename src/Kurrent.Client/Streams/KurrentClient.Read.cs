@@ -49,7 +49,7 @@ namespace EventStore.Client {
 				readReq,
 				Settings,
 				options,
-				_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
+				_messageSerializer.With(options.SerializationSettings, Settings.Serialization),
 				cancellationToken
 			);
 		}
@@ -298,7 +298,7 @@ namespace EventStore.Client {
 				Settings,
 				options.Deadline,
 				options.UserCredentials,
-				_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
+				_messageSerializer.With(options.SerializationSettings, Settings.Serialization),
 				cancellationToken
 			);
 		}

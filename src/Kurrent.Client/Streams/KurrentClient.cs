@@ -29,6 +29,7 @@ namespace EventStore.Client {
 		Lazy<StreamAppender>             _batchAppenderLazy;
 		StreamAppender                   BatchAppender => _batchAppenderLazy.Value;
 		readonly CancellationTokenSource _disposedTokenSource;
+		readonly IMessageSerializer      _messageSerializer;
 
 		static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
 			[Constants.Exceptions.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),

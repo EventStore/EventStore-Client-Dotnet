@@ -11,13 +11,14 @@ namespace EventStore.Client {
 	/// The client used to manage persistent subscriptions in the KurrentDB.
 	/// </summary>
 	public sealed partial class KurrentPersistentSubscriptionsClient : KurrentClientBase {
-		private static BoundedChannelOptions ReadBoundedChannelOptions = new (1) {
+		static BoundedChannelOptions ReadBoundedChannelOptions = new (1) {
 			SingleReader = true,
 			SingleWriter = true,
 			AllowSynchronousContinuations = true
 		};
 
-		private readonly ILogger _log;
+		readonly ILogger            _log;
+		readonly IMessageSerializer _messageSerializer;
 
 		/// <summary>
 		/// Constructs a new <see cref="KurrentPersistentSubscriptionsClient"/>.

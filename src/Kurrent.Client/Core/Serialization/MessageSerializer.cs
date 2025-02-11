@@ -21,7 +21,6 @@ public record MessageSerializationContext(
 	ContentType ContentType
 ) {
 	public string CategoryName =>
-		// TODO: This is dangerous, as separator can be changed in database settings
 		StreamName.Split('-').FirstOrDefault() ?? "no_stream_category";
 }
 
@@ -36,8 +35,8 @@ public static class MessageSerializerExtensions {
 
 	public static IMessageSerializer With(
 		this IMessageSerializer defaultMessageSerializer,
-		KurrentClientSerializationSettings defaultSettings,
-		OperationSerializationSettings? operationSettings = null
+		OperationSerializationSettings? operationSettings,
+		KurrentClientSerializationSettings defaultSettings
 	) {
 		if (operationSettings == null)
 			return defaultMessageSerializer;

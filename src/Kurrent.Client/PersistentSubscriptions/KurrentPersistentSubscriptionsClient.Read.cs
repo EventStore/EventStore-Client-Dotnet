@@ -12,15 +12,54 @@ namespace EventStore.Client {
 		/// <summary>
 		/// The size of the buffer.
 		/// </summary>
-		public int                                BufferSize            { get; set; } = 10;
-		/// <summary>
-		/// The optional settings to customize the default serialization for the specific persistent subscription
-		/// </summary>
-		public KurrentClientSerializationSettings SerializationSettings { get; set; } = KurrentClientSerializationSettings.Default();
+		public int BufferSize { get; set; } = 10;
+
 		/// <summary>
 		/// The optional user credentials to perform operation with.
 		/// </summary>
-		public UserCredentials?                   UserCredentials       { get; set; } = null;
+		public UserCredentials? UserCredentials { get; set; } = null;
+
+		/// <summary>
+		/// Allows to customize or disable the automatic deserialization
+		/// </summary>
+		public OperationSerializationSettings? SerializationSettings { get; set; }
+	}
+
+	public class PersistentSubscriptionListener {
+#if NET48
+		/// <summary>
+		/// A handler called when a new event is received over the subscription.
+		/// </summary>
+		public Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> EventAppeared { get; set; } =
+ null!;
+#else
+		public required Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> EventAppeared {
+			get;
+			set;
+		}
+#endif
+		/// <summary>
+		/// A handler called if the subscription is dropped.
+		/// </summary>
+		public Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? SubscriptionDropped { get; set; }
+
+		/// <summary>
+		/// Returns the subscription listener with configured handlers
+		/// </summary>
+		/// <param name="eventAppeared">Handler invoked when a new event is received over the subscription.</param>
+		/// <param name="subscriptionDropped">A handler invoked if the subscription is dropped.</param>
+		/// <param name="checkpointReached">A handler called when a checkpoint is reached.
+		/// Set the checkpointInterval in subscription filter options to define how often this method is called.
+		/// </param>
+		/// <returns></returns>
+		public static PersistentSubscriptionListener Handle(
+			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null
+		) =>
+			new PersistentSubscriptionListener {
+				EventAppeared       = eventAppeared,
+				SubscriptionDropped = subscriptionDropped
+			};
 	}
 
 	partial class KurrentPersistentSubscriptionsClient {
@@ -32,10 +71,13 @@ namespace EventStore.Client {
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		[Obsolete("SubscribeAsync is no longer supported. Use SubscribeToStream with manual acks instead.", false)]
 		public async Task<PersistentSubscription> SubscribeAsync(
-			string streamName, string groupName,
+			string streamName,
+			string groupName,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-			UserCredentials? userCredentials = null, int bufferSize = 10, bool autoAck = true,
+			UserCredentials? userCredentials = null,
+			int bufferSize = 10,
+			bool autoAck = true,
 			CancellationToken cancellationToken = default
 		) {
 			if (autoAck) {
@@ -44,42 +86,15 @@ namespace EventStore.Client {
 				);
 			}
 
-			return await PersistentSubscription
-				.Confirm(
-					SubscribeToStream(streamName, groupName, bufferSize, userCredentials, cancellationToken),
-					eventAppeared,
-					subscriptionDropped ?? delegate { },
-					_log,
-					userCredentials,
-					cancellationToken
-				)
-				.ConfigureAwait(false);
-		}
-
-		/// <summary>
-		/// Subscribes to a persistent subscription. Messages must be manually acknowledged
-		/// </summary>
-		/// <exception cref="ArgumentNullException"></exception>
-		/// <exception cref="ArgumentException"></exception>
-		/// <exception cref="ArgumentOutOfRangeException"></exception>
-		public Task<PersistentSubscription> SubscribeToStreamAsync(
-			string streamName, 
-			string groupName,
-			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-			UserCredentials? userCredentials = null, 
-			int bufferSize = 10,
-			CancellationToken cancellationToken = default
-		) {
-			return SubscribeToStreamAsync(
+			return await SubscribeToStreamAsync(
 				streamName,
 				groupName,
-				eventAppeared,
+				PersistentSubscriptionListener.Handle(eventAppeared, subscriptionDropped),
 				new SubscribeToPersistentSubscriptionOptions {
-					UserCredentials = userCredentials,
-					BufferSize      = bufferSize
+					UserCredentials       = userCredentials,
+					BufferSize            = bufferSize,
+					SerializationSettings = OperationSerializationSettings.Disabled
 				},
-				subscriptionDropped,
 				cancellationToken
 			);
 		}
@@ -90,21 +105,45 @@ namespace EventStore.Client {
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
-		public async Task<PersistentSubscription> SubscribeToStreamAsync(
-			string streamName, 
+		public Task<PersistentSubscription> SubscribeToStreamAsync(
+			string streamName,
 			string groupName,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-			SubscribeToPersistentSubscriptionOptions options,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
+			UserCredentials? userCredentials = null,
+			int bufferSize = 10,
+			CancellationToken cancellationToken = default
+		) =>
+			SubscribeToStreamAsync(
+				streamName,
+				groupName,
+				PersistentSubscriptionListener.Handle(eventAppeared, subscriptionDropped),
+				new SubscribeToPersistentSubscriptionOptions {
+					UserCredentials       = userCredentials,
+					BufferSize            = bufferSize,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Subscribes to a persistent subscription. Messages must be manually acknowledged
+		/// </summary>
+		/// <exception cref="ArgumentNullException"></exception>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
+		public async Task<PersistentSubscription> SubscribeToStreamAsync(
+			string streamName,
+			string groupName,
+			PersistentSubscriptionListener listener,
+			SubscribeToPersistentSubscriptionOptions options,
 			CancellationToken cancellationToken = default
 		) {
 			return await PersistentSubscription
 				.Confirm(
 					SubscribeToStream(streamName, groupName, options, cancellationToken),
-					eventAppeared,
-					subscriptionDropped ?? delegate { },
+					listener,
 					_log,
-					options.UserCredentials,
 					cancellationToken
 				)
 				.ConfigureAwait(false);
@@ -120,18 +159,47 @@ namespace EventStore.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public PersistentSubscriptionResult SubscribeToStream(
-			string streamName, 
-			string groupName, 
-			int bufferSize = 10,
-			UserCredentials? userCredentials = null, 
+			string streamName,
+			string groupName,
+			int bufferSize,
+			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) {
 			return SubscribeToStream(
 				streamName,
 				groupName,
 				new SubscribeToPersistentSubscriptionOptions {
-					BufferSize      = bufferSize,
-					UserCredentials = userCredentials
+					BufferSize            = bufferSize,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
+				cancellationToken
+			);
+		}
+		
+		
+
+		/// <summary>
+		/// Subscribes to a persistent subscription. Messages must be manually acknowledged.
+		/// </summary>
+		/// <param name="streamName">The name of the stream to read events from.</param>
+		/// <param name="groupName">The name of the persistent subscription group.</param>
+		/// <param name="bufferSize">The size of the buffer.</param>
+		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public PersistentSubscriptionResult SubscribeToStream(
+			string streamName,
+			string groupName,
+			UserCredentials? userCredentials,
+			CancellationToken cancellationToken = default
+		) {
+			return SubscribeToStream(
+				streamName,
+				groupName,
+				new SubscribeToPersistentSubscriptionOptions {
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
 				},
 				cancellationToken
 			);
@@ -146,8 +214,9 @@ namespace EventStore.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public PersistentSubscriptionResult SubscribeToStream(
-			string streamName, string groupName, 
-			SubscribeToPersistentSubscriptionOptions options, 
+			string streamName,
+			string groupName,
+			SubscribeToPersistentSubscriptionOptions options,
 			CancellationToken cancellationToken = default
 		) {
 			if (streamName == null) {
@@ -208,23 +277,41 @@ namespace EventStore.Client {
 		/// <summary>
 		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged
 		/// </summary>
-		public async Task<PersistentSubscription> SubscribeToAllAsync(
+		public Task<PersistentSubscription> SubscribeToAllAsync(
 			string groupName,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-			UserCredentials? userCredentials = null, int bufferSize = 10,
+			UserCredentials? userCredentials = null, 
+			int bufferSize = 10,
 			CancellationToken cancellationToken = default
 		) =>
-			await SubscribeToStreamAsync(
-					SystemStreams.AllStream,
-					groupName,
-					eventAppeared,
-					subscriptionDropped,
-					userCredentials,
-					bufferSize,
-					cancellationToken
-				)
-				.ConfigureAwait(false);
+			SubscribeToAllAsync(
+				groupName,
+				PersistentSubscriptionListener.Handle(eventAppeared, subscriptionDropped),
+				new SubscribeToPersistentSubscriptionOptions {
+					BufferSize            = bufferSize,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged
+		/// </summary>
+		public Task<PersistentSubscription> SubscribeToAllAsync(
+			string groupName,
+			PersistentSubscriptionListener listener,
+			SubscribeToPersistentSubscriptionOptions options,
+			CancellationToken cancellationToken = default
+		) =>
+			SubscribeToStreamAsync(
+				SystemStreams.AllStream,
+				groupName,
+				listener,
+				options,
+				cancellationToken
+			);
 
 		/// <summary>
 		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged.
@@ -235,10 +322,64 @@ namespace EventStore.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public PersistentSubscriptionResult SubscribeToAll(
-			string groupName, int bufferSize = 10,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
+			string groupName,
+			int bufferSize,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default
 		) =>
-			SubscribeToStream(SystemStreams.AllStream, groupName, bufferSize, userCredentials, cancellationToken);
+			SubscribeToStream(
+				SystemStreams.AllStream,
+				groupName,
+				new SubscribeToPersistentSubscriptionOptions {
+					BufferSize            = bufferSize,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
+				cancellationToken
+			);
+		
+		
+		/// <summary>
+		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged.
+		/// </summary>
+		/// <param name="groupName">The name of the persistent subscription group.</param>
+		/// <param name="bufferSize">The size of the buffer.</param>
+		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public PersistentSubscriptionResult SubscribeToAll(
+			string groupName,
+			UserCredentials? userCredentials,
+			CancellationToken cancellationToken = default
+		) =>
+			SubscribeToStream(
+				SystemStreams.AllStream,
+				groupName,
+				new SubscribeToPersistentSubscriptionOptions {
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged.
+		/// </summary>
+		/// <param name="groupName">The name of the persistent subscription group.</param>
+		/// <param name="options">Optional settings to configure subscription</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public PersistentSubscriptionResult SubscribeToAll(
+			string groupName,
+			SubscribeToPersistentSubscriptionOptions options,
+			CancellationToken cancellationToken = default
+		) =>
+			SubscribeToStream(
+				SystemStreams.AllStream,
+				groupName,
+				options,
+				cancellationToken
+			);
 
 		/// <inheritdoc />
 		public class PersistentSubscriptionResult : IAsyncEnumerable<ResolvedEvent>, IAsyncDisposable, IDisposable {
@@ -562,5 +703,83 @@ namespace EventStore.Client {
 				}
 			}
 		}
+	}
+
+	public static class KurrentClientPersistentSubscriptionsExtensions {
+		/// <summary>
+		/// Subscribes to a persistent subscription. Messages must be manually acknowledged
+		/// </summary>
+		/// <exception cref="ArgumentNullException"></exception>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
+		public static Task<PersistentSubscription> SubscribeToStreamAsync(
+			this KurrentPersistentSubscriptionsClient kurrentClient,
+			string streamName,
+			string groupName,
+			PersistentSubscriptionListener listener,
+			CancellationToken cancellationToken = default
+		) =>
+			kurrentClient.SubscribeToStreamAsync(
+				streamName,
+				groupName,
+				listener,
+				new SubscribeToPersistentSubscriptionOptions(),
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Subscribes to a persistent subscription. Messages must be manually acknowledged.
+		/// </summary>
+		/// <param name="kurrentClient"></param>
+		/// <param name="streamName">The name of the stream to read events from.</param>
+		/// <param name="groupName">The name of the persistent subscription group.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static KurrentPersistentSubscriptionsClient.PersistentSubscriptionResult SubscribeToStream(
+			this KurrentPersistentSubscriptionsClient kurrentClient,
+			string streamName,
+			string groupName,
+			CancellationToken cancellationToken = default
+		) =>
+			kurrentClient.SubscribeToStream(
+				streamName,
+				groupName,
+				new SubscribeToPersistentSubscriptionOptions(),
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged
+		/// </summary>
+		public static Task<PersistentSubscription> SubscribeToAllAsync(
+			this KurrentPersistentSubscriptionsClient kurrentClient,
+			string groupName,
+			PersistentSubscriptionListener listener,
+			CancellationToken cancellationToken = default
+		) =>
+			kurrentClient.SubscribeToAllAsync(
+				groupName,
+				listener,
+				new SubscribeToPersistentSubscriptionOptions(),
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged.
+		/// </summary>
+		/// <param name="kurrentClient"></param>
+		/// <param name="groupName">The name of the persistent subscription group.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static KurrentPersistentSubscriptionsClient.PersistentSubscriptionResult SubscribeToAll(
+			this KurrentPersistentSubscriptionsClient kurrentClient,
+			string groupName,
+			CancellationToken cancellationToken = default
+		) =>
+			kurrentClient.SubscribeToAll(
+				groupName,
+				new SubscribeToPersistentSubscriptionOptions(),
+				cancellationToken
+			);
 	}
 }

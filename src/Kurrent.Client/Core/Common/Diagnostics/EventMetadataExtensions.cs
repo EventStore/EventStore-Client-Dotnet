@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using EventStore.Client.Serialization;
 using Kurrent.Diagnostics;
 using Kurrent.Diagnostics.Tracing;
 
