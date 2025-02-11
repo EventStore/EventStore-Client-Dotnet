@@ -185,7 +185,7 @@ namespace EventStore.Client {
 			},
 			Settings,
 			options.UserCredentials,
-			_messageSerializer.With(options.SerializationSettings, Settings.Serialization),
+			_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
 			cancellationToken
 		);
 
@@ -324,7 +324,7 @@ namespace EventStore.Client {
 			},
 			Settings,
 			options.UserCredentials,
-			_messageSerializer.With(options.SerializationSettings, Settings.Serialization),
+			_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
 			cancellationToken
 		);
 

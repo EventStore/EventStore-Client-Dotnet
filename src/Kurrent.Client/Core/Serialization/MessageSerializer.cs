@@ -35,8 +35,8 @@ public static class MessageSerializerExtensions {
 
 	public static IMessageSerializer With(
 		this IMessageSerializer defaultMessageSerializer,
-		OperationSerializationSettings? operationSettings,
-		KurrentClientSerializationSettings defaultSettings
+		KurrentClientSerializationSettings defaultSettings,
+		OperationSerializationSettings? operationSettings
 	) {
 		if (operationSettings == null)
 			return defaultMessageSerializer;
