@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using EventStore.Client;
 using Kurrent.Client.Core.Serialization;
@@ -24,7 +25,7 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 
 	[RetryFact]
 	public async Task
-		appends_with_messages_serializes_and_deserializes_data_and_metadata_using_default_json_serialization() {
+		appends_serializes_and_deserializes_data_and_metadata_using_default_json_serialization_with_registered_metadata() {
 		// Given
 		await using var client = NewClientWith(serialization => serialization.UseMetadataType<CustomMetadata>());
 
@@ -72,6 +73,34 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 		AssertThatMessages(AreNotDeserialized, expected, resolvedEvents);
 	}
 
+	[RetryFact]
+	public async Task read_deserializes_resolved_message_appended_with_manual_compatible_serialization() {
+		// Given
+		var (stream, expected) = await AppendEventsUsingManualCompatibleSerialization();
+		
+		// When
+		var resolvedEvents = await Fixture.Streams
+			.ReadStreamAsync(stream)
+			.ToListAsync();
+
+		// Then
+		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
+	}
+
+	[RetryFact]
+	public async Task read_all_deserializes_resolved_message_appended_with_manual_compatible_serialization() {
+		// Given
+		var (stream, expected) = await AppendEventsUsingManualCompatibleSerialization();
+
+		// When
+		var resolvedEvents = await Fixture.Streams
+			.ReadAllAsync(new ReadAllOptions { EventFilter = StreamFilter.Prefix(stream) })
+			.ToListAsync();
+
+		// Then
+		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
+	}
+
 	static List<Message> AssertThatMessages(
 		Action<UserRegistered, ResolvedEvent> assertMatches,
 		List<UserRegistered> expected,
@@ -107,6 +136,29 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 		var messages = GenerateMessages();
 
 		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, messages);
+		Assert.Equal(new((ulong)messages.Count - 1), writeResult.NextExpectedStreamRevision);
+
+		return (stream, messages);
+	}
+
+	async Task<(string, List<UserRegistered>)> AppendEventsUsingManualCompatibleSerialization() {
+		var stream   = Fixture.GetStreamName();
+		var messages = GenerateMessages();
+		var eventData = messages.Select(
+			message =>
+				new EventData(
+					Uuid.NewUuid(),
+					$"stream-{message.GetType().FullName!}",
+					Encoding.UTF8.GetBytes(
+						JsonSerializer.Serialize(
+							message,
+							SystemTextJsonSerializationSettings.DefaultJsonSerializerOptions
+						)
+					)
+				)
+		);
+
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamRevision.None, eventData);
 		Assert.Equal(new((ulong)messages.Count - 1), writeResult.NextExpectedStreamRevision);
 
 		return (stream, messages);

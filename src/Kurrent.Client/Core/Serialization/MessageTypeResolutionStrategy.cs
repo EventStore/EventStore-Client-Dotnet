@@ -85,7 +85,7 @@ public class DefaultMessageTypeNamingStrategy(Type? defaultMetadataType) : IMess
 
 		var clrTypeName = messageTypeName[(categorySeparatorIndex + 1)..];
 		
-		type = TypeProvider.GetTypeWithAutoLoad(clrTypeName);
+		type = TypeProvider.GetTypeByFullName(clrTypeName);
 
 		return type != null;
 	}
