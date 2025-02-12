@@ -37,10 +37,10 @@ namespace EventStore.Client {
 
 			var eventsData = _messageSerializer.Serialize(messages, serializationContext);
 
-			return options.StreamRevision.HasValue
+			return options.ExpectedStreamRevision.HasValue
 				? AppendToStreamAsync(
 					streamName,
-					options.StreamRevision.Value,
+					options.ExpectedStreamRevision.Value,
 					eventsData,
 					options.ConfigureOperationOptions,
 					options.Deadline,
@@ -49,7 +49,7 @@ namespace EventStore.Client {
 				)
 				: AppendToStreamAsync(
 					streamName,
-					options.StreamState ?? StreamState.Any,
+					options.ExpectedStreamState ?? StreamState.Any,
 					eventsData,
 					options.ConfigureOperationOptions,
 					options.Deadline,
@@ -562,14 +562,14 @@ namespace EventStore.Client {
 	// TODO: In the follow up PR merge StreamState and StreamRevision into a one thing
 	public class AppendToStreamOptions {
 		/// <summary>
-		/// The expected <see cref="StreamState"/> of the stream to append to.
+		/// The expected <see cref="ExpectedStreamState"/> of the stream to append to.
 		/// </summary>
-		public StreamState? StreamState { get; set; }
+		public StreamState? ExpectedStreamState { get; set; }
 
 		/// <summary>
-		/// The expected <see cref="StreamRevision"/> of the stream to append to.
+		/// The expected <see cref="ExpectedStreamRevision"/> of the stream to append to.
 		/// </summary>
-		public StreamRevision? StreamRevision { get; set; }
+		public StreamRevision? ExpectedStreamRevision { get; set; }
 
 		/// <summary>
 		/// An <see cref="Action{KurrentClientOperationOptions}"/> to configure the operation's options.
