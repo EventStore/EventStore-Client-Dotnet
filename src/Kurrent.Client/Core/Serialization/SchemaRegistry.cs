@@ -39,7 +39,7 @@ public class SchemaRegistry(
 
 	public static SchemaRegistry From(KurrentClientSerializationSettings settings) {
 		var messageTypeNamingStrategy =
-			settings.MessageTypeNamingStrategy ?? new DefaultMessageTypeNamingStrategy();
+			settings.MessageTypeNamingStrategy ?? new DefaultMessageTypeNamingStrategy(settings.DefaultMetadataType);
 
 		var categoriesTypeMap = ResolveMessageTypeUsingNamingStrategy(
 			settings.CategoryMessageTypesMap,
@@ -64,7 +64,7 @@ public class SchemaRegistry(
 			serializers,
 			new MessageTypeNamingStrategyWrapper(
 				messageTypeRegistry,
-				settings.MessageTypeNamingStrategy ?? new DefaultMessageTypeNamingStrategy()
+				settings.MessageTypeNamingStrategy ?? new DefaultMessageTypeNamingStrategy(settings.DefaultMetadataType)
 			)
 		);
 	}

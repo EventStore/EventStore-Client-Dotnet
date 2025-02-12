@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
+using EventStore.Client;
 using EventStore.Client.Diagnostics;
+using EventStore.Client.Serialization;
 using Kurrent.Client.Core.Serialization;
 
 namespace EventStore.Client.Serialization;
@@ -10,9 +12,9 @@ public interface IMessageSerializer {
 	public EventData Serialize(Message value, MessageSerializationContext context);
 
 #if NET48
-	public bool TryDeserialize(EventRecord messageRecord, out object? deserialized);
+	public bool TryDeserialize(EventRecord record, out Message? deserialized);
 #else
-	public bool TryDeserialize(EventRecord messageRecord, [NotNullWhen(true)] out object? deserialized);
+	public bool TryDeserialize(EventRecord record, [NotNullWhen(true)] out Message? deserialized);
 #endif
 }
 
@@ -88,22 +90,30 @@ public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializ
 	}
 
 #if NET48
-	public bool TryDeserialize(EventRecord messageRecord, out object? deserialized) {
+	public bool TryDeserialize(EventRecord record, out Message? deserialized) {
 #else
-	public bool TryDeserialize(EventRecord messageRecord, [NotNullWhen(true)] out object? deserialized) {
+	public bool TryDeserialize(EventRecord record, [NotNullWhen(true)] out Message? deserialized) {
 #endif
-		if (!schemaRegistry
-			    .MessageTypeNamingStrategy
-			    .TryResolveClrType(messageRecord.EventType, out var clrType)) {
+		if (!TryResolveClrType(record, out var clrType)) {
 			deserialized = null;
 			return false;
 		}
 
-		deserialized = schemaRegistry
-			.GetSerializer(FromMessageContentType(messageRecord.ContentType))
-			.Deserialize(messageRecord.Data, clrType!);
+		var data = schemaRegistry
+			.GetSerializer(FromMessageContentType(record.ContentType))
+			.Deserialize(record.Data, clrType!);
 
-		return deserialized != null;
+		if (data == null) {
+			deserialized = null;
+			return false;
+		}
+
+		object? metadata = record.Metadata.Length > 0 && TryResolveClrMetadataType(record, out var clrMetadataType)
+				? _jsonSerializer.Deserialize(record.Metadata, clrMetadataType!)
+				: null;
+
+		deserialized = Message.From(data, metadata, record.EventId);
+		return true;
 	}
 
 	public static MessageSerializer From(KurrentClientSerializationSettings? settings = null) {
@@ -111,6 +121,16 @@ public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializ
 
 		return new MessageSerializer(SchemaRegistry.From(settings));
 	}
+
+	bool TryResolveClrType(EventRecord record, out Type? clrType) =>
+		schemaRegistry
+			.MessageTypeNamingStrategy
+			.TryResolveClrType(record.EventType, out clrType);
+
+	bool TryResolveClrMetadataType(EventRecord record, out Type? clrMetadataType) =>
+		schemaRegistry
+			.MessageTypeNamingStrategy
+			.TryResolveClrMetadataType(record.EventType, out clrMetadataType);
 }
 
 public class NulloMessageSerializer : IMessageSerializer {
@@ -121,9 +141,9 @@ public class NulloMessageSerializer : IMessageSerializer {
 	}
 
 #if NET48
-	public bool TryDeserialize(EventRecord eventRecord, out object? deserialized) {
+	public bool TryDeserialize(EventRecord record, out Message? deserialized) {
 #else
-	public bool TryDeserialize(EventRecord eventRecord, [NotNullWhen(true)] out object? deserialized) {
+	public bool TryDeserialize(EventRecord eventRecord, [NotNullWhen(true)] out Message? deserialized) {
 #endif
 		deserialized = null;
 		return false;

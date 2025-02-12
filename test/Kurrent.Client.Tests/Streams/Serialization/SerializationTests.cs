@@ -10,94 +10,91 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 	: KurrentPermanentTests<SerializationTests.CustomSerializationFixture>(output, fixture) {
 	[RetryFact]
 	public async Task appends_with_raw_messages_serializes_and_deserializes_using_default_json_serialization() {
-		var stream = $"{Fixture.GetStreamName()}_{0}";
+		// Given
+		var                  stream   = Fixture.GetStreamName();
+		List<UserRegistered> expected = GenerateMessages();
 
-		List<UserRegistered> messages = GenerateMessages();
+		//When
+		await Fixture.Streams.AppendToStreamAsync(stream, expected);
 
-		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, messages);
-
-		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
-
-		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(stream)
-			.ToListAsync();
-
-		AssertResolvedEventIsAutomaticallyDeserialized(resolvedEvents, messages);
+		//Then
+		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(stream).ToListAsync();
+		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
 	}
-	
+
 	[RetryFact]
-	public async Task appends_with_messages_serializes_and_deserializes_data_using_default_json_serialization() {
-		var stream   = $"{Fixture.GetStreamName()}_{0}";
+	public async Task
+		appends_with_messages_serializes_and_deserializes_data_and_metadata_using_default_json_serialization() {
+		// Given
+		await using var client = NewClientWith(serialization => serialization.UseMetadataType<CustomMetadata>());
+
+		var stream   = Fixture.GetStreamName();
 		var metadata = new CustomMetadata(Guid.NewGuid());
+		var expected = GenerateMessages();
+		List<Message> messagesWithMetadata =
+			expected.Select(message => Message.From(message, metadata, Uuid.NewUuid())).ToList();
 
-		var messages = GenerateMessages();
-		List<Message> messagesWithMetadata = messages.Select(message => Message.From(message, metadata, Uuid.NewUuid())).ToList();
+		// When
+		await client.AppendToStreamAsync(stream, messagesWithMetadata);
 
-		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, messagesWithMetadata);
+		// Then
+		var resolvedEvents = await client.ReadStreamAsync(stream).ToListAsync();
+		var messages       = AssertThatMessages(AreDeserialized, expected, resolvedEvents);
 
-		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
-
-		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(stream)
-			.ToListAsync();
-
-		var resolvedEvent = AssertResolvedEventIsAutomaticallyDeserialized(resolvedEvents, messages);
-		
-		Assert.Equal(messagesWithMetadata.First().Metadata, JsonSerializer.Deserialize<CustomMetadata>(
-			resolvedEvent.Event.Metadata.Span,
-			SystemTextJsonSerializationSettings.DefaultJsonSerializerOptions
-		));
+		Assert.Equal(messagesWithMetadata, messages);
 	}
 
 	[RetryFact]
 	public async Task read_without_options_does_NOT_deserialize_resolved_message() {
-		var stream = $"{Fixture.GetStreamName()}_{0}";
+		// Given
+		var (stream, expected) = await AppendEventsUsingAutoSerialization();
 
-		var events = await AppendEventsUsingAutoSerialization(stream);
-
+		// When
 		var resolvedEvents = await Fixture.Streams
 			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
 			.ToListAsync();
 
-		AssertResolvedEventIsNotAutomaticallyDeserialized(resolvedEvents, events);
+		// Then
+		AssertThatMessages(AreNotDeserialized, expected, resolvedEvents);
 	}
 
 	[RetryFact]
 	public async Task read_all_without_options_does_NOT_deserialize_resolved_message() {
-		var stream = $"{Fixture.GetStreamName()}_{0}";
+		// Given
+		var (stream, expected) = await AppendEventsUsingAutoSerialization();
 
-		var events = await AppendEventsUsingAutoSerialization(stream);
-
+		// When
 		var resolvedEvents = await Fixture.Streams
 			.ReadAllAsync(Direction.Forwards, Position.Start, StreamFilter.Prefix(stream))
 			.ToListAsync();
 
-		AssertResolvedEventIsNotAutomaticallyDeserialized(resolvedEvents, events);
+		// Then
+		AssertThatMessages(AreNotDeserialized, expected, resolvedEvents);
 	}
-	
-	static ResolvedEvent AssertResolvedEventIsAutomaticallyDeserialized(
-		List<ResolvedEvent> resolvedEvents, 
-		List<UserRegistered> messages
+
+	static List<Message> AssertThatMessages(
+		Action<UserRegistered, ResolvedEvent> assertMatches,
+		List<UserRegistered> expected,
+		List<ResolvedEvent> resolvedEvents
 	) {
-		Assert.Single(resolvedEvents);
+		Assert.Equal(expected.Count, resolvedEvents.Count);
+		Assert.NotEmpty(resolvedEvents);
 
-		var resolvedEvent = resolvedEvents.Single();
+		Assert.All(resolvedEvents, (resolvedEvent, idx) => assertMatches(expected[idx], resolvedEvent));
 
+		return resolvedEvents.Select(resolvedEvent => resolvedEvent.Message!).ToList();
+	}
+
+	static void AreDeserialized(UserRegistered expected, ResolvedEvent resolvedEvent) {
 		Assert.NotNull(resolvedEvent.Message);
-		Assert.Equal(messages.First(), resolvedEvent.Message);
-
-		return resolvedEvent;
+		Assert.Equal(expected, resolvedEvent.Message.Data);
+		Assert.Equal(expected, resolvedEvent.DeserializedData);
 	}
 
-	static void AssertResolvedEventIsNotAutomaticallyDeserialized(
-		List<ResolvedEvent> resolvedEvents, 
-		List<UserRegistered> messages
-	) {
-		Assert.Single(resolvedEvents);
-
-		var resolvedEvent = resolvedEvents.Single();
-
+	static void AreNotDeserialized(UserRegistered expected, ResolvedEvent resolvedEvent) {
 		Assert.Null(resolvedEvent.Message);
 		Assert.Equal(
-			messages.First(),
+			expected,
 			JsonSerializer.Deserialize<UserRegistered>(
 				resolvedEvent.Event.Data.Span,
 				SystemTextJsonSerializationSettings.DefaultJsonSerializerOptions
@@ -105,16 +102,17 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 		);
 	}
 
-	async Task<List<UserRegistered>> AppendEventsUsingAutoSerialization(string stream) {
-		var events = GenerateMessages();
+	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization() {
+		var stream   = Fixture.GetStreamName();
+		var messages = GenerateMessages();
 
-		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, events);
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, messages);
+		Assert.Equal(new((ulong)messages.Count - 1), writeResult.NextExpectedStreamRevision);
 
-		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
-		return events;
+		return (stream, messages);
 	}
 
-	List<UserRegistered> GenerateMessages(int count = 1) =>
+	static List<UserRegistered> GenerateMessages(int count = 2) =>
 		Enumerable.Range(0, count)
 			.Select(
 				_ => new UserRegistered(
@@ -122,6 +120,13 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 					new Address(Guid.NewGuid().ToString(), Guid.NewGuid().GetHashCode())
 				)
 			).ToList();
+
+	KurrentClient NewClientWith(Action<KurrentClientSerializationSettings> customizeSerialization) {
+		var settings = Fixture.ClientSettings;
+		customizeSerialization(settings.Serialization);
+
+		return new KurrentClient(settings);
+	}
 
 	public record Address(string Street, int Number);
 

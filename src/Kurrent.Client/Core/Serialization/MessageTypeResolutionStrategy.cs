@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Kurrent.Client.Tests.Streams.Serialization;
+using Kurrent.Diagnostics.Tracing;
 
 namespace EventStore.Client.Serialization;
 
@@ -10,6 +11,13 @@ public interface IMessageTypeNamingStrategy {
 	bool TryResolveClrType(string messageTypeName, out Type? type);
 #else
 	bool TryResolveClrType(string messageTypeName, [NotNullWhen(true)] out Type? type);
+#endif
+	
+	
+#if NET48
+	bool TryResolveClrMetadataType(string messageTypeName, out Type? type);
+#else
+	bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? type);
 #endif
 }
 
@@ -40,9 +48,26 @@ public class MessageTypeNamingStrategyWrapper(
 
 		return type != null;
 	}
+
+#if NET48
+	public bool TryResolveClrMetadataType(string messageTypeName, out Type? type) {
+#else
+	public bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
+#endif
+		type = messageTypeRegistry.GetOrAddClrType(
+			$"{messageTypeName}-metadata",
+			_ => messageTypeNamingStrategy.TryResolveClrMetadataType(messageTypeName, out var resolvedType)
+				? resolvedType
+				: null
+		);
+
+		return type != null;
+	}
 }
 
-public class DefaultMessageTypeNamingStrategy: IMessageTypeNamingStrategy {
+public class DefaultMessageTypeNamingStrategy(Type? defaultMetadataType) : IMessageTypeNamingStrategy {
+	readonly Type _defaultMetadataType = defaultMetadataType ?? typeof(TracingMetadata);
+	
 	public string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext) =>
 		$"{resolutionContext.CategoryName}-{messageType.FullName}"; 
 
@@ -63,5 +88,14 @@ public class DefaultMessageTypeNamingStrategy: IMessageTypeNamingStrategy {
 		type = TypeProvider.GetTypeWithAutoLoad(clrTypeName);
 
 		return type != null;
+	}
+
+#if NET48
+	public bool TryResolveClrMetadataType(string messageTypeName, out Type? type) {
+#else
+	public bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
+#endif
+		type = _defaultMetadataType;
+		return true;
 	}
 }

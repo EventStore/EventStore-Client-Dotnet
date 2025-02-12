@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using EventStore.Client.Serialization;
 using Kurrent.Client.Core.Serialization;
 
@@ -27,11 +26,21 @@ namespace EventStore.Client {
 		public EventRecord OriginalEvent => Link ?? Event;
 
 		/// <summary>
-		/// Returns the deserialized event payload.
+		/// Returns the deserialized message
 		/// It will be provided or equal to null, depending on the automatic deserialization settings you choose.
 		/// If it's null, you can use  <see cref="OriginalEvent"/> to deserialize it manually. 
 		/// </summary>
-		public readonly object? Message;
+		public readonly Message? Message;
+		
+		/// <summary>
+		/// Returns the deserialized message data.
+		/// </summary>
+		public object? DeserializedData => Message?.Data;
+		
+		/// <summary>
+		/// Returns the deserialized message metadata.
+		/// </summary>
+		public object? DeserializedMetadata => Message?.Metadata;
 
 		/// <summary>
 		/// Position of the <see cref="OriginalEvent"/> if available.
@@ -78,7 +87,7 @@ namespace EventStore.Client {
 		ResolvedEvent(
 			EventRecord @event,
 			EventRecord? link,
-			object? message,
+			Message? message,
 			ulong? commitPosition
 		) {
 			Event   = @event;
@@ -96,8 +105,8 @@ namespace EventStore.Client {
 			IMessageSerializer messageSerializer
 		) {
 			var originalEvent = link ?? @event;
-			return messageSerializer.TryDeserialize(originalEvent, out var deserialized)
-				? new ResolvedEvent(@event, link, deserialized, commitPosition)
+			return messageSerializer.TryDeserialize(originalEvent, out var message)
+				? new ResolvedEvent(@event, link, message, commitPosition)
 				: new ResolvedEvent(@event, link, commitPosition);
 		}
 	}

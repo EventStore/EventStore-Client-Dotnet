@@ -14,7 +14,8 @@ public class KurrentClientSerializationSettings {
 	public ContentType                 DefaultContentType        { get; set; } = ContentType.Json;
 	public IMessageTypeNamingStrategy? MessageTypeNamingStrategy { get; set; }
 	public IDictionary<Type, string>   MessageTypeMap            { get; set; } = new Dictionary<Type, string>();
-	public IDictionary<string, Type[]> CategoryMessageTypesMap  { get; set; } = new Dictionary<string, Type[]>();
+	public IDictionary<string, Type[]> CategoryMessageTypesMap   { get; set; } = new Dictionary<string, Type[]>();
+	public Type?                       DefaultMetadataType       { get; set; }
 
 	public static KurrentClientSerializationSettings Default(
 		Action<KurrentClientSerializationSettings>? configure = null
@@ -86,13 +87,22 @@ public class KurrentClientSerializationSettings {
 		return this;
 	}
 
+	public KurrentClientSerializationSettings UseMetadataType<T>() =>
+		UseMetadataType(typeof(T));
+
+	public KurrentClientSerializationSettings UseMetadataType(Type type) {
+		DefaultMetadataType = type;
+
+		return this;
+	}
+
 	internal KurrentClientSerializationSettings Clone() {
 		return new KurrentClientSerializationSettings {
 			BytesSerializer           = BytesSerializer,
 			JsonSerializer            = JsonSerializer,
 			DefaultContentType        = DefaultContentType,
 			MessageTypeMap            = new Dictionary<Type, string>(MessageTypeMap),
-			CategoryMessageTypesMap  = new Dictionary<string, Type[]>(CategoryMessageTypesMap),
+			CategoryMessageTypesMap   = new Dictionary<string, Type[]>(CategoryMessageTypesMap),
 			MessageTypeNamingStrategy = MessageTypeNamingStrategy
 		};
 	}
