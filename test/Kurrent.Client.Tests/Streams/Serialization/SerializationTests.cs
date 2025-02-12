@@ -76,8 +76,10 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 	[RetryFact]
 	public async Task read_deserializes_resolved_message_appended_with_manual_compatible_serialization() {
 		// Given
-		var (stream, expected) = await AppendEventsUsingManualCompatibleSerialization();
-		
+		var (stream, expected) = await AppendEventsUsingManualSerialization(
+			message => $"stream-{message.GetType().FullName!}"
+		);
+
 		// When
 		var resolvedEvents = await Fixture.Streams
 			.ReadStreamAsync(stream)
@@ -90,7 +92,9 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 	[RetryFact]
 	public async Task read_all_deserializes_resolved_message_appended_with_manual_compatible_serialization() {
 		// Given
-		var (stream, expected) = await AppendEventsUsingManualCompatibleSerialization();
+		var (stream, expected) = await AppendEventsUsingManualSerialization(
+			message => $"stream-{message.GetType().FullName!}"
+		);
 
 		// When
 		var resolvedEvents = await Fixture.Streams
@@ -99,6 +103,38 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 
 		// Then
 		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
+	}
+
+	[RetryFact]
+	public async Task read_does_NOT_deserialize_resolved_message_appended_with_manual_incompatible_serialization() {
+		// Given
+		var (stream, expected) = await AppendEventsUsingManualSerialization(
+			_ => "user_registered"
+		);
+		
+		// When
+		var resolvedEvents = await Fixture.Streams
+			.ReadStreamAsync(stream)
+			.ToListAsync();
+
+		// Then
+		AssertThatMessages(AreNotDeserialized, expected, resolvedEvents);
+	}
+
+	[RetryFact]
+	public async Task read_all_does_NOT_deserialize_resolved_message_appended_with_manual_incompatible_serialization() {
+		// Given
+		var (stream, expected) = await AppendEventsUsingManualSerialization(
+			message =>  "user_registered"
+		);
+
+		// When
+		var resolvedEvents = await Fixture.Streams
+			.ReadAllAsync(new ReadAllOptions { EventFilter = StreamFilter.Prefix(stream) })
+			.ToListAsync();
+
+		// Then
+		AssertThatMessages(AreNotDeserialized, expected, resolvedEvents);
 	}
 
 	static List<Message> AssertThatMessages(
@@ -141,14 +177,19 @@ public class SerializationTests(ITestOutputHelper output, SerializationTests.Cus
 		return (stream, messages);
 	}
 
-	async Task<(string, List<UserRegistered>)> AppendEventsUsingManualCompatibleSerialization() {
+	Task<(string, List<UserRegistered>)> AppendEventsUsingManualIncompatibleSerialization() =>
+		AppendEventsUsingManualSerialization(message => message.GetType().FullName!);
+
+	async Task<(string, List<UserRegistered>)> AppendEventsUsingManualSerialization(
+		Func<UserRegistered, string> getTypeName
+	) {
 		var stream   = Fixture.GetStreamName();
 		var messages = GenerateMessages();
 		var eventData = messages.Select(
 			message =>
 				new EventData(
 					Uuid.NewUuid(),
-					$"stream-{message.GetType().FullName!}",
+					getTypeName(message),
 					Encoding.UTF8.GetBytes(
 						JsonSerializer.Serialize(
 							message,
