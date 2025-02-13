@@ -19,6 +19,7 @@ _ = Task.Run(async () => {
 				semaphore.Release();
 				break;
 			case StreamMessage.AllStreamCheckpointReached(var p):
+				// Code to save p.CommitPosition to a persistent store as a checkpoint
 				Console.WriteLine($"checkpoint taken at {p.PreparePosition}");
 				break;
 		}
@@ -143,6 +144,7 @@ static async Task CheckpointCallback(EventStoreClient client) {
 				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
 				break;
 			case StreamMessage.AllStreamCheckpointReached(var p):
+				// Code to save p.CommitPosition to a persistent store as a checkpoint
 				Console.WriteLine($"checkpoint taken at {p.PreparePosition}");
 				break;
 		}
@@ -165,6 +167,7 @@ static async Task CheckpointCallbackWithInterval(EventStoreClient client) {
 				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
 				break;
 			case StreamMessage.AllStreamCheckpointReached(var p):
+				// Code to save p.CommitPosition to a persistent store as a checkpoint
 				Console.WriteLine($"checkpoint taken at {p.PreparePosition}");
 				break;
 		}
