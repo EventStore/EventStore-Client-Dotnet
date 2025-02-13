@@ -26,6 +26,11 @@ namespace EventStore.Client {
 		public SubscriptionFilterOptions? FilterOptions { get; set; }
 
 		/// <summary>
+		/// The optional <see cref="SubscriptionFilterOptions"/> to apply.
+		/// </summary>
+		public IEventFilter Filter { set => FilterOptions = new SubscriptionFilterOptions(value); }
+
+		/// <summary>
 		/// The optional user credentials to perform operation with.
 		/// </summary>
 		public UserCredentials? UserCredentials { get; set; }

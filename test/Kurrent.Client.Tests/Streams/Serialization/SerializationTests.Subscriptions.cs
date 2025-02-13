@@ -10,7 +10,7 @@ namespace Kurrent.Client.Tests.Streams.Serialization;
 
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Append")]
-public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixture fixture)
+public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentPermanentFixture fixture)
 	: KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
 	[RetryFact]
 	public async Task plain_clr_objects_are_serialized_and_deserialized_using_auto_serialization() {
@@ -22,7 +22,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixtur
 		await Fixture.Streams.AppendToStreamAsync(stream, expected);
 
 		//Then
-		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(stream).ToListAsync();
+		var resolvedEvents = await Fixture.Streams.SubscribeToStream(stream).Take(2).ToListAsync();
 		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
 	}
 
@@ -42,7 +42,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixtur
 		await client.AppendToStreamAsync(stream, messagesWithMetadata);
 
 		// Then
-		var resolvedEvents = await client.ReadStreamAsync(stream).ToListAsync();
+		var resolvedEvents = await client.SubscribeToStream(stream).Take(2).ToListAsync();
 		var messages       = AssertThatMessages(AreDeserialized, expected, resolvedEvents);
 
 		Assert.Equal(messagesWithMetadata, messages);
@@ -61,20 +61,20 @@ public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixtur
 		await Fixture.Streams.AppendToStreamAsync(stream, messagesWithMetadata);
 
 		// Then
-		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(stream).ToListAsync();
+		var resolvedEvents = await Fixture.Streams.SubscribeToStream(stream).Take(2).ToListAsync();
 		var messages       = AssertThatMessages(AreDeserialized, expected, resolvedEvents);
 
 		Assert.Equal(messagesWithMetadata.Select(m => m with { Metadata = new TracingMetadata() }), messages);
 	}
 
 	[RetryFact]
-	public async Task read_stream_without_options_does_NOT_deserialize_resolved_message() {
+	public async Task subscribe_to_stream_without_options_does_NOT_deserialize_resolved_message() {
 		// Given
 		var (stream, expected) = await AppendEventsUsingAutoSerialization();
 
 		// When
 		var resolvedEvents = await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+			.SubscribeToStream(stream, FromStream.Start).Take(2)
 			.ToListAsync();
 
 		// Then
@@ -82,13 +82,14 @@ public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixtur
 	}
 
 	[RetryFact]
-	public async Task read_all_without_options_does_NOT_deserialize_resolved_message() {
+	public async Task subscribe_to_all_without_options_does_NOT_deserialize_resolved_message() {
 		// Given
 		var (stream, expected) = await AppendEventsUsingAutoSerialization();
 
 		// When
 		var resolvedEvents = await Fixture.Streams
-			.ReadAllAsync(Direction.Forwards, Position.Start, StreamFilter.Prefix(stream))
+			.SubscribeToAll(FromAll.Start, filterOptions: new SubscriptionFilterOptions(StreamFilter.Prefix(stream)))
+			.Take(2)
 			.ToListAsync();
 
 		// Then
@@ -108,7 +109,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixtur
 
 	[RetryTheory]
 	[MemberData(nameof(CustomTypeMappings))]
-	public async Task append_and_read_stream_uses_custom_type_mappings(
+	public async Task append_and_subscribe_to_stream_uses_custom_type_mappings(
 		Action<KurrentClientSerializationSettings, string> customTypeMapping
 	) {
 		// Given
@@ -118,7 +119,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixtur
 		var (stream, expected) = await AppendEventsUsingAutoSerialization(client);
 
 		// Then
-		var resolvedEvents = await client.ReadStreamAsync(stream).ToListAsync();
+		var resolvedEvents = await client.SubscribeToStream(stream).Take(2).ToListAsync();
 		Assert.All(resolvedEvents, resolvedEvent => Assert.Equal("user_registered", resolvedEvent.Event.EventType));
 
 		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
@@ -126,7 +127,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixtur
 
 	[RetryTheory]
 	[MemberData(nameof(CustomTypeMappings))]
-	public async Task append_and_read_all_uses_custom_type_mappings(
+	public async Task append_and_subscribe_to_all_uses_custom_type_mappings(
 		Action<KurrentClientSerializationSettings, string> customTypeMapping
 	) {
 		// Given
@@ -137,7 +138,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixtur
 
 		// Then
 		var resolvedEvents = await client
-			.ReadAllAsync(new ReadAllOptions { Filter = StreamFilter.Prefix(stream) })
+			.SubscribeToAll(new SubscribeToAllOptions { Filter = StreamFilter.Prefix(stream) }).Take(2)
 			.ToListAsync();
 
 		Assert.All(resolvedEvents, resolvedEvent => Assert.Equal("user_registered", resolvedEvent.Event.EventType));
@@ -158,7 +159,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixtur
 		var (stream, expected) = await AppendEventsUsingAutoSerialization(client);
 
 		// Then
-		var resolvedEvents = await client.ReadStreamAsync(stream).ToListAsync();
+		var resolvedEvents = await client.SubscribeToStream(stream).Take(2).ToListAsync();
 		var jsons          = resolvedEvents.Select(e => JsonDocument.Parse(e.Event.Data).RootElement).ToList();
 
 		Assert.Equal(expected.Select(m => m.UserId), jsons.Select(j => j.GetProperty("user-id").GetGuid()));
@@ -193,7 +194,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixtur
 	}
 
 	[RetryFact]
-	public async Task append_and_read_stream_uses_custom_message_type_naming_strategy() {
+	public async Task append_and_subscribe_to_stream_uses_custom_message_type_naming_strategy() {
 		// Given
 		await using var client = NewClientWith(
 			serialization => serialization.UseMessageTypeNamingStrategy<CustomMessageTypeNamingStrategy>()
@@ -203,13 +204,17 @@ public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixtur
 		var (stream, expected) = await AppendEventsUsingAutoSerialization(client);
 
 		//Then
-		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(stream).ToListAsync();
-		Assert.All(resolvedEvents, resolvedEvent => Assert.Equal($"custom-{typeof(UserRegistered).FullName}", resolvedEvent.Event.EventType));
+		var resolvedEvents = await Fixture.Streams.SubscribeToStream(stream).Take(2).ToListAsync();
+		Assert.All(
+			resolvedEvents,
+			resolvedEvent => Assert.Equal($"custom-{typeof(UserRegistered).FullName}", resolvedEvent.Event.EventType)
+		);
+
 		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
 	}
 
 	[RetryFact]
-	public async Task append_and_read_all_uses_custom_message_type_naming_strategy() {
+	public async Task append_and_subscribe_to_all_uses_custom_message_type_naming_strategy() {
 		// Given
 		await using var client = NewClientWith(
 			serialization => serialization.UseMessageTypeNamingStrategy<CustomMessageTypeNamingStrategy>()
@@ -220,15 +225,34 @@ public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixtur
 
 		//Then
 		var resolvedEvents = await client
-			.ReadAllAsync(new ReadAllOptions { Filter = StreamFilter.Prefix(stream) })
+			.SubscribeToAll(new SubscribeToAllOptions { Filter = StreamFilter.Prefix(stream) }).Take(2)
 			.ToListAsync();
 
-		Assert.All(resolvedEvents, resolvedEvent => Assert.Equal($"custom-{typeof(UserRegistered).FullName}", resolvedEvent.Event.EventType));
+		Assert.All(
+			resolvedEvents,
+			resolvedEvent => Assert.Equal($"custom-{typeof(UserRegistered).FullName}", resolvedEvent.Event.EventType)
+		);
+
 		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
 	}
 
 	[RetryFact]
-	public async Task read_stream_deserializes_resolved_message_appended_with_manual_compatible_serialization() {
+	public async Task
+		subscribe_to_stream_deserializes_resolved_message_appended_with_manual_compatible_serialization() {
+		// Given
+		var (stream, expected) = await AppendEventsUsingManualSerialization(
+			message => $"stream-{message.GetType().FullName!}"
+		);
+
+		// When
+		var resolvedEvents = await Fixture.Streams.SubscribeToStream(stream).Take(2).ToListAsync();
+
+		// Then
+		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
+	}
+
+	[RetryFact]
+	public async Task subscribe_to_all_deserializes_resolved_message_appended_with_manual_compatible_serialization() {
 		// Given
 		var (stream, expected) = await AppendEventsUsingManualSerialization(
 			message => $"stream-{message.GetType().FullName!}"
@@ -236,7 +260,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixtur
 
 		// When
 		var resolvedEvents = await Fixture.Streams
-			.ReadStreamAsync(stream)
+			.SubscribeToAll(new SubscribeToAllOptions { Filter = StreamFilter.Prefix(stream) }).Take(2)
 			.ToListAsync();
 
 		// Then
@@ -244,43 +268,26 @@ public class SerializationTests(ITestOutputHelper output, KurrentPermanentFixtur
 	}
 
 	[RetryFact]
-	public async Task read_all_deserializes_resolved_message_appended_with_manual_compatible_serialization() {
-		// Given
-		var (stream, expected) = await AppendEventsUsingManualSerialization(
-			message => $"stream-{message.GetType().FullName!}"
-		);
-
-		// When
-		var resolvedEvents = await Fixture.Streams
-			.ReadAllAsync(new ReadAllOptions { Filter = StreamFilter.Prefix(stream) })
-			.ToListAsync();
-
-		// Then
-		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
-	}
-
-	[RetryFact]
-	public async Task read_stream_does_NOT_deserialize_resolved_message_appended_with_manual_incompatible_serialization() {
+	public async Task subscribe_to_stream_does_NOT_deserialize_resolved_message_appended_with_manual_incompatible_serialization() {
 		// Given
 		var (stream, expected) = await AppendEventsUsingManualSerialization(_ => "user_registered");
 
 		// When
-		var resolvedEvents = await Fixture.Streams
-			.ReadStreamAsync(stream)
-			.ToListAsync();
+		var resolvedEvents = await Fixture.Streams.SubscribeToStream(stream).Take(2).ToListAsync();
 
 		// Then
 		AssertThatMessages(AreNotDeserialized, expected, resolvedEvents);
 	}
 
 	[RetryFact]
-	public async Task read_all_does_NOT_deserialize_resolved_message_appended_with_manual_incompatible_serialization() {
+	public async Task
+		subscribe_to_all_does_NOT_deserialize_resolved_message_appended_with_manual_incompatible_serialization() {
 		// Given
 		var (stream, expected) = await AppendEventsUsingManualSerialization(_ => "user_registered");
 
 		// When
 		var resolvedEvents = await Fixture.Streams
-			.ReadAllAsync(new ReadAllOptions { Filter = StreamFilter.Prefix(stream) })
+			.SubscribeToAll(new SubscribeToAllOptions { Filter = StreamFilter.Prefix(stream) }).Take(2)
 			.ToListAsync();
 
 		// Then
