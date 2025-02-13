@@ -144,7 +144,7 @@ static async Task CheckpointCallback(EventStoreClient client) {
 				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 			case StreamMessage.AllStreamCheckpointReached(var p):
-				// Code to save commit position to a persistent store as a checkpoint
+				// Save commit position to a persistent store as a checkpoint
 				Console.WriteLine($"checkpoint taken at {p.CommitPosition}");
 				break;
 		}
@@ -167,7 +167,7 @@ static async Task CheckpointCallbackWithInterval(EventStoreClient client) {
 				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 			case StreamMessage.AllStreamCheckpointReached(var p):
-				// Code to save commit position to a persistent store as a checkpoint
+				// Save commit position to a persistent store as a checkpoint
 				Console.WriteLine($"checkpoint taken at {p.CommitPosition}");
 				break;
 		}
