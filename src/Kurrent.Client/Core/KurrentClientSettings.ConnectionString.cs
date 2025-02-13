@@ -14,6 +14,20 @@ namespace EventStore.Client {
 		public static KurrentClientSettings Create(string connectionString) =>
 			ConnectionStringParser.Parse(connectionString);
 
+		/// <summary>
+		/// Creates client settings from a connection string with additional configuration
+		/// </summary>
+		/// <param name="connectionString"></param>
+		/// <param name="configure">allows you to make additional customization of client settings</param>
+		/// <returns></returns>
+		public static KurrentClientSettings Create(string connectionString, Action<KurrentClientSettings> configure) {
+			var settings = ConnectionStringParser.Parse(connectionString);
+
+			configure(settings);
+			
+			return settings;
+		}
+
 		private static class ConnectionStringParser {
 			private const string SchemeSeparator   = "://";
 			private const string UserInfoSeparator = "@";
