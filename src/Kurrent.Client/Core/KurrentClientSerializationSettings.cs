@@ -1,3 +1,4 @@
+using System.Text.Json;
 using EventStore.Client.Serialization;
 using Kurrent.Client.Core.Serialization;
 
@@ -28,6 +29,25 @@ public class KurrentClientSerializationSettings {
 	}
 
 	public KurrentClientSerializationSettings UseJsonSettings(
+		Func<JsonSerializerOptions, JsonSerializerOptions> configure
+	) {
+		JsonSerializer = new SystemTextJsonSerializer(
+			new SystemTextJsonSerializationSettings
+				{ Options = configure(SystemTextJsonSerializationSettings.DefaultJsonSerializerOptions) }
+		);
+
+		return this;
+	}
+
+	public KurrentClientSerializationSettings UseJsonSettings(JsonSerializerOptions systemTextJsonSerializerOptions) {
+		JsonSerializer = new SystemTextJsonSerializer(
+			new SystemTextJsonSerializationSettings { Options = systemTextJsonSerializerOptions }
+		);
+
+		return this;
+	}
+
+	public KurrentClientSerializationSettings UseJsonSettings(
 		SystemTextJsonSerializationSettings jsonSerializationSettings
 	) {
 		JsonSerializer = new SystemTextJsonSerializer(jsonSerializationSettings);
@@ -47,11 +67,11 @@ public class KurrentClientSerializationSettings {
 		return this;
 	}
 
-	public KurrentClientSerializationSettings UseMessageTypeResolutionStrategy<TCustomMessageTypeResolutionStrategy>()
+	public KurrentClientSerializationSettings UseMessageTypeNamingStrategy<TCustomMessageTypeResolutionStrategy>()
 		where TCustomMessageTypeResolutionStrategy : IMessageTypeNamingStrategy, new() =>
-		UseMessageTypeResolutionStrategy(new TCustomMessageTypeResolutionStrategy());
+		UseMessageTypeNamingStrategy(new TCustomMessageTypeResolutionStrategy());
 
-	public KurrentClientSerializationSettings UseMessageTypeResolutionStrategy(
+	public KurrentClientSerializationSettings UseMessageTypeNamingStrategy(
 		IMessageTypeNamingStrategy messageTypeNamingStrategy
 	) {
 		MessageTypeNamingStrategy = messageTypeNamingStrategy;
@@ -74,14 +94,14 @@ public class KurrentClientSerializationSettings {
 		RegisterMessageType(typeof(T), typeName);
 
 	public KurrentClientSerializationSettings RegisterMessageType(Type type, string typeName) {
-		MessageTypeMap.Add(type, typeName);
+		MessageTypeMap[type] = typeName;
 
 		return this;
 	}
 
 	public KurrentClientSerializationSettings RegisterMessageTypes(IDictionary<Type, string> typeMap) {
 		foreach (var map in typeMap) {
-			MessageTypeMap.Add(map.Key, map.Value);
+			MessageTypeMap[map.Key] = map.Value;
 		}
 
 		return this;

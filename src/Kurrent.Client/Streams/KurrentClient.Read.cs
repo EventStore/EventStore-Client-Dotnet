@@ -37,7 +37,7 @@ namespace EventStore.Client {
 					Count         = (ulong)options.MaxCount,
 					UuidOption    = new() { Structured    = new() },
 					ControlOption = new() { Compatibility = 1 },
-					Filter        = GetFilterOptions(options.EventFilter)
+					Filter        = GetFilterOptions(options.Filter)
 				}
 			};
 
@@ -78,7 +78,7 @@ namespace EventStore.Client {
 				new ReadAllOptions {
 					Direction             = direction,
 					Position              = position,
-					EventFilter           = null,
+					Filter           = null,
 					MaxCount              = maxCount,
 					ResolveLinkTos        = resolveLinkTos,
 					Deadline              = deadline,
@@ -117,7 +117,7 @@ namespace EventStore.Client {
 				new ReadAllOptions {
 					Direction             = direction,
 					Position              = position,
-					EventFilter           = eventFilter,
+					Filter           = eventFilter,
 					MaxCount              = maxCount,
 					ResolveLinkTos        = resolveLinkTos,
 					Deadline              = deadline,
@@ -566,7 +566,7 @@ namespace EventStore.Client {
 		/// <summary>
 		/// The <see cref="IEventFilter"/> to apply.
 		/// </summary>
-		public IEventFilter? EventFilter { get; set; }
+		public IEventFilter? Filter { get; set; }
 
 		/// <summary>
 		/// The number of events to read from the stream.
