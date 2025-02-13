@@ -269,7 +269,7 @@ namespace EventStore.Client {
 				new() { Options = readOptions },
 				Settings,
 				options.UserCredentials,
-				_messageSerializer,
+				_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
 				cancellationToken
 			);
 		}
