@@ -15,11 +15,12 @@ _ = Task.Run(async () => {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				semaphore.Release();
 				break;
 			case StreamMessage.AllStreamCheckpointReached(var p):
-				Console.WriteLine($"checkpoint taken at {p.PreparePosition}");
+				// Code to save commit position to a persistent store as a checkpoint
+				Console.WriteLine($"checkpoint taken at {p.CommitPosition}");
 				break;
 		}
 	}
@@ -55,7 +56,7 @@ static async Task ExcludeSystemEvents(EventStoreClient client) {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 		}
 	}
@@ -74,7 +75,7 @@ static async Task EventTypePrefix(EventStoreClient client) {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 		}
 	}
@@ -91,7 +92,7 @@ static async Task EventTypeRegex(EventStoreClient client) {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 		}
 	}
@@ -108,7 +109,7 @@ static async Task StreamPrefix(EventStoreClient client) {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 		}
 	}
@@ -125,7 +126,7 @@ static async Task StreamRegex(EventStoreClient client) {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 		}
 	}
@@ -140,10 +141,11 @@ static async Task CheckpointCallback(EventStoreClient client) {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 			case StreamMessage.AllStreamCheckpointReached(var p):
-				Console.WriteLine($"checkpoint taken at {p.PreparePosition}");
+				// Save commit position to a persistent store as a checkpoint
+				Console.WriteLine($"checkpoint taken at {p.CommitPosition}");
 				break;
 		}
 	}
@@ -162,10 +164,11 @@ static async Task CheckpointCallbackWithInterval(EventStoreClient client) {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 			case StreamMessage.AllStreamCheckpointReached(var p):
-				Console.WriteLine($"checkpoint taken at {p.PreparePosition}");
+				// Save commit position to a persistent store as a checkpoint
+				Console.WriteLine($"checkpoint taken at {p.CommitPosition}");
 				break;
 		}
 	}
