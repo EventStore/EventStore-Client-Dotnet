@@ -155,7 +155,7 @@ public partial class EventStoreFixture : IAsyncLifetime, IAsyncDisposable {
 		}
 
 		static Version GetEventStoreVersion() {
-			const string versionPrefix = "EventStoreDB version";
+			const string versionPrefix = "KurrentDB version";
 
 			using var cancellator = new CancellationTokenSource(FromSeconds(30));
 			using var eventstore = new Builder()

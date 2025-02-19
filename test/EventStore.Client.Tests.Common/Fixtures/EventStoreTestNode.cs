@@ -40,7 +40,7 @@ public class EventStoreTestNode(EventStoreFixtureOptions? options = null) : Test
 			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]       = "10000",
 			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]        = "true",
 			["EVENTSTORE_DISABLE_LOG_FILE"]                 = "true",
-			["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}"
+			["EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}"
 		};
 
 		if (GlobalEnvironment.DockerImage.Contains("commercial")) {

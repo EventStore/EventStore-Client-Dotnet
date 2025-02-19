@@ -100,7 +100,7 @@ public class EventStoreTestServer : IEventStoreTestServer {
 	}
 
 	static Version GetVersion() {
-		const string versionPrefix = "EventStoreDB version";
+		const string versionPrefix = "KurrentDB version";
 
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 		using var eventstore = new Builder().UseContainer()
