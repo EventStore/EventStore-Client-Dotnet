@@ -24,3 +24,6 @@ jobs:
       docker-tag: ${{ inputs.docker-tag }}
       docker-image: ${{ inputs.docker-image }}
       test: ${{ matrix.test }}
+    secrets:
+      CLOUDSMITH_CICD_USER: ${{ secrets.CLOUDSMITH_CICD_USER }}
+      CLOUDSMITH_CICD_TOKEN: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
