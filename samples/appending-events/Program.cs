@@ -1,10 +1,10 @@
 ﻿#pragma warning disable CS8321 // Local function is declared but never used
 
-var settings = EventStoreClientSettings.Create("esdb://localhost:2113?tls=false");
+var settings = KurrentClientSettings.Create("esdb://localhost:2113?tls=false");
 
 settings.OperationOptions.ThrowOnAppendFailure = false;
 
-await using var client = new EventStoreClient(settings);
+await using var client = new KurrentClient(settings);
 
 await AppendToStream(client);
 await AppendWithConcurrencyCheck(client);
@@ -13,7 +13,7 @@ await AppendWithSameId(client);
 
 return;
 
-static async Task AppendToStream(EventStoreClient client) {
+static async Task AppendToStream(KurrentClient client) {
 	#region append-to-stream
 
 	var eventData = new EventData(
@@ -33,7 +33,7 @@ static async Task AppendToStream(EventStoreClient client) {
 	#endregion append-to-stream
 }
 
-static async Task AppendWithSameId(EventStoreClient client) {
+static async Task AppendWithSameId(KurrentClient client) {
 	#region append-duplicate-event
 
 	var eventData = new EventData(
@@ -62,7 +62,7 @@ static async Task AppendWithSameId(EventStoreClient client) {
 	#endregion append-duplicate-event
 }
 
-static async Task AppendWithNoStream(EventStoreClient client) {
+static async Task AppendWithNoStream(KurrentClient client) {
 	#region append-with-no-stream
 
 	var eventDataOne = new EventData(
@@ -97,7 +97,7 @@ static async Task AppendWithNoStream(EventStoreClient client) {
 	#endregion append-with-no-stream
 }
 
-static async Task AppendWithConcurrencyCheck(EventStoreClient client) {
+static async Task AppendWithConcurrencyCheck(KurrentClient client) {
 	await client.AppendToStreamAsync(
 		"concurrency-stream",
 		StreamRevision.None,
@@ -148,7 +148,7 @@ static async Task AppendWithConcurrencyCheck(EventStoreClient client) {
 	#endregion append-with-concurrency-check
 }
 
-static async Task AppendOverridingUserCredentials(EventStoreClient client, CancellationToken cancellationToken) {
+static async Task AppendOverridingUserCredentials(KurrentClient client, CancellationToken cancellationToken) {
 	var eventData = new EventData(
 		Uuid.NewUuid(),
 		"TestEvent",

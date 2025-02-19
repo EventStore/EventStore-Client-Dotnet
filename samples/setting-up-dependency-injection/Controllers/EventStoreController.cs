@@ -5,15 +5,15 @@ namespace setting_up_dependency_injection.Controllers {
 	[Route("[controller]")]
 	public class EventStoreController : ControllerBase {
 		#region using-dependency
-		private readonly EventStoreClient _eventStoreClient;
+		private readonly KurrentClient _KurrentClient;
 
-		public EventStoreController(EventStoreClient eventStoreClient) {
-			_eventStoreClient = eventStoreClient;
+		public EventStoreController(KurrentClient KurrentClient) {
+			_KurrentClient = KurrentClient;
 		}
 
 		[HttpGet]
 		public IAsyncEnumerable<ResolvedEvent> Get() {
-			return _eventStoreClient.ReadAllAsync(Direction.Forwards, Position.Start);
+			return _KurrentClient.ReadAllAsync(Direction.Forwards, Position.Start);
 		}
 		#endregion using-dependency
 	}

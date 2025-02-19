@@ -1,6 +1,6 @@
 ﻿#pragma warning disable CS8321 // Local function is declared but never used
 
-await using var client = new EventStoreClient(EventStoreClientSettings.Create("esdb://localhost:2113?tls=false"));
+await using var client = new KurrentClient(KurrentClientSettings.Create("esdb://localhost:2113?tls=false"));
 
 var events = Enumerable.Range(0, 20)
 	.Select(
@@ -21,7 +21,7 @@ await ReadFromStream(client);
 
 return;
 
-static async Task ReadFromStream(EventStoreClient client) {
+static async Task ReadFromStream(KurrentClient client) {
 	#region read-from-stream
 
 	var events = client.ReadStreamAsync(
@@ -46,7 +46,7 @@ static async Task ReadFromStream(EventStoreClient client) {
 	#endregion
 }
 
-static async Task ReadFromStreamMessages(EventStoreClient client) {
+static async Task ReadFromStreamMessages(KurrentClient client) {
 	#region read-from-stream-messages
 
 	var streamPosition = StreamPosition.Start;
@@ -90,7 +90,7 @@ static async Task ReadFromStreamMessages(EventStoreClient client) {
 	#endregion iterate-stream-messages
 }
 
-static async Task ReadFromStreamPosition(EventStoreClient client) {
+static async Task ReadFromStreamPosition(KurrentClient client) {
 	#region read-from-stream-position
 
 	var events = client.ReadStreamAsync(
@@ -109,7 +109,7 @@ static async Task ReadFromStreamPosition(EventStoreClient client) {
 	#endregion iterate-stream
 }
 
-static async Task ReadFromStreamPositionCheck(EventStoreClient client) {
+static async Task ReadFromStreamPositionCheck(KurrentClient client) {
 	#region checking-for-stream-presence
 
 	var result = client.ReadStreamAsync(
@@ -126,7 +126,7 @@ static async Task ReadFromStreamPositionCheck(EventStoreClient client) {
 	#endregion checking-for-stream-presence
 }
 
-static async Task ReadFromStreamBackwards(EventStoreClient client) {
+static async Task ReadFromStreamBackwards(KurrentClient client) {
 	#region reading-backwards
 
 	var events = client.ReadStreamAsync(
@@ -140,7 +140,7 @@ static async Task ReadFromStreamBackwards(EventStoreClient client) {
 	#endregion reading-backwards
 }
 
-static async Task ReadFromStreamMessagesBackwards(EventStoreClient client) {
+static async Task ReadFromStreamMessagesBackwards(KurrentClient client) {
 	#region read-from-stream-messages-backwards
 
 	var results = client.ReadStreamAsync(
@@ -175,7 +175,7 @@ static async Task ReadFromStreamMessagesBackwards(EventStoreClient client) {
 	#endregion iterate-stream-messages-backwards
 }
 
-static async Task ReadFromAllStream(EventStoreClient client) {
+static async Task ReadFromAllStream(KurrentClient client) {
 	#region read-from-all-stream
 
 	var events = client.ReadAllAsync(Direction.Forwards, Position.Start);
@@ -189,7 +189,7 @@ static async Task ReadFromAllStream(EventStoreClient client) {
 	#endregion read-from-all-stream-iterate
 }
 
-static async Task ReadFromAllStreamMessages(EventStoreClient client) {
+static async Task ReadFromAllStreamMessages(KurrentClient client) {
 	#region read-from-all-stream-messages
 
 	var position = Position.Start;
@@ -216,7 +216,7 @@ static async Task ReadFromAllStreamMessages(EventStoreClient client) {
 	#endregion iterate-all-stream-messages
 }
 
-static async Task IgnoreSystemEvents(EventStoreClient client) {
+static async Task IgnoreSystemEvents(KurrentClient client) {
 	#region ignore-system-events
 
 	var events = client.ReadAllAsync(Direction.Forwards, Position.Start);
@@ -230,7 +230,7 @@ static async Task IgnoreSystemEvents(EventStoreClient client) {
 	#endregion ignore-system-events
 }
 
-static async Task ReadFromAllStreamBackwards(EventStoreClient client) {
+static async Task ReadFromAllStreamBackwards(KurrentClient client) {
 	#region read-from-all-stream-backwards
 
 	var events = client.ReadAllAsync(Direction.Backwards, Position.End);
@@ -244,7 +244,7 @@ static async Task ReadFromAllStreamBackwards(EventStoreClient client) {
 	#endregion read-from-all-stream-iterate
 }
 
-static async Task ReadFromAllStreamBackwardsMessages(EventStoreClient client) {
+static async Task ReadFromAllStreamBackwardsMessages(KurrentClient client) {
 	#region read-from-all-stream-messages-backwards
 
 	var position = Position.End;
@@ -272,7 +272,7 @@ static async Task ReadFromAllStreamBackwardsMessages(EventStoreClient client) {
 	#endregion iterate-all-stream-messages-backwards
 }
 
-static async Task FilteringOutSystemEvents(EventStoreClient client) {
+static async Task FilteringOutSystemEvents(KurrentClient client) {
 	var events = client.ReadAllAsync(Direction.Forwards, Position.Start);
 
 	await foreach (var e in events)
@@ -280,7 +280,7 @@ static async Task FilteringOutSystemEvents(EventStoreClient client) {
 			Console.WriteLine(Encoding.UTF8.GetString(e.Event.Data.ToArray()));
 }
 
-static void ReadStreamOverridingUserCredentials(EventStoreClient client, CancellationToken cancellationToken) {
+static void ReadStreamOverridingUserCredentials(KurrentClient client, CancellationToken cancellationToken) {
 	#region overriding-user-credentials
 
 	var result = client.ReadStreamAsync(
@@ -294,7 +294,7 @@ static void ReadStreamOverridingUserCredentials(EventStoreClient client, Cancell
 	#endregion overriding-user-credentials
 }
 
-static void ReadAllOverridingUserCredentials(EventStoreClient client, CancellationToken cancellationToken) {
+static void ReadAllOverridingUserCredentials(KurrentClient client, CancellationToken cancellationToken) {
 	#region read-all-overriding-user-credentials
 
 	var result = client.ReadAllAsync(
@@ -307,7 +307,7 @@ static void ReadAllOverridingUserCredentials(EventStoreClient client, Cancellati
 	#endregion read-all-overriding-user-credentials
 }
 
-static void ReadAllResolvingLinkTos(EventStoreClient client, CancellationToken cancellationToken) {
+static void ReadAllResolvingLinkTos(KurrentClient client, CancellationToken cancellationToken) {
 	#region read-from-all-stream-resolving-link-Tos
 
 	var result = client.ReadAllAsync(

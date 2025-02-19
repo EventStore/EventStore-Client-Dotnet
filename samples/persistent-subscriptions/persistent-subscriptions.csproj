@@ -3,10 +3,7 @@
         <OutputType>Exe</OutputType>
         <RootNamespace>persistent_subscriptions</RootNamespace>
     </PropertyGroup>
-
     <ItemGroup>
-        <!-- Use NuGet instead of ProjectReferences -->
-        <ProjectReference Include="..\..\src\EventStore.Client.PersistentSubscriptions\EventStore.Client.PersistentSubscriptions.csproj" />
-        <ProjectReference Include="..\..\src\EventStore.Client\EventStore.Client.csproj" />
+      <ProjectReference Include="..\..\src\Kurrent.Client\Kurrent.Client.csproj" />
     </ItemGroup>
 </Project>

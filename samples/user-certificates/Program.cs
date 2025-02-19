@@ -9,11 +9,11 @@ static async Task ClientWithUserCertificates() {
 		const string userCertFile = "/path/to/user.crt";
 		const string userKeyFile  = "/path/to/user.key";
 
-		var settings = EventStoreClientSettings.Create(
+		var settings = KurrentClientSettings.Create(
 			$"esdb://localhost:2113/?tls=true&tlsVerifyCert=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}"
 		);
 
-		await using var client = new EventStoreClient(settings);
+		await using var client = new KurrentClient(settings);
 
 		# endregion client-with-user-certificates
 	} catch (InvalidClientCertificateException) {

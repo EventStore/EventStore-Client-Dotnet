@@ -14,8 +14,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- Use NuGet instead of ProjectReferences -->
-        <!-- <PackageReference Include="EventStore.Client.Grpc.Streams" Version="23.1.0" /> -->
-        <ProjectReference Include="..\..\src\EventStore.Client.Streams\EventStore.Client.Streams.csproj" />
+      <ProjectReference Include="..\..\src\Kurrent.Client\Kurrent.Client.csproj" />
     </ItemGroup>
 </Project>

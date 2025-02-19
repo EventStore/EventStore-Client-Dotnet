@@ -64,20 +64,20 @@ await GetResult(managementClient);
 
 return;
 
-static EventStoreProjectionManagementClient ManagementClient(string connection) {
+static KurrentProjectionManagementClient ManagementClient(string connection) {
 	#region createClient
 
-	var settings = EventStoreClientSettings.Create(connection);
+	var settings = KurrentClientSettings.Create(connection);
 	settings.ConnectionName     = "Projection management client";
 	settings.DefaultCredentials = new UserCredentials("admin", "changeit");
-	var managementClient = new EventStoreProjectionManagementClient(settings);
+	var managementClient = new KurrentProjectionManagementClient(settings);
 
 	#endregion createClient
 
 	return managementClient;
 }
 
-static async Task RestartSubSystem(EventStoreProjectionManagementClient managementClient) {
+static async Task RestartSubSystem(KurrentProjectionManagementClient managementClient) {
 	#region RestartSubSystem
 
 	await managementClient.RestartSubsystemAsync();
@@ -85,7 +85,7 @@ static async Task RestartSubSystem(EventStoreProjectionManagementClient manageme
 	#endregion RestartSubSystem
 }
 
-static async Task Disable(EventStoreProjectionManagementClient managementClient) {
+static async Task Disable(KurrentProjectionManagementClient managementClient) {
 	#region Disable
 
 	await managementClient.DisableAsync("$by_category");
@@ -93,7 +93,7 @@ static async Task Disable(EventStoreProjectionManagementClient managementClient)
 	#endregion Disable
 }
 
-static async Task DisableNotFound(EventStoreProjectionManagementClient managementClient) {
+static async Task DisableNotFound(KurrentProjectionManagementClient managementClient) {
 	#region DisableNotFound
 
 	try {
@@ -109,7 +109,7 @@ static async Task DisableNotFound(EventStoreProjectionManagementClient managemen
 	#endregion DisableNotFound
 }
 
-static async Task Enable(EventStoreProjectionManagementClient managementClient) {
+static async Task Enable(KurrentProjectionManagementClient managementClient) {
 	#region Enable
 
 	await managementClient.EnableAsync("$by_category");
@@ -117,7 +117,7 @@ static async Task Enable(EventStoreProjectionManagementClient managementClient) 
 	#endregion Enable
 }
 
-static async Task EnableNotFound(EventStoreProjectionManagementClient managementClient) {
+static async Task EnableNotFound(KurrentProjectionManagementClient managementClient) {
 	#region EnableNotFound
 
 	try {
@@ -133,7 +133,7 @@ static async Task EnableNotFound(EventStoreProjectionManagementClient management
 	#endregion EnableNotFound
 }
 
-static Task Delete(EventStoreProjectionManagementClient managementClient) {
+static Task Delete(KurrentProjectionManagementClient managementClient) {
 	#region Delete
 
 	// this is not yet available in the .net grpc client
@@ -143,7 +143,7 @@ static Task Delete(EventStoreProjectionManagementClient managementClient) {
 	return Task.CompletedTask;
 }
 
-static async Task Abort(EventStoreProjectionManagementClient managementClient) {
+static async Task Abort(KurrentProjectionManagementClient managementClient) {
 	try {
 		var js =
 			"fromAll() .when({$init:function(){return {count:0};},$any:function(s, e){s.count += 1;}}).outputState();";
@@ -165,7 +165,7 @@ static async Task Abort(EventStoreProjectionManagementClient managementClient) {
 	#endregion Abort
 }
 
-static async Task Abort_NotFound(EventStoreProjectionManagementClient managementClient) {
+static async Task Abort_NotFound(KurrentProjectionManagementClient managementClient) {
 	#region Abort_NotFound
 
 	try {
@@ -181,7 +181,7 @@ static async Task Abort_NotFound(EventStoreProjectionManagementClient management
 	#endregion Abort_NotFound
 }
 
-static async Task Reset(EventStoreProjectionManagementClient managementClient) {
+static async Task Reset(KurrentProjectionManagementClient managementClient) {
 	try {
 		var js =
 			"fromAll() .when({$init:function(){return {count:0};},$any:function(s, e){s.count += 1;}}).outputState();";
@@ -203,7 +203,7 @@ static async Task Reset(EventStoreProjectionManagementClient managementClient) {
 	#endregion Reset
 }
 
-static async Task Reset_NotFound(EventStoreProjectionManagementClient managementClient) {
+static async Task Reset_NotFound(KurrentProjectionManagementClient managementClient) {
 	#region Reset_NotFound
 
 	try {
@@ -219,14 +219,14 @@ static async Task Reset_NotFound(EventStoreProjectionManagementClient management
 	#endregion Reset_NotFound
 }
 
-static async Task CreateOneTime(EventStoreProjectionManagementClient managementClient) {
+static async Task CreateOneTime(KurrentProjectionManagementClient managementClient) {
 	const string js =
 		"fromAll() .when({$init:function(){return {count:0};},$any:function(s, e){s.count += 1;}}).outputState();";
 
 	await managementClient.CreateOneTimeAsync(js);
 }
 
-static async Task CreateContinuous(EventStoreProjectionManagementClient managementClient) {
+static async Task CreateContinuous(KurrentProjectionManagementClient managementClient) {
 	#region CreateContinuous
 
 	const string js = @"fromAll()
@@ -248,7 +248,7 @@ static async Task CreateContinuous(EventStoreProjectionManagementClient manageme
 	#endregion CreateContinuous
 }
 
-static async Task CreateContinuous_Conflict(EventStoreProjectionManagementClient managementClient) {
+static async Task CreateContinuous_Conflict(KurrentProjectionManagementClient managementClient) {
 	const string js = @"fromAll()
 							    .when({
 							        $init: function() {
@@ -281,7 +281,7 @@ static async Task CreateContinuous_Conflict(EventStoreProjectionManagementClient
 	#endregion CreateContinuous_Conflict
 }
 
-static async Task Update(EventStoreProjectionManagementClient managementClient) {
+static async Task Update(KurrentProjectionManagementClient managementClient) {
 	#region Update
 
 	const string js = @"fromAll()
@@ -305,7 +305,7 @@ static async Task Update(EventStoreProjectionManagementClient managementClient) 
 	#endregion Update
 }
 
-static async Task Update_NotFound(EventStoreProjectionManagementClient managementClient) {
+static async Task Update_NotFound(KurrentProjectionManagementClient managementClient) {
 	#region Update_NotFound
 
 	try {
@@ -321,7 +321,7 @@ static async Task Update_NotFound(EventStoreProjectionManagementClient managemen
 	#endregion Update_NotFound
 }
 
-static async Task ListAll(EventStoreProjectionManagementClient managementClient) {
+static async Task ListAll(KurrentProjectionManagementClient managementClient) {
 	#region ListAll
 
 	var details = managementClient.ListAllAsync();
@@ -333,7 +333,7 @@ static async Task ListAll(EventStoreProjectionManagementClient managementClient)
 	#endregion ListAll
 }
 
-static async Task ListContinuous(EventStoreProjectionManagementClient managementClient) {
+static async Task ListContinuous(KurrentProjectionManagementClient managementClient) {
 	#region ListContinuous
 
 	var details = managementClient.ListContinuousAsync();
@@ -345,7 +345,7 @@ static async Task ListContinuous(EventStoreProjectionManagementClient management
 	#endregion ListContinuous
 }
 
-static async Task GetStatus(EventStoreProjectionManagementClient managementClient) {
+static async Task GetStatus(KurrentProjectionManagementClient managementClient) {
 	const string js =
 		"fromAll().when({$init:function(){return {count:0};},$any:function(s, e){s.count += 1;}}).outputState();";
 
@@ -362,7 +362,7 @@ static async Task GetStatus(EventStoreProjectionManagementClient managementClien
 	#endregion GetStatus
 }
 
-static async Task GetState(EventStoreProjectionManagementClient managementClient) {
+static async Task GetState(KurrentProjectionManagementClient managementClient) {
 	// will have to wait for the client to be fixed before we import in the doc 
 
 	#region GetState
@@ -393,7 +393,7 @@ static async Task GetState(EventStoreProjectionManagementClient managementClient
 	#endregion GetState
 }
 
-static async Task GetResult(EventStoreProjectionManagementClient managementClient) {
+static async Task GetResult(KurrentProjectionManagementClient managementClient) {
 	#region GetResult
 
 	const string js = @"fromAll()
@@ -433,9 +433,9 @@ static async Task GetResult(EventStoreProjectionManagementClient managementClien
 }
 
 static async Task Populate(string connection, int numberOfEvents) {
-	var settings = EventStoreClientSettings.Create(connection);
+	var settings = KurrentClientSettings.Create(connection);
 	settings.DefaultCredentials = new UserCredentials("admin", "changeit");
-	var client = new EventStoreClient(settings);
+	var client = new KurrentClient(settings);
 	var messages = Enumerable.Range(0, numberOfEvents).Select(
 		number =>
 			new EventData(
