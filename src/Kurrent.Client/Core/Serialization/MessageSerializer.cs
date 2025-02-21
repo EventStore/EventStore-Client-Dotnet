@@ -41,7 +41,7 @@ public static class MessageSerializerExtensions {
 			return defaultMessageSerializer;
 
 		if (operationSettings.AutomaticDeserialization == AutomaticDeserialization.Disabled)
-			return NulloMessageSerializer.Instance;
+			return NullMessageSerializer.Instance;
 
 		if (operationSettings.ConfigureSettings == null)
 			return defaultMessageSerializer;
@@ -130,8 +130,8 @@ public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializ
 			.TryResolveClrMetadataType(record.EventType, out clrMetadataType);
 }
 
-public class NulloMessageSerializer : IMessageSerializer {
-	public static readonly NulloMessageSerializer Instance = new NulloMessageSerializer();
+public class NullMessageSerializer : IMessageSerializer {
+	public static readonly NullMessageSerializer Instance = new NullMessageSerializer();
 
 	public EventData Serialize(Message value, MessageSerializationContext context) {
 		throw new InvalidOperationException("Cannot serialize, automatic deserialization is disabled");
