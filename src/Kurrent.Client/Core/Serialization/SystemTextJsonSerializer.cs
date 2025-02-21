@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using EventStore.Client.Serialization;
 
 namespace Kurrent.Client.Core.Serialization;
 
@@ -27,7 +26,7 @@ public class SystemTextJsonSerializer(SystemTextJsonSerializationSettings? optio
 	readonly JsonSerializerOptions _options = options?.Options ?? SystemTextJsonSerializationSettings.DefaultJsonSerializerOptions;
 
 	public ReadOnlyMemory<byte> Serialize(object value) {
-		return Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value, _options));
+		return JsonSerializer.SerializeToUtf8Bytes(value, _options);
 	}
 
 	public object? Deserialize(ReadOnlyMemory<byte> data, Type type) {

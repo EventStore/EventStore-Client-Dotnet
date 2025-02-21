@@ -1,7 +1,7 @@
 using System.Threading.Channels;
-using EventStore.Client.Serialization;
 using EventStore.Client.Streams;
 using Grpc.Core;
+using Kurrent.Client.Core.Serialization;
 using static EventStore.Client.Streams.ReadResp;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
 

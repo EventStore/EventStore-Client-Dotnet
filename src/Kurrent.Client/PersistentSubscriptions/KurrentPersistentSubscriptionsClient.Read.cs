@@ -1,7 +1,6 @@
 using System.Threading.Channels;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Client.Diagnostics;
-using EventStore.Client.Serialization;
 using Grpc.Core;
 using Kurrent.Client.Core.Serialization;
 using static EventStore.Client.PersistentSubscriptions.PersistentSubscriptions;
@@ -26,10 +25,10 @@ namespace EventStore.Client {
 	}
 
 	public class PersistentSubscriptionListener {
-#if NET48
 		/// <summary>
 		/// A handler called when a new event is received over the subscription.
 		/// </summary>
+#if NET48
 		public Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> EventAppeared { get; set; } =
  null!;
 #else
@@ -421,8 +420,7 @@ namespace EventStore.Client {
 					async IAsyncEnumerable<PersistentSubscriptionMessage> GetMessages() {
 						try {
 							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)) {
-								if (message is PersistentSubscriptionMessage.SubscriptionConfirmation(var subscriptionId
-								    ))
+								if (message is PersistentSubscriptionMessage.SubscriptionConfirmation(var subscriptionId))
 									SubscriptionId = subscriptionId;
 
 								yield return message;

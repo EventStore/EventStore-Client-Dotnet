@@ -6,7 +6,6 @@ using EventStore.Client.Streams;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using EventStore.Client.Diagnostics;
-using EventStore.Client.Serialization;
 using Kurrent.Client.Core.Serialization;
 using Kurrent.Diagnostics;
 using Kurrent.Diagnostics.Telemetry;

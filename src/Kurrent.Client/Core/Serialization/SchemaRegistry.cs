@@ -1,6 +1,4 @@
 using EventStore.Client;
-using EventStore.Client.Serialization;
-using Kurrent.Client.Tests.Streams.Serialization;
 
 namespace Kurrent.Client.Core.Serialization;
 

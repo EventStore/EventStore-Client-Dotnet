@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace Kurrent.Client.Tests.Streams.Serialization;
+namespace Kurrent.Client.Core.Serialization;
 
 public interface IMessageTypeRegistry {
 	void    Register(Type messageType, string messageTypeName);

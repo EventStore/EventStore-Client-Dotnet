@@ -1,10 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using EventStore.Client;
-using EventStore.Client.Diagnostics;
-using EventStore.Client.Serialization;
-using Kurrent.Client.Core.Serialization;
 
-namespace EventStore.Client.Serialization;
+namespace Kurrent.Client.Core.Serialization;
 
 using static ContentTypeExtensions;
 

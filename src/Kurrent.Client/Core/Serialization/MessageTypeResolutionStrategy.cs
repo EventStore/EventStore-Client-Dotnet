@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Kurrent.Client.Tests.Streams.Serialization;
 using Kurrent.Diagnostics.Tracing;
 
-namespace EventStore.Client.Serialization;
+namespace Kurrent.Client.Core.Serialization;
 
 public interface IMessageTypeNamingStrategy {
 	string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext);

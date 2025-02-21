@@ -1,4 +1,4 @@
-namespace EventStore.Client.Serialization;
+namespace Kurrent.Client.Core.Serialization;
 
 public interface ISerializer {
 	public ReadOnlyMemory<byte> Serialize(object value);

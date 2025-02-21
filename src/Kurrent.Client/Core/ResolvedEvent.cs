@@ -1,4 +1,3 @@
-using EventStore.Client.Serialization;
 using Kurrent.Client.Core.Serialization;
 
 namespace EventStore.Client {
@@ -69,7 +68,6 @@ namespace EventStore.Client {
 		/// <param name="event"></param>
 		/// <param name="link"></param>
 		/// <param name="commitPosition"></param>
-		/// <param name="deserializedEvent"></param>
 		public ResolvedEvent(EventRecord @event, EventRecord? link, ulong? commitPosition) : this(
 			@event,
 			link,

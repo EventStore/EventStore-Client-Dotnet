@@ -1,6 +1,5 @@
 using System.Text.Encodings.Web;
 using System.Threading.Channels;
-using EventStore.Client.Serialization;
 using Grpc.Core;
 using Kurrent.Client.Core.Serialization;
 using Microsoft.Extensions.Logging;

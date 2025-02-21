@@ -1,5 +1,4 @@
 using System.Text.Json;
-using EventStore.Client.Serialization;
 using Kurrent.Client.Core.Serialization;
 
 namespace EventStore.Client;
