@@ -533,6 +533,55 @@ namespace EventStore.Client {
 				new AppendToStreamOptions(),
 				cancellationToken
 			);
+		
+		
+		/// <summary>
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="EventStore.Client.KurrentClientSettings"/>
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream to append to.</param>
+		/// <param name="messages">Messages to append to the stream.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static Task<IWriteResult> AppendToStreamAsync(
+			this KurrentClient client,
+			string streamName,
+			StreamRevision expectedRevision,
+			IEnumerable<Message> messages,
+			CancellationToken cancellationToken = default
+		)
+			=> client.AppendToStreamAsync(
+				streamName,
+				messages,
+				new AppendToStreamOptions {
+					ExpectedStreamRevision = expectedRevision
+				},
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="EventStore.Client.KurrentClientSettings"/>
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream to append to.</param>
+		/// <param name="messages">Messages to append to the stream.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static Task<IWriteResult> AppendToStreamAsync(
+			this KurrentClient client,
+			string streamName,
+			StreamRevision expectedRevision,
+			IEnumerable<object> messages,
+			CancellationToken cancellationToken = default
+		)
+			=> client.AppendToStreamAsync(
+				streamName,
+				messages.Select(m => Message.From(m)),
+				new AppendToStreamOptions{ ExpectedStreamRevision = expectedRevision},
+				cancellationToken
+			);
 
 		/// <summary>
 		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="EventStore.Client.KurrentClientSettings"/>
