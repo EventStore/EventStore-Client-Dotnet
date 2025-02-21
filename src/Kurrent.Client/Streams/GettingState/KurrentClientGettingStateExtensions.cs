@@ -8,106 +8,94 @@ public record GetStateResult<TState>(
 	Position? LastPosition = null
 );
 
-public class BuildStateOptions {
-	/// <summary>
-	/// The <see cref="EventStore.Client.StreamPosition"/> to start reading from.
-	/// </summary>
-	public StreamPosition FromStreamPosition { get; set; } = StreamPosition.Start;
-
-	/// <summary>
-	/// The <see cref="EventStore.Client.Position"/> to start reading from.
-	/// </summary>
-	public Position FromPosition { get; set; } = Position.Start;
-
-	/// <summary>
-	/// The <see cref="EventStore.Client.StreamPosition"/> to end reading on.
-	/// </summary>
-	public StreamPosition ToStreamPosition { get; set; } = StreamPosition.Start;
-
-	/// <summary>
-	/// The <see cref="EventStore.Client.Position"/> to end reading on.
-	/// </summary>
-	public Position ToPosition { get; set; } = Position.Start;
-
-	/// <summary>
-	/// The expected <see cref="ExpectedStreamState"/> of the stream to append to.
-	/// </summary>
-	public StreamState? ExpectedStreamState { get; set; }
-
-	/// <summary>
-	/// The expected <see cref="ExpectedStreamRevision"/> of the stream to append to.
-	/// </summary>
-	public StreamRevision? ExpectedStreamRevision { get; set; }
-
-	/// <summary>
-	/// The number of events to read
-	/// </summary>
-	public long MaxCount { get; set; } = long.MaxValue;
-
-	/// <summary>
-	/// Toggle this to fail when builder didn't get any messages (e.g. stream was empty)
-	/// </summary>
-	public bool ShouldFailOnNoMessages { get; set; }
-}
-
 public interface IStateBuilder<TState> {
 	public Task<GetStateResult<TState>> GetAsync(
 		IAsyncEnumerable<ResolvedEvent> messages,
-		BuildStateOptions options,
 		CancellationToken ct = default
 	);
 }
 
 public interface IState<in TEvent> {
-	public void When(TEvent @event);
+	public void Apply(TEvent @event);
 }
 
-public static class StateBuilder {
+public static class BuildState {
 	public static Task<GetStateResult<TState>> GetAsync<TState>(
 		this IStateBuilder<TState> stateBuilder,
 		IAsyncEnumerable<ResolvedEvent> messages,
 		CancellationToken ct = default
-	) => stateBuilder.GetAsync(messages, new BuildStateOptions(), ct);
+	) =>
+		stateBuilder.GetAsync(messages, ct);
 
 	public static StateBuilder<TState, TEvent> From<TState, TEvent>()
-		where TState : IState<TEvent>, new () =>
+		where TState : IState<TEvent>, new() =>
 		new StateBuilder<TState, TEvent>(
 			(state, @event) => {
-				state.When(@event);
+				state.Apply(@event);
 				return state;
 			},
 			() => new TState()
 		);
-	
+
 	public static StateBuilder<TState, TEvent> From<TState, TEvent>(Func<TState> getInitialState)
 		where TState : IState<TEvent> =>
 		new StateBuilder<TState, TEvent>(
 			(state, @event) => {
-				state.When(@event);
+				state.Apply(@event);
+				return state;
+			},
+			getInitialState
+		);
+
+	public static AsyncStateBuilder<TState, TEvent> From<TState, TEvent>(
+		Func<ValueTask<TState>> getInitialState
+	) where TState : IState<TEvent> =>
+		new AsyncStateBuilder<TState, TEvent>(
+			(state, @event) => {
+				state.Apply(@event);
 				return state;
 			},
 			getInitialState
 		);
 }
 
-public static class KurrentClientGettingStateExtensions {
+public static class KurrentClientGettingStateClientExtensions {
 	public static Task<GetStateResult<TState>> GetStateAsync<TState>(
 		this KurrentClient eventStore,
 		string streamName,
 		IStateBuilder<TState> stateBuilder,
 		CancellationToken cancellationToken = default
 	) =>
-		eventStore.ReadStreamAsync(streamName, cancellationToken: cancellationToken)
+		eventStore.GetStateAsync(streamName, stateBuilder, new ReadStreamOptions(), cancellationToken);
+
+	public static Task<GetStateResult<TState>> GetStateAsync<TState>(
+		this KurrentClient eventStore,
+		string streamName,
+		IStateBuilder<TState> stateBuilder,
+		ReadStreamOptions options,
+		CancellationToken cancellationToken = default
+	) =>
+		eventStore.ReadStreamAsync(streamName, options, cancellationToken)
 			.GetStateAsync(stateBuilder, cancellationToken);
-	
+
 	public static Task<GetStateResult<TState>> GetStateAsync<TState, TEvent>(
 		this KurrentClient eventStore,
 		string streamName,
 		CancellationToken cancellationToken = default
-	) where TState: IState<TEvent>, new() =>
-		eventStore.ReadStreamAsync(streamName, cancellationToken: cancellationToken)
-			.GetStateAsync(StateBuilder.From<TState, TEvent>(), cancellationToken);
+	) where TState : IState<TEvent>, new() =>
+		eventStore.GetStateAsync<TState, TEvent>(streamName, new ReadStreamOptions(), cancellationToken);
 
+	public static Task<GetStateResult<TState>> GetStateAsync<TState, TEvent>(
+		this KurrentClient eventStore,
+		string streamName,
+		ReadStreamOptions options,
+		CancellationToken cancellationToken = default
+	) where TState : IState<TEvent>, new() =>
+		eventStore.ReadStreamAsync(streamName, options, cancellationToken)
+			.GetStateAsync(BuildState.From<TState, TEvent>(), cancellationToken);
+}
+
+public static class KurrentClientGettingStateReadAndSubscribeExtensions {
 	public static Task<GetStateResult<TState>> GetStateAsync<TState>(
 		this KurrentClient.ReadStreamResult readStreamResult,
 		IStateBuilder<TState> stateBuilder,
@@ -143,22 +131,19 @@ public record StateBuilder<TState, TEvent>(
 ) : IStateBuilder<TState> {
 	public virtual async Task<GetStateResult<TState>> GetAsync(
 		IAsyncEnumerable<ResolvedEvent> messages,
-		BuildStateOptions options,
 		CancellationToken ct
 	) {
 		var state = GetInitialState();
 
 		if (messages is KurrentClient.ReadStreamResult readStreamResult) {
-			if (await readStreamResult.ReadState.ConfigureAwait(false) == ReadState.StreamNotFound)
+			if (await readStreamResult.ReadState.ConfigureAwait(false) == ReadState.Ok)
 				return new GetStateResult<TState>(state);
 		}
 
-		StreamPosition? lastStreamPosition = null;
-		Position?       lastPosition       = null;
+		ResolvedEvent? lastEvent = null;
 
 		await foreach (var resolvedEvent in messages.WithCancellation(ct)) {
-			lastStreamPosition = resolvedEvent.Event.EventNumber;
-			lastPosition       = resolvedEvent.Event.Position;
+			lastEvent = resolvedEvent;
 
 			if (resolvedEvent.DeserializedData is not TEvent @event)
 				continue;
@@ -166,7 +151,7 @@ public record StateBuilder<TState, TEvent>(
 			state = Evolve(state, @event);
 		}
 
-		return new GetStateResult<TState>(state, lastStreamPosition, lastPosition);
+		return new GetStateResult<TState>(state, lastEvent?.Event.EventNumber, lastEvent?.Event.Position);
 	}
 }
 
