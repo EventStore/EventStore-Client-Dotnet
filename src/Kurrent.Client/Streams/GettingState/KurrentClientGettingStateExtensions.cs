@@ -74,7 +74,7 @@ public static class BuildState {
 		var state = initialState;
 
 		if (messages is KurrentClient.ReadStreamResult readStreamResult) {
-			if (await readStreamResult.ReadState.ConfigureAwait(false) == ReadState.Ok)
+			if (await readStreamResult.ReadState.ConfigureAwait(false) == ReadState.StreamNotFound)
 				return new GetStateResult<TState>(state);
 		}
 
