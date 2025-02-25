@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using Kurrent.Client.Tests.Streams.Serialization;
 using Kurrent.Diagnostics.Tracing;
 
 namespace Kurrent.Client.Core.Serialization;

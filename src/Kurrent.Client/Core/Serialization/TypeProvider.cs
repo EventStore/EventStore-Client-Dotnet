@@ -1,4 +1,4 @@
-namespace Kurrent.Client.Tests.Streams.Serialization;
+namespace Kurrent.Client.Core.Serialization;
 
 static class TypeProvider {
 	public static Type? GetTypeByFullName(string fullName) =>

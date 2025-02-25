@@ -15,7 +15,7 @@ class MessageTypeRegistry : IMessageTypeRegistry {
 	readonly ConcurrentDictionary<Type, string>  _typeNameMap = new();
 
 	public void Register(Type messageType, string messageTypeName) {
-		_typeNameMap.AddOrUpdate(messageType, messageTypeName, (_, typeName) => typeName);
+		_typeNameMap.AddOrUpdate(messageType, messageTypeName, (_, _) => messageTypeName);
 		_typeMap.AddOrUpdate(messageTypeName, messageType, (_, type) => type);
 	}
 
@@ -61,7 +61,7 @@ class MessageTypeRegistry : IMessageTypeRegistry {
 		);
 }
 
-static class MessageTypeMapperExtensions {
+static class MessageTypeRegistryExtensions {
 	public static void Register<T>(this IMessageTypeRegistry messageTypeRegistry, string messageTypeName) =>
 		messageTypeRegistry.Register(typeof(T), messageTypeName);
 
