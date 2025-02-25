@@ -96,7 +96,7 @@ namespace EventStore.Client {
 				: new Position?();
 		}
 
-		public static ResolvedEvent From(
+		internal static ResolvedEvent From(
 			EventRecord @event,
 			EventRecord? link,
 			ulong? commitPosition,

@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 
 namespace Kurrent.Client.Core.Serialization;
 
-public interface IMessageTypeRegistry {
+interface IMessageTypeRegistry {
 	void    Register(Type messageType, string messageTypeName);
 	string? GetTypeName(Type messageType);
 	string  GetOrAddTypeName(Type clrType, Func<Type, string> getTypeName);
@@ -10,7 +10,7 @@ public interface IMessageTypeRegistry {
 	Type?   GetOrAddClrType(string messageTypeName, Func<string, Type?> getClrType);
 }
 
-public class MessageTypeRegistry : IMessageTypeRegistry {
+class MessageTypeRegistry : IMessageTypeRegistry {
 	readonly ConcurrentDictionary<string, Type?> _typeMap     = new();
 	readonly ConcurrentDictionary<Type, string>  _typeNameMap = new();
 
@@ -61,7 +61,7 @@ public class MessageTypeRegistry : IMessageTypeRegistry {
 		);
 }
 
-public static class MessageTypeMapperExtensions {
+static class MessageTypeMapperExtensions {
 	public static void Register<T>(this IMessageTypeRegistry messageTypeRegistry, string messageTypeName) =>
 		messageTypeRegistry.Register(typeof(T), messageTypeName);
 

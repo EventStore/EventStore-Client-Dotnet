@@ -58,6 +58,10 @@ namespace EventStore.Client {
 		/// </summary>
 		public TimeSpan? DefaultDeadline { get; set; } = TimeSpan.FromSeconds(10);
 
+		/// <summary>
+		/// Provides configuration options for messages serialization and deserialization in the KurrentDB client.
+		/// If null, default settings are used.
+		/// </summary>
 		public KurrentClientSerializationSettings Serialization  { get; set; } = KurrentClientSerializationSettings.Default();
 	}
 }

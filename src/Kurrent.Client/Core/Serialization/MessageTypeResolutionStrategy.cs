@@ -23,7 +23,7 @@ public interface IMessageTypeNamingStrategy {
 
 public record MessageTypeNamingResolutionContext(string CategoryName);
 
-public class MessageTypeNamingStrategyWrapper(
+class MessageTypeNamingStrategyWrapper(
 	IMessageTypeRegistry messageTypeRegistry,
 	IMessageTypeNamingStrategy messageTypeNamingStrategy
 ) : IMessageTypeNamingStrategy {

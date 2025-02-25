@@ -12,7 +12,7 @@ public enum ContentType {
 	Bytes = 4
 }
 
-public static class ContentTypeExtensions {
+static class ContentTypeExtensions {
 	public static ContentType FromMessageContentType(string contentType) =>
 		contentType == ApplicationJson
 			? ContentType.Json
@@ -26,7 +26,7 @@ public static class ContentTypeExtensions {
 		};
 }
 
-public class SchemaRegistry(
+class SchemaRegistry(
 	IDictionary<ContentType, ISerializer> serializers,
 	IMessageTypeNamingStrategy messageTypeNamingStrategy
 ) {

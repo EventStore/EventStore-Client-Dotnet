@@ -5,7 +5,7 @@ namespace Kurrent.Client.Core.Serialization;
 
 using static ContentTypeExtensions;
 
-public interface IMessageSerializer {
+interface IMessageSerializer {
 	public EventData Serialize(Message value, MessageSerializationContext context);
 
 #if NET48
@@ -15,7 +15,7 @@ public interface IMessageSerializer {
 #endif
 }
 
-public record MessageSerializationContext(
+record MessageSerializationContext(
 	string StreamName,
 	ContentType ContentType
 ) {
@@ -23,7 +23,7 @@ public record MessageSerializationContext(
 		StreamName.Split('-').FirstOrDefault() ?? "no_stream_category";
 }
 
-public static class MessageSerializerExtensions {
+static class MessageSerializerExtensions {
 	public static EventData[] Serialize(
 		this IMessageSerializer serializer,
 		IEnumerable<Message> messages,
@@ -53,7 +53,7 @@ public static class MessageSerializerExtensions {
 	}
 }
 
-public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializer {
+class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializer {
 	readonly ISerializer _jsonSerializer =
 		schemaRegistry.GetSerializer(ContentType.Json);
 
@@ -130,7 +130,7 @@ public class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializ
 			.TryResolveClrMetadataType(record.EventType, out clrMetadataType);
 }
 
-public class NullMessageSerializer : IMessageSerializer {
+class NullMessageSerializer : IMessageSerializer {
 	public static readonly NullMessageSerializer Instance = new NullMessageSerializer();
 
 	public EventData Serialize(Message value, MessageSerializationContext context) {
