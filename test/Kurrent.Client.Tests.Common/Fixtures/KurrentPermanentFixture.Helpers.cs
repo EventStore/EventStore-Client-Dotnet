@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using EventStore.Client;
+using Kurrent.Client.Core.Serialization;
 
 namespace Kurrent.Client.Tests;
 
@@ -48,6 +49,11 @@ public partial class KurrentPermanentFixture {
 		Enumerable.Range(0, count)
 			.Select(index => CreateTestEvent(index, type ?? TestEventType, metadata, contentType));
 
+
+	public IEnumerable<Message> CreateTestMessages(int count = 1, object? metadata = null) =>
+		Enumerable.Range(0, count)
+			.Select(index => CreateTestMessage(index, metadata));
+
 	public EventData CreateTestEvent(
 		string? type = null, ReadOnlyMemory<byte>? metadata = null, string? contentType = null
 	) =>
@@ -63,6 +69,13 @@ public partial class KurrentPermanentFixture {
 
 	protected static EventData CreateTestEvent(int index) => CreateTestEvent(index, TestEventType);
 
+	protected static Message CreateTestMessage(int index, object? metadata = null) =>
+		Message.From(
+			new DummyEvent(index),
+			metadata,
+			Uuid.NewUuid()
+		);
+	
 	protected static EventData CreateTestEvent(
 		int index, string type, ReadOnlyMemory<byte>? metadata = null, string? contentType = null
 	) =>
@@ -104,4 +117,6 @@ public partial class KurrentPermanentFixture {
 		await Streams.WarmUp();
 		Log.Information("Service restarted.");
 	}
+
+	public record DummyEvent(int X);
 }

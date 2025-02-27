@@ -13,6 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client", "src\Kurre
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.Tests.Common", "test\Kurrent.Client.Tests.Common\Kurrent.Client.Tests.Common.csproj", "{47BF715B-A0BF-4044-B335-717E56422550}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.Tests.NeverLoadedAssembly", "test\Kurrent.Client.Tests.NeverLoadedAssembly\Kurrent.Client.Tests.NeverLoadedAssembly.csproj", "{0AC8A7E9-6839-4B4C-B299-950C376DF71F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.Tests.ExternalAssembly", "test\Kurrent.Client.Tests.ExternalAssembly\Kurrent.Client.Tests.ExternalAssembly.csproj", "{829AF806-1144-408A-85FE-763835775086}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -34,10 +38,20 @@ Global
 		{47BF715B-A0BF-4044-B335-717E56422550}.Debug|x64.Build.0 = Debug|Any CPU
 		{47BF715B-A0BF-4044-B335-717E56422550}.Release|x64.ActiveCfg = Release|Any CPU
 		{47BF715B-A0BF-4044-B335-717E56422550}.Release|x64.Build.0 = Release|Any CPU
+		{0AC8A7E9-6839-4B4C-B299-950C376DF71F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0AC8A7E9-6839-4B4C-B299-950C376DF71F}.Debug|x64.Build.0 = Debug|Any CPU
+		{0AC8A7E9-6839-4B4C-B299-950C376DF71F}.Release|x64.ActiveCfg = Release|Any CPU
+		{0AC8A7E9-6839-4B4C-B299-950C376DF71F}.Release|x64.Build.0 = Release|Any CPU
+		{829AF806-1144-408A-85FE-763835775086}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{829AF806-1144-408A-85FE-763835775086}.Debug|x64.Build.0 = Debug|Any CPU
+		{829AF806-1144-408A-85FE-763835775086}.Release|x64.ActiveCfg = Release|Any CPU
+		{829AF806-1144-408A-85FE-763835775086}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{FC829F1B-43AD-4C96-9002-23D04BBA3AF3} = {C51F2C69-45A9-4D0D-A708-4FC319D5D340}
 		{762EECAA-122E-4B0C-BC50-5AA4F72CA4E0} = {EA59C1CB-16DA-4F68-AF8A-642A969B4CF8}
 		{47BF715B-A0BF-4044-B335-717E56422550} = {C51F2C69-45A9-4D0D-A708-4FC319D5D340}
+		{0AC8A7E9-6839-4B4C-B299-950C376DF71F} = {C51F2C69-45A9-4D0D-A708-4FC319D5D340}
+		{829AF806-1144-408A-85FE-763835775086} = {C51F2C69-45A9-4D0D-A708-4FC319D5D340}
 	EndGlobalSection
 EndGlobal
