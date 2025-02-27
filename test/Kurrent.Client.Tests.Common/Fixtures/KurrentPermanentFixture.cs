@@ -70,7 +70,8 @@ public partial class KurrentPermanentFixture : IAsyncLifetime, IAsyncDisposable 
 			OperationOptions         = Options.ClientSettings.OperationOptions,
 			ConnectivitySettings     = Options.ClientSettings.ConnectivitySettings,
 			DefaultCredentials       = Options.ClientSettings.DefaultCredentials,
-			DefaultDeadline          = Options.ClientSettings.DefaultDeadline
+			DefaultDeadline          = Options.ClientSettings.DefaultDeadline,
+			Serialization            = Options.ClientSettings.Serialization
 		};
 
 	InterlockedBoolean            WarmUpCompleted { get; } = new InterlockedBoolean();

@@ -6,6 +6,7 @@ using EventStore.Client.Streams;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using EventStore.Client.Diagnostics;
+using Kurrent.Client.Core.Serialization;
 using Kurrent.Diagnostics;
 using Kurrent.Diagnostics.Telemetry;
 using Kurrent.Diagnostics.Tracing;
@@ -14,6 +15,48 @@ using static EventStore.Client.Streams.Streams;
 
 namespace EventStore.Client {
 	public partial class KurrentClient {
+		/// <summary>
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="EventStore.Client.KurrentClientSettings"/>
+		/// </summary>
+		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="messages">Messages to append to the stream.</param>
+		/// <param name="options">Optional settings for the append operation, e.g. expected stream position for optimistic concurrency check</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public Task<IWriteResult> AppendToStreamAsync(
+			string streamName,
+			IEnumerable<Message> messages,
+			AppendToStreamOptions options,
+			CancellationToken cancellationToken = default
+		) {
+			var serializationContext = new MessageSerializationContext(
+				streamName,
+				Settings.Serialization.DefaultContentType
+			);
+
+			var eventsData = _messageSerializer.Serialize(messages, serializationContext);
+
+			return options.ExpectedStreamRevision.HasValue
+				? AppendToStreamAsync(
+					streamName,
+					options.ExpectedStreamRevision.Value,
+					eventsData,
+					options.ConfigureOperationOptions,
+					options.Deadline,
+					options.UserCredentials,
+					cancellationToken
+				)
+				: AppendToStreamAsync(
+					streamName,
+					options.ExpectedStreamState ?? StreamState.Any,
+					eventsData,
+					options.ConfigureOperationOptions,
+					options.Deadline,
+					options.UserCredentials,
+					cancellationToken
+				);
+		}
+
 		/// <summary>
 		/// Appends events asynchronously to a stream.
 		/// </summary>
@@ -114,16 +157,28 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken
 		) {
 			var tags = new ActivityTagsCollection()
-				.WithRequiredTag(TelemetryTags.Kurrent.Stream, header.Options.StreamIdentifier.StreamName.ToStringUtf8())
+				.WithRequiredTag(
+					TelemetryTags.Kurrent.Stream,
+					header.Options.StreamIdentifier.StreamName.ToStringUtf8()
+				)
 				.WithGrpcChannelServerTags(channelInfo)
 				.WithClientSettingsServerTags(Settings)
-				.WithOptionalTag(TelemetryTags.Database.User, userCredentials?.Username ?? Settings.DefaultCredentials?.Username);
+				.WithOptionalTag(
+					TelemetryTags.Database.User,
+					userCredentials?.Username ?? Settings.DefaultCredentials?.Username
+				);
 
-			return KurrentClientDiagnostics.ActivitySource.TraceClientOperation(Operation, TracingConstants.Operations.Append, tags);
+			return KurrentClientDiagnostics.ActivitySource.TraceClientOperation(
+				Operation,
+				TracingConstants.Operations.Append,
+				tags
+			);
 
 			async ValueTask<IWriteResult> Operation() {
 				using var call = new StreamsClient(channelInfo.CallInvoker)
-					.Append(KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+					.Append(
+						KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken)
+					);
 
 				await call.RequestStream
 					.WriteAsync(header)
@@ -160,11 +215,13 @@ namespace EventStore.Client {
 		}
 
 		IWriteResult HandleSuccessAppend(AppendResp response, AppendReq header) {
-			var currentRevision = response.Success.CurrentRevisionOptionCase == AppendResp.Types.Success.CurrentRevisionOptionOneofCase.NoStream
+			var currentRevision = response.Success.CurrentRevisionOptionCase
+			                   == AppendResp.Types.Success.CurrentRevisionOptionOneofCase.NoStream
 				? StreamRevision.None
 				: new StreamRevision(response.Success.CurrentRevision);
 
-			var position = response.Success.PositionOptionCase == AppendResp.Types.Success.PositionOptionOneofCase.Position
+			var position = response.Success.PositionOptionCase
+			            == AppendResp.Types.Success.PositionOptionOneofCase.Position
 				? new Position(response.Success.Position.CommitPosition, response.Success.Position.PreparePosition)
 				: default;
 
@@ -181,7 +238,8 @@ namespace EventStore.Client {
 		IWriteResult HandleWrongExpectedRevision(
 			AppendResp response, AppendReq header, KurrentClientOperationOptions operationOptions
 		) {
-			var actualStreamRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase == CurrentRevisionOptionOneofCase.CurrentRevision
+			var actualStreamRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase
+			                        == CurrentRevisionOptionOneofCase.CurrentRevision
 				? new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
 				: StreamRevision.None;
 
@@ -193,7 +251,8 @@ namespace EventStore.Client {
 			);
 
 			if (operationOptions.ThrowOnAppendFailure) {
-				if (response.WrongExpectedVersion.ExpectedRevisionOptionCase == ExpectedRevisionOptionOneofCase.ExpectedRevision) {
+				if (response.WrongExpectedVersion.ExpectedRevisionOptionCase
+				 == ExpectedRevisionOptionOneofCase.ExpectedRevision) {
 					throw new WrongExpectedVersionException(
 						header.Options.StreamIdentifier!,
 						new StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
@@ -215,7 +274,8 @@ namespace EventStore.Client {
 				);
 			}
 
-			var expectedRevision = response.WrongExpectedVersion.ExpectedRevisionOptionCase == ExpectedRevisionOptionOneofCase.ExpectedRevision
+			var expectedRevision = response.WrongExpectedVersion.ExpectedRevisionOptionCase
+			                    == ExpectedRevisionOptionOneofCase.ExpectedRevision
 				? new StreamRevision(response.WrongExpectedVersion.ExpectedRevision)
 				: StreamRevision.None;
 
@@ -227,7 +287,7 @@ namespace EventStore.Client {
 		}
 
 		class StreamAppender : IDisposable {
-			readonly KurrentClientSettings                                       _settings;
+			readonly KurrentClientSettings                                          _settings;
 			readonly CancellationToken                                              _cancellationToken;
 			readonly Action<Exception>                                              _onException;
 			readonly Channel<BatchAppendReq>                                        _channel;
@@ -302,8 +362,7 @@ namespace EventStore.Client {
 					try {
 						foreach (var appendRequest in GetRequests(events, options, correlationId))
 							await _channel.Writer.WriteAsync(appendRequest, cancellationToken).ConfigureAwait(false);
-					}
-					catch (ChannelClosedException ex) {
+					} catch (ChannelClosedException ex) {
 						// channel is closed, our tcs won't necessarily get completed, don't wait for it.
 						throw ex.InnerException ?? ex;
 					}
@@ -333,8 +392,7 @@ namespace EventStore.Client {
 					_ = Task.Run(Receive, _cancellationToken);
 
 					_isUsable.TrySetResult(true);
-				}
-				catch (Exception ex) {
+				} catch (Exception ex) {
 					_isUsable.TrySetException(ex);
 					_onException(ex);
 				}
@@ -344,7 +402,8 @@ namespace EventStore.Client {
 				async Task Send() {
 					if (_call is null) return;
 
-					await foreach (var appendRequest in _channel.Reader.ReadAllAsync(_cancellationToken).ConfigureAwait(false))
+					await foreach (var appendRequest in _channel.Reader.ReadAllAsync(_cancellationToken)
+						               .ConfigureAwait(false))
 						await _call.RequestStream.WriteAsync(appendRequest).ConfigureAwait(false);
 
 					await _call.RequestStream.CompleteAsync().ConfigureAwait(false);
@@ -354,20 +413,22 @@ namespace EventStore.Client {
 					if (_call is null) return;
 
 					try {
-						await foreach (var response in _call.ResponseStream.ReadAllAsync(_cancellationToken).ConfigureAwait(false)) {
-							if (!_pendingRequests.TryRemove(Uuid.FromDto(response.CorrelationId), out var writeResult)) {
+						await foreach (var response in _call.ResponseStream.ReadAllAsync(_cancellationToken)
+							               .ConfigureAwait(false)) {
+							if (!_pendingRequests.TryRemove(
+								    Uuid.FromDto(response.CorrelationId),
+								    out var writeResult
+							    )) {
 								continue; // TODO: Log?
 							}
 
 							try {
 								writeResult.TrySetResult(response.ToWriteResult());
-							}
-							catch (Exception ex) {
+							} catch (Exception ex) {
 								writeResult.TrySetException(ex);
 							}
 						}
-					}
-					catch (Exception ex) {
+					} catch (Exception ex) {
 						// signal that no tcs added to _pendingRequests after this point will necessarily complete
 						_channel.Writer.TryComplete(ex);
 
@@ -380,7 +441,9 @@ namespace EventStore.Client {
 				}
 			}
 
-			IEnumerable<BatchAppendReq> GetRequests(IEnumerable<EventData> events, BatchAppendReq.Types.Options options, Uuid correlationId) {
+			IEnumerable<BatchAppendReq> GetRequests(
+				IEnumerable<EventData> events, BatchAppendReq.Types.Options options, Uuid correlationId
+			) {
 				var batchSize        = 0;
 				var first            = true;
 				var correlationIdDto = correlationId.ToDto();
@@ -426,5 +489,154 @@ namespace EventStore.Client {
 				_call?.Dispose();
 			}
 		}
+	}
+
+	public static class KurrentClientAppendToStreamExtensions {
+		/// <summary>
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="EventStore.Client.KurrentClientSettings"/>
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="messages">Messages to append to the stream.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static Task<IWriteResult> AppendToStreamAsync(
+			this KurrentClient client,
+			string streamName,
+			IEnumerable<Message> messages,
+			CancellationToken cancellationToken = default
+		)
+			=> client.AppendToStreamAsync(
+				streamName,
+				messages,
+				new AppendToStreamOptions(),
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="EventStore.Client.KurrentClientSettings"/>
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="messages">Messages to append to the stream.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static Task<IWriteResult> AppendToStreamAsync(
+			this KurrentClient client,
+			string streamName,
+			IEnumerable<object> messages,
+			CancellationToken cancellationToken = default
+		)
+			=> client.AppendToStreamAsync(
+				streamName,
+				messages.Select(m => Message.From(m)),
+				new AppendToStreamOptions(),
+				cancellationToken
+			);
+		
+		
+		/// <summary>
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="EventStore.Client.KurrentClientSettings"/>
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream to append to.</param>
+		/// <param name="messages">Messages to append to the stream.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static Task<IWriteResult> AppendToStreamAsync(
+			this KurrentClient client,
+			string streamName,
+			StreamRevision expectedRevision,
+			IEnumerable<Message> messages,
+			CancellationToken cancellationToken = default
+		)
+			=> client.AppendToStreamAsync(
+				streamName,
+				messages,
+				new AppendToStreamOptions {
+					ExpectedStreamRevision = expectedRevision
+				},
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="EventStore.Client.KurrentClientSettings"/>
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream to append to.</param>
+		/// <param name="messages">Messages to append to the stream.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static Task<IWriteResult> AppendToStreamAsync(
+			this KurrentClient client,
+			string streamName,
+			StreamRevision expectedRevision,
+			IEnumerable<object> messages,
+			CancellationToken cancellationToken = default
+		)
+			=> client.AppendToStreamAsync(
+				streamName,
+				messages.Select(m => Message.From(m)),
+				new AppendToStreamOptions{ ExpectedStreamRevision = expectedRevision},
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="EventStore.Client.KurrentClientSettings"/>
+		/// </summary>
+		/// <param name="client"></param>
+		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="messages">Messages to append to the stream.</param>
+		/// <param name="options">Optional settings for the append operation, e.g. expected stream position for optimistic concurrency check</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static Task<IWriteResult> AppendToStreamAsync(
+			this KurrentClient client,
+			string streamName,
+			IEnumerable<object> messages,
+			AppendToStreamOptions options,
+			CancellationToken cancellationToken = default
+		)
+			=> client.AppendToStreamAsync(
+				streamName,
+				messages.Select(m => Message.From(m)),
+				options,
+				cancellationToken
+			);
+	}
+
+	// TODO: In the follow up PR merge StreamState and StreamRevision into a one thing
+	public class AppendToStreamOptions {
+		/// <summary>
+		/// The expected <see cref="ExpectedStreamState"/> of the stream to append to.
+		/// </summary>
+		public StreamState? ExpectedStreamState { get; set; }
+
+		/// <summary>
+		/// The expected <see cref="ExpectedStreamRevision"/> of the stream to append to.
+		/// </summary>
+		public StreamRevision? ExpectedStreamRevision { get; set; }
+
+		/// <summary>
+		/// An <see cref="Action{KurrentClientOperationOptions}"/> to configure the operation's options.
+		/// </summary>
+		public Action<KurrentClientOperationOptions>? ConfigureOperationOptions { get; set; }
+
+		/// <summary>
+		/// Maximum time that the operation will be run
+		/// </summary>
+		public TimeSpan? Deadline { get; set; }
+
+		/// <summary>
+		/// The <see cref="UserCredentials"/> for the operation.
+		/// </summary>
+		public UserCredentials? UserCredentials { get; set; }
+
+		/// <summary>
+		/// Allows to customize or disable the automatic deserialization
+		/// </summary>
+		public OperationSerializationSettings? SerializationSettings { get; set; }
 	}
 }
