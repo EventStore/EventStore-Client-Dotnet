@@ -21,6 +21,53 @@ public interface IState<in TEvent> {
 	public void Apply(TEvent @event);
 }
 
+public record StateBuilder<TState, TEvent>(
+	Func<TState, TEvent, TState> Evolve,
+	Func<TState> GetInitialState
+) : IStateBuilder<TState> {
+	public Task<GetStateResult<TState>> GetAsync(
+		IAsyncEnumerable<ResolvedEvent> messages,
+		CancellationToken ct
+	) =>
+		messages.GetState(
+			GetInitialState(),
+			(state, resolvedEvent) =>
+				resolvedEvent.DeserializedData is TEvent @event ? Evolve(state, @event): state,
+			ct
+		);
+}
+
+public record AsyncStateBuilder<TState>(
+	Func<TState, ResolvedEvent, TState> Evolve,
+	Func<ValueTask<TState>> GetInitialState
+) : IStateBuilder<TState> {
+	public async Task<GetStateResult<TState>> GetAsync(
+		IAsyncEnumerable<ResolvedEvent> messages,
+		CancellationToken ct
+	) =>
+		await messages.GetState(
+			await GetInitialState(),
+			Evolve,
+			ct
+		);
+}
+
+public record AsyncStateBuilder<TState, TEvent>(
+	Func<TState, TEvent, TState> Evolve,
+	Func<ValueTask<TState>> GetInitialState
+) : IStateBuilder<TState> {
+	public async Task<GetStateResult<TState>> GetAsync(
+		IAsyncEnumerable<ResolvedEvent> messages,
+		CancellationToken ct
+	) =>
+		await messages.GetState(
+			await GetInitialState(),
+			(state, resolvedEvent) =>
+				resolvedEvent.DeserializedData is TEvent @event ? Evolve(state, @event): state,
+			ct
+		);
+}
+
 public static class BuildState {
 	public static StateBuilder<TState, TEvent> From<TState, TEvent>(
 		Func<TState, TEvent, TState> evolve,
@@ -167,68 +214,3 @@ public record StateBuilder<TState>(
 		messages.GetState(GetInitialState(), Evolve, ct);
 }
 
-public record StateBuilder<TState, TEvent>(
-	Func<TState, TEvent, TState> Evolve,
-	Func<TState> GetInitialState
-) : IStateBuilder<TState> {
-	public Task<GetStateResult<TState>> GetAsync(
-		IAsyncEnumerable<ResolvedEvent> messages,
-		CancellationToken ct
-	) =>
-		messages.GetState(
-			GetInitialState(),
-			(state, resolvedEvent) =>
-				resolvedEvent.DeserializedData is TEvent @event ? Evolve(state, @event): state,
-			ct
-		);
-}
-
-public record AsyncStateBuilder<TState>(
-	Func<TState, ResolvedEvent, TState> Evolve,
-	Func<ValueTask<TState>> GetInitialState
-) : IStateBuilder<TState> {
-	public async Task<GetStateResult<TState>> GetAsync(
-		IAsyncEnumerable<ResolvedEvent> messages,
-		CancellationToken ct
-	) =>
-		await messages.GetState(
-			await GetInitialState(),
-			Evolve,
-			ct
-		);
-}
-
-public record AsyncStateBuilder<TState, TEvent>(
-	Func<TState, TEvent, TState> Evolve,
-	Func<ValueTask<TState>> GetInitialState
-) : IStateBuilder<TState> {
-	public async Task<GetStateResult<TState>> GetAsync(
-		IAsyncEnumerable<ResolvedEvent> messages,
-		CancellationToken ct
-	) =>
-		await messages.GetState(
-			await GetInitialState(),
-			(state, resolvedEvent) =>
-				resolvedEvent.DeserializedData is TEvent @event ? Evolve(state, @event): state,
-			ct
-		);
-}
-
-public record Decider<TState, TCommand, TEvent>(
-	Func<TCommand, TState, TEvent[]> Decide,
-	Func<TState, TEvent, TState> Evolve,
-	Func<TState> GetInitialState
-) : StateBuilder<TState, TEvent>(Evolve, GetInitialState);
-
-public record AsyncDecider<TState, TCommand, TEvent>(
-	Func<TCommand, TState, ValueTask<TEvent[]>> Decide,
-	Func<TState, TEvent, TState> Evolve,
-	Func<ValueTask<TState>> GetInitialState
-) : AsyncStateBuilder<TState, TEvent>(Evolve, GetInitialState) {
-	public static AsyncDecider<TState, TCommand, TEvent> From(Decider<TState, TCommand, TEvent> decider) =>
-		new AsyncDecider<TState, TCommand, TEvent>(
-			(command, state) => new ValueTask<TEvent[]>(decider.Decide(command, state)),
-			decider.Evolve,
-			() => new ValueTask<TState>(decider.GetInitialState())
-		);
-}
