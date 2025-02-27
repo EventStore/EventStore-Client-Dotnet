@@ -2,8 +2,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
         <ProjectReference Include="..\Kurrent.Client.Tests.Common\Kurrent.Client.Tests.Common.csproj"/>
-        <ProjectReference Include="..\Kurrent.Client.Tests.ExternalAssembly\Kurrent.Client.Tests.ExternalAssembly.csproj" />
-        <ProjectReference Include="..\Kurrent.Client.Tests.NeverLoadedAssembly\Kurrent.Client.Tests.NeverLoadedAssembly.csproj" />
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
         <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.0"/>
