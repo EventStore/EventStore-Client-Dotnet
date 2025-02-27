@@ -1,7 +1,6 @@
 using System.Text.Encodings.Web;
 using System.Threading.Channels;
 using Grpc.Core;
-using Kurrent.Client.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -10,14 +9,13 @@ namespace EventStore.Client {
 	/// The client used to manage persistent subscriptions in the KurrentDB.
 	/// </summary>
 	public sealed partial class KurrentPersistentSubscriptionsClient : KurrentClientBase {
-		static BoundedChannelOptions ReadBoundedChannelOptions = new (1) {
+		private static BoundedChannelOptions ReadBoundedChannelOptions = new (1) {
 			SingleReader = true,
 			SingleWriter = true,
 			AllowSynchronousContinuations = true
 		};
 
-		readonly ILogger            _log;
-		readonly IMessageSerializer _messageSerializer;
+		private readonly ILogger _log;
 
 		/// <summary>
 		/// Constructs a new <see cref="KurrentPersistentSubscriptionsClient"/>.
@@ -39,8 +37,6 @@ namespace EventStore.Client {
 			}) {
 			_log = Settings.LoggerFactory?.CreateLogger<KurrentPersistentSubscriptionsClient>()
 			       ?? new NullLogger<KurrentPersistentSubscriptionsClient>();
-
-			_messageSerializer = MessageSerializer.From(settings?.Serialization);
 		}
 		
 		private static string UrlEncode(string s) {

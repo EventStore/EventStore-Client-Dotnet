@@ -1,59 +1,11 @@
 using System.Threading.Channels;
 using EventStore.Client.Streams;
 using Grpc.Core;
-using Kurrent.Client.Core.Serialization;
 using static EventStore.Client.Streams.ReadResp;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
 
 namespace EventStore.Client {
 	public partial class KurrentClient {
-		/// <summary>
-		/// Asynchronously reads all events. By default, it reads all of them from the start. The options parameter allows you to fine-tune it to your needs.
-		/// </summary>
-		/// <param name="options">Optional settings like: max count, <see cref="Direction"/> in which to read, the <see cref="Position"/> to start reading from, etc.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public ReadAllStreamResult ReadAllAsync(
-			ReadAllOptions options,
-			CancellationToken cancellationToken = default
-		) {
-			if (options.MaxCount <= 0)
-				throw new ArgumentOutOfRangeException(nameof(options.MaxCount));
-
-			var readReq = new ReadReq {
-				Options = new() {
-					ReadDirection = options.Direction switch {
-						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
-						Direction.Forwards  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
-						_                   => throw InvalidOption(options.Direction)
-					},
-					ResolveLinks = options.ResolveLinkTos,
-					All = new() {
-						Position = new() {
-							CommitPosition  = options.Position.CommitPosition,
-							PreparePosition = options.Position.PreparePosition
-						}
-					},
-					Count         = (ulong)options.MaxCount,
-					UuidOption    = new() { Structured    = new() },
-					ControlOption = new() { Compatibility = 1 },
-					Filter        = GetFilterOptions(options.Filter)
-				}
-			};
-
-			return new ReadAllStreamResult(
-				async _ => {
-					var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-					return channelInfo.CallInvoker;
-				},
-				readReq,
-				Settings,
-				options,
-				_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
-				cancellationToken
-			);
-		}
-
 		/// <summary>
 		/// Asynchronously reads all events.
 		/// </summary>
@@ -73,20 +25,16 @@ namespace EventStore.Client {
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
-		) =>
-			ReadAllAsync(
-				new ReadAllOptions {
-					Direction             = direction,
-					Position              = position,
-					Filter           = null,
-					MaxCount              = maxCount,
-					ResolveLinkTos        = resolveLinkTos,
-					Deadline              = deadline,
-					UserCredentials       = userCredentials,
-					SerializationSettings = OperationSerializationSettings.Disabled
-				},
-				cancellationToken
-			);
+		) => ReadAllAsync(
+			direction,
+			position,
+			eventFilter: null,
+			maxCount,
+			resolveLinkTos,
+			deadline,
+			userCredentials,
+			cancellationToken
+		);
 
 		/// <summary>
 		/// Asynchronously reads all events with filtering.
@@ -113,17 +61,36 @@ namespace EventStore.Client {
 			if (maxCount <= 0)
 				throw new ArgumentOutOfRangeException(nameof(maxCount));
 
-			return ReadAllAsync(
-				new ReadAllOptions {
-					Direction             = direction,
-					Position              = position,
-					Filter           = eventFilter,
-					MaxCount              = maxCount,
-					ResolveLinkTos        = resolveLinkTos,
-					Deadline              = deadline,
-					UserCredentials       = userCredentials,
-					SerializationSettings = OperationSerializationSettings.Disabled
+			var readReq = new ReadReq {
+				Options = new() {
+					ReadDirection = direction switch {
+						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
+						Direction.Forwards  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
+						_                   => throw InvalidOption(direction)
+					},
+					ResolveLinks = resolveLinkTos,
+					All = new() {
+						Position = new() {
+							CommitPosition  = position.CommitPosition,
+							PreparePosition = position.PreparePosition
+						}
+					},
+					Count         = (ulong)maxCount,
+					UuidOption    = new() { Structured    = new() },
+					ControlOption = new() { Compatibility = 1 },
+					Filter        = GetFilterOptions(eventFilter)
+				}
+			};
+
+			return new ReadAllStreamResult(
+				async _ => {
+					var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+					return channelInfo.CallInvoker;
 				},
+				readReq,
+				Settings,
+				deadline,
+				userCredentials,
 				cancellationToken
 			);
 		}
@@ -163,7 +130,8 @@ namespace EventStore.Client {
 
 								yield return message;
 							}
-						} finally {
+						}
+						finally {
 							_cts.Cancel();
 						}
 					}
@@ -171,17 +139,14 @@ namespace EventStore.Client {
 			}
 
 			internal ReadAllStreamResult(
-				Func<CancellationToken, Task<CallInvoker>> selectCallInvoker,
-				ReadReq request,
-				KurrentClientSettings settings,
-				ReadAllOptions options,
-				IMessageSerializer messageSerializer,
+				Func<CancellationToken, Task<CallInvoker>> selectCallInvoker, ReadReq request,
+				KurrentClientSettings settings, TimeSpan? deadline, UserCredentials? userCredentials,
 				CancellationToken cancellationToken
 			) {
 				var callOptions = KurrentCallOptions.CreateStreaming(
 					settings,
-					options.Deadline,
-					options.UserCredentials,
+					deadline,
+					userCredentials,
 					cancellationToken
 				);
 
@@ -192,7 +157,7 @@ namespace EventStore.Client {
 
 				if (request.Options.FilterOptionCase == ReadReq.Types.Options.FilterOptionOneofCase.None)
 					request.Options.NoFilter = new();
-
+				
 				_ = PumpMessages();
 
 				return;
@@ -202,21 +167,14 @@ namespace EventStore.Client {
 						var       callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
 						var       client      = new Streams.Streams.StreamsClient(callInvoker);
 						using var call        = client.Read(request, callOptions);
-
 						await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken)
 							               .ConfigureAwait(false)) {
 							await _channel.Writer.WriteAsync(
 								response.ContentCase switch {
-									StreamNotFound => StreamMessage.NotFound.Instance,
-									Event => new StreamMessage.Event(
-										ConvertToResolvedEvent(response.Event, messageSerializer)
-									),
-									FirstStreamPosition => new StreamMessage.FirstStreamPosition(
-										new StreamPosition(response.FirstStreamPosition)
-									),
-									LastStreamPosition => new StreamMessage.LastStreamPosition(
-										new StreamPosition(response.LastStreamPosition)
-									),
+									StreamNotFound      => StreamMessage.NotFound.Instance,
+									Event               => new StreamMessage.Event(ConvertToResolvedEvent(response.Event)),
+									FirstStreamPosition => new StreamMessage.FirstStreamPosition(new StreamPosition(response.FirstStreamPosition)),
+									LastStreamPosition  => new StreamMessage.LastStreamPosition(new StreamPosition(response.LastStreamPosition)),
 									LastAllStreamPosition => new StreamMessage.LastAllStreamPosition(
 										new Position(
 											response.LastAllStreamPosition.CommitPosition,
@@ -230,7 +188,8 @@ namespace EventStore.Client {
 						}
 
 						_channel.Writer.Complete();
-					} catch (Exception ex) {
+					}
+					catch (Exception ex) {
 						_channel.Writer.TryComplete(ex);
 					}
 				}
@@ -241,66 +200,18 @@ namespace EventStore.Client {
 				CancellationToken cancellationToken = default
 			) {
 				try {
-					await foreach (var message in
-					               _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
+					await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
 						if (message is not StreamMessage.Event e) {
 							continue;
 						}
 
 						yield return e.ResolvedEvent;
 					}
-				} finally {
+				}
+				finally {
 					_cts.Cancel();
 				}
 			}
-		}
-
-		/// <summary>
-		/// Asynchronously reads all the events from a stream.
-		/// 
-		/// The result could also be inspected as a means to avoid handling exceptions as the <see cref="ReadState"/> would indicate whether or not the stream is readable./>
-		/// </summary>
-		/// <param name="streamName">The name of the stream to read.</param>
-		/// <param name="options">Optional settings like: max count, <see cref="Direction"/> in which to read, the <see cref="Position"/> to start reading from, etc.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public ReadStreamResult ReadStreamAsync(
-			string streamName,
-			ReadStreamOptions options,
-			CancellationToken cancellationToken = default
-		) {
-			if (options.MaxCount <= 0)
-				throw new ArgumentOutOfRangeException(nameof(options.MaxCount));
-
-			return new ReadStreamResult(
-				async _ => {
-					var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-					return channelInfo.CallInvoker;
-				},
-				new ReadReq {
-					Options = new() {
-						ReadDirection = options.Direction switch {
-							Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
-							Direction.Forwards  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
-							_                   => throw InvalidOption(options.Direction)
-						},
-						ResolveLinks = options.ResolveLinkTos,
-						Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(
-							streamName,
-							options.StreamPosition
-						),
-						Count         = (ulong)options.MaxCount,
-						UuidOption    = new() { Structured = new() },
-						NoFilter      = new(),
-						ControlOption = new() { Compatibility = 1 }
-					}
-				},
-				Settings,
-				options.Deadline,
-				options.UserCredentials,
-				_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
-				cancellationToken
-			);
 		}
 
 		/// <summary>
@@ -330,17 +241,32 @@ namespace EventStore.Client {
 			if (maxCount <= 0)
 				throw new ArgumentOutOfRangeException(nameof(maxCount));
 
-			return ReadStreamAsync(
-				streamName,
-				new ReadStreamOptions {
-					Direction             = direction,
-					StreamPosition        = revision,
-					MaxCount              = maxCount,
-					ResolveLinkTos        = resolveLinkTos,
-					Deadline              = deadline,
-					UserCredentials       = userCredentials,
-					SerializationSettings = OperationSerializationSettings.Disabled
+			return new ReadStreamResult(
+				async _ => {
+					var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+					return channelInfo.CallInvoker;
 				},
+				new ReadReq {
+					Options = new() {
+						ReadDirection = direction switch {
+							Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
+							Direction.Forwards  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
+							_                   => throw InvalidOption(direction)
+						},
+						ResolveLinks = resolveLinkTos,
+						Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(
+							streamName,
+							revision
+						),
+						Count         = (ulong)maxCount,
+						UuidOption    = new() { Structured = new() },
+						NoFilter      = new(),
+						ControlOption = new() { Compatibility = 1 }
+					}
+				},
+				Settings,
+				deadline,
+				userCredentials,
 				cancellationToken
 			);
 		}
@@ -382,8 +308,7 @@ namespace EventStore.Client {
 						}
 
 						try {
-							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)
-								               .ConfigureAwait(false)) {
+							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
 								switch (message) {
 									case StreamMessage.FirstStreamPosition(var streamPosition):
 										FirstStreamPosition = streamPosition;
@@ -399,7 +324,8 @@ namespace EventStore.Client {
 
 								yield return message;
 							}
-						} finally {
+						}
+						finally {
 							_cts.Cancel();
 						}
 					}
@@ -412,12 +338,8 @@ namespace EventStore.Client {
 			public Task<ReadState> ReadState { get; }
 
 			internal ReadStreamResult(
-				Func<CancellationToken, Task<CallInvoker>> selectCallInvoker,
-				ReadReq request,
-				KurrentClientSettings settings,
-				TimeSpan? deadline,
-				UserCredentials? userCredentials,
-				IMessageSerializer messageSerializer,
+				Func<CancellationToken, Task<CallInvoker>> selectCallInvoker, ReadReq request,
+				KurrentClientSettings settings, TimeSpan? deadline, UserCredentials? userCredentials,
 				CancellationToken cancellationToken
 			) {
 				var callOptions = KurrentCallOptions.CreateStreaming(
@@ -460,7 +382,8 @@ namespace EventStore.Client {
 										.ConfigureAwait(false);
 
 									tcs.SetResult(Client.ReadState.Ok);
-								} else {
+								}
+								else {
 									tcs.SetResult(Client.ReadState.StreamNotFound);
 								}
 							}
@@ -468,9 +391,7 @@ namespace EventStore.Client {
 							await _channel.Writer.WriteAsync(
 								response.ContentCase switch {
 									StreamNotFound => StreamMessage.NotFound.Instance,
-									Event => new StreamMessage.Event(
-										ConvertToResolvedEvent(response.Event, messageSerializer)
-									),
+									Event          => new StreamMessage.Event(ConvertToResolvedEvent(response.Event)),
 									ContentOneofCase.FirstStreamPosition => new StreamMessage.FirstStreamPosition(
 										new StreamPosition(response.FirstStreamPosition)
 									),
@@ -490,7 +411,8 @@ namespace EventStore.Client {
 						}
 
 						_channel.Writer.Complete();
-					} catch (Exception ex) {
+					}
+					catch (Exception ex) {
 						tcs.TrySetException(ex);
 						_channel.Writer.TryComplete(ex);
 					}
@@ -502,8 +424,7 @@ namespace EventStore.Client {
 				CancellationToken cancellationToken = default
 			) {
 				try {
-					await foreach (var message in
-					               _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
+					await foreach (var message in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false)) {
 						if (message is StreamMessage.NotFound) {
 							throw new StreamNotFoundException(StreamName);
 						}
@@ -514,24 +435,21 @@ namespace EventStore.Client {
 
 						yield return e.ResolvedEvent;
 					}
-				} finally {
+				}
+				finally {
 					_cts.Cancel();
 				}
 			}
 		}
 
-		static ResolvedEvent ConvertToResolvedEvent(
-			Types.ReadEvent readEvent,
-			IMessageSerializer messageSerializer
-		) =>
-			ResolvedEvent.From(
+		static ResolvedEvent ConvertToResolvedEvent(ReadResp.Types.ReadEvent readEvent) =>
+			new ResolvedEvent(
 				ConvertToEventRecord(readEvent.Event)!,
 				ConvertToEventRecord(readEvent.Link),
 				readEvent.PositionCase switch {
-					Types.ReadEvent.PositionOneofCase.CommitPosition => readEvent.CommitPosition,
-					_                                                => null
-				},
-				messageSerializer
+					ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => readEvent.CommitPosition,
+					_                                                         => null
+				}
 			);
 
 		static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>
@@ -546,127 +464,5 @@ namespace EventStore.Client {
 					e.Data.ToByteArray(),
 					e.CustomMetadata.ToByteArray()
 				);
-	}
-
-	/// <summary>
-	/// Optional settings to customize reading all messages, for instance: max count,
-	/// <see cref="Direction"/> in which to read, the <see cref="Position"/> to start reading from, etc.
-	/// </summary>
-	public class ReadAllOptions {
-		/// <summary>
-		/// The <see cref="Direction"/> in which to read.
-		/// </summary>
-		public Direction Direction { get; set; } = Direction.Forwards;
-
-		/// <summary>
-		/// The <see cref="Position"/> to start reading from.
-		/// </summary>
-		public Position Position { get; set; } = Position.Start;
-
-		/// <summary>
-		/// The <see cref="IEventFilter"/> to apply.
-		/// </summary>
-		public IEventFilter? Filter { get; set; }
-
-		/// <summary>
-		/// The number of events to read from the stream.
-		/// </summary>
-		public long MaxCount { get; set; } = long.MaxValue;
-
-		/// <summary>
-		/// Whether to resolve LinkTo events automatically.
-		/// </summary>
-		public bool ResolveLinkTos { get; set; }
-
-		/// <summary>
-		/// Maximum time that the operation will be run
-		/// </summary>
-		public TimeSpan? Deadline { get; set; }
-
-		/// <summary>
-		/// The optional <see cref="UserCredentials"/> to perform operation with.
-		/// </summary>
-		public UserCredentials? UserCredentials { get; set; }
-
-		/// <summary>
-		/// Allows to customize or disable the automatic deserialization
-		/// </summary>
-		public OperationSerializationSettings? SerializationSettings { get; set; }
-	}
-
-	/// <summary>
-	/// Optional settings to customize reading stream messages, for instance: max count,
-	/// <see cref="Direction"/> in which to read, the <see cref="StreamPosition"/> to start reading from, etc.
-	/// </summary>
-	public class ReadStreamOptions {
-		/// <summary>
-		/// The <see cref="Direction"/> in which to read.
-		/// </summary>
-		public Direction Direction { get; set; } = Direction.Forwards;
-
-		/// <summary>
-		/// The <see cref="Client.StreamRevision"/> to start reading from.
-		/// </summary>
-		public StreamPosition StreamPosition { get; set; } = StreamPosition.Start;
-
-		/// <summary>
-		/// The number of events to read from the stream.
-		/// </summary>
-		public long MaxCount { get; set; } = long.MaxValue;
-
-		/// <summary>
-		/// Whether to resolve LinkTo events automatically.
-		/// </summary>
-		public bool ResolveLinkTos { get; set; }
-
-		/// <summary>
-		/// Maximum time that the operation will be run
-		/// </summary>
-		public TimeSpan? Deadline { get; set; }
-
-		/// <summary>
-		/// The optional <see cref="UserCredentials"/> to perform operation with.
-		/// </summary>
-		public UserCredentials? UserCredentials { get; set; }
-
-		/// <summary>
-		/// Allows to customize or disable the automatic deserialization
-		/// </summary>
-		public OperationSerializationSettings? SerializationSettings { get; set; }
-	}
-
-	public static class KurrentClientReadExtensions {
-		/// <summary>
-		/// Asynchronously reads all events. By default, it reads all of them from the start. The options parameter allows you to fine-tune it to your needs.
-		/// </summary>
-		/// <param name="client"></param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public static KurrentClient.ReadAllStreamResult ReadAllAsync(
-			this KurrentClient client,
-			CancellationToken cancellationToken = default
-		) =>
-			client.ReadAllAsync(new ReadAllOptions(), cancellationToken);
-
-		/// <summary>
-		/// Asynchronously reads all the events from a stream.
-		/// 
-		/// The result could also be inspected as a means to avoid handling exceptions as the <see cref="ReadState"/> would indicate whether or not the stream is readable./>
-		/// </summary>
-		/// <param name="client"></param>
-		/// <param name="streamName">The name of the stream to read.</param>
-		/// <param name="options">Optional settings like: max count, <see cref="Direction"/> in which to read, the <see cref="Position"/> to start reading from, etc.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public static KurrentClient.ReadStreamResult ReadStreamAsync(
-			this KurrentClient client,
-			string streamName,
-			CancellationToken cancellationToken = default
-		) =>
-			client.ReadStreamAsync(
-				streamName,
-				new ReadStreamOptions(),
-				cancellationToken
-			);
 	}
 }

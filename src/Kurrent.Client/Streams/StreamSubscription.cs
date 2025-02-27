@@ -22,8 +22,10 @@ namespace EventStore.Client {
 
 		internal static async Task<StreamSubscription> Confirm(
 			KurrentClient.StreamSubscriptionResult subscription,
-			SubscriptionListener subscriptionListener,
+			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
+			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped,
 			ILogger log,
+			Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached = null,
 			CancellationToken cancellationToken = default
 		) {
 			var messages = subscription.Messages;
@@ -38,26 +40,29 @@ namespace EventStore.Client {
 				subscription,
 				enumerator,
 				subscriptionId,
-				subscriptionListener,
+				eventAppeared,
+				subscriptionDropped,
 				log,
+				checkpointReached,
 				cancellationToken
 			);
 		}
 
 		private StreamSubscription(
 			KurrentClient.StreamSubscriptionResult subscription,
-			IAsyncEnumerator<StreamMessage> messages, 
-			string subscriptionId,
-			SubscriptionListener subscriptionListener,
+			IAsyncEnumerator<StreamMessage> messages, string subscriptionId,
+			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
+			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped,
 			ILogger log,
+			Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached,
 			CancellationToken cancellationToken = default
 		) {
 			_cts                        = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 			_subscription               = subscription;
 			_messages                   = messages;
-			_eventAppeared              = subscriptionListener.EventAppeared;
-			_checkpointReached          = subscriptionListener.CheckpointReached ?? ((_, _, _) => Task.CompletedTask);
-			_subscriptionDropped        = subscriptionListener.SubscriptionDropped;
+			_eventAppeared              = eventAppeared;
+			_checkpointReached          = checkpointReached ?? ((_, _, _) => Task.CompletedTask);
+			_subscriptionDropped        = subscriptionDropped;
 			_log                        = log;
 			_subscriptionDroppedInvoked = 0;
 			SubscriptionId              = subscriptionId;

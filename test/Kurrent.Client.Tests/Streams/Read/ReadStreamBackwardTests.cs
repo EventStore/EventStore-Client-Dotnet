@@ -78,7 +78,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentTemporaryF
 
 		Assert.True(
 			EventDataComparer.Equal(
-				Enumerable.Reverse(expected).ToArray(),
+				expected.Reverse().ToArray(),
 				actual
 			)
 		);

@@ -27,7 +27,7 @@ public class ReadAllEventsFixture : KurrentTemporaryFixture {
 			await Streams.AppendToStreamAsync(ExpectedStreamName, StreamState.NoStream, Events);
 
 			ExpectedEvents         = Events.ToBinaryData();
-			ExpectedEventsReversed = Enumerable.Reverse(ExpectedEvents).ToArray();
+			ExpectedEventsReversed = ExpectedEvents.Reverse().ToArray();
 
 			ExpectedFirstEvent = ExpectedEvents.First();
 			ExpectedLastEvent  = ExpectedEvents.Last();
