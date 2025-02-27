@@ -6,7 +6,7 @@ const int eventCount = 100;
 
 var semaphore = new SemaphoreSlim(eventCount);
 
-await using var client = new EventStoreClient(EventStoreClientSettings.Create("esdb://localhost:2113?tls=false"));
+await using var client = new KurrentClient(KurrentClientSettings.Create("esdb://localhost:2113?tls=false"));
 
 _ = Task.Run(async () => {
 	await using var subscription = client.SubscribeToAll(
@@ -47,7 +47,7 @@ await semaphore.WaitAsync();
 
 return;
 
-static async Task ExcludeSystemEvents(EventStoreClient client) {
+static async Task ExcludeSystemEvents(KurrentClient client) {
 	#region exclude-system
 
 	await using var subscription = client.SubscribeToAll(
@@ -64,7 +64,7 @@ static async Task ExcludeSystemEvents(EventStoreClient client) {
 	#endregion exclude-system
 }
 
-static async Task EventTypePrefix(EventStoreClient client) {
+static async Task EventTypePrefix(KurrentClient client) {
 	#region event-type-prefix
 
 	var filterOptions = new SubscriptionFilterOptions(EventTypeFilter.Prefix("customer-"));
@@ -81,7 +81,7 @@ static async Task EventTypePrefix(EventStoreClient client) {
 	}
 }
 
-static async Task EventTypeRegex(EventStoreClient client) {
+static async Task EventTypeRegex(KurrentClient client) {
 	#region event-type-regex
 
 	var filterOptions = new SubscriptionFilterOptions(EventTypeFilter.RegularExpression("^user|^company"));
@@ -98,7 +98,7 @@ static async Task EventTypeRegex(EventStoreClient client) {
 	}
 }
 
-static async Task StreamPrefix(EventStoreClient client) {
+static async Task StreamPrefix(KurrentClient client) {
 	#region stream-prefix
 
 	var filterOptions = new SubscriptionFilterOptions(StreamFilter.Prefix("user-"));
@@ -115,7 +115,7 @@ static async Task StreamPrefix(EventStoreClient client) {
 	}
 }
 
-static async Task StreamRegex(EventStoreClient client) {
+static async Task StreamRegex(KurrentClient client) {
 	#region stream-regex
 
 	var filterOptions = new SubscriptionFilterOptions(StreamFilter.RegularExpression("^account|^savings"));
@@ -132,7 +132,7 @@ static async Task StreamRegex(EventStoreClient client) {
 	}
 }
 
-static async Task CheckpointCallback(EventStoreClient client) {
+static async Task CheckpointCallback(KurrentClient client) {
 	#region checkpoint
 
 	var filterOptions = new SubscriptionFilterOptions(EventTypeFilter.ExcludeSystemEvents());
@@ -153,7 +153,7 @@ static async Task CheckpointCallback(EventStoreClient client) {
 	#endregion checkpoint
 }
 
-static async Task CheckpointCallbackWithInterval(EventStoreClient client) {
+static async Task CheckpointCallbackWithInterval(KurrentClient client) {
 	#region checkpoint-with-interval
 
 	var filterOptions = new SubscriptionFilterOptions(EventTypeFilter.ExcludeSystemEvents(), 1000);

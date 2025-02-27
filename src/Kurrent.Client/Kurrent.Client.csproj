@@ -1,0 +1,112 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<PackageId>Kurrent.Client</PackageId>
+		<Description>The base GRPC client library for the Kurrent Platform. Get the open source or commercial versions of KurrentDB from https://kurrent.io/</Description>
+		<PackageId>Kurrent.Client</PackageId>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Google.Protobuf" Version="3.29.1"/>
+		<PackageReference Include="Grpc.Net.Client" Version="2.67.0"/>
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0"/>
+		<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.0"/>
+		<PackageReference Include="System.Linq.Async" Version="6.0.1"/>
+	  <PackageReference Include="OpenTelemetry.Api" Version="1.10.0" />
+
+		<PackageReference Include="Grpc.Tools" Version="2.68.1">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Protobuf
+			ProtoRoot="Core/protos"
+			Include="Core/protos/**/*.proto"
+			Link="Core\protos\%(RecursiveDir)/%(FileName)%(Extension)"
+			GrpcServices="Client"
+			Access="internal"
+		/>
+		<Protobuf Update="Core\protos\code.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\gossip.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\operations.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\persistentsubscriptions.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\projectionmanagement.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\serverfeatures.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\shared.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\status.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\streams.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\usermanagement.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\code.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\gossip.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\operations.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\persistentsubscriptions.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\projectionmanagement.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\status.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\streams.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\usermanagement.proto">
+		  <Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+
+		<!--       -->
+		<!--        <Protobuf-->
+		<!--                Access="internal"-->
+		<!--                Include="..\Kurrent.Client\Common\protos\shared.proto;..\Kurrent.Client\Common\protos\status.proto;..\Kurrent.Client\Core\Common\protos\code.proto;"-->
+		<!--                ProtoRoot="..\Kurrent.Client\Core\Common\protos"-->
+		<!--                GrpcServices="Client"-->
+		<!--        />-->
+	</ItemGroup>
+
+	<!--    <ItemGroup Condition="'$(TargetFramework)' == 'net48'">-->
+	<!--        <PackageReference Include="System.Net.Http.WinHttpHandler" Version="9.0.0"/>-->
+	<!--        <PackageReference Include="System.Threading.Channels" Version="9.0.0"/>-->
+	<!--        <PackageReference Include="BouncyCastle.Cryptography" Version="2.5.0" />-->
+	<!--    </ItemGroup>-->
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+		<!--        <PackageReference Include="System.Net.Http" Version="4.3.4"/>-->
+		<PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0"/>
+		<PackageReference Include="System.Text.Json" Version="9.0.1" />
+		<PackageReference Include="System.Threading.Channels" Version="8.0.0"/>
+		<PackageReference Include="BouncyCastle.Cryptography" Version="2.3.1"/>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="Kurrent.Client.csproj.DotSettings"/>
+	</ItemGroup>
+</Project>

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using EventStore.Client;
 using EventStore.Client.Extensions.OpenTelemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -23,17 +24,17 @@ dotnet add package OpenTelemetry.Extensions.Hosting
 # endregion import-required-packages
 **/
 
-var settings = EventStoreClientSettings.Create("esdb://localhost:2113?tls=false");
+var settings = KurrentClientSettings.Create("esdb://localhost:2113?tls=false");
 
 settings.OperationOptions.ThrowOnAppendFailure = false;
 
-await using var client = new EventStoreClient(settings);
+await using var client = new KurrentClient(settings);
 
 await TraceAppendToStream(client);
 
 return;
 
-static async Task TraceAppendToStream(EventStoreClient client) {
+static async Task TraceAppendToStream(KurrentClient client) {
 	const string serviceName = "sample";
 
 	var host = Host.CreateDefaultBuilder()
@@ -76,7 +77,7 @@ static async Task TraceAppendToStream(EventStoreClient client) {
 		#region register-instrumentation
 
 		tracerProviderBuilder
-			.AddEventStoreClientInstrumentation();
+			.AddKurrentClientInstrumentation();
 
 		#endregion register-instrumentation
 
