@@ -1,70 +1,90 @@
 using EventStore.Client;
+using Kurrent.Client.Core.Serialization;
 using Kurrent.Client.Streams.GettingState;
 
 namespace Kurrent.Client.Streams.DecisionMaking;
+
+public delegate ValueTask<Message[]> CommandHandler<in TState>(TState state, CancellationToken ct = default);
+
+public interface ICommandHandler<in TState> {
+	ValueTask<Message[]> Handle(TState state, CancellationToken ct = default);
+}
+
+public record AsyncDecider<TState, TCommand>(
+	Func<TCommand, TState, CancellationToken, ValueTask<Message[]>> Decide,
+	Func<TState, ResolvedEvent, TState> Evolve,
+	Func<TState> GetInitialState,
+	GetSnapshot<TState>? GetSnapshot = null
+) : StateBuilder<TState>(
+	Evolve,
+	GetInitialState,
+	GetSnapshot
+);
 
 public record Decider<TState, TCommand, TEvent>(
 	Func<TCommand, TState, TEvent[]> Decide,
 	Func<TState, TEvent, TState> Evolve,
 	Func<TState> GetInitialState
-) : StateBuilder<TState, TEvent>(Evolve, GetInitialState);
-
-public record AsyncDecider<TState, TCommand, TEvent>(
-	Func<TCommand, TState, ValueTask<TEvent[]>> Decide,
-	Func<TState, TEvent, TState> Evolve,
-	Func<ValueTask<TState>> GetInitialState
-) : AsyncStateBuilder<TState, TEvent>(Evolve, GetInitialState) {
-	public static AsyncDecider<TState, TCommand, TEvent> From(Decider<TState, TCommand, TEvent> decider) =>
-		new AsyncDecider<TState, TCommand, TEvent>(
-			(command, state) => new ValueTask<TEvent[]>(decider.Decide(command, state)),
-			decider.Evolve,
-			() => new ValueTask<TState>(decider.GetInitialState())
+) {
+	public AsyncDecider<TState, TCommand> ToAsyncDecider(GetSnapshot<TState>? getSnapshot = null) =>
+		new AsyncDecider<TState, TCommand>(
+			(command, state, _) =>
+				new ValueTask<Message[]>(Decide(command, state).Select(m => Message.From(m!)).ToArray()),
+			(state, resolvedEvent) =>
+				resolvedEvent.DeserializedData is TEvent @event
+					? Evolve(state, @event)
+					: state,
+			GetInitialState,
+			getSnapshot
 		);
 }
 
+public record Decider<TState, TCommand>(
+	Func<TCommand, TState, object[]> Decide,
+	Func<TState, object, TState> Evolve,
+	Func<TState> GetInitialState
+) : Decider<TState, TCommand, object>(Decide, Evolve, GetInitialState);
+
+
 public static class KurrentClientDecisionMakingClientExtensions {
-	public static Task<GetStateResult<TState>> GetStateAsync<TState>(
-		this KurrentClient eventStore,
-		string streamName,
-		IStateBuilder<TState> stateBuilder,
-		CancellationToken ct = default
-	) =>
-		eventStore.GetStateAsync(streamName, stateBuilder, new ReadStreamOptions(), ct);
-
-	// public static Task GetAndUpdate<T, TEvent>(
-	// 	this KurrentClient eventStore,
-	// 	Func<T> getInitial,
-	// 	Guid id,
-	// 	Action<T> handle,
-	// 	CancellationToken ct
-	// )
-	// 	where T : Aggregate<TEvent>
-	// 	where TEvent: notnull =>
-	// 	eventStore.GetAndUpdate<T, TEvent>(
-	// 		(state, @event) =>
-	// 		{
-	// 			state.Evolve(@event);
-	// 			return state;
-	// 		},
-	// 		getInitial,
-	// 		id,
-	// 		state =>
-	// 		{
-	// 			handle(state);
-	// 			var events = state.DequeueUncommittedEvents();
-	// 			return events;
-	// 		}, ct);
-
-	public static async Task GetAndUpdate<TState, TCommand, TEvent>(
+	public static Task Decide<TState, TCommand>(
 		this KurrentClient eventStore,
 		string streamName,
 		TCommand command,
-		Decider<TState, TCommand, TEvent> decider,
+		Decider<TState, TCommand> decider,
 		CancellationToken ct
-	) {
-		var (state, streamPosition, _) = await eventStore.GetStateAsync(streamName, decider, ct);
+	) =>
+		eventStore.Decide(
+			streamName,
+			command,
+			decider.ToAsyncDecider(),
+			ct
+		);
+	
+	public static Task Decide<TState, TCommand>(
+		this KurrentClient eventStore,
+		string streamName,
+		TCommand command,
+		AsyncDecider<TState, TCommand> asyncDecider,
+		CancellationToken ct
+	) =>
+		eventStore.Decide(
+			streamName,
+			(state, token) => asyncDecider.Decide(command, state, token),
+			asyncDecider,
+			ct
+		);
 
-		var events = decider.Decide(command, state);
+	public static async Task Decide<TState>(
+		this KurrentClient eventStore,
+		string streamName,
+		CommandHandler<TState> decide,
+		IStateBuilder<TState> stateBuilder,
+		CancellationToken ct = default
+	) {
+		var (state, streamPosition, _) = await eventStore.GetStateAsync(streamName, stateBuilder, ct);
+
+		var events = await decide(state, ct);
 
 		var options = streamPosition.HasValue
 			? new AppendToStreamOptions
@@ -78,14 +98,4 @@ public static class KurrentClientDecisionMakingClientExtensions {
 			cancellationToken: ct
 		);
 	}
-
-// 	public static Task<GetStateResult<TState>> GetStateAsync<TState>(
-// 		this KurrentClient eventStore,
-// 		string streamName,
-// 		IStateBuilder<TState> stateBuilder,
-// 		ReadStreamOptions options,
-// 		CancellationToken ct = default
-// 	) =>
-// 		eventStore.ReadStreamAsync(streamName, options, ct)
-// 			.GetStateAsync(stateBuilder, ct);
 }

@@ -37,7 +37,7 @@ public class DecisionMakingTests(ITestOutputHelper output, KurrentPermanentFixtu
 		// When
 		var result = await Fixture.Streams.GetStateAsync(
 			streamName,
-			BuildState.From<ShoppingCart, Event>(Evolve, () => new Initial())
+			StateBuilder.For<ShoppingCart, Event>(Evolve, () => new Initial())
 		);
 
 		var shoppingCart = result.State;
